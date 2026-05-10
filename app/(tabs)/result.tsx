@@ -16,9 +16,9 @@ import { useColors } from '@/hooks/use-colors';
 import { generateInterpretation } from '@/constants/colorData';
 
 const SOCIAL_LINKS = {
-  naver: 'https://booking.naver.com',
-  youtube: 'https://www.youtube.com',
-  instagram: 'https://www.instagram.com',
+  naver: 'https://naver.me/ID3fxw2W',
+  youtube: 'https://youtube.com/@huali7603?si=C82e7o_sUCPaEVWT',
+  instagram: 'https://www.instagram.com/husim_lumiere?igsh=MTh6bWhpdWRjb2Rtcw==',
 };
 
 export default function ResultScreen() {
@@ -89,7 +89,7 @@ export default function ResultScreen() {
         <Animated.View
           style={[styles.colorCardsSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
         >
-          <Text style={[styles.sectionLabel, { color: colors.muted }]}>선택한 컬러</Text>
+          <Text style={[styles.sectionLabel, { color: colors.muted }]}>오늘 선택한 컬러</Text>
           <View style={styles.colorCards}>
             {[
               { card: card1, label: '1번 카드', desc: '현재 상태' },
@@ -149,7 +149,7 @@ export default function ResultScreen() {
             contentColor={colors.muted}
           />
 
-          {/* 장점 & 그림자 나란히 */}
+          {/* 장점 & 감정 패턴 나란히 */}
           <View style={styles.twoColumnSection}>
             <View
               style={[
@@ -170,15 +170,15 @@ export default function ResultScreen() {
             <View
               style={[
                 styles.halfCard,
-                { backgroundColor: '#FBF0F0', borderColor: '#E8C8C8' },
+                { backgroundColor: '#FBF5EE', borderColor: '#E8D8C0' },
               ]}
             >
-              <Text style={styles.halfCardIcon}>🌑</Text>
-              <Text style={[styles.halfCardTitle, { color: '#8A4A4A' }]}>그림자</Text>
+              <Text style={styles.halfCardIcon}>💛</Text>
+              <Text style={[styles.halfCardTitle, { color: '#8A6A3A' }]}>감정 패턴</Text>
               {interpretation.shadows.map((s, i) => (
                 <View key={i} style={styles.tagRow}>
-                  <View style={[styles.tag, { backgroundColor: '#E8C8C8' }]}>
-                    <Text style={[styles.tagText, { color: '#7A3A3A' }]}>{s}</Text>
+                  <View style={[styles.tag, { backgroundColor: '#E8D8C0' }]}>
+                    <Text style={[styles.tagText, { color: '#7A5A2A' }]}>{s}</Text>
                   </View>
                 </View>
               ))}
@@ -252,12 +252,16 @@ export default function ResultScreen() {
         {/* 소셜 링크 섹션 */}
         <Animated.View style={[styles.socialSection, { opacity: fadeAnim }]}>
           <View style={[styles.socialDivider, { backgroundColor: colors.border }]} />
-          <Text style={[styles.socialTitle, { color: colors.foreground }]}>
-            더 깊은 치유를 원하신다면
-          </Text>
-          <Text style={[styles.socialSubtitle, { color: colors.muted }]}>
-            휴심컬러와 함께하는 다양한 방법을 만나보세요
-          </Text>
+
+          {/* 브랜드 문구 */}
+          <View style={styles.brandMessageBox}>
+            <Text style={[styles.socialTitle, { color: colors.foreground }]}>
+              지금의 마음 흐름을{'\n'}더 깊이 이해하고 싶다면
+            </Text>
+            <Text style={[styles.socialSubtitle, { color: colors.muted }]}>
+              휴심컬러와 함께하는 1:1 컬러코칭을 만나보세요
+            </Text>
+          </View>
 
           <View style={styles.socialButtons}>
             {/* 네이버 예약 */}
@@ -275,7 +279,7 @@ export default function ResultScreen() {
                 </View>
                 <View style={styles.socialTextGroup}>
                   <Text style={styles.socialButtonTitle}>네이버 예약</Text>
-                  <Text style={styles.socialButtonDesc}>1:1 컬러 코칭 예약하기</Text>
+                  <Text style={styles.socialButtonDesc}>1:1 컬러코칭 예약하기</Text>
                 </View>
                 <Text style={styles.socialArrow}>→</Text>
               </View>
@@ -296,7 +300,7 @@ export default function ResultScreen() {
                 </View>
                 <View style={styles.socialTextGroup}>
                   <Text style={styles.socialButtonTitle}>유튜브 묵상채널</Text>
-                  <Text style={styles.socialButtonDesc}>치유 묵상 영상 보러가기</Text>
+                  <Text style={styles.socialButtonDesc}>마음을 쉬게 하는 묵상 영상</Text>
                 </View>
                 <Text style={styles.socialArrow}>→</Text>
               </View>
@@ -320,7 +324,7 @@ export default function ResultScreen() {
                 </View>
                 <View style={styles.socialTextGroup}>
                   <Text style={styles.socialButtonTitle}>인스타그램</Text>
-                  <Text style={styles.socialButtonDesc}>휴심컬러 일상 팔로우하기</Text>
+                  <Text style={styles.socialButtonDesc}>휴심컬러 감성 코칭 팔로우</Text>
                 </View>
                 <Text style={styles.socialArrow}>→</Text>
               </View>
@@ -473,7 +477,7 @@ const styles = StyleSheet.create({
   },
   resultCardContent: {
     fontSize: 14,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   twoColumnSection: {
     flexDirection: 'row',
@@ -568,7 +572,7 @@ const styles = StyleSheet.create({
   },
   coachingMessage: {
     fontSize: 16,
-    lineHeight: 26,
+    lineHeight: 28,
     fontWeight: '500',
     fontStyle: 'italic',
     textAlign: 'center',
@@ -598,7 +602,7 @@ const styles = StyleSheet.create({
   },
   recoveryDetail: {
     fontSize: 13,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   socialSection: {
     marginTop: 24,
@@ -609,15 +613,21 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     marginBottom: 4,
   },
+  brandMessageBox: {
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 4,
+  },
   socialTitle: {
     fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',
+    lineHeight: 28,
   },
   socialSubtitle: {
     fontSize: 13,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 20,
   },
   socialButtons: {
     gap: 10,
@@ -657,7 +667,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   socialButtonDesc: {
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 12,
   },
   socialArrow: {

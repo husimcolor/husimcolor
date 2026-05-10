@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { COLOR_DATA, getColorById, generateInterpretation } from '../constants/colorData';
 
 describe('COLOR_DATA', () => {
-  it('25가지 컬러가 모두 존재해야 한다', () => {
+  it('25가지 콜러가 모두 존재해야 한다', () => {
+    // cream은 아이보리로 표시되어 25가지 유지
     expect(COLOR_DATA).toHaveLength(25);
   });
 
