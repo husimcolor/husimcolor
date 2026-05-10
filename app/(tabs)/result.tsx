@@ -55,14 +55,10 @@ export default function ResultScreen() {
 
   const openLink = async (url: string, name: string) => {
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert('알림', `${name} 링크를 열 수 없습니다.`);
-      }
+      // canOpenURL은 웹/일부 환경에서 false를 반환할 수 있으므로 직접 openURL 사용
+      await Linking.openURL(url);
     } catch {
-      Alert.alert('알림', `${name} 링크를 열 수 없습니다.`);
+      Alert.alert('알림', `${name} 링크를 열 수 없습니다.\n직접 접속해 주세요.`);
     }
   };
 
@@ -203,9 +199,9 @@ export default function ResultScreen() {
               {interpretation.complementColors.map((c, i) => (
                 <View
                   key={i}
-                  style={[styles.complementTag, { backgroundColor: '#C4A882' + '25', borderColor: '#C4A882' + '60' }]}
+                  style={[styles.complementTag, { backgroundColor: '#A07840', borderColor: '#7A5820' }]}
                 >
-                  <Text style={[styles.complementTagText, { color: '#8A6A3A' }]}>{c}</Text>
+                  <Text style={[styles.complementTagText, { color: '#FFFFFF' }]}>{c}</Text>
                 </View>
               ))}
             </View>
