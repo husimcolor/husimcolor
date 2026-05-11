@@ -207,39 +207,44 @@ export default function ResultScreen() {
             </View>
           </View>
 
-          {/* 오늘의 코칭 메시지 */}
-          <View
-            style={[
-              styles.coachingCard,
-              { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' },
-            ]}
-          >
-            <View style={styles.coachingHeader}>
-              <Text style={styles.coachingIcon}>💌</Text>
-              <Text style={[styles.coachingTitle, { color: colors.primary }]}>오늘의 코칭 메시지</Text>
-            </View>
-            <View style={[styles.coachingDivider, { backgroundColor: colors.primary + '30' }]} />
-            <Text style={[styles.coachingMessage, { color: colors.foreground }]}>
-              "{interpretation.coachingMessage}"
-            </Text>
-          </View>
-
-          {/* 회복 방향 */}
+          {/* 회복 방향 - 3번 카드 고유 회복 에너지 설명 */}
           <View
             style={[
               styles.recoveryCard,
-              { backgroundColor: '#F0F5FF', borderColor: '#C8D8F0' },
+              { backgroundColor: '#EFF7F0', borderColor: '#B8D8C0' },
             ]}
           >
             <View style={styles.recoveryHeader}>
               <Text style={styles.recoveryIcon}>🌱</Text>
-              <Text style={[styles.recoveryTitle, { color: '#4A5A8A' }]}>회복 방향</Text>
+              <Text style={[styles.recoveryTitle, { color: '#2A6A3A' }]}>회복 방향</Text>
             </View>
-            <Text style={[styles.recoveryContent, { color: '#5A6A9A' }]}>
-              {card3.recovery}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+              <View style={[styles.recoveryBadge, { backgroundColor: '#B8D8C0', borderColor: '#8ABF9A' }]}>
+                <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{card3.korName} 에너지</Text>
+              </View>
+              <View style={[styles.recoveryBadge, { backgroundColor: '#D8EED8', borderColor: '#A8CEB0' }]}>
+                <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{card3.recovery}</Text>
+              </View>
+            </View>
+            <Text style={[styles.recoveryDetail, { color: '#2A5A3A', lineHeight: 24 }]}>
+              {interpretation.recoveryFlow}
             </Text>
-            <Text style={[styles.recoveryDetail, { color: '#7A8AAA' }]}>
-              {card3.reading3}
+          </View>
+
+          {/* 오늘의 코칭 메시지 - 짧고 따뜻한 한 마디 */}
+          <View
+            style={[
+              styles.coachingCard,
+              { backgroundColor: '#FBF5EE', borderColor: '#E8D8C0' },
+            ]}
+          >
+            <View style={styles.coachingHeader}>
+              <Text style={styles.coachingIcon}>💌</Text>
+              <Text style={[styles.coachingTitle, { color: '#8A6A3A' }]}>오늘의 코칭 메시지</Text>
+            </View>
+            <View style={[styles.coachingDivider, { backgroundColor: '#E8D8C0' }]} />
+            <Text style={[styles.coachingMessage, { color: '#4A3010', lineHeight: 30, textAlign: 'center' }]}>
+              {interpretation.coachingMessage}
             </Text>
           </View>
 
@@ -597,8 +602,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   recoveryDetail: {
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 22,
+  },
+  recoveryBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  recoveryBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   socialSection: {
     marginTop: 24,
