@@ -38,25 +38,35 @@ export default function ResultScreen() {
   const viewShotRef = useRef<ViewShotRef>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // 이미지 저장 - 시스템 공유 시트 사용 (원한 권한 요청 없이 갤러리에 저장 가능)
+  // 이미지 저장 - 웹: <a> 다운로드 방식 / 네이티브: 시스템 공유 시트
   const handleSaveImage = async () => {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      // ViewShot으로 화면 콡처
+      // ViewShot으로 화면 캡처
       let uri: string | undefined;
       if (viewShotRef.current && typeof viewShotRef.current.capture === 'function') {
         uri = await viewShotRef.current.capture();
       } else {
         uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
       }
-      if (!uri) throw new Error('콡처 실패');
+      if (!uri) throw new Error('캡처 실패');
 
-      // 임시 파일로 복사 (Sharing이 임시 경로를 요구하는 경우 대비)
+      // 웹 환경: <a> 태그로 직접 다운로드
+      if (Platform.OS === 'web') {
+        const link = document.createElement('a');
+        link.href = uri;
+        link.download = `husimcolor_result_${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // 네이티브 환경: 임시 파일로 복사 후 시스템 공유 시트
       const destUri = `${FileSystem.cacheDirectory}husimcolor_result_${Date.now()}.png`;
       await FileSystem.copyAsync({ from: uri, to: destUri });
 
-      // 시스템 공유 시트를 통해 갤러리에 저장
       const available = await Sharing.isAvailableAsync();
       if (available) {
         await Sharing.shareAsync(destUri, {

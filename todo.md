@@ -150,3 +150,10 @@
 ## 28차 개선 작업
 
 - [x] 이미지 저장 버튼 AUDIO 권한 오류 완전 해결 - MediaLibrary.requestPermissionsAsync 제거, expo-file-system + expo-sharing 방식으로 교체하여 권한 요청 없이 시스템 공유 시트로 갤러리 저장
+
+## 29차 개선 작업
+
+- [x] 네이버 예약/인스타/유튜브 외부 링크 연동 현황 확인 (이미 연동됨)
+- [x] Vercel 배포 설정 파일 작성 (vercel.json)
+- [x] 웹 전용 이미지 저장 기능 개선 (Platform.OS==='web'일 때 <a> 다운로드 방식)
+- [ ] Vercel 배포 안내
