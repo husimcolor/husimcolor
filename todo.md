@@ -132,3 +132,7 @@
 - [x] generatePersonalityFlow에 card3 파라미터 추가 및 generateInterpretation에서 card3 전달
 - [x] violet_indigo 기존 문장 수정: "현실과의 거리가 멀어지고 있습니다" → "조용히 자신만의 흐름을 정리하는 시간이 이어지고 있습니다"
 - [x] 바이올렛 shadows "현실 거리두기" → "내면 집중 흐름"으로 수정
+
+## 25차 개선 작업
+
+- [x] 실버 / 틸 컬러 shadows "이성 우선 흐름" → "생각 우선 흐름"으로 수정 (차갑거나 분석형 느낌 완화)
