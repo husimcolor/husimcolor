@@ -18,7 +18,7 @@ describe('COLOR_DATA', () => {
       expect(color.complementColors.length).toBeGreaterThanOrEqual(1);
       expect(color.strengths.length).toBeGreaterThanOrEqual(2);
       expect(color.shadows.length).toBeGreaterThanOrEqual(2);
-      expect(color.coachingMessages.length).toBeGreaterThanOrEqual(1);
+      expect(color.recoveryMessages.length).toBeGreaterThanOrEqual(1);
     }
   });
 

@@ -22,16 +22,16 @@ const CARD_INFO = [
   {
     step: 0,
     number: '1',
-    title: '현재 겉으로 드러난 상태',
-    subtitle: '지금 이 순간 가장 끌리는 색을 선택하세요',
-    accentColor: '#E05A4E',
+    title: '무의식 / 내면 흐름',
+    subtitle: '마음 깊은 곳에서 자연스럽게 끌리는 색을 선택하세요',
+    accentColor: '#5B8DB8',
   },
   {
     step: 1,
     number: '2',
-    title: '내면 / 무의식 패턴',
-    subtitle: '마음 깊은 곳에서 공명하는 색을 선택하세요',
-    accentColor: '#5B8DB8',
+    title: '현재 상태 / 심리 흐름',
+    subtitle: '지금 이 순간 나의 상태와 가장 가까운 색을 선택하세요',
+    accentColor: '#E05A4E',
   },
   {
     step: 2,

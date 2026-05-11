@@ -88,8 +88,8 @@ export default function ResultScreen() {
           <Text style={[styles.sectionLabel, { color: colors.muted }]}>오늘 선택한 컬러</Text>
           <View style={styles.colorCards}>
             {[
-              { card: card1, label: '1번 카드', desc: '현재 상태' },
-              { card: card2, label: '2번 카드', desc: '내면 패턴' },
+              { card: card1, label: '1번 카드', desc: '무의식 / 내면 흐름' },
+              { card: card2, label: '2번 카드', desc: '현재 상태' },
               { card: card3, label: '3번 카드', desc: '회복 방향' },
             ].map(({ card, label, desc }, i) => (
               <View
