@@ -6,10 +6,12 @@ import {
   ScrollView,
   StyleSheet,
   Animated,
+  Platform,
   Linking,
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
@@ -56,10 +58,26 @@ export default function ResultScreen() {
 
   const openLink = async (url: string, name: string) => {
     try {
-      // canOpenURL은 웹/일부 환경에서 false를 반환할 수 있으므로 직접 openURL 사용
-      await Linking.openURL(url);
+      if (Platform.OS === 'web') {
+        // 웹 환경: window.open으로 새 탭에서 열기
+        const opened = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!opened) {
+          // 팝업 차단 시 Linking 폴백
+          await Linking.openURL(url);
+        }
+      } else {
+        // 모바일(iOS/Android): 인앱 브라우저로 열기
+        await WebBrowser.openBrowserAsync(url, {
+          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+        });
+      }
     } catch {
-      Alert.alert('알림', `${name} 링크를 열 수 없습니다.\n직접 접속해 주세요.`);
+      // 폴백: Linking.openURL로 시도
+      try {
+        await Linking.openURL(url);
+      } catch {
+        Alert.alert('알림', `${name} 링크를 열 수 없습니다.\n직접 접속해 주세요.`);
+      }
     }
   };
 
