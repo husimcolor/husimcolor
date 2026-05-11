@@ -3,6 +3,7 @@ import {
   View,
   Text,
   Pressable,
+  TouchableOpacity,
   ScrollView,
   StyleSheet,
   Animated,
@@ -21,7 +22,7 @@ import { generateInterpretation } from '@/constants/colorData';
 const SOCIAL_LINKS = {
   naver: 'https://naver.me/ID3fxw2W',
   youtube: 'https://youtube.com/@huali7603?si=C82e7o_sUCPaEVWT',
-  instagram: 'https://www.instagram.com/husim_lumiere?igsh=MTh6bWhpdWRjb2Rtcw==',
+  instagram: 'https://www.instagram.com/husim_lumiere',
 };
 
 export default function ResultScreen() {
@@ -58,26 +59,9 @@ export default function ResultScreen() {
 
   const openLink = async (url: string, name: string) => {
     try {
-      if (Platform.OS === 'web') {
-        // 웹 환경: window.open으로 새 탭에서 열기
-        const opened = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!opened) {
-          // 팝업 차단 시 Linking 폴백
-          await Linking.openURL(url);
-        }
-      } else {
-        // 모바일(iOS/Android): 인앱 브라우저로 열기
-        await WebBrowser.openBrowserAsync(url, {
-          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-        });
-      }
+      await Linking.openURL(url);
     } catch {
-      // 폴백: Linking.openURL로 시도
-      try {
-        await Linking.openURL(url);
-      } catch {
-        Alert.alert('알림', `${name} 링크를 열 수 없습니다.\n직접 접속해 주세요.`);
-      }
+      Alert.alert('알림', `${name} 링크를 열 수 없습니다.\n직접 접속해 주세요.`);
     }
   };
 
@@ -298,12 +282,9 @@ export default function ResultScreen() {
 
           <View style={styles.socialButtons}>
             {/* 네이버 예약 */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.socialButton,
-                { backgroundColor: '#03C75A', shadowColor: '#03C75A' },
-                pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
-              ]}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.socialButton, { backgroundColor: '#03C75A' }]}
               onPress={() => openLink(SOCIAL_LINKS.naver, '네이버 예약')}
             >
               <View style={styles.socialButtonContent}>
@@ -316,15 +297,12 @@ export default function ResultScreen() {
                 </View>
                 <Text style={styles.socialArrow}>→</Text>
               </View>
-            </Pressable>
+            </TouchableOpacity>
 
             {/* 유튜브 묵상채널 */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.socialButton,
-                { backgroundColor: '#FF0000', shadowColor: '#FF0000' },
-                pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
-              ]}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.socialButton, { backgroundColor: '#FF0000' }]}
               onPress={() => openLink(SOCIAL_LINKS.youtube, '유튜브 묵상채널')}
             >
               <View style={styles.socialButtonContent}>
@@ -337,18 +315,12 @@ export default function ResultScreen() {
                 </View>
                 <Text style={styles.socialArrow}>→</Text>
               </View>
-            </Pressable>
+            </TouchableOpacity>
 
             {/* 인스타그램 */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.socialButton,
-                {
-                  backgroundColor: '#E1306C',
-                  shadowColor: '#E1306C',
-                },
-                pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
-              ]}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.socialButton, { backgroundColor: '#E1306C' }]}
               onPress={() => openLink(SOCIAL_LINKS.instagram, '인스타그램')}
             >
               <View style={styles.socialButtonContent}>
@@ -361,7 +333,7 @@ export default function ResultScreen() {
                 </View>
                 <Text style={styles.socialArrow}>→</Text>
               </View>
-            </Pressable>
+            </TouchableOpacity>
           </View>
         </Animated.View>
 
