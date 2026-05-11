@@ -239,7 +239,7 @@ export default function ResultScreen() {
               {card3.recovery}
             </Text>
             <Text style={[styles.recoveryDetail, { color: '#7A8AAA' }]}>
-              {card3.psychologyFlow}
+              {card3.reading3}
             </Text>
           </View>
 

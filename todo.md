@@ -44,3 +44,10 @@
 - [ ] generateInterpretation 로직 - 카드 역할 재정의 (card1=무의식, card2=현재, card3=회복)
 - [ ] 온보딩 화면 카드 설명 수정
 - [ ] 25가지 컬러 해석 문장 전면 재작성 (감성적 힐링 코칭 스타일)
+
+## 6차 개선 작업
+
+- [ ] ColorData 인터페이스에 카드 위치별 해석 필드 3종 분리 (card1Reading, card2Reading, card3Reading)
+- [ ] 25가지 컬러 각각 카드 위치별 해석 문장 작성
+- [ ] generateInterpretation 로직 카드 위치별 필드 사용으로 재설계
+- [ ] 결과 화면 심리 흐름 섹션 카드 위치별 해석 표시 구조 개선
