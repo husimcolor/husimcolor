@@ -190,7 +190,7 @@ export const COLOR_DATA: ColorData[] = [
     strengths: ['이상 추구', '변화 주도', '영성', '창의성'],
     shadows: ['이상과 현실 괴리', '현실 도피 경향', '불안정'],
     reading1: '무의식에서 변화와 더 높은 것을 향한 열망이 깊이 흐르고 있습니다.\n이상적인 것을 추구하는 패턴이 오랫동안 내면에 자리하고 있습니다.\n현실이 이상에 미치지 못할 때 내면에서 갈등이 조용히 이어지고 있습니다.',
-    reading2: '지금 변화와 성장을 향한 열망이 있지만,\n이상과 현실 사이에서 마음이 흔들리는 시기입니다.\n의미 있는 삶을 원하지만 어디서부터 시작해야 할지 막막합니다.',
+    reading2: '지금 변화와 성장을 향한 열망이 있지만,\n이상과 현실 사이에서 마음이 흔들리는 시기입니다.\n새로운 시작을 원하지만, 마음은 아직 천천히 자신만의 방향을 찾고 있습니다.',
     reading3: '바이올렛이 회복 방향으로 나타났을 때는,\n지금 있는 현실을 따뜻하게 받아들이는 것이 필요한 에너지라는 신호입니다.\n완벽하지 않아도, 지금 이 순간도 충분히 의미 있다는 것을 느껴보세요.',
     recoveryMessages: [
       '지금 있는 그대로도\n충분히 아름답습니다.',
@@ -342,9 +342,9 @@ export const COLOR_DATA: ColorData[] = [
     recovery: '생기 회복',
     complementColors: ['코랄', '옐로우'],
     strengths: ['정화력', '명료함', '새로운 시작', '순수함'],
-    shadows: ['감정 비움 어려움', '공허감', '방향 상실'],
+    shadows: ['감정 비움 어려움', '내면 공백감', '방향 혼란'],
     reading1: '무의식에서 정화와 새로운 시작을 향한 욕구가 깊이 흐르고 있습니다.\n복잡한 것들을 비워내고 싶은 패턴이 오랫동안 내면에 자리하고 있습니다.\n감정과 생각이 너무 많아 비워내고 싶은 흐름이 조용히 이어지고 있습니다.',
-    reading2: '지금 복잡한 것들을 비워내고 싶은 마음이 강하게 흐르고 있습니다.\n새롭게 시작하고 싶지만 어디서부터 시작해야 할지 막막합니다.\n정화를 원하지만 공허감이 느껴지는 시기입니다.',
+    reading2: '지금 복잡한 것들을 비워내고 싶은 마음이 강하게 흐르고 있습니다.\n새롭게 시작하고 싶지만, 내면은 조용히 방향을 정리해가는 시간이 필요합니다.\n정화를 원하면서도 마음은 아직 자신만의 흐름을 찾고 있습니다.',
     reading3: '화이트가 회복 방향으로 나타났을 때는,\n복잡함을 비워내고 다시 생기를 회복하는 에너지가 필요하다는 신호입니다.\n깨끗하게 비워낸 자리에 새로운 생기와 활력을 조금씩 채워가세요.',
     recoveryMessages: [
       '복잡함을 비워낸 자리에\n새로운 생기를 채워보세요.',
@@ -626,6 +626,27 @@ export function generateInterpretation(
 }
 
 /**
+ * 연결어로 끝나는 문장을 감지하여 자동으로 완결형 마무리 문장을 추가하는 헬퍼
+ * "하지만," / "있지만," / "원하지만," 등으로 끝나는 경우 회복 흐름 마무리 문장 자동 추가
+ */
+function ensureComplete(text: string, card3?: ColorData): string {
+  const incompleteEndings = ['하지만,', '있지만,', '원하지만,', '지만,', '이지만,', '지만'];
+  const lastLine = text.split('\n').pop() ?? '';
+  const isIncomplete = incompleteEndings.some(ending => lastLine.trim().endsWith(ending));
+  if (!isIncomplete) return text;
+  // card3의 recovery 키워드를 활용한 마무리 문장 생성
+  const recoveryKeyword = card3?.recovery ?? '회복';
+  const closings = [
+    `마음은 안정과 ${recoveryKeyword}을 함께 원하고 있습니다.`,
+    `내면은 조용히 ${recoveryKeyword}의 시간을 필요로 하고 있습니다.`,
+    `서두르기보다 자신만의 흐름으로 천천히 ${recoveryKeyword}해가는 과정이 이어지고 있습니다.`,
+  ];
+  // card3 recovery 키워드 기반으로 마무리 문장 선택
+  const idx = card3 ? (card3.id.length % closings.length) : 0;
+  return `${text}\n${closings[idx]}`;
+}
+
+/**
  * 현재 심리 흐름 생성
  * 무의식(1번 reading1) → 현재상태(2번 reading2) 흐름 연결
  */
@@ -655,7 +676,8 @@ function generatePsychologyFlow(card1: ColorData, card2: ColorData, card3: Color
   if (combos[key12]) return combos[key12];
   const line1 = card1.reading1.split('\n')[0];
   const line2 = card2.reading2.split('\n')[0];
-  return `${line1}\n${line2}`;
+  const combined = `${line1}\n${line2}`;
+  return ensureComplete(combined, card3);
 }
 
 /**
@@ -682,7 +704,8 @@ function generatePersonalityFlow(card1: ColorData, card2: ColorData): string {
   if (personalityCombos[key]) return personalityCombos[key];
   const lines1 = card1.reading1.split('\n');
   const lines2 = card2.reading2.split('\n');
-  return `${lines1[lines1.length - 1]}\n${lines2[lines2.length - 1]}`;
+  const combined = `${lines1[lines1.length - 1]}\n${lines2[lines2.length - 1]}`;
+  return ensureComplete(combined);
 }
 
 /**
