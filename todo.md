@@ -142,3 +142,7 @@
 - [x] 이미지 저장 버튼 오류 수정 - View ref를 ViewShot 컴포넌트로 교체, ViewShotRef 타입 적용
 - [x] 이미지 저장 로직 개선 - ViewShot.capture() 메서드 직접 사용, 권한 거부 시 설정 안내 메시지 추가
 - [x] app.config.ts에 expo-media-library 플러그인 추가 (iOS/Android 갤러리 저장 권한 등록)
+
+## 27차 개선 작업
+
+- [x] Android 이미지 저장 AUDIO 권한 오류 수정 - app.config.ts granularPermissions: ["photo"]로 명시, requestPermissionsAsync(false, ['photo'])로 photo 권한만 요청

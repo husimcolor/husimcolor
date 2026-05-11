@@ -43,8 +43,8 @@ export default function ResultScreen() {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      // 권한 요청
-      const { status, canAskAgain } = await MediaLibrary.requestPermissionsAsync();
+      // 권한 요청 - photo만 요청 (AUDIO 권한 제외)
+      const { status, canAskAgain } = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
       if (status !== 'granted') {
         if (!canAskAgain) {
           Alert.alert(

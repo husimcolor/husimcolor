@@ -92,6 +92,7 @@ const config: ExpoConfig = {
         photosPermission: "$(PRODUCT_NAME)이(가) 사진을 저장하기 위해 갤러리 접근 권한이 필요합니다.",
         savePhotosPermission: "$(PRODUCT_NAME)이(가) 결과 이미지를 갤러리에 저장하기 위해 권한이 필요합니다.",
         isAccessMediaLocationEnabled: false,
+        granularPermissions: ["photo"],
       },
     ],
     [
