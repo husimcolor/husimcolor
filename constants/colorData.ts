@@ -188,7 +188,7 @@ export const COLOR_DATA: ColorData[] = [
     recovery: '현실 수용',
     complementColors: ['골드', '옐로우'],
     strengths: ['이상 추구', '변화 주도', '영성', '창의성'],
-    shadows: ['이상과 현실 사이 흔들림', '현실 거리두기', '마음 흔들림'],
+    shadows: ['이상과 현실 사이 흔들림', '내면 집중 흐름', '마음 흔들림'],
     reading1: '무의식에서 변화와 더 높은 것을 향한 열망이 깊이 흐르고 있습니다.\n이상적인 것을 추구하는 패턴이 오랫동안 내면에 자리하고 있습니다.\n현실이 이상에 미치지 못할 때 내면에서 갈등이 조용히 이어지고 있습니다.',
     reading2: '지금 변화와 성장을 향한 열망이 있지만,\n이상과 현실 사이에서 마음이 흔들리는 시기입니다.\n새로운 시작을 원하지만, 마음은 아직 천천히 자신만의 방향을 찾고 있습니다.',
     reading3: '바이올렛이 회복 방향으로 나타났을 때는,\n지금 있는 현실을 따뜻하게 받아들이는 것이 필요한 에너지라는 신호입니다.\n완벽하지 않아도, 지금 이 순간도 충분히 의미 있다는 것을 느껴보세요.',
@@ -610,7 +610,7 @@ export function generateInterpretation(
   const complementColors = [...new Set([...card3.complementColors, ...card2.complementColors])].slice(0, 3);
 
   const psychologyFlow = generatePsychologyFlow(card1, card2, card3);
-  const personalityFlow = generatePersonalityFlow(card1, card2);
+  const personalityFlow = generatePersonalityFlow(card1, card2, card3);
   const coachingMessage = generateCoachingMessage(card1, card2, card3);
   const recoveryFlow = generateRecoveryFlow(card3);
 
@@ -670,7 +670,8 @@ function generatePsychologyFlow(card1: ColorData, card2: ColorData, card3: Color
     'coral_lavender': '사람과의 따뜻한 연결을 원하면서도 마음 한편에서는 조용한 치유를 함께 바라고 있습니다.',
     'lavender_coral': '평온함과 치유를 원하는 마음이 내면에 있지만,\n지금은 활기찬 에너지를 나누며 자신을 소진하고 있습니다.',
     'coral_cream': '따뜻한 연결을 원하는 에너지가 내면에 흐르지만,\n지금은 고요함 속에서 자신을 정리하고 싶은 마음이 강합니다.',
-    'violet_indigo': '변화와 성장을 향한 열망이 내면에 있지만,\n지금은 깊은 탐구 속에서 현실과의 거리가 멀어지고 있습니다.',
+    'violet_indigo': '변화와 성장을 향한 열망이 내면에 있지만,\n지금은 깊은 탐구 속에서 조용히 자신만의 흐름을 정리하는 시간이 이어지고 있습니다.',
+    'violet_indigo_green': '변화와 성장을 향한 열망이 내면에 깊이 흐르고 있습니다.\n지금은 깊은 탐구 속에서도, 조금씩 자신만의 회복과 균형을 찾아가고 있습니다.',
     'black_silver': '자신을 보호하려는 에너지가 내면에 자리하고 있지만,\n지금은 이성적 거리감 속에서 감정과의 연결이 멀어지고 있습니다.',
     'coral_orange': '따뜻한 연결을 원하는 에너지가 내면에 흐르지만,\n지금은 관계 속에서 많이 소진되어 자신을 돌볼 여유가 없습니다.',
     'lavender_cream': '조용히 자신을 돌보며 마음을 회복하고 싶은 흐름이 이어지고 있습니다.\n지금 가장 필요한 것은 부드러운 휴식과 자기 돌봐입니다.',
@@ -680,6 +681,8 @@ function generatePsychologyFlow(card1: ColorData, card2: ColorData, card3: Color
     'peach_yellow': '따뜻한 연결과 밝은 에너지가 함께 흐르고 있지만,\n마음은 안정과 회복을 함께 원하고 있습니다.',
     'yellow_peach': '지금 많은 생각과 아이디어가 흐르고 있지만,\n마음은 안정과 회복을 함께 원하고 있습니다.',
   };
+  const key123 = `${card1.id}_${card2.id}_${card3.id}`;
+  if (combos[key123]) return ensureComplete(combos[key123], card3);
   const key12 = `${card1.id}_${card2.id}`;
   if (combos[key12]) return ensureComplete(combos[key12], card3);
   const line1 = card1.reading1.split('\n')[0];
@@ -692,7 +695,7 @@ function generatePsychologyFlow(card1: ColorData, card2: ColorData, card3: Color
  * 성격 흐름 생성
  * 무의식(1번) + 현재상태(2번) 기반으로 감정 패턴 설명
  */
-function generatePersonalityFlow(card1: ColorData, card2: ColorData): string {
+function generatePersonalityFlow(card1: ColorData, card2: ColorData, card3?: ColorData): string {
   const personalityCombos: Record<string, string> = {
     'cream_skyblue': '온화하고 섬세한 성향이지만,\n갈등을 피하려는 경향이 강하고 감정을 안으로 담아두는 흐름이 있습니다.',
     'blue_red': '책임감이 강하고 혼자 견디는 성향이 있습니다.\n감정을 표현하는 것이 약함처럼 느껴져 안으로 담아두는 패턴이 있습니다.',
@@ -702,12 +705,17 @@ function generatePersonalityFlow(card1: ColorData, card2: ColorData): string {
     'coral_lavender': '따뜻하고 활기찬 성향이지만,\n섬세한 내면에서는 조용히 쉬고 싶은 마음이 흐르고 있습니다.',
     'lavender_coral': '섬세하고 평온한 성향이지만,\n관계 속에서 에너지를 나누다 보니 자신을 소홀히 하는 패턴이 있습니다.',
     'coral_cream': '따뜻하고 소통을 좋아하는 성향이지만,\n내면에서는 조용히 정리하고 싶은 마음이 조용히 흐르고 있습니다.',
-    'violet_indigo': '이상을 추구하고 깊이 탐구하는 성향이 있지만,\n현실과의 연결이 어색하게 느껴지는 패턴이 있습니다.',
+    'violet_indigo': '이상을 추구하고 깊이 탐구하는 성향이 있지만,\n마음 한편에서는 안정과 확신을 찾고 있는 흐름이 이어지고 있습니다.',
+    'violet_indigo_green': '이상을 추구하고 깊이 탐구하는 성향이 있지만,\n마음 한편에서는 자연스러운 회복의 흐름도 함께 이어지고 있습니다.',
     'black_silver': '깊이 있고 이성적이지만,\n감정 표현이 어렵고 고립되는 패턴이 있습니다.',
     'coral_orange': '활기차고 따뜻하지만,\n관계 속에서 에너지를 소진하며 자신을 돌보지 못하는 패턴이 있습니다.',
     'lavender_cream': '섬세하고 평온하지만,\n자신을 표현하는 것이 어색하고 감정을 안으로 담아두는 흐름이 있습니다.',
     'lavender_indigo': '감정을 섬세하게 느끼고 깊이 탐구하는 성향이 있습니다.\n혼자 생각으로 감정을 정리하려는 흐름이 강하고, 그 과정에서 주변과의 연결이 멀어지는 패턴이 있습니다.',
   };
+  if (card3) {
+    const key3 = `${card1.id}_${card2.id}_${card3.id}`;
+    if (personalityCombos[key3]) return ensureComplete(personalityCombos[key3]);
+  }
   const key = `${card1.id}_${card2.id}`;
   if (personalityCombos[key]) return ensureComplete(personalityCombos[key]);
   const lines1 = card1.reading1.split('\n');
@@ -743,6 +751,7 @@ function generateCoachingMessage(card1: ColorData, card2: ColorData, card3: Colo
     'yellow_blue_green': '분주한 생각들을 내려놓고,\n균형 잡힌 회복의 에너지를 찾아보세요.',
     'white_blue_green': '비워낸 자리에\n균형과 회복의 에너지를 채워보세요.',
     'violet_indigo_gold': '이상을 현실로 연결하는 작은 한 걸음이\n지금 당신에게 필요합니다.',
+    'violet_indigo_green': '깊은 탐구와 열망 속에서도,\n자연스러운 회복의 흐름이 지금 당신과 함께하고 있습니다.',
     'black_silver_white': '보호막 뒤에 있던 마음을\n조용히 정화하고 새롭게 시작해 보세요.',
     'coral_orange_lavender': '활기차게 나누어왔지만,\n이제는 자신을 위한 부드러운 돌봄의 시간이 필요합니다.',
     'lavender_cream_coral': '조용히 머물러 있던 마음에\n따뜻한 생기와 연결이 필요합니다.',

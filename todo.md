@@ -124,3 +124,11 @@
   - 충동적 패턴 → 방향 탐색 중
   - 과도한 중재 → 중재 우선 흐름
   - 고집스러운 패턴 → 익숙함 붙잡는 흐름
+
+## 24차 개선 작업
+
+- [x] 바이올렛+인디고+그린 3카드 조합 맞춤 문장 추가 (현재 심리 흐름 / 성격 흐름 / 코칭 메시지)
+- [x] generatePsychologyFlow / generatePersonalityFlow에 3카드 조합 키(card1_card2_card3) 우선 매칭 로직 추가
+- [x] generatePersonalityFlow에 card3 파라미터 추가 및 generateInterpretation에서 card3 전달
+- [x] violet_indigo 기존 문장 수정: "현실과의 거리가 멀어지고 있습니다" → "조용히 자신만의 흐름을 정리하는 시간이 이어지고 있습니다"
+- [x] 바이올렛 shadows "현실 거리두기" → "내면 집중 흐름"으로 수정
