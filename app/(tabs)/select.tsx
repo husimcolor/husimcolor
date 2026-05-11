@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Dimensions,
   FlatList,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
@@ -42,6 +43,28 @@ const CARD_INFO = [
   },
 ];
 
+/** 컬러 glowStyle에 따른 LinearGradient 색상 배열 반환 */
+function getGlowColors(item: ColorData): readonly [string, string, string] {
+  const { glowStyle, highlightColor } = item;
+  switch (glowStyle) {
+    case 'metallic':
+      return ['rgba(255,255,255,0.55)', highlightColor, 'rgba(0,0,0,0.08)'] as const;
+    case 'luminous':
+      return ['rgba(255,255,255,0.5)', highlightColor, 'rgba(255,255,255,0.05)'] as const;
+    case 'misty':
+      return ['rgba(255,255,255,0.45)', highlightColor, 'rgba(255,255,255,0.0)'] as const;
+    case 'creamy':
+      return ['rgba(255,255,255,0.4)', highlightColor, 'rgba(255,255,240,0.05)'] as const;
+    case 'radiant':
+      return ['rgba(255,255,255,0.45)', highlightColor, 'rgba(255,200,150,0.05)'] as const;
+    case 'natural':
+      return ['rgba(255,255,255,0.35)', highlightColor, 'rgba(255,255,255,0.0)'] as const;
+    case 'matte':
+    default:
+      return ['rgba(255,255,255,0.25)', highlightColor, 'rgba(0,0,0,0.05)'] as const;
+  }
+}
+
 export default function SelectScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ step?: string }>();
@@ -49,7 +72,6 @@ export default function SelectScreen() {
   const { selectedColors, setSelectedColor } = useColorContext();
   const colors = useColors();
 
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
 
@@ -88,6 +110,10 @@ export default function SelectScreen() {
 
   const renderColorItem = ({ item }: { item: ColorData }) => {
     const isSelected = currentSelected?.id === item.id;
+    const circleSize = CIRCLE_SIZE - 4;
+    const borderRadius = circleSize / 2;
+    const glowColors = getGlowColors(item);
+
     return (
       <Pressable
         style={({ pressed }) => [
@@ -96,27 +122,61 @@ export default function SelectScreen() {
         ]}
         onPress={() => handleColorSelect(item)}
       >
+        {/* 컬러 서클 - 광택 오버레이 포함 */}
         <View
           style={[
-            styles.colorCircle,
             {
-              backgroundColor: item.hex,
-              borderWidth: isSelected ? 3 : 2,
-              borderColor: isSelected ? colors.foreground : 'transparent',
+              width: circleSize,
+              height: circleSize,
+              borderRadius,
+              overflow: 'hidden',
+              borderWidth: isSelected ? 2.5 : 1.5,
+              borderColor: isSelected ? colors.foreground : 'rgba(255,255,255,0.4)',
               shadowColor: item.hex,
-              shadowOpacity: isSelected ? 0.5 : 0.2,
-              shadowOffset: { width: 0, height: 2 },
-              shadowRadius: isSelected ? 8 : 4,
-              elevation: isSelected ? 6 : 2,
+              shadowOpacity: isSelected ? 0.55 : 0.25,
+              shadowOffset: { width: 0, height: isSelected ? 4 : 2 },
+              shadowRadius: isSelected ? 10 : 5,
+              elevation: isSelected ? 8 : 3,
               transform: [{ scale: isSelected ? 1.1 : 1 }],
             },
           ]}
-        />
+        >
+          {/* 베이스 컬러 */}
+          <View
+            style={[
+              StyleSheet.absoluteFillObject,
+              { backgroundColor: item.hex },
+            ]}
+          />
+          {/* 광택 하이라이트 오버레이 */}
+          <LinearGradient
+            colors={glowColors}
+            start={{ x: 0.2, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          {/* 상단 반사광 */}
+          <View
+            style={{
+              position: 'absolute',
+              top: '8%',
+              left: '15%',
+              width: '40%',
+              height: '28%',
+              backgroundColor: 'rgba(255,255,255,0.3)',
+              borderRadius: circleSize * 0.3,
+              opacity: item.glowIntensity * 0.65,
+            }}
+          />
+        </View>
+
+        {/* 선택 체크 마크 */}
         {isSelected && (
           <View style={[styles.checkMark, { backgroundColor: colors.foreground }]}>
             <Text style={styles.checkMarkText}>✓</Text>
           </View>
         )}
+
         <Text
           style={[
             styles.colorName,
@@ -198,22 +258,34 @@ export default function SelectScreen() {
             <View
               style={[
                 styles.selectedPreviewCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.surface, borderColor: currentSelected.hex + '50' },
               ]}
             >
+              {/* 선택된 컬러 서클 (광택 포함) */}
               <View
-                style={[
-                  styles.selectedColorCircle,
-                  {
-                    backgroundColor: currentSelected.hex,
-                    shadowColor: currentSelected.hex,
-                    shadowOpacity: 0.4,
-                    shadowOffset: { width: 0, height: 3 },
-                    shadowRadius: 8,
-                    elevation: 4,
-                  },
-                ]}
-              />
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  overflow: 'hidden',
+                  shadowColor: currentSelected.hex,
+                  shadowOpacity: 0.45,
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowRadius: 8,
+                  elevation: 5,
+                }}
+              >
+                <View
+                  style={[StyleSheet.absoluteFillObject, { backgroundColor: currentSelected.hex }]}
+                />
+                <LinearGradient
+                  colors={getGlowColors(currentSelected)}
+                  start={{ x: 0.2, y: 0 }}
+                  end={{ x: 0.8, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                />
+              </View>
+
               <View style={styles.selectedInfo}>
                 <Text style={[styles.selectedName, { color: colors.foreground }]}>
                   {currentSelected.korName}
@@ -222,7 +294,7 @@ export default function SelectScreen() {
                   {currentSelected.keywords.join(' · ')}
                 </Text>
               </View>
-              <Text style={[styles.selectedCheck, { color: colors.primary }]}>선택됨</Text>
+              <Text style={[styles.selectedCheck, { color: cardInfo.accentColor }]}>선택됨 ✓</Text>
             </View>
           </Animated.View>
         )}
@@ -240,7 +312,6 @@ export default function SelectScreen() {
           />
         </Animated.View>
 
-        {/* 하단 여백 */}
         <View style={{ height: 100 }} />
       </ScrollView>
 
@@ -368,11 +439,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 12,
   },
-  selectedColorCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
   selectedInfo: {
     flex: 1,
     gap: 3,
@@ -403,11 +469,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     position: 'relative',
-  },
-  colorCircle: {
-    width: CIRCLE_SIZE - 4,
-    height: CIRCLE_SIZE - 4,
-    borderRadius: (CIRCLE_SIZE - 4) / 2,
   },
   checkMark: {
     position: 'absolute',

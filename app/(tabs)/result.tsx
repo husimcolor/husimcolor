@@ -9,6 +9,7 @@ import {
   Linking,
   Alert,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
@@ -109,9 +110,22 @@ export default function ResultScreen() {
                       shadowOffset: { width: 0, height: 3 },
                       shadowRadius: 8,
                       elevation: 4,
+                      overflow: 'hidden',
                     },
                   ]}
-                />
+                >
+                  <LinearGradient
+                    colors={[
+                      (card.highlightColor ?? 'rgba(255,255,255,0.25)') as string,
+                      'transparent' as string,
+                      'rgba(0,0,0,0.08)' as string,
+                    ]}
+                    locations={[0, 0.5, 1]}
+                    start={{ x: 0.3, y: 0 }}
+                    end={{ x: 0.7, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                </View>
                 <Text style={[styles.colorCardLabel, { color: colors.muted }]}>{label}</Text>
                 <Text style={[styles.colorCardName, { color: colors.foreground }]}>{card.korName}</Text>
                 <Text style={[styles.colorCardDesc, { color: colors.muted }]}>{desc}</Text>
