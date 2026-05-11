@@ -213,7 +213,7 @@ export default function ResultScreen() {
               {interpretation.complementColors.map((c, i) => (
                 <View
                   key={i}
-                  style={[styles.complementTag, { backgroundColor: '#A07840', borderColor: '#7A5820' }]}
+                  style={[styles.complementTag, { backgroundColor: '#4A7A5A', borderColor: '#2E5C3E' }]}
                 >
                   <Text style={[styles.complementTagText, { color: '#FFFFFF' }]}>{c}</Text>
                 </View>
@@ -560,8 +560,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   complementTagText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.4,
   },
   coachingCard: {
     padding: 20,
