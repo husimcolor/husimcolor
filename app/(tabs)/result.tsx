@@ -57,20 +57,16 @@ export default function ResultScreen() {
     router.replace('/(tabs)');
   };
 
-  const openLink = (url: string, name: string) => {
-    Linking.canOpenURL(url)
-      .then((supported) => {
-        if (supported) {
-          return Linking.openURL(url);
-        } else {
-          // 웹 환경 또는 앱이 없을 때 https로 폴백
-          const webUrl = url.startsWith('http') ? url : `https://${url}`;
-          return Linking.openURL(webUrl);
-        }
-      })
-      .catch(() => {
+  const openLink = async (url: string, name: string) => {
+    try {
+      await WebBrowser.openBrowserAsync(url);
+    } catch {
+      try {
+        await Linking.openURL(url);
+      } catch {
         Alert.alert('알림', `${name} 링크를 열 수 없습니다.\n직접 접속해 주세요.`);
-      });
+      }
+    }
   };
 
   return (
@@ -301,7 +297,8 @@ export default function ResultScreen() {
                 </View>
                 <View style={styles.socialTextGroup}>
                   <Text style={styles.socialButtonTitle}>네이버 예약</Text>
-                  <Text style={styles.socialButtonDesc}>1:1 컬러코칭 예약하기</Text>
+                  <Text style={styles.socialButtonDesc}>1:1 콜러코칭 예약하기</Text>
+                  <Text style={styles.socialButtonAddr}>이음트레이드 · 동소문로 47 701호</Text>
                 </View>
                 <Text style={styles.socialArrow}>→</Text>
               </View>
@@ -694,6 +691,11 @@ const styles = StyleSheet.create({
   socialButtonDesc: {
     color: 'rgba(255,255,255,0.85)',
     fontSize: 12,
+  },
+  socialButtonAddr: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    marginTop: 2,
   },
   socialArrow: {
     color: 'rgba(255,255,255,0.8)',
