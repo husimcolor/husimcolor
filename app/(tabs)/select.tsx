@@ -43,25 +43,74 @@ const CARD_INFO = [
   },
 ];
 
-/** 컬러 glowStyle에 따른 LinearGradient 색상 배열 반환 */
-function getGlowColors(item: ColorData): readonly [string, string, string] {
-  const { glowStyle, highlightColor } = item;
+/** glowStyle별 유리구슬 입체감 레이어 설정 */
+function getGlassLayers(item: ColorData) {
+  const { glowStyle, highlightColor, glowIntensity: hi } = item;
   switch (glowStyle) {
-    case 'metallic':
-      return ['rgba(255,255,255,0.55)', highlightColor, 'rgba(0,0,0,0.08)'] as const;
-    case 'luminous':
-      return ['rgba(255,255,255,0.5)', highlightColor, 'rgba(255,255,255,0.05)'] as const;
-    case 'misty':
-      return ['rgba(255,255,255,0.45)', highlightColor, 'rgba(255,255,255,0.0)'] as const;
-    case 'creamy':
-      return ['rgba(255,255,255,0.4)', highlightColor, 'rgba(255,255,240,0.05)'] as const;
-    case 'radiant':
-      return ['rgba(255,255,255,0.45)', highlightColor, 'rgba(255,200,150,0.05)'] as const;
-    case 'natural':
-      return ['rgba(255,255,255,0.35)', highlightColor, 'rgba(255,255,255,0.0)'] as const;
+    case 'metallic': // 골드, 실버 - 강한 금속 광택
+      return {
+        mainColors: ['rgba(255,255,255,0.60)', highlightColor, 'rgba(0,0,0,0.14)'] as const,
+        glowOpacity: hi * 0.20,
+        highlight: { top: '6%', left: '12%', width: '38%', height: '26%', opacity: hi * 0.80 },
+        smallHighlight: { top: '10%', left: '18%', width: '18%', height: '12%', opacity: hi * 0.90 },
+        rimOpacity: hi * 0.14,
+        innerShadowColor: `rgba(0,0,0,${hi * 0.18})`,
+      };
+    case 'luminous': // 라벤더, 스카이블루 - 안에서 퍼지는 빛
+      return {
+        mainColors: ['rgba(255,255,255,0.52)', highlightColor, 'rgba(200,200,255,0.04)'] as const,
+        glowOpacity: hi * 0.24,
+        highlight: { top: '7%', left: '14%', width: '42%', height: '30%', opacity: hi * 0.68 },
+        smallHighlight: { top: '11%', left: '20%', width: '16%', height: '10%', opacity: hi * 0.85 },
+        rimOpacity: hi * 0.16,
+        innerShadowColor: `rgba(100,80,180,${hi * 0.10})`,
+      };
+    case 'misty': // 세이지, 민트 - 안개 느낌
+      return {
+        mainColors: ['rgba(255,255,255,0.50)', highlightColor, 'rgba(180,210,180,0.0)'] as const,
+        glowOpacity: hi * 0.22,
+        highlight: { top: '7%', left: '13%', width: '40%', height: '28%', opacity: hi * 0.62 },
+        smallHighlight: { top: '11%', left: '19%', width: '16%', height: '10%', opacity: hi * 0.78 },
+        rimOpacity: hi * 0.10,
+        innerShadowColor: `rgba(60,100,60,${hi * 0.08})`,
+      };
+    case 'creamy': // 아이보리, 크림 - 크림빛 부드러움
+      return {
+        mainColors: ['rgba(255,255,255,0.48)', highlightColor, 'rgba(255,240,210,0.07)'] as const,
+        glowOpacity: hi * 0.22,
+        highlight: { top: '7%', left: '13%', width: '44%', height: '32%', opacity: hi * 0.60 },
+        smallHighlight: { top: '11%', left: '19%', width: '18%', height: '12%', opacity: hi * 0.76 },
+        rimOpacity: hi * 0.13,
+        innerShadowColor: `rgba(180,140,90,${hi * 0.07})`,
+      };
+    case 'radiant': // 코랄, 오렌지, 핑크 - 따뜻한 내부 발광
+      return {
+        mainColors: ['rgba(255,255,255,0.50)', highlightColor, 'rgba(255,170,100,0.06)'] as const,
+        glowOpacity: hi * 0.20,
+        highlight: { top: '6%', left: '12%', width: '40%', height: '28%', opacity: hi * 0.65 },
+        smallHighlight: { top: '10%', left: '18%', width: '16%', height: '10%', opacity: hi * 0.82 },
+        rimOpacity: hi * 0.11,
+        innerShadowColor: `rgba(180,70,30,${hi * 0.09})`,
+      };
+    case 'natural': // 그린, 올리브 - 자연스러운 빛
+      return {
+        mainColors: ['rgba(255,255,255,0.40)', highlightColor, 'rgba(180,220,180,0.0)'] as const,
+        glowOpacity: hi * 0.16,
+        highlight: { top: '8%', left: '14%', width: '38%', height: '26%', opacity: hi * 0.56 },
+        smallHighlight: { top: '12%', left: '20%', width: '14%', height: '9%', opacity: hi * 0.72 },
+        rimOpacity: hi * 0.08,
+        innerShadowColor: `rgba(50,90,50,${hi * 0.08})`,
+      };
     case 'matte':
     default:
-      return ['rgba(255,255,255,0.25)', highlightColor, 'rgba(0,0,0,0.05)'] as const;
+      return {
+        mainColors: ['rgba(255,255,255,0.30)', highlightColor, 'rgba(0,0,0,0.07)'] as const,
+        glowOpacity: hi * 0.13,
+        highlight: { top: '9%', left: '15%', width: '36%', height: '24%', opacity: hi * 0.50 },
+        smallHighlight: { top: '13%', left: '21%', width: '13%', height: '8%', opacity: hi * 0.65 },
+        rimOpacity: hi * 0.07,
+        innerShadowColor: `rgba(0,0,0,${hi * 0.12})`,
+      };
   }
 }
 
@@ -112,7 +161,7 @@ export default function SelectScreen() {
     const isSelected = currentSelected?.id === item.id;
     const circleSize = CIRCLE_SIZE - 4;
     const borderRadius = circleSize / 2;
-    const glowColors = getGlowColors(item);
+    const gl = getGlassLayers(item);
 
     return (
       <Pressable
@@ -122,7 +171,7 @@ export default function SelectScreen() {
         ]}
         onPress={() => handleColorSelect(item)}
       >
-        {/* 컬러 서클 - 광택 오버레이 포함 */}
+        {/* 콜러 서클 - 유리구슬 입체감 */}
         <View
           style={[
             {
@@ -131,42 +180,78 @@ export default function SelectScreen() {
               borderRadius,
               overflow: 'hidden',
               borderWidth: isSelected ? 2.5 : 1.5,
-              borderColor: isSelected ? colors.foreground : 'rgba(255,255,255,0.4)',
+              borderColor: isSelected ? colors.foreground : 'rgba(255,255,255,0.45)',
               shadowColor: item.hex,
-              shadowOpacity: isSelected ? 0.55 : 0.25,
-              shadowOffset: { width: 0, height: isSelected ? 4 : 2 },
-              shadowRadius: isSelected ? 10 : 5,
-              elevation: isSelected ? 8 : 3,
+              shadowOpacity: isSelected ? 0.60 : 0.28,
+              shadowOffset: { width: 0, height: isSelected ? 5 : 2 },
+              shadowRadius: isSelected ? 12 : 6,
+              elevation: isSelected ? 10 : 4,
               transform: [{ scale: isSelected ? 1.1 : 1 }],
             },
           ]}
         >
-          {/* 베이스 컬러 */}
-          <View
-            style={[
-              StyleSheet.absoluteFillObject,
-              { backgroundColor: item.hex },
-            ]}
-          />
-          {/* 광택 하이라이트 오버레이 */}
+          {/* 레이어1: 베이스 콜러 */}
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: item.hex }]} />
+
+          {/* 레이어2: 메인 광택 그라디언트 (좌상단→우하단) */}
           <LinearGradient
-            colors={glowColors}
-            start={{ x: 0.2, y: 0 }}
-            end={{ x: 0.8, y: 1 }}
+            colors={gl.mainColors}
+            start={{ x: 0.15, y: 0 }}
+            end={{ x: 0.85, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
-          {/* 상단 반사광 */}
+
+          {/* 레이어3: 내부 발광 - 중앙에서 퍼지는 빛 */}
+          <LinearGradient
+            colors={['transparent', `rgba(255,255,255,${gl.glowOpacity})`, 'transparent']}
+            start={{ x: 0.5, y: 0.5 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+
+          {/* 레이어4: 상단 하이라이트 - 큰 반사광 */}
           <View
             style={{
               position: 'absolute',
-              top: '8%',
-              left: '15%',
-              width: '40%',
-              height: '28%',
-              backgroundColor: 'rgba(255,255,255,0.3)',
-              borderRadius: circleSize * 0.3,
-              opacity: item.glowIntensity * 0.65,
+              top: `${gl.highlight.top}` as any,
+              left: `${gl.highlight.left}` as any,
+              width: `${gl.highlight.width}` as any,
+              height: `${gl.highlight.height}` as any,
+              backgroundColor: 'rgba(255,255,255,0.55)',
+              borderRadius: circleSize * 0.35,
+              opacity: gl.highlight.opacity,
+              transform: [{ rotate: '-15deg' }],
             }}
+          />
+
+          {/* 레이어5: 작은 하이라이트 포인트 - 유리구슬 반짝이는 빛 */}
+          <View
+            style={{
+              position: 'absolute',
+              top: `${gl.smallHighlight.top}` as any,
+              left: `${gl.smallHighlight.left}` as any,
+              width: `${gl.smallHighlight.width}` as any,
+              height: `${gl.smallHighlight.height}` as any,
+              backgroundColor: 'rgba(255,255,255,0.85)',
+              borderRadius: circleSize * 0.2,
+              opacity: gl.smallHighlight.opacity,
+            }}
+          />
+
+          {/* 레이어6: 하단 림 라이트 - 가장자리 반사 */}
+          <LinearGradient
+            colors={['transparent', `rgba(255,255,255,${gl.rimOpacity})`]}
+            start={{ x: 0.5, y: 0.6 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+
+          {/* 레이어7: 내부 그림자 - 입체감 강화 */}
+          <LinearGradient
+            colors={['transparent', gl.innerShadowColor]}
+            start={{ x: 0.5, y: 0.4 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
           />
         </View>
 
@@ -279,9 +364,9 @@ export default function SelectScreen() {
                   style={[StyleSheet.absoluteFillObject, { backgroundColor: currentSelected.hex }]}
                 />
                 <LinearGradient
-                  colors={getGlowColors(currentSelected)}
-                  start={{ x: 0.2, y: 0 }}
-                  end={{ x: 0.8, y: 1 }}
+                  colors={getGlassLayers(currentSelected).mainColors}
+                  start={{ x: 0.15, y: 0 }}
+                  end={{ x: 0.85, y: 1 }}
                   style={StyleSheet.absoluteFillObject}
                 />
               </View>
