@@ -89,4 +89,19 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// 후기 관련 DB 함수
+import { InsertReview, reviews } from "../drizzle/schema";
+import { desc } from "drizzle-orm";
+
+export async function getReviews() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(reviews).orderBy(desc(reviews.createdAt)).limit(50);
+}
+
+export async function createReview(data: InsertReview) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(reviews).values(data);
+  return result[0].insertId;
+}

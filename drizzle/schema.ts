@@ -25,4 +25,15 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+// 후기 테이블
+export const reviews = mysqlTable("reviews", {
+  id: int("id").autoincrement().primaryKey(),
+  nickname: varchar("nickname", { length: 50 }).notNull(),
+  rating: int("rating").notNull(), // 1~5
+  content: text("content").notNull(),
+  colorCombo: varchar("colorCombo", { length: 100 }), // 예: "라벤더 + 인디고 + 세이지"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = typeof reviews.$inferInsert;

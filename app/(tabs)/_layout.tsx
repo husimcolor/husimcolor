@@ -29,6 +29,12 @@ export default function TabLayout() {
           title: "결과",
         }}
       />
+      <Tabs.Screen
+        name="reviews"
+        options={{
+          title: "후기",
+        }}
+      />
     </Tabs>
   );
 }

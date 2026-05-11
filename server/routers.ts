@@ -1,7 +1,9 @@
+import { z } from "zod";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import * as db from "./db";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -17,12 +19,22 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  // 후기 API
+  reviews: router({
+    list: publicProcedure.query(() => {
+      return db.getReviews();
+    }),
+    create: publicProcedure
+      .input(z.object({
+        nickname: z.string().min(1).max(50),
+        rating: z.number().int().min(1).max(5),
+        content: z.string().min(1).max(500),
+        colorCombo: z.string().max(100).optional(),
+      }))
+      .mutation(({ input }) => {
+        return db.createReview(input);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

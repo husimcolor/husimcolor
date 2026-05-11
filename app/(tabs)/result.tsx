@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
+import ViewShot, { captureRef } from 'react-native-view-shot';
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
@@ -32,6 +35,58 @@ export default function ResultScreen() {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  const viewShotRef = useRef<View>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 이미지 저장
+  const handleSaveImage = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('권한 필요', '사진 저장을 위해 갤러리 권한이 필요합니다.');
+        return;
+      }
+      const uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
+      await MediaLibrary.saveToLibraryAsync(uri);
+      Alert.alert('저장 완료', '사진이 갤러리에 저장되었습니다.');
+    } catch {
+      Alert.alert('오류', '이미지 저장에 실패했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 카카오톡 공유
+  const handleKakaoShare = async () => {
+    try {
+      const uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
+      const available = await Sharing.isAvailableAsync();
+      if (available) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '휴심컬러 결과 공유' });
+      } else {
+        Alert.alert('알림', '이 환경에서는 공유 기능을 사용할 수 없습니다.');
+      }
+    } catch {
+      Alert.alert('오류', '공유에 실패했습니다.');
+    }
+  };
+
+  // 인스타그램 스토리 공유
+  const handleInstaShare = async () => {
+    try {
+      const uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
+      const available = await Sharing.isAvailableAsync();
+      if (available) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '인스타그램에 공유' });
+      } else {
+        Alert.alert('알림', '이 환경에서는 공유 기능을 사용할 수 없습니다.');
+      }
+    } catch {
+      Alert.alert('오류', '공유에 실패했습니다.');
+    }
+  };
 
   const card1 = selectedColors[0];
   const card2 = selectedColors[1];
@@ -88,6 +143,8 @@ export default function ResultScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* ViewShot 캡처 영역 */}
+        <View ref={viewShotRef} collapsable={false}>
         {/* 선택한 컬러 카드 3개 */}
         <Animated.View
           style={[styles.colorCardsSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
@@ -269,6 +326,40 @@ export default function ResultScreen() {
           </View>
 
         </Animated.View>
+        </View>{/* ViewShot 캡처 영역 끝 */}
+
+        {/* 공유 버튼 섹션 */}
+        <View style={styles.shareSection}>
+          <Text style={[styles.shareSectionTitle, { color: colors.muted }]}>결과 저장 및 공유</Text>
+          <View style={styles.shareButtons}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.shareButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={handleSaveImage}
+            >
+              <Text style={styles.shareButtonIcon}>📷</Text>
+              <Text style={[styles.shareButtonText, { color: colors.foreground }]}>
+                {isSaving ? '저장 중...' : '이미지 저장'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.shareButton, { backgroundColor: '#FEE500', borderColor: '#FEE500' }]}
+              onPress={handleKakaoShare}
+            >
+              <Text style={styles.shareButtonIcon}>💬</Text>
+              <Text style={[styles.shareButtonText, { color: '#3A1D1D' }]}>카카오톡 공유</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.shareButton, { backgroundColor: '#E1306C', borderColor: '#E1306C' }]}
+              onPress={handleInstaShare}
+            >
+              <Text style={styles.shareButtonIcon}>📸</Text>
+              <Text style={[styles.shareButtonText, { color: '#fff' }]}>인스타 스토리</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* 소셜 링크 섹션 */}
         <View style={styles.socialSection}>
@@ -340,6 +431,17 @@ export default function ResultScreen() {
               </View>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* 후기 남기기 버튼 */}
+        <View style={styles.reviewButtonSection}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.reviewButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.push('/reviews' as any)}
+          >
+            <Text style={styles.reviewButtonText}>후기 남기기 혹은 후기 보기 →</Text>
+          </TouchableOpacity>
         </View>
 
         {/* 다시 시작 버튼 */}
@@ -721,5 +823,52 @@ const styles = StyleSheet.create({
   footer: {
     fontSize: 12,
     letterSpacing: 0.5,
+  },
+  shareSection: {
+    marginTop: 20,
+    marginHorizontal: 16,
+    gap: 10,
+  },
+  shareSectionTitle: {
+    fontSize: 12,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  shareButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'center',
+  },
+  shareButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 4,
+  },
+  shareButtonIcon: {
+    fontSize: 20,
+  },
+  shareButtonText: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  reviewButtonSection: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  reviewButton: {
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  reviewButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
