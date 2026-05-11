@@ -146,3 +146,7 @@
 ## 27차 개선 작업
 
 - [x] Android 이미지 저장 AUDIO 권한 오류 수정 - app.config.ts granularPermissions: ["photo"]로 명시, requestPermissionsAsync(false, ['photo'])로 photo 권한만 요청
+
+## 28차 개선 작업
+
+- [x] 이미지 저장 버튼 AUDIO 권한 오류 완전 해결 - MediaLibrary.requestPermissionsAsync 제거, expo-file-system + expo-sharing 방식으로 교체하여 권한 요청 없이 시스템 공유 시트로 갤러리 저장

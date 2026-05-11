@@ -14,7 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import ViewShot, { captureRef, type ViewShotRef } from 'react-native-view-shot';
-import * as MediaLibrary from 'expo-media-library';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -38,35 +38,35 @@ export default function ResultScreen() {
   const viewShotRef = useRef<ViewShotRef>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // 이미지 저장
+  // 이미지 저장 - 시스템 공유 시트 사용 (원한 권한 요청 없이 갤러리에 저장 가능)
   const handleSaveImage = async () => {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      // 권한 요청 - photo만 요청 (AUDIO 권한 제외)
-      const { status, canAskAgain } = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
-      if (status !== 'granted') {
-        if (!canAskAgain) {
-          Alert.alert(
-            '권한 필요',
-            '갤러리 저장 권한이 거부되었습니다. 설정 > 앱 > 휴심컬러 > 권한에서 허용해 주세요.',
-            [{ text: '확인' }]
-          );
-        } else {
-          Alert.alert('권한 필요', '사진 저장을 위해 갤러리 권한이 필요합니다.');
-        }
-        return;
-      }
-      // ViewShot capture 메서드 직접 사용
+      // ViewShot으로 화면 콡처
       let uri: string | undefined;
       if (viewShotRef.current && typeof viewShotRef.current.capture === 'function') {
         uri = await viewShotRef.current.capture();
       } else {
         uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
       }
-      if (!uri) throw new Error('캡처 실패');
-      await MediaLibrary.saveToLibraryAsync(uri);
-      Alert.alert('저장 완료', '사진이 갤러리에 저장되었습니다. 📷');
+      if (!uri) throw new Error('콡처 실패');
+
+      // 임시 파일로 복사 (Sharing이 임시 경로를 요구하는 경우 대비)
+      const destUri = `${FileSystem.cacheDirectory}husimcolor_result_${Date.now()}.png`;
+      await FileSystem.copyAsync({ from: uri, to: destUri });
+
+      // 시스템 공유 시트를 통해 갤러리에 저장
+      const available = await Sharing.isAvailableAsync();
+      if (available) {
+        await Sharing.shareAsync(destUri, {
+          mimeType: 'image/png',
+          dialogTitle: '휴심컬러 결과 저장',
+          UTI: 'public.png',
+        });
+      } else {
+        Alert.alert('알림', '이 환경에서는 저장 기능을 사용할 수 없습니다.');
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       Alert.alert('저장 실패', `이미지 저장에 실패했습니다.\n(${msg})`);
