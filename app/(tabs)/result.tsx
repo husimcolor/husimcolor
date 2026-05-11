@@ -21,8 +21,8 @@ import { generateInterpretation } from '@/constants/colorData';
 
 const SOCIAL_LINKS = {
   naver: 'https://naver.me/ID3fxw2W',
-  youtube: 'https://youtube.com/@huali7603?si=C82e7o_sUCPaEVWT',
-  instagram: 'https://www.instagram.com/husim_lumiere',
+  youtube: 'https://youtube.com/@huali7603?si=zMMC1MRxIfrlWUIA',
+  instagram: 'https://www.instagram.com/husim_lumiere?igsh=MTh6bWhpdWRjb2Rtcw==',
 };
 
 export default function ResultScreen() {
@@ -57,12 +57,20 @@ export default function ResultScreen() {
     router.replace('/(tabs)');
   };
 
-  const openLink = async (url: string, name: string) => {
-    try {
-      await Linking.openURL(url);
-    } catch {
-      Alert.alert('알림', `${name} 링크를 열 수 없습니다.\n직접 접속해 주세요.`);
-    }
+  const openLink = (url: string, name: string) => {
+    Linking.canOpenURL(url)
+      .then((supported) => {
+        if (supported) {
+          return Linking.openURL(url);
+        } else {
+          // 웹 환경 또는 앱이 없을 때 https로 폴백
+          const webUrl = url.startsWith('http') ? url : `https://${url}`;
+          return Linking.openURL(webUrl);
+        }
+      })
+      .catch(() => {
+        Alert.alert('알림', `${name} 링크를 열 수 없습니다.\n직접 접속해 주세요.`);
+      });
   };
 
   return (
@@ -267,7 +275,7 @@ export default function ResultScreen() {
         </Animated.View>
 
         {/* 소셜 링크 섹션 */}
-        <Animated.View style={[styles.socialSection, { opacity: fadeAnim }]}>
+        <View style={styles.socialSection}>
           <View style={[styles.socialDivider, { backgroundColor: colors.border }]} />
 
           {/* 브랜드 문구 */}
@@ -335,7 +343,7 @@ export default function ResultScreen() {
               </View>
             </TouchableOpacity>
           </View>
-        </Animated.View>
+        </View>
 
         {/* 다시 시작 버튼 */}
         <Animated.View style={[styles.restartSection, { opacity: fadeAnim }]}>
