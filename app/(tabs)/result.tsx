@@ -204,7 +204,7 @@ export default function ResultScreen() {
           >
             <View style={styles.complementHeader}>
               <Text style={styles.complementIcon}>🎨</Text>
-              <Text style={[styles.complementTitle, { color: colors.foreground }]}>보완 컬러</Text>
+              <Text style={[styles.complementTitle, { color: '#2A2A2A' }]}>보완 컬러</Text>
             </View>
             <Text style={[styles.complementDesc, { color: colors.muted }]}>
               지금 당신에게 필요한 에너지의 색
@@ -541,8 +541,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   complementTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   complementDesc: {
     fontSize: 13,
