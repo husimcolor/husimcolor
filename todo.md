@@ -136,3 +136,9 @@
 ## 25차 개선 작업
 
 - [x] 실버 / 틸 컬러 shadows "이성 우선 흐름" → "생각 우선 흐름"으로 수정 (차갑거나 분석형 느낌 완화)
+
+## 26차 개선 작업
+
+- [x] 이미지 저장 버튼 오류 수정 - View ref를 ViewShot 컴포넌트로 교체, ViewShotRef 타입 적용
+- [x] 이미지 저장 로직 개선 - ViewShot.capture() 메서드 직접 사용, 권한 거부 시 설정 안내 메시지 추가
+- [x] app.config.ts에 expo-media-library 플러그인 추가 (iOS/Android 갤러리 저장 권한 등록)

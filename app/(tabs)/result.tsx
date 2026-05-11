@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
-import ViewShot, { captureRef } from 'react-native-view-shot';
+import ViewShot, { captureRef, type ViewShotRef } from 'react-native-view-shot';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { useRouter } from 'expo-router';
@@ -35,7 +35,7 @@ export default function ResultScreen() {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
-  const viewShotRef = useRef<View>(null);
+  const viewShotRef = useRef<ViewShotRef>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   // 이미지 저장
@@ -43,16 +43,33 @@ export default function ResultScreen() {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
+      // 권한 요청
+      const { status, canAskAgain } = await MediaLibrary.requestPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('권한 필요', '사진 저장을 위해 갤러리 권한이 필요합니다.');
+        if (!canAskAgain) {
+          Alert.alert(
+            '권한 필요',
+            '갤러리 저장 권한이 거부되었습니다. 설정 > 앱 > 휴심컬러 > 권한에서 허용해 주세요.',
+            [{ text: '확인' }]
+          );
+        } else {
+          Alert.alert('권한 필요', '사진 저장을 위해 갤러리 권한이 필요합니다.');
+        }
         return;
       }
-      const uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
+      // ViewShot capture 메서드 직접 사용
+      let uri: string | undefined;
+      if (viewShotRef.current && typeof viewShotRef.current.capture === 'function') {
+        uri = await viewShotRef.current.capture();
+      } else {
+        uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
+      }
+      if (!uri) throw new Error('캡처 실패');
       await MediaLibrary.saveToLibraryAsync(uri);
-      Alert.alert('저장 완료', '사진이 갤러리에 저장되었습니다.');
-    } catch {
-      Alert.alert('오류', '이미지 저장에 실패했습니다.');
+      Alert.alert('저장 완료', '사진이 갤러리에 저장되었습니다. 📷');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      Alert.alert('저장 실패', `이미지 저장에 실패했습니다.\n(${msg})`);
     } finally {
       setIsSaving(false);
     }
@@ -144,7 +161,7 @@ export default function ResultScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* ViewShot 캡처 영역 */}
-        <View ref={viewShotRef} collapsable={false}>
+        <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 0.95 }}>
         {/* 선택한 컬러 카드 3개 */}
         <Animated.View
           style={[styles.colorCardsSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
@@ -326,7 +343,7 @@ export default function ResultScreen() {
           </View>
 
         </Animated.View>
-        </View>{/* ViewShot 캡처 영역 끝 */}
+        </ViewShot>{/* ViewShot 캡처 영역 끝 */}
 
         {/* 공유 버튼 섹션 */}
         <View style={styles.shareSection}>
