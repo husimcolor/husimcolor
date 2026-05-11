@@ -630,18 +630,26 @@ export function generateInterpretation(
  * "하지만," / "있지만," / "원하지만," 등으로 끝나는 경우 회복 흐름 마무리 문장 자동 추가
  */
 function ensureComplete(text: string, card3?: ColorData): string {
-  const incompleteEndings = ['하지만,', '있지만,', '원하지만,', '지만,', '이지만,', '지만'];
+  // 연결어/쉼표로 끝나는 모든 패턴 감지
+  const incompletePattern = /[하있원되어지이고]지만,?$|[하있원되어지이고]고,?$|[하있원되어지이고]며,?$|[하있원되어지이고]나,?$|[하있원되어지이고]서,?$/;
   const lastLine = text.split('\n').pop() ?? '';
-  const isIncomplete = incompleteEndings.some(ending => lastLine.trim().endsWith(ending));
+  const trimmed = lastLine.trim();
+  // 쉼표로 끝나거나 연결어 패턴으로 끝나는 경우 감지
+  const isIncomplete = trimmed.endsWith(',') || incompletePattern.test(trimmed);
   if (!isIncomplete) return text;
   // card3의 recovery 키워드를 활용한 마무리 문장 생성
   const recoveryKeyword = card3?.recovery ?? '회복';
+  // recovery 키워드 끝 글자 받침 여부로 '을/를' 선택
+  const lastChar = recoveryKeyword[recoveryKeyword.length - 1];
+  const charCode = lastChar.charCodeAt(0);
+  const hasBatchim = (charCode - 0xAC00) % 28 !== 0;
+  const eul = hasBatchim ? '을' : '를';
   const closings = [
-    `마음은 안정과 ${recoveryKeyword}을 함께 원하고 있습니다.`,
+    `마음은 안정과 ${recoveryKeyword}${eul} 함께 원하고 있습니다.`,
     `내면은 조용히 ${recoveryKeyword}의 시간을 필요로 하고 있습니다.`,
     `서두르기보다 자신만의 흐름으로 천천히 ${recoveryKeyword}해가는 과정이 이어지고 있습니다.`,
   ];
-  // card3 recovery 키워드 기반으로 마무리 문장 선택
+  // card3 id 길이 기반으로 마무리 문장 선택 (다양성 확보)
   const idx = card3 ? (card3.id.length % closings.length) : 0;
   return `${text}\n${closings[idx]}`;
 }
@@ -673,7 +681,7 @@ function generatePsychologyFlow(card1: ColorData, card2: ColorData, card3: Color
     'yellow_peach': '지금 많은 생각과 아이디어가 흐르고 있지만,\n마음은 안정과 회복을 함께 원하고 있습니다.',
   };
   const key12 = `${card1.id}_${card2.id}`;
-  if (combos[key12]) return combos[key12];
+  if (combos[key12]) return ensureComplete(combos[key12], card3);
   const line1 = card1.reading1.split('\n')[0];
   const line2 = card2.reading2.split('\n')[0];
   const combined = `${line1}\n${line2}`;
@@ -701,7 +709,7 @@ function generatePersonalityFlow(card1: ColorData, card2: ColorData): string {
     'lavender_indigo': '감정을 섬세하게 느끼고 깊이 탐구하는 성향이 있습니다.\n혼자 생각으로 감정을 정리하려는 흐름이 강하고, 그 과정에서 주변과의 연결이 멀어지는 패턴이 있습니다.',
   };
   const key = `${card1.id}_${card2.id}`;
-  if (personalityCombos[key]) return personalityCombos[key];
+  if (personalityCombos[key]) return ensureComplete(personalityCombos[key]);
   const lines1 = card1.reading1.split('\n');
   const lines2 = card2.reading2.split('\n');
   const combined = `${lines1[lines1.length - 1]}\n${lines2[lines2.length - 1]}`;
