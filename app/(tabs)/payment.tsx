@@ -111,23 +111,15 @@ export default function PaymentScreen() {
     setTrialStatus("active");
     const label = await getTrialRemainingLabel();
     setRemainingLabel(label);
-    // 체험 활성화 후 이전 화면(심화 결과)으로 복귀
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.push("/premium-select" as any);
-    }
+    // 체험 활성화 후 심화 카드 선택 화면으로 이동
+    router.push("/premium-select" as any);
   };
-
   const handleContinueTrial = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.push("/premium-select" as any);
-    }
+    // 심화 카드 선택 화면으로 이동
+    router.push("/premium-select" as any);
   };
 
   // 무료체험 버튼 렌더링

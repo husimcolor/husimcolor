@@ -1,9 +1,7 @@
 import { Tabs } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
-
 export default function TabLayout() {
   const colors = useColors();
-
   return (
     <Tabs
       screenOptions={{
@@ -33,6 +31,34 @@ export default function TabLayout() {
         name="reviews"
         options={{
           title: "후기",
+        }}
+      />
+      <Tabs.Screen
+        name="payment"
+        options={{
+          title: "결제",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="premium-select"
+        options={{
+          title: "심화 카드 선택",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="premium-result"
+        options={{
+          title: "심화 결과",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "프로필",
+          href: null,
         }}
       />
     </Tabs>
