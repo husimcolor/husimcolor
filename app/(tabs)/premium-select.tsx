@@ -310,7 +310,7 @@ export default function PremiumSelectScreen() {
           {isShuffling
             ? "✨ 카드를 섞는 중..."
             : selectedCount < 3
-            ? `마음이 이끄는 카드를 ${3 - selectedCount}장 더 선택해 주세요`
+            ? `마음이 이끄는 카드를 ${3 - selectedCount}장 선택해 주세요`
             : "3장 선택 완료 · 아래 버튼을 눌러 해석을 확인하세요"}
         </Text>
 
