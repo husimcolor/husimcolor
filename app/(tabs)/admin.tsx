@@ -8,10 +8,16 @@ import {
   Alert,
   RefreshControl,
   TextInput,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
+
+// 관리자 비밀번호 (앱 내 간단 보호용)
+const ADMIN_PASSWORD = "hyusim2024";
 
 type PaymentRecord = {
   id: number;
@@ -38,16 +44,30 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function AdminScreen() {
   const colors = useColors();
+  const [authenticated, setAuthenticated] = useState(false);
+  const [pwInput, setPwInput] = useState("");
+  const [pwError, setPwError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [memoInputs, setMemoInputs] = useState<Record<number, string>>({});
 
   const { data: payments, refetch } = trpc.payments.list.useQuery(undefined, {
     retry: false,
+    enabled: authenticated,
   });
 
   const updateStatus = trpc.payments.updateStatus.useMutation({
     onSuccess: () => refetch(),
   });
+
+  const handleLogin = () => {
+    if (pwInput === ADMIN_PASSWORD) {
+      setAuthenticated(true);
+      setPwError(false);
+    } else {
+      setPwError(true);
+      setPwInput("");
+    }
+  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -86,6 +106,53 @@ export default function AdminScreen() {
     });
   };
 
+  // 비밀번호 입력 화면
+  if (!authenticated) {
+    return (
+      <ScreenContainer>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.loginContainer}>
+            <Text style={[styles.loginTitle, { color: colors.foreground }]}>
+              🌿 관리자 로그인
+            </Text>
+            <Text style={[styles.loginSubtitle, { color: colors.muted }]}>
+              관리자 비밀번호를 입력해 주세요
+            </Text>
+            <TextInput
+              style={[styles.loginInput, {
+                borderColor: pwError ? "#EF4444" : colors.border,
+                color: colors.foreground,
+                backgroundColor: colors.surface,
+              }]}
+              placeholder="비밀번호"
+              placeholderTextColor={colors.muted}
+              secureTextEntry
+              value={pwInput}
+              onChangeText={(t) => { setPwInput(t); setPwError(false); }}
+              onSubmitEditing={handleLogin}
+              returnKeyType="done"
+              autoFocus
+            />
+            {pwError && (
+              <Text style={styles.pwErrorText}>비밀번호가 올바르지 않습니다</Text>
+            )}
+            <TouchableOpacity
+              style={[styles.loginBtn, { backgroundColor: "#8BAF8B" }]}
+              onPress={handleLogin}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.loginBtnText}>확인</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </ScreenContainer>
+    );
+  }
+
+  // 관리자 메인 화면
   return (
     <ScreenContainer>
       <ScrollView
@@ -102,6 +169,13 @@ export default function AdminScreen() {
           <Text style={[styles.subtitle, { color: colors.muted }]}>
             아래로 당겨서 새로고침
           </Text>
+          <TouchableOpacity
+            style={[styles.logoutBtn, { borderColor: colors.border }]}
+            onPress={() => { setAuthenticated(false); setPwInput(""); }}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.logoutBtnText, { color: colors.muted }]}>로그아웃</Text>
+          </TouchableOpacity>
         </View>
 
         {/* 통계 */}
@@ -133,7 +207,7 @@ export default function AdminScreen() {
         {/* 목록 */}
         {!payments ? (
           <Text style={[styles.emptyText, { color: colors.muted }]}>
-            로그인 후 관리자 화면을 이용할 수 있습니다
+            데이터를 불러오는 중...
           </Text>
         ) : payments.length === 0 ? (
           <Text style={[styles.emptyText, { color: colors.muted }]}>
@@ -238,6 +312,51 @@ export default function AdminScreen() {
 }
 
 const styles = StyleSheet.create({
+  // 로그인 화면
+  loginContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 32,
+    gap: 16,
+  },
+  loginTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+    marginBottom: 4,
+  },
+  loginSubtitle: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  loginInput: {
+    width: "100%",
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    letterSpacing: 2,
+  },
+  pwErrorText: {
+    color: "#EF4444",
+    fontSize: 13,
+    marginTop: -8,
+  },
+  loginBtn: {
+    width: "100%",
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  loginBtnText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  // 관리자 메인
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 24,
@@ -256,6 +375,16 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 13,
+  },
+  logoutBtn: {
+    marginTop: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  logoutBtnText: {
+    fontSize: 12,
   },
   statsRow: {
     flexDirection: "row",
