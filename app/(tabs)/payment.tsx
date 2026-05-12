@@ -9,6 +9,7 @@ import {
   Image,
   Dimensions,
   Platform,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -42,7 +43,7 @@ const PAYMENT_PLANS = [
     id: "couple",
     label: "커플 심리코칭",
     price: "60,000원",
-    badge: "준비 중",
+    badge: "커플 추천",
     badgeColor: "#C4956A",
     description: "두 사람의 컬러 에너지 흐름 비교 분석",
     features: [
@@ -51,10 +52,9 @@ const PAYMENT_PLANS = [
       { icon: "💬", title: "관계 맞춤 코칭 메시지", desc: "두 사람의 회복 방향 제안" },
       { icon: "🌿", title: "함께하는 보완 컬러 안내", desc: "관계 회복에 도움이 되는 컬러 제안" },
     ],
-    // 추후 커플 QR 이미지 추가 시: require("@/assets/images/qr_60000.jpg")
-    qrImage: null as number | null,
-    qrNote: "준비 중입니다",
-    available: false,
+    qrImage: require("@/assets/images/qr_60000.jpg") as number,
+    qrNote: "카카오페이 · 토스 · 계좌이체 가능",
+    available: true,
   },
 ];
 
@@ -114,8 +114,7 @@ export default function PaymentScreen() {
               styles.planCard,
               {
                 backgroundColor: colors.surface,
-                borderColor: plan.available ? "#8BAF8B55" : colors.border,
-                opacity: plan.available ? 1 : 0.65,
+                borderColor: plan.id === "couple" ? "#C4956A55" : "#8BAF8B55",
               },
             ]}
           >
@@ -130,7 +129,7 @@ export default function PaymentScreen() {
               </View>
             </View>
 
-            <Text style={[styles.planPrice, { color: plan.available ? "#8BAF8B" : colors.muted }]}>
+            <Text style={[styles.planPrice, { color: plan.id === "couple" ? "#C4956A" : "#8BAF8B" }]}>
               {plan.price}
             </Text>
             <Text style={[styles.planDesc, { color: colors.muted }]}>
@@ -156,14 +155,13 @@ export default function PaymentScreen() {
             <TouchableOpacity
               style={[
                 styles.payButton,
-                { backgroundColor: plan.available ? "#8BAF8B" : colors.border },
+                { backgroundColor: plan.id === "couple" ? "#C4956A" : "#8BAF8B" },
               ]}
               onPress={() => handlePayPress(plan)}
-              activeOpacity={plan.available ? 0.8 : 1}
-              disabled={!plan.available}
+              activeOpacity={0.8}
             >
               <Text style={styles.payButtonText}>
-                {plan.available ? `${plan.price} 결제하기` : "준비 중입니다"}
+                {`${plan.price} 결제하기`}
               </Text>
             </TouchableOpacity>
           </View>
@@ -197,8 +195,16 @@ export default function PaymentScreen() {
         {/* 안내 문구 */}
         <Text style={[styles.notice, { color: colors.muted }]}>
           · 결제 후 환불은 카드 선택 전에만 가능합니다{"\n"}
-          · 결제 관련 문의: 카카오톡 채널 @휴심컬러
+          · 결제 관련 문의:
         </Text>
+        <TouchableOpacity
+          onPress={() => Linking.openURL("https://open.kakao.com/o/sp6nBerh")}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.kakaoLink, { color: "#3A9F3A" }]}>
+            카카오톡 오픈채팅 @휴심컬러 연결하기 →
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* QR 결제 모달 */}
@@ -398,6 +404,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     textAlign: "center",
+  },
+  kakaoLink: {
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+    textDecorationLine: "underline",
+    paddingVertical: 4,
   },
   modalOverlay: {
     flex: 1,
