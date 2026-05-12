@@ -131,11 +131,11 @@ function AnimatedCard({
             },
           ]}
         >
-          {/* 화이트·블랙 카드는 도형과 텍스트를 다크 컬러로 */}
+          {/* 화이트 카드: 도형·텍스트 골드 / 블랙 카드: 흰색 유지 */}
           <Text
             style={[
               styles.shapeSymbol,
-              (card.colorKor === "화이트" || card.colorKor === "블랙") && { color: "rgba(30, 30, 30, 0.85)" },
+              card.colorKor === "화이트" && { color: "#D4AF37" },
             ]}
           >
             {card.shapeSymbol}
@@ -143,7 +143,7 @@ function AnimatedCard({
           <Text
             style={[
               styles.cardFrontColorName,
-              (card.colorKor === "화이트" || card.colorKor === "블랙") && { color: "rgba(30, 30, 30, 0.9)" },
+              card.colorKor === "화이트" && { color: "#D4AF37" },
             ]}
             numberOfLines={1}
           >

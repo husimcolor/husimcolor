@@ -201,7 +201,7 @@ export default function PremiumResultScreen() {
                 <Text
                   style={[
                     styles.cardSummarySymbol,
-                    (card.colorKor === "화이트" || card.colorKor === "블랙") && { color: "rgba(30, 30, 30, 0.85)" },
+                    card.colorKor === "화이트" && { color: "#D4AF37" },
                   ]}
                 >
                   {card.shapeSymbol}
