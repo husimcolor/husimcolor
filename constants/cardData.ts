@@ -110,7 +110,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '앞으로 나아가는 힘이 있습니다.\n방향을 잘 잡으면 그 힘이 더 빛납니다.',
     wellness: {
       tea: '대추차 또는 생강차',
-      breath: '활기찬 복식호흡 (배로 깊게 들이쉬기)',
+      breath: '깊고 리듬감 있는 복식호흡',
       routine: [
         '아침 햇빛 쬐기',
         '짧은 산책으로 에너지 발산',
@@ -182,7 +182,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '변화는 당신에게 새로운 가능성을 열어줍니다.\n그 흐름 안에서 자신을 잃지 마세요.',
     wellness: {
       tea: '생강차 또는 계피차',
-      breath: '활기찬 복식호흡',
+      breath: '리듬감 있는 복식호흡',
       routine: [
         '짧은 달리기 또는 빠른 걷기',
         '오늘의 우선순위 3가지 정하기',
@@ -282,7 +282,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신 안에 아직 꺼내지 못한 창의성이 있습니다.\n오늘 그것을 작게라도 표현해보세요.',
     wellness: {
       tea: '루이보스 또는 오렌지 허브차',
-      breath: '활기찬 복식호흡',
+      breath: '리듬감 있는 복식호흡',
       routine: [
         '새로운 사람과 짧은 대화',
         '창의적인 활동 (그림, 요리)',
@@ -354,7 +354,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '변화 속에서도 당신의 따뜻함은 변하지 않습니다.\n그 본질을 믿어보세요.',
     wellness: {
       tea: '생강차 또는 루이보스',
-      breath: '활기찬 복식호흡',
+      breath: '리듬감 있는 복식호흡',
       routine: [
         '짧은 산책',
         '좋아하는 음악 들으며 기분 전환',
@@ -430,7 +430,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 밝음은 진짜입니다.\n그 안에 있는 솔직한 감정도 함께 빛납니다.',
     wellness: {
       tea: '레몬 허브차 또는 국화차',
-      breath: '밝고 가벼운 복식호흡 (코로 깊게 들이쉬기)',
+      breath: '가볍고 부드러운 복식호흡',
       routine: [
         '햇빛 아래 산책',
         '새로운 것 배우기',
@@ -454,7 +454,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 지적 탐구는 삶을 풍요롭게 합니다.\n그 지식을 삶 속에서 꽃피워보세요.',
     wellness: {
       tea: '레몬 허브차 또는 페퍼민트차',
-      breath: '활기찬 복식호흡',
+      breath: '리듬감 있는 복식호흡',
       routine: [
         '아이디어 노트 쓰기',
         '새로운 장소 방문',
@@ -526,7 +526,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 창의적 시각은 세상을 새롭게 봅니다.\n그 빛나는 아이디어를 현실로 만들어보세요.',
     wellness: {
       tea: '페퍼민트차 또는 레몬 허브차',
-      breath: '활기찬 복식호흡',
+      breath: '리듬감 있는 복식호흡',
       routine: [
         '빠른 걷기',
         '새로운 아이디어 탐색',
@@ -602,7 +602,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신은 자연처럼 조용히 성장합니다.\n그 성장의 속도를 믿어보세요.',
     wellness: {
       tea: '녹차 또는 캐모마일',
-      breath: '자연스러운 복식호흡 (배가 올라오는 느낌)',
+      breath: '배가 부드럽게 올라오는 복식호흡',
       routine: [
         '자연 속 산책',
         '식물 돌보기',
@@ -626,7 +626,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 성장은 뿌리 깊은 나무처럼 단단합니다.\n그 뿌리를 더 깊이 내려보세요.',
     wellness: {
       tea: '녹차 또는 페퍼민트차',
-      breath: '활기찬 복식호흡',
+      breath: '리듬감 있는 복식호흡',
       routine: [
         '자연 속 걷기',
         '새로운 성장 목표 세우기',
@@ -698,7 +698,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '어떤 환경에서도 당신은 성장합니다.\n그 생명력을 믿어보세요.',
     wellness: {
       tea: '녹차 또는 페퍼민트차',
-      breath: '활기찬 복식호흡',
+      breath: '리듬감 있는 복식호흡',
       routine: [
         '자연 속 빠른 걷기',
         '성장 목표 점검',
@@ -798,7 +798,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 진실함이 당신을 빛나게 합니다.\n그 진실한 방향을 믿어보세요.',
     wellness: {
       tea: '페퍼민트차 또는 블루 말로우 허브차',
-      breath: '활기찬 복식호흡',
+      breath: '리듬감 있는 복식호흡',
       routine: [
         '감정을 글로 표현하기',
         '새로운 소통 방식 시도',
@@ -870,7 +870,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 진실한 목소리는 어떤 상황에서도 가치 있습니다.\n그 목소리를 잃지 마세요.',
     wellness: {
       tea: '페퍼민트차 또는 블루 말로우 허브차',
-      breath: '활기찬 복식호흡',
+      breath: '리듬감 있는 복식호흡',
       routine: [
         '빠른 걷기',
         '감정 표현 연습',
@@ -1314,7 +1314,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 순수한 성장 동기는 가장 강한 힘입니다.\n그 순수함을 지켜나가세요.',
     wellness: {
       tea: '화이트 티 또는 페퍼민트차',
-      breath: '활기찬 복식호흡',
+      breath: '리듬감 있는 복식호흡',
       routine: [
         '새로운 시작 선언',
         '공간 정리',
@@ -1386,7 +1386,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '순수한 변화의 에너지가 당신 안에 있습니다.\n오늘 작은 한 걸음을 내딛어보세요.',
     wellness: {
       tea: '화이트 티 또는 페퍼민트차',
-      breath: '활기찬 복식호흡',
+      breath: '리듬감 있는 복식호흡',
       routine: [
         '새로운 목표 설정',
         '공간 정리',

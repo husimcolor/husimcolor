@@ -32,10 +32,10 @@ function shuffleArray<T>(arr: T[]): T[] {
 const POSITION_LABELS = ["무의식 · 내면 에너지", "현재 현실 에너지", "미래 · 회복 · 희망 에너지"];
 const POSITION_COLORS = ["#8BAF8B", "#B5A0C8", "#C4956A"];
 
-// 따뜻한 크림 아이보리 카드 뒷면 색상
-const CARD_BACK_COLOR = "#F5F0E8"; // 크림 아이보리
-const CARD_BACK_BORDER = "#E0D8CC"; // 베이지 테두리
-const CARD_BACK_SYMBOL_COLOR = "rgba(160, 148, 130, 0.6)"; // 따뜻한 세이지 베이지 심볼
+// 따뜻한 연베이지 카드 뒷면 색상
+const CARD_BACK_COLOR = "#EDE8DF"; // 연베이지 (크림보다 약간 더 따뜻하고 구분감 있는 톤)
+const CARD_BACK_BORDER = "#C8BFB0"; // 베이지 테두리 (더 선명하게)
+const CARD_BACK_SYMBOL_COLOR = "rgba(140, 128, 112, 0.65)"; // 따뜻한 브라운 세이지 심볼
 
 export default function PremiumSelectScreen() {
   const colors = useColors();
@@ -294,10 +294,18 @@ export default function PremiumSelectScreen() {
                       },
                     ]}
                   >
-                    <Text style={styles.shapeSymbol}>{card.shapeSymbol}</Text>
-                    <Text style={styles.cardFrontColorName} numberOfLines={1}>
-                      {card.colorKor}
-                    </Text>
+                  <Text style={[
+                    styles.shapeSymbol,
+                    // 화이트 카드는 도형을 블랙으로 표시
+                    card.colorKor === '화이트' && { color: 'rgba(30, 30, 30, 0.85)' },
+                  ]}>{card.shapeSymbol}</Text>
+                  <Text style={[
+                    styles.cardFrontColorName,
+                    // 화이트 카드는 텍스트도 다크로
+                    card.colorKor === '화이트' && { color: 'rgba(30, 30, 30, 0.9)' },
+                  ]} numberOfLines={1}>
+                    {card.colorKor}
+                  </Text>
                   </Animated.View>
                 </TouchableOpacity>
               </Animated.View>
@@ -420,16 +428,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
-  // 크림 아이보리 카드 뒷면
+  // 연베이지 카드 뒷면 (입체감 강화)
   cardBack: {
     backgroundColor: CARD_BACK_COLOR,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: CARD_BACK_BORDER,
-    shadowColor: "#B8A898",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowColor: "#9A8E7E",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 5,
+    elevation: 4,
   },
   cardBackPattern: {
     alignItems: "center",
