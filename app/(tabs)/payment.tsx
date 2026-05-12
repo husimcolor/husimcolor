@@ -294,7 +294,7 @@ export default function PaymentScreen() {
             activeOpacity={0.8}
           >
             <Text style={[styles.freeButtonText, { color: "#5A8A5A", fontWeight: "600" }]}>
-              🌿 심화 분석 계속하기 →
+              🌿 1인 1회 · 48시간 무료체험 시작하기
             </Text>
           </TouchableOpacity>
         ) : (
