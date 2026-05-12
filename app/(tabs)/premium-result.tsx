@@ -282,6 +282,43 @@ export default function PremiumResultScreen() {
           </Text>
         </View>
 
+        {/* 보완 루틴 섹션 */}
+        <View style={[styles.wellnessSection, { backgroundColor: '#FFF8F0', borderColor: '#E8D5B0' }]}>
+          <Text style={[styles.wellnessSectionTitle, { color: '#8B6914' }]}>
+            🌿 오늘의 보완 루틴
+          </Text>
+          <Text style={[styles.wellnessSectionSub, { color: '#A0845C' }]}>
+            지금 당신의 에너지 흐름에 맞는 회복 가이드입니다
+          </Text>
+          <View style={styles.wellnessRow}>
+            <Text style={styles.wellnessIcon}>🍵</Text>
+            <View style={styles.wellnessContent}>
+              <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>추천 차</Text>
+              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{card3.wellness.tea}</Text>
+            </View>
+          </View>
+          <View style={styles.wellnessDivider} />
+          <View style={styles.wellnessRow}>
+            <Text style={styles.wellnessIcon}>🌬️</Text>
+            <View style={styles.wellnessContent}>
+              <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>추천 호흡</Text>
+              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{card3.wellness.breath}</Text>
+            </View>
+          </View>
+          <View style={styles.wellnessDivider} />
+          <View style={styles.wellnessRow}>
+            <Text style={styles.wellnessIcon}>🌱</Text>
+            <View style={styles.wellnessContent}>
+              <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>추천 루틴</Text>
+              {card3.wellness.routine.map((item, idx) => (
+                <Text key={idx} style={[styles.wellnessRoutineItem, { color: '#5C4A1E' }]}>
+                  · {item}
+                </Text>
+              ))}
+            </View>
+          </View>
+        </View>
+
         {/* 공유 버튼 */}
         <TouchableOpacity
           style={[styles.shareButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -602,6 +639,57 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   retryButtonText: {
-    fontSize: 15,
+    fontSize: 14,
+    color: '#888',
+  },
+  wellnessSection: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+    marginBottom: 16,
+  },
+  wellnessSectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  wellnessSectionSub: {
+    fontSize: 13,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  wellnessRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+  },
+  wellnessIcon: {
+    fontSize: 22,
+    marginRight: 12,
+    marginTop: 2,
+  },
+  wellnessContent: {
+    flex: 1,
+  },
+  wellnessLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  wellnessValue: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  wellnessDivider: {
+    height: 1,
+    backgroundColor: '#E8D5B055',
+    marginVertical: 2,
+  },
+  wellnessRoutineItem: {
+    fontSize: 14,
+    lineHeight: 22,
+    fontWeight: '400',
   },
 });

@@ -32,6 +32,12 @@ export interface CardData {
   recoveryDirection: string;
   // 코칭 메시지
   coachingMessage: string;
+  // 보완 루틴 - 추천 차·호흡·생활 루틴
+  wellness: {
+    tea: string;       // 추천 차
+    breath: string;    // 추천 호흡
+    routine: string[]; // 추천 생활 루틴 (2~3가지)
+  };
 }
 
 // 컬러 정보
@@ -78,6 +84,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '지금 당신에게 필요한 것은 그 열정을 먼저 자신에게 향하게 하는 것입니다.\n· 하루 10분, 아무것도 하지 않고 조용히 앉아 자신의 감정을 느껴보세요.\n· 신뢰하는 사람과 "요즘 나는 어떤 것 같아?"라는 대화를 시도해보세요.\n· 남을 위해 쓰는 에너지의 일부를 자신을 위한 작은 즐거움에 써보세요.',
     coachingMessage: '당신의 열정은 주변을 살리는 에너지입니다.\n그 에너지를 먼저 자신에게 선물해보세요.',
+    wellness: {
+      tea: '생강차 또는 쌍화차',
+      breath: '깊게 들이쉬고 천천히 내쉬기 (4-6 호흡)',
+      routine: [
+        '햇빛 아래 10분 걷기',
+        '몸을 움직이는 가벼운 스트레칭',
+        '오늘 한 가지 작은 목표 완수하기',
+      ],
+    },
   },
   {
     id: 'red_triangle', color: 'red', shape: 'triangle',
@@ -93,6 +108,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '앞으로 나아가는 힘만큼, 멈추는 용기도 필요합니다.\n· 지금 달리고 있는 목표가 진정 내가 원하는 것인지 조용히 물어보세요.\n· 한 가지 중요한 주제에만 집중하고, 나머지는 잠시 내려놓아 보세요.\n· 하루를 마무리할 때 "오늘 잘한 것 한 가지"를 스스로에게 말해주세요.',
     coachingMessage: '앞으로 나아가는 힘이 있습니다.\n방향을 잘 잡으면 그 힘이 더 빛납니다.',
+    wellness: {
+      tea: '대추차 또는 생강차',
+      breath: '활기찬 복식호흡 (배로 깊게 들이쉬기)',
+      routine: [
+        '아침 햇빛 쬐기',
+        '짧은 산책으로 에너지 발산',
+        '하루 한 가지 새로운 시도',
+      ],
+    },
   },
   {
     id: 'red_inverted_triangle', color: 'red', shape: 'inverted_triangle',
@@ -108,6 +132,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '억눌린 감정을 안전하게 꺼내는 것이 지금 가장 필요한 회복입니다.\n· 일기나 편지 형식으로 감정을 글로 써보세요. 보내지 않아도 됩니다.\n· 신뢰하는 사람에게 "요즘 힘들어"라고 솔직하게 말해보세요.\n· 격렬한 운동이나 춤처럼 몸을 통해 감정을 방출하는 시간을 가져보세요.',
     coachingMessage: '감정을 꺼내는 것은 용기 있는 일입니다.\n그 감정들이 당신을 더 깊이 이해하게 해줍니다.',
+    wellness: {
+      tea: '쌍화차 또는 루이보스',
+      breath: '천천히 깊게 호흡하기 (긴 내쉬기)',
+      routine: [
+        '충분한 수면 확보',
+        '감정 일기 쓰기',
+        '신뢰하는 사람과 대화',
+      ],
+    },
   },
   {
     id: 'red_square', color: 'red', shape: 'square',
@@ -123,6 +156,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '열정을 구체적인 한 걸음으로 연결하는 것이 지금의 회복 방향입니다.\n· 하고 싶은 것을 작은 단위로 나누어 오늘 할 수 있는 것 하나만 해보세요.\n· 완벽하지 않아도 시작하는 것 자체가 에너지를 살립니다.\n· 매일 밤 "오늘 내가 한 것"을 적어두면 성취감이 쌓입니다.',
     coachingMessage: '열정과 안정은 함께 갈 수 있습니다.\n하나씩 쌓아가는 당신의 흐름을 믿어보세요.',
+    wellness: {
+      tea: '대추차 또는 국화차',
+      breath: '4-4-4 박스 호흡 (들이쉬기-멈추기-내쉬기)',
+      routine: [
+        '규칙적인 취침 시간 지키기',
+        '하루 루틴 정리하기',
+        '따뜻한 물 한 잔으로 하루 시작',
+      ],
+    },
   },
   {
     id: 'red_diamond', color: 'red', shape: 'diamond',
@@ -138,6 +180,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '변화를 받아들이면서도 자신의 핵심 가치를 잃지 않는 것이 지금의 회복 방향입니다.\n· "내가 변하지 않고 싶은 것 세 가지"를 적어보세요.\n· 새로운 시도를 할 때 작게 시작하여 성공 경험을 쌓아보세요.\n· 변화 속에서 흔들릴 때 "나는 어디로 가고 싶은가?"를 스스로에게 물어보세요.',
     coachingMessage: '변화는 당신에게 새로운 가능성을 열어줍니다.\n그 흐름 안에서 자신을 잃지 마세요.',
+    wellness: {
+      tea: '생강차 또는 계피차',
+      breath: '활기찬 복식호흡',
+      routine: [
+        '짧은 달리기 또는 빠른 걷기',
+        '오늘의 우선순위 3가지 정하기',
+        '몸을 따뜻하게 하는 목욕',
+      ],
+    },
   },
   {
     id: 'red_pentagon', color: 'red', shape: 'pentagon',
@@ -153,6 +204,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '지금 당신에게 필요한 것은 "선택과 집중"입니다.\n· 지금 가장 중요한 것 한 가지를 골라 그것에만 일주일 집중해보세요.\n· 나머지는 메모해두고 나중에 돌아오겠다고 자신에게 약속하세요.\n· 하루를 마칠 때 "오늘 가장 의미 있었던 것"을 한 가지만 기록해보세요.',
     coachingMessage: '당신의 다양한 에너지는 큰 자산입니다.\n지금은 그 에너지를 한 곳에 모아볼 시간입니다.',
+    wellness: {
+      tea: '쌍화차 또는 대추차',
+      breath: '깊은 복식호흡 (5초 들이쉬기, 7초 내쉬기)',
+      routine: [
+        '햇빛 아래 산책',
+        '좋아하는 음악 들으며 휴식',
+        '오늘 잘한 일 3가지 적기',
+      ],
+    },
   },
   {
     id: 'red_hexagon', color: 'red', shape: 'hexagon',
@@ -168,6 +228,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '공동체 안에서의 역할과 개인으로서의 나 사이의 균형을 찾는 것이 지금의 회복 방향입니다.\n· "나는 관계에서 무엇을 원하는가?"를 솔직하게 적어보세요.\n· 혼자만의 시간을 의도적으로 만들어 자신을 재충전하세요.\n· 기여하고 싶은 마음을 표현할 때 경계도 함께 설정해보세요.',
     coachingMessage: '함께할 때 빛나는 당신의 에너지가 있습니다.\n그 에너지를 먼저 자신에게도 나눠주세요.',
+    wellness: {
+      tea: '루이보스 또는 생강차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '글쓰기 또는 그림 그리기',
+        '충분한 수면',
+      ],
+    },
   },
 
   // ═══════════════════════════════════════════
@@ -187,6 +256,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '관계에서 에너지를 받는 만큼, 혼자서도 충만할 수 있는 내면의 힘을 키우는 것이 지금의 회복 방향입니다.\n· 하루 중 혼자만의 시간을 30분 이상 의도적으로 만들어보세요.\n· "나는 관계 없이도 괜찮다"는 감각을 조금씩 연습해보세요.\n· 좋아하는 것을 혼자 즐기는 취미 활동을 시작해보세요.',
     coachingMessage: '당신의 따뜻함은 세상을 밝힙니다.\n그 온기를 자신에게도 충분히 주세요.',
+    wellness: {
+      tea: '캐모마일 또는 루이보스',
+      breath: '부드러운 복식호흡 (코로 들이쉬고 입으로 내쉬기)',
+      routine: [
+        '신뢰하는 사람과 따뜻한 대화',
+        '좋아하는 음식 천천히 즐기기',
+        '감사한 일 3가지 적기',
+      ],
+    },
   },
   {
     id: 'orange_triangle', color: 'orange', shape: 'triangle',
@@ -202,6 +280,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '창의적 에너지를 실제 행동으로 연결하는 것이 지금의 회복 방향입니다.\n· 머릿속 아이디어를 오늘 당장 작은 형태로 만들어보세요.\n· 완성보다 시작에 집중하세요. 완벽하지 않아도 됩니다.\n· 창의적 작업을 할 수 있는 나만의 공간과 시간을 정해보세요.',
     coachingMessage: '당신 안에 아직 꺼내지 못한 창의성이 있습니다.\n오늘 그것을 작게라도 표현해보세요.',
+    wellness: {
+      tea: '루이보스 또는 오렌지 허브차',
+      breath: '활기찬 복식호흡',
+      routine: [
+        '새로운 사람과 짧은 대화',
+        '창의적인 활동 (그림, 요리)',
+        '밝은 색 옷 입어보기',
+      ],
+    },
   },
   {
     id: 'orange_inverted_triangle', color: 'orange', shape: 'inverted_triangle',
@@ -217,6 +304,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '감정을 조금씩 표현하는 연습이 지금 가장 필요한 회복입니다.\n· 가까운 사람에게 "고마워", "보고 싶어"처럼 작은 감정 표현을 해보세요.\n· 감정 일기를 써서 자신의 감정 패턴을 이해해보세요.\n· 관계에서 받은 상처를 글로 써서 정리하고 용서하는 시간을 가져보세요.',
     coachingMessage: '당신의 따뜻한 감정은 소중한 선물입니다.\n그 감정을 조금씩 세상에 꺼내보세요.',
+    wellness: {
+      tea: '캐모마일 또는 국화차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '감정 일기 쓰기',
+        '따뜻한 목욕',
+      ],
+    },
   },
   {
     id: 'orange_square', color: 'orange', shape: 'square',
@@ -232,6 +328,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '감정과 현실 사이의 균형을 의도적으로 찾는 것이 지금의 회복 방향입니다.\n· "지금 내 감정은 어떤가?"를 하루 세 번 스스로에게 물어보세요.\n· 일과 관계에서 "충분히 잘 하고 있다"고 자신에게 말해주세요.\n· 완벽하지 않아도 따뜻하게 연결되는 것이 더 중요함을 기억하세요.',
     coachingMessage: '따뜻함과 실용성을 모두 가진 당신은\n관계와 일 모두에서 빛납니다.',
+    wellness: {
+      tea: '대추차 또는 루이보스',
+      breath: '4-4-4 박스 호흡',
+      routine: [
+        '규칙적인 식사 시간 지키기',
+        '가까운 사람에게 연락하기',
+        '따뜻한 물 한 잔으로 하루 마무리',
+      ],
+    },
   },
   {
     id: 'orange_diamond', color: 'orange', shape: 'diamond',
@@ -247,6 +352,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '변화 속에서도 자신의 따뜻한 본질을 잃지 않는 것이 지금의 회복 방향입니다.\n· "나는 어떤 사람인가?"를 적어보고 그 답을 자주 떠올리세요.\n· 관계가 변해도 자신의 가치관은 변하지 않음을 확인하세요.\n· 혼자만의 시간에 자신이 진정 원하는 것을 탐색해보세요.',
     coachingMessage: '변화 속에서도 당신의 따뜻함은 변하지 않습니다.\n그 본질을 믿어보세요.',
+    wellness: {
+      tea: '생강차 또는 루이보스',
+      breath: '활기찬 복식호흡',
+      routine: [
+        '짧은 산책',
+        '좋아하는 음악 들으며 기분 전환',
+        '오늘 표현하지 못한 감정 글로 쓰기',
+      ],
+    },
   },
   {
     id: 'orange_pentagon', color: 'orange', shape: 'pentagon',
@@ -262,6 +376,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '많은 관계보다 깊은 연결 하나를 선택하는 것이 지금의 회복 방향입니다.\n· 가장 소중한 관계 한두 개에 더 많은 시간과 에너지를 투자해보세요.\n· 깊은 대화를 나눌 수 있는 사람과 정기적으로 만나보세요.\n· 혼자만의 조용한 시간을 통해 내면의 소리를 들어보세요.',
     coachingMessage: '당신의 따뜻한 에너지는 많은 사람에게 닿습니다.\n그 에너지를 깊이 있게 나눠보세요.',
+    wellness: {
+      tea: '캐모마일 또는 라벤더 허브차',
+      breath: '부드러운 복식호흡',
+      routine: [
+        '신뢰하는 사람과 대화',
+        '자신에게 작은 선물하기',
+        '좋아하는 장소 방문',
+      ],
+    },
   },
   {
     id: 'orange_hexagon', color: 'orange', shape: 'hexagon',
@@ -277,6 +400,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '다른 사람을 돌보는 만큼 자신도 돌보는 것이 지금의 회복 방향입니다.\n· "나는 지금 무엇이 필요한가?"를 매일 스스로에게 물어보세요.\n· 도움을 요청하는 것이 약함이 아님을 기억하세요.\n· 자신을 위한 시간과 공간을 의도적으로 만들어보세요.',
     coachingMessage: '당신의 따뜻한 돌봄은 공동체를 살립니다.\n그 돌봄을 자신에게도 아낌없이 주세요.',
+    wellness: {
+      tea: '루이보스 또는 대추차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 창의적 활동',
+        '충분한 수면',
+        '감사 일기 쓰기',
+      ],
+    },
   },
 
   // ═══════════════════════════════════════════
@@ -296,6 +428,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '밝음 뒤에 숨어 있는 진짜 감정을 만나는 것이 지금의 회복 방향입니다.\n· 오늘 "사실 나는 좀 힘들어"라고 솔직하게 말해보세요.\n· 긍정적으로 보이려는 노력을 잠시 내려놓고 있는 그대로의 자신을 허용하세요.\n· 조용한 시간에 일기를 쓰며 진짜 감정을 탐색해보세요.',
     coachingMessage: '당신의 밝음은 진짜입니다.\n그 안에 있는 솔직한 감정도 함께 빛납니다.',
+    wellness: {
+      tea: '레몬 허브차 또는 국화차',
+      breath: '밝고 가벼운 복식호흡 (코로 깊게 들이쉬기)',
+      routine: [
+        '햇빛 아래 산책',
+        '새로운 것 배우기',
+        '오늘의 긍정적인 일 3가지 적기',
+      ],
+    },
   },
   {
     id: 'yellow_triangle', color: 'yellow', shape: 'triangle',
@@ -311,6 +452,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '지적 성장을 실제 삶의 변화로 연결하는 것이 지금의 회복 방향입니다.\n· 배운 것 중 하나를 오늘 실제로 적용해보세요.\n· 생각을 행동으로 옮기는 작은 첫 걸음을 내딛어보세요.\n· 신뢰하는 사람과 배운 것을 나누는 대화를 해보세요.',
     coachingMessage: '당신의 지적 탐구는 삶을 풍요롭게 합니다.\n그 지식을 삶 속에서 꽃피워보세요.',
+    wellness: {
+      tea: '레몬 허브차 또는 페퍼민트차',
+      breath: '활기찬 복식호흡',
+      routine: [
+        '아이디어 노트 쓰기',
+        '새로운 장소 방문',
+        '창의적인 활동',
+      ],
+    },
   },
   {
     id: 'yellow_inverted_triangle', color: 'yellow', shape: 'inverted_triangle',
@@ -326,6 +476,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '생각의 전환을 두려워하지 않고 새로운 관점을 받아들이는 것이 지금의 회복 방향입니다.\n· "내가 틀릴 수도 있다"는 가능성을 열어두고 대화해보세요.\n· 평소와 다른 관점의 책이나 이야기를 접해보세요.\n· 혼란스러운 생각을 글로 써서 정리하는 시간을 가져보세요.',
     coachingMessage: '생각이 뒤집히는 것은 새로운 문이 열리는 것입니다.\n그 문을 용기 있게 열어보세요.',
+    wellness: {
+      tea: '캐모마일 또는 국화차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '생각을 글로 정리하기',
+        '충분한 수면',
+        '한 가지 주제에 집중하는 시간',
+      ],
+    },
   },
   {
     id: 'yellow_square', color: 'yellow', shape: 'square',
@@ -341,6 +500,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '체계와 계획 너머에 있는 직관과 감정도 신뢰하는 것이 지금의 회복 방향입니다.\n· 계획 없이 즉흥적으로 하루를 보내는 시간을 만들어보세요.\n· "몰라도 괜찮아"라는 말을 스스로에게 해보세요.\n· 논리보다 감정이 이끄는 선택을 한 번 해보세요.',
     coachingMessage: '당신의 체계적인 지성은 큰 힘입니다.\n때로는 그 체계를 내려놓고 흐르는 것도 지혜입니다.',
+    wellness: {
+      tea: '국화차 또는 레몬 허브차',
+      breath: '4-4-4 박스 호흡',
+      routine: [
+        '규칙적인 루틴 만들기',
+        '하루 계획 세우기',
+        '햇빛 쬐기',
+      ],
+    },
   },
   {
     id: 'yellow_diamond', color: 'yellow', shape: 'diamond',
@@ -356,6 +524,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '창의적 에너지를 현실과 연결하는 구체적인 방법을 찾는 것이 지금의 회복 방향입니다.\n· 아이디어를 노트에 적고 그 중 하나를 오늘 실행해보세요.\n· 창의적 막힘을 경험할 때 자연 속 산책이나 휴식을 취해보세요.\n· 다양한 분야의 사람들과 아이디어를 나누는 대화를 해보세요.',
     coachingMessage: '당신의 창의적 시각은 세상을 새롭게 봅니다.\n그 빛나는 아이디어를 현실로 만들어보세요.',
+    wellness: {
+      tea: '페퍼민트차 또는 레몬 허브차',
+      breath: '활기찬 복식호흡',
+      routine: [
+        '빠른 걷기',
+        '새로운 아이디어 탐색',
+        '창의적인 문제 해결 시도',
+      ],
+    },
   },
   {
     id: 'yellow_pentagon', color: 'yellow', shape: 'pentagon',
@@ -371,6 +548,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '넓이보다 깊이를 선택하는 경험이 지금의 회복 방향입니다.\n· 가장 관심 있는 주제 하나를 골라 한 달 동안 깊이 탐구해보세요.\n· 배운 것을 다른 사람에게 가르쳐보면 진짜 이해가 깊어집니다.\n· 매일 한 가지 주제에만 집중하는 "단일 집중 시간"을 만들어보세요.',
     coachingMessage: '당신의 넓은 지식은 세상을 연결합니다.\n지금은 그 깊이를 더할 시간입니다.',
+    wellness: {
+      tea: '국화차 또는 캐모마일',
+      breath: '부드러운 복식호흡',
+      routine: [
+        '햇빛 아래 독서',
+        '좋아하는 음악 들으며 휴식',
+        '오늘 배운 것 정리하기',
+      ],
+    },
   },
   {
     id: 'yellow_hexagon', color: 'yellow', shape: 'hexagon',
@@ -386,6 +572,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '나누는 것만큼 자신을 채우는 시간도 필요합니다.\n· 가르치거나 나누는 역할에서 잠시 벗어나 자신을 위한 학습 시간을 가져보세요.\n· 인정받지 않아도 성장하는 것 자체가 가치 있음을 기억하세요.\n· 혼자 조용히 공부하거나 탐구하는 시간을 즐겨보세요.',
     coachingMessage: '당신의 지혜는 세상을 밝힙니다.\n그 지혜를 먼저 자신에게도 나눠주세요.',
+    wellness: {
+      tea: '캐모마일 또는 국화차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '생각 정리 글쓰기',
+        '충분한 수면',
+      ],
+    },
   },
 
   // ═══════════════════════════════════════════
@@ -405,6 +600,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '안정 속에서 자신의 성장을 허용하는 것이 지금의 회복 방향입니다.\n· 매일 자연 속에서 10분이라도 걷는 시간을 가져보세요.\n· 지금 있는 곳에서 작은 것 하나를 더 아름답게 가꿔보세요.\n· "지금 이대로도 충분하다"는 말을 자신에게 해주세요.',
     coachingMessage: '당신은 자연처럼 조용히 성장합니다.\n그 성장의 속도를 믿어보세요.',
+    wellness: {
+      tea: '녹차 또는 캐모마일',
+      breath: '자연스러운 복식호흡 (배가 올라오는 느낌)',
+      routine: [
+        '자연 속 산책',
+        '식물 돌보기',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'green_triangle', color: 'green', shape: 'triangle',
@@ -420,6 +624,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '성장의 속도보다 방향을 점검하는 것이 지금의 회복 방향입니다.\n· "나는 어디를 향해 성장하고 싶은가?"를 명확히 적어보세요.\n· 매일 작은 성장 하나를 기록하는 성장 일기를 써보세요.\n· 조급함이 올라올 때 "천천히 가도 괜찮아"라고 자신에게 말해주세요.',
     coachingMessage: '당신의 성장은 뿌리 깊은 나무처럼 단단합니다.\n그 뿌리를 더 깊이 내려보세요.',
+    wellness: {
+      tea: '녹차 또는 페퍼민트차',
+      breath: '활기찬 복식호흡',
+      routine: [
+        '자연 속 걷기',
+        '새로운 성장 목표 세우기',
+        '몸을 움직이는 활동',
+      ],
+    },
   },
   {
     id: 'green_inverted_triangle', color: 'green', shape: 'inverted_triangle',
@@ -435,6 +648,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '자연과 고요함 속에서 자신을 회복하는 것이 지금의 핵심 방향입니다.\n· 자연 속에서 최소 30분 혼자 걷거나 앉아 있는 시간을 가져보세요.\n· 디지털 기기를 끄고 조용한 시간을 의도적으로 만들어보세요.\n· 몸이 원하는 것(수면, 음식, 휴식)에 더 귀 기울여보세요.',
     coachingMessage: '자연처럼 당신도 쉬어야 다시 피어납니다.\n지금 그 쉼을 허락해주세요.',
+    wellness: {
+      tea: '캐모마일 또는 녹차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '감정 일기 쓰기',
+        '자연 속에서 쉬기',
+      ],
+    },
   },
   {
     id: 'green_square', color: 'green', shape: 'square',
@@ -450,6 +672,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '안정을 유지하면서도 새로운 가능성을 열어두는 것이 지금의 회복 방향입니다.\n· 지금의 안정적인 기반을 감사하게 여기는 시간을 가져보세요.\n· 작은 변화 하나를 시도하여 변화가 위험하지 않음을 경험해보세요.\n· "지금 내 삶에서 잘 되고 있는 것 세 가지"를 적어보세요.',
     coachingMessage: '당신이 만든 안정은 성장의 토대입니다.\n그 위에서 새로운 꽃을 피워보세요.',
+    wellness: {
+      tea: '녹차 또는 대추차',
+      breath: '4-4-4 박스 호흡',
+      routine: [
+        '규칙적인 산책',
+        '식물 돌보기',
+        '안정적인 일상 루틴 유지',
+      ],
+    },
   },
   {
     id: 'green_diamond', color: 'green', shape: 'diamond',
@@ -465,6 +696,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '변화 속에서도 자신의 성장 방향을 명확히 하는 것이 지금의 회복 방향입니다.\n· "내가 변하지 않고 싶은 핵심 가치"를 적어보세요.\n· 변화를 경험할 때마다 "이것이 나를 어떻게 성장시키는가?"를 물어보세요.\n· 자신의 성장 스토리를 글로 써보며 방향을 확인해보세요.',
     coachingMessage: '어떤 환경에서도 당신은 성장합니다.\n그 생명력을 믿어보세요.',
+    wellness: {
+      tea: '녹차 또는 페퍼민트차',
+      breath: '활기찬 복식호흡',
+      routine: [
+        '자연 속 빠른 걷기',
+        '성장 목표 점검',
+        '몸을 움직이는 스트레칭',
+      ],
+    },
   },
   {
     id: 'green_pentagon', color: 'green', shape: 'pentagon',
@@ -480,6 +720,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '지금 가장 필요한 영역 하나에 집중하는 것이 지금의 회복 방향입니다.\n· 삶의 영역(관계/일/건강/내면)을 적고 지금 가장 필요한 것 하나를 선택하세요.\n· 그 영역에 이번 주 특별한 시간과 에너지를 투자해보세요.\n· 균형은 동시에 이루는 것이 아니라 순서대로 이루는 것임을 기억하세요.',
     coachingMessage: '당신의 성장은 삶 전체를 풍요롭게 합니다.\n지금 가장 필요한 곳부터 시작해보세요.',
+    wellness: {
+      tea: '캐모마일 또는 녹차',
+      breath: '부드러운 복식호흡',
+      routine: [
+        '자연 속 산책',
+        '좋아하는 사람과 함께하는 시간',
+        '감사 일기 쓰기',
+      ],
+    },
   },
   {
     id: 'green_hexagon', color: 'green', shape: 'hexagon',
@@ -495,6 +744,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '공동체 안에서의 역할과 개인으로서의 성장 사이의 균형을 찾는 것이 지금의 회복 방향입니다.\n· "나는 공동체를 위해 무엇을 하고 있는가?"와 "나 자신을 위해 무엇을 하고 있는가?"를 함께 점검해보세요.\n· 공동체에 기여하는 것과 개인적 성장을 위한 시간을 모두 의도적으로 계획해보세요.\n· 공동체 안에서 받는 것에도 감사하는 연습을 해보세요.',
     coachingMessage: '함께 성장하는 것이 당신의 방식입니다.\n그 안에서 자신의 성장도 잊지 마세요.',
+    wellness: {
+      tea: '녹차 또는 캐모마일',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 자연 시간',
+        '글쓰기 또는 독서',
+        '충분한 수면',
+      ],
+    },
   },
 
   // ═══════════════════════════════════════════
@@ -514,6 +772,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '감정을 말로 표현하는 연습이 지금의 핵심 회복 방향입니다.\n· 신뢰하는 사람에게 "사실 나는 이런 감정이야"라고 솔직하게 말해보세요.\n· 감정을 표현할 때 "나는 ~라고 느껴"라는 표현을 사용해보세요.\n· 말하기 어렵다면 편지나 메시지로 먼저 표현해보세요.',
     coachingMessage: '당신의 진실한 마음은 관계를 깊게 합니다.\n그 마음을 조금씩 표현해보세요.',
+    wellness: {
+      tea: '캐모마일 또는 블루 말로우 허브차',
+      breath: '천천히 깊게 호흡하기 (긴 내쉬기)',
+      routine: [
+        '신뢰하는 사람과 깊은 대화',
+        '감정 일기 쓰기',
+        '조용한 음악 들으며 휴식',
+      ],
+    },
   },
   {
     id: 'blue_triangle', color: 'blue', shape: 'triangle',
@@ -529,6 +796,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '자신의 진실한 방향을 믿고 한 걸음씩 나아가는 것이 지금의 회복 방향입니다.\n· "내가 진정으로 원하는 것"을 솔직하게 적어보세요.\n· 남의 기대보다 자신의 내면 목소리에 더 귀 기울여보세요.\n· 진실한 자신의 모습을 한 가지 행동으로 표현해보세요.',
     coachingMessage: '당신의 진실함이 당신을 빛나게 합니다.\n그 진실한 방향을 믿어보세요.',
+    wellness: {
+      tea: '페퍼민트차 또는 블루 말로우 허브차',
+      breath: '활기찬 복식호흡',
+      routine: [
+        '감정을 글로 표현하기',
+        '새로운 소통 방식 시도',
+        '짧은 산책',
+      ],
+    },
   },
   {
     id: 'blue_inverted_triangle', color: 'blue', shape: 'inverted_triangle',
@@ -544,6 +820,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '감정을 안전하게 흘려보내는 것이 지금의 핵심 회복 방향입니다.\n· 울고 싶을 때 충분히 울어도 됩니다. 눈물은 정화입니다.\n· 조용한 음악을 들으며 감정이 흘러가도록 허용해보세요.\n· 감정을 글로 써서 "이제 보내줄게"라고 말하며 정리해보세요.',
     coachingMessage: '감정을 흘려보내는 것은 약함이 아닙니다.\n그것이 당신을 더 깊이 치유합니다.',
+    wellness: {
+      tea: '캐모마일 또는 라벤더 허브차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '감정 일기 쓰기',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'blue_square', color: 'blue', shape: 'square',
@@ -559,6 +844,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '신뢰를 다시 쌓는 과정에 인내하며 자신도 신뢰하는 것이 지금의 회복 방향입니다.\n· 신뢰가 깨진 관계에서 자신의 감정을 먼저 정리해보세요.\n· 작은 약속을 지키는 것부터 신뢰를 다시 쌓아보세요.\n· 자신을 신뢰하는 것이 모든 신뢰의 시작임을 기억하세요.',
     coachingMessage: '신뢰는 천천히 쌓이지만 오래 갑니다.\n자신을 먼저 신뢰해보세요.',
+    wellness: {
+      tea: '캐모마일 또는 국화차',
+      breath: '4-4-4 박스 호흡',
+      routine: [
+        '규칙적인 취침 시간',
+        '감정 정리 글쓰기',
+        '따뜻한 물 한 잔',
+      ],
+    },
   },
   {
     id: 'blue_diamond', color: 'blue', shape: 'diamond',
@@ -574,6 +868,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '어떤 상황에서도 자신의 진실한 목소리를 유지하는 것이 지금의 회복 방향입니다.\n· 소통하기 전에 "내가 진짜 하고 싶은 말은 무엇인가?"를 먼저 확인해보세요.\n· 상황에 맞추다가 자신을 잃었다고 느낄 때 잠시 멈추고 내면을 확인하세요.\n· 진실한 소통을 위해 용기 있게 자신의 생각을 표현해보세요.',
     coachingMessage: '당신의 진실한 목소리는 어떤 상황에서도 가치 있습니다.\n그 목소리를 잃지 마세요.',
+    wellness: {
+      tea: '페퍼민트차 또는 블루 말로우 허브차',
+      breath: '활기찬 복식호흡',
+      routine: [
+        '빠른 걷기',
+        '감정 표현 연습',
+        '창의적인 글쓰기',
+      ],
+    },
   },
   {
     id: 'blue_pentagon', color: 'blue', shape: 'pentagon',
@@ -589,6 +892,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '다양한 표현 방식 중 지금 가장 자연스러운 것 하나를 선택하는 것이 지금의 회복 방향입니다.\n· 말, 글, 그림, 음악 중 지금 가장 끌리는 방식으로 자신을 표현해보세요.\n· 완성도보다 표현 자체에 집중해보세요.\n· 표현한 것을 신뢰하는 사람과 나눠보세요.',
     coachingMessage: '당신의 다양한 표현은 세상을 풍요롭게 합니다.\n지금 가장 자연스러운 방식으로 시작해보세요.',
+    wellness: {
+      tea: '캐모마일 또는 블루 말로우 허브차',
+      breath: '부드러운 복식호흡',
+      routine: [
+        '신뢰하는 사람과 대화',
+        '좋아하는 음악 감상',
+        '감사 일기 쓰기',
+      ],
+    },
   },
   {
     id: 'blue_hexagon', color: 'blue', shape: 'hexagon',
@@ -604,6 +916,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '공동체 소통에서 자신의 에너지를 보호하는 것이 지금의 회복 방향입니다.\n· 공동체의 모든 문제를 혼자 해결하려 하지 않아도 됨을 기억하세요.\n· 자신의 소통 에너지가 소진될 때 잠시 물러나는 것도 지혜입니다.\n· 공동체를 위한 시간과 자신을 위한 시간을 균형 있게 배분해보세요.',
     coachingMessage: '당신의 소통은 공동체를 하나로 만듭니다.\n그 에너지를 현명하게 사용해보세요.',
+    wellness: {
+      tea: '캐모마일 또는 라벤더 허브차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '감정 일기 쓰기',
+        '충분한 수면',
+      ],
+    },
   },
 
   // ═══════════════════════════════════════════
@@ -623,6 +944,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '깊은 생각을 밖으로 꺼내어 나누는 것이 지금의 회복 방향입니다.\n· 신뢰하는 사람과 깊은 대화를 시도해보세요.\n· 혼자 담아두었던 생각을 글로 써서 정리해보세요.\n· 자신의 통찰을 다른 사람과 나눌 때 더 큰 의미가 생깁니다.',
     coachingMessage: '당신의 깊은 통찰은 세상을 밝히는 빛입니다.\n그 빛을 나눠보세요.',
+    wellness: {
+      tea: '국화차 또는 캐모마일',
+      breath: '깊고 느린 복식호흡 (4-7-8 호흡)',
+      routine: [
+        '조용한 독서',
+        '명상 또는 기도',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'navy_triangle', color: 'navy', shape: 'triangle',
@@ -638,6 +968,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '깊이 있는 성장의 과정을 신뢰하는 것이 지금의 회복 방향입니다.\n· 지금 배우고 있는 것의 깊은 의미를 탐구해보세요.\n· 빠른 결과보다 과정에서 얻는 통찰에 집중해보세요.\n· 자신의 성장 여정을 기록하며 얼마나 멀리 왔는지 확인해보세요.',
     coachingMessage: '깊이 있는 성장은 오래 지속됩니다.\n그 과정을 신뢰해보세요.',
+    wellness: {
+      tea: '녹차 또는 국화차',
+      breath: '깊고 느린 복식호흡',
+      routine: [
+        '새로운 지식 탐구',
+        '글쓰기로 생각 정리',
+        '짧은 산책',
+      ],
+    },
   },
   {
     id: 'navy_inverted_triangle', color: 'navy', shape: 'inverted_triangle',
@@ -653,6 +992,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '깊은 성찰과 함께 자신을 돌보는 균형이 지금의 회복 방향입니다.\n· 내면 탐구 후에는 반드시 자신을 위한 따뜻한 시간을 가져보세요.\n· 발견한 것들을 전문가나 신뢰하는 사람과 나눠보세요.\n· 성찰의 무게가 무거울 때는 잠시 쉬어도 됩니다.',
     coachingMessage: '당신의 깊은 성찰은 진정한 자유로 이어집니다.\n그 여정에서 자신을 잘 돌봐주세요.',
+    wellness: {
+      tea: '캐모마일 또는 국화차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '명상',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'navy_square', color: 'navy', shape: 'square',
@@ -668,6 +1016,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '내면의 깊은 안정을 찾는 것이 지금의 핵심 회복 방향입니다.\n· 매일 아침 5분 조용히 앉아 내면의 소리를 들어보세요.\n· "나는 지금 이 순간 안전하다"는 것을 확인하는 연습을 해보세요.\n· 내면의 안정을 주는 것들(기도, 명상, 자연 등)을 규칙적으로 실천해보세요.',
     coachingMessage: '진정한 안정은 내면에서 옵니다.\n그 깊은 안정을 찾아가는 여정을 시작해보세요.',
+    wellness: {
+      tea: '국화차 또는 대추차',
+      breath: '4-4-4 박스 호흡',
+      routine: [
+        '규칙적인 수면 루틴',
+        '하루 마무리 글쓰기',
+        '조용한 독서',
+      ],
+    },
   },
   {
     id: 'navy_diamond', color: 'navy', shape: 'diamond',
@@ -683,6 +1040,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '통찰을 행동으로 연결하는 결단이 지금의 회복 방향입니다.\n· 충분히 생각했다면 이제 한 가지를 선택하고 실행해보세요.\n· "완벽한 이해 후에 행동"보다 "행동하면서 배우는" 방식도 유효합니다.\n· 결정을 내린 후 자신을 신뢰하는 연습을 해보세요.',
     coachingMessage: '당신의 깊은 통찰은 행동으로 완성됩니다.\n이제 한 걸음 내딛어보세요.',
+    wellness: {
+      tea: '녹차 또는 국화차',
+      breath: '깊고 느린 복식호흡',
+      routine: [
+        '깊이 있는 독서',
+        '생각 정리 글쓰기',
+        '짧은 산책',
+      ],
+    },
   },
   {
     id: 'navy_pentagon', color: 'navy', shape: 'pentagon',
@@ -698,6 +1064,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '지금 가장 중요한 통찰 하나에 집중하는 것이 지금의 회복 방향입니다.\n· 지금 탐구하고 있는 것 중 가장 중요한 것 하나를 선택해보세요.\n· 그 하나를 깊이 있게 탐구하고 실제 삶에 적용해보세요.\n· 통찰을 나누는 대화나 글쓰기를 통해 더 깊어질 수 있습니다.',
     coachingMessage: '당신의 깊고 넓은 통찰은 귀한 선물입니다.\n지금 가장 필요한 것에 그 통찰을 집중해보세요.',
+    wellness: {
+      tea: '캐모마일 또는 국화차',
+      breath: '부드러운 복식호흡',
+      routine: [
+        '명상 또는 기도',
+        '신뢰하는 사람과 깊은 대화',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'navy_hexagon', color: 'navy', shape: 'hexagon',
@@ -713,6 +1088,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '통찰을 나누되 혼자 짊어지지 않는 것이 지금의 회복 방향입니다.\n· 발견한 통찰을 공동체와 나누는 방법을 찾아보세요.\n· 모든 것을 혼자 해결하려 하지 않아도 됩니다.\n· 공동체의 지혜를 신뢰하고 함께 답을 찾아보세요.',
     coachingMessage: '당신의 깊은 통찰은 공동체의 방향을 밝힙니다.\n그 빛을 함께 나눠보세요.',
+    wellness: {
+      tea: '국화차 또는 캐모마일',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '명상',
+        '충분한 수면',
+      ],
+    },
   },
 
   // ═══════════════════════════════════════════
@@ -732,6 +1116,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '직관을 신뢰하면서 현실과 연결하는 것이 지금의 회복 방향입니다.\n· 직관적으로 느끼는 것을 일기에 기록해보세요.\n· 직관이 이끄는 방향으로 작은 행동을 해보세요.\n· 영적 정서를 채우는 활동(기도, 명상, 자연 등)을 규칙적으로 실천해보세요.',
     coachingMessage: '당신의 직관은 깊은 지혜에서 옵니다.\n그 목소리를 신뢰해보세요.',
+    wellness: {
+      tea: '라벤더 허브차 또는 국화차',
+      breath: '깊고 느린 복식호흡 (명상 호흡)',
+      routine: [
+        '명상 또는 기도',
+        '조용한 음악 감상',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'purple_triangle', color: 'purple', shape: 'triangle',
@@ -747,6 +1140,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '영적 성장을 일상의 작은 실천으로 연결하는 것이 지금의 회복 방향입니다.\n· 매일 아침 또는 저녁 5분 기도나 묵상의 시간을 가져보세요.\n· 영적 성장에 도움이 되는 책이나 모임을 찾아보세요.\n· 일상의 작은 순간에서 깊은 의미를 발견하는 연습을 해보세요.',
     coachingMessage: '당신의 영적 성장은 삶 전체를 변화시킵니다.\n그 여정의 매 순간이 소중합니다.',
+    wellness: {
+      tea: '라벤더 허브차 또는 녹차',
+      breath: '깊고 느린 복식호흡',
+      routine: [
+        '영적 성장 활동',
+        '창의적인 표현 (글, 그림)',
+        '짧은 산책',
+      ],
+    },
   },
   {
     id: 'purple_inverted_triangle', color: 'purple', shape: 'inverted_triangle',
@@ -762,6 +1164,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '영적 정화의 과정을 자신을 돌보면서 진행하는 것이 지금의 회복 방향입니다.\n· 오래된 상처나 믿음을 글로 써서 "이제 보내줄게"라고 말하며 내려놓아보세요.\n· 영적 정화를 돕는 활동(기도, 예배, 상담 등)을 찾아보세요.\n· 정화의 과정이 힘들 때 신뢰하는 사람의 도움을 받아보세요.',
     coachingMessage: '내려놓는 것이 새로운 시작의 문을 엽니다.\n그 용기 있는 선택을 응원합니다.',
+    wellness: {
+      tea: '라벤더 허브차 또는 캐모마일',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '감정 일기 쓰기',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'purple_square', color: 'purple', shape: 'square',
@@ -777,6 +1188,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '영적 규율을 유연하게 유지하는 것이 지금의 회복 방향입니다.\n· 완벽하지 않아도 매일 조금씩 영적 실천을 이어가보세요.\n· 영적 규율이 의무가 아닌 기쁨이 되도록 방식을 조정해보세요.\n· 영적 공동체나 신뢰하는 사람과 함께 실천해보세요.',
     coachingMessage: '당신의 영적 규율은 내면을 단단하게 합니다.\n그 실천을 기쁨으로 이어가보세요.',
+    wellness: {
+      tea: '라벤더 허브차 또는 국화차',
+      breath: '4-4-4 박스 호흡',
+      routine: [
+        '규칙적인 영적 실천',
+        '하루 마무리 묵상',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'purple_diamond', color: 'purple', shape: 'diamond',
@@ -792,6 +1212,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '영적 탐구의 과정을 신뢰하며 내면의 중심을 잡는 것이 지금의 회복 방향입니다.\n· 다양한 영적 관점을 탐구하되 자신의 핵심 가치를 잃지 마세요.\n· 영적 탐구 중 혼란스러울 때 신뢰하는 영적 멘토와 대화해보세요.\n· 탐구한 것들을 일기에 기록하며 자신의 영적 여정을 정리해보세요.',
     coachingMessage: '당신의 영적 탐구는 더 깊은 자유로 이어집니다.\n그 여정을 두려워하지 마세요.',
+    wellness: {
+      tea: '라벤더 허브차 또는 녹차',
+      breath: '깊고 느린 복식호흡',
+      routine: [
+        '창의적인 활동',
+        '영적 탐구',
+        '짧은 산책',
+      ],
+    },
   },
   {
     id: 'purple_pentagon', color: 'purple', shape: 'pentagon',
@@ -807,6 +1236,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '지금 가장 영적으로 필요한 것 하나에 집중하는 것이 지금의 회복 방향입니다.\n· 지금 삶에서 가장 영적 의미가 필요한 영역을 선택해보세요.\n· 그 영역에서 깊은 의미를 발견하는 실천을 해보세요.\n· 영적 에너지가 소진될 때 조용한 쉼과 회복의 시간을 가져보세요.',
     coachingMessage: '당신의 영적 감수성은 삶을 풍요롭게 합니다.\n지금 가장 필요한 곳에 그 감수성을 집중해보세요.',
+    wellness: {
+      tea: '라벤더 허브차 또는 캐모마일',
+      breath: '부드러운 복식호흡',
+      routine: [
+        '명상 또는 기도',
+        '신뢰하는 사람과 대화',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'purple_hexagon', color: 'purple', shape: 'hexagon',
@@ -822,6 +1260,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '공동체 영성과 개인 영성의 균형을 찾는 것이 지금의 회복 방향입니다.\n· 공동체 활동과 개인 영적 실천을 모두 의도적으로 계획해보세요.\n· 공동체를 위한 역할에서 잠시 벗어나 자신의 영적 필요를 채우는 시간을 가져보세요.\n· 영적 공동체 안에서 받는 것에도 감사하는 연습을 해보세요.',
     coachingMessage: '함께하는 영적 여정은 더 깊고 풍요롭습니다.\n그 안에서 자신의 영적 중심도 잃지 마세요.',
+    wellness: {
+      tea: '라벤더 허브차 또는 국화차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '명상',
+        '충분한 수면',
+      ],
+    },
   },
 
   // ═══════════════════════════════════════════
@@ -841,6 +1288,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '새로운 시작을 용기 있게 허용하는 것이 지금의 회복 방향입니다.\n· 과거의 무게를 내려놓는 의식적인 시간을 가져보세요(편지 쓰기, 기도 등).\n· 새로운 시작을 위한 작은 첫 걸음을 오늘 내딛어보세요.\n· "나는 새로운 시작을 받을 자격이 있다"고 자신에게 말해주세요.',
     coachingMessage: '새로운 시작은 언제나 가능합니다.\n그 첫 걸음을 오늘 내딛어보세요.',
+    wellness: {
+      tea: '캐모마일 또는 화이트 티',
+      breath: '부드럽고 가벼운 복식호흡',
+      routine: [
+        '아침 햇빛 쬐기',
+        '공간 정리 정돈',
+        '새로운 시작을 위한 한 가지 결심',
+      ],
+    },
   },
   {
     id: 'white_triangle', color: 'white', shape: 'triangle',
@@ -856,6 +1312,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '자신의 순수한 성장 동기를 확인하고 그것을 따르는 것이 지금의 회복 방향입니다.\n· "나는 왜 성장하고 싶은가?"를 솔직하게 적어보세요.\n· 외부의 기대를 잠시 내려놓고 자신의 진짜 동기를 따라가보세요.\n· 순수한 동기에서 시작하는 작은 성장 행동을 오늘 해보세요.',
     coachingMessage: '당신의 순수한 성장 동기는 가장 강한 힘입니다.\n그 순수함을 지켜나가세요.',
+    wellness: {
+      tea: '화이트 티 또는 페퍼민트차',
+      breath: '활기찬 복식호흡',
+      routine: [
+        '새로운 시작 선언',
+        '공간 정리',
+        '짧은 산책',
+      ],
+    },
   },
   {
     id: 'white_inverted_triangle', color: 'white', shape: 'inverted_triangle',
@@ -871,6 +1336,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '하나씩 내려놓는 연습이 지금의 핵심 회복 방향입니다.\n· 지금 삶에서 내려놓고 싶은 것 하나를 선택해보세요.\n· 그것을 내려놓는 의식적인 행동을 해보세요(글쓰기, 기도, 정리 등).\n· "비워질수록 더 많이 채워진다"는 것을 경험해보세요.',
     coachingMessage: '비움은 새로운 채움의 시작입니다.\n용기 있게 내려놓아보세요.',
+    wellness: {
+      tea: '캐모마일 또는 화이트 티',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '내려놓기 글쓰기',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'white_square', color: 'white', shape: 'square',
@@ -886,6 +1360,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '삶을 단순화하여 본질에 집중하는 것이 지금의 회복 방향입니다.\n· 지금 삶에서 불필요한 것 하나를 제거해보세요.\n· 공간을 정리하면 마음도 정리됩니다. 방 한 곳을 깨끗이 정돈해보세요.\n· "지금 정말 필요한 것은 무엇인가?"를 스스로에게 물어보세요.',
     coachingMessage: '단순함 속에 진정한 평안이 있습니다.\n불필요한 것들을 내려놓아보세요.',
+    wellness: {
+      tea: '화이트 티 또는 국화차',
+      breath: '4-4-4 박스 호흡',
+      routine: [
+        '공간 정리 정돈',
+        '규칙적인 루틴 시작',
+        '아침 햇빛 쬐기',
+      ],
+    },
   },
   {
     id: 'white_diamond', color: 'white', shape: 'diamond',
@@ -901,6 +1384,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '작은 변화부터 시작하여 변화의 흐름을 타는 것이 지금의 회복 방향입니다.\n· 오늘 일상에서 작은 것 하나를 바꿔보세요(루틴, 식사, 경로 등).\n· 변화가 두려울 때 "작게 시작해도 된다"고 자신에게 말해주세요.\n· 변화를 경험한 후 어떤 느낌인지 기록해보세요.',
     coachingMessage: '순수한 변화의 에너지가 당신 안에 있습니다.\n오늘 작은 한 걸음을 내딛어보세요.',
+    wellness: {
+      tea: '화이트 티 또는 페퍼민트차',
+      breath: '활기찬 복식호흡',
+      routine: [
+        '새로운 목표 설정',
+        '공간 정리',
+        '짧은 산책',
+      ],
+    },
   },
   {
     id: 'white_pentagon', color: 'white', shape: 'pentagon',
@@ -916,6 +1408,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '지금 가장 새롭게 시작하고 싶은 영역 하나를 선택하는 것이 지금의 회복 방향입니다.\n· 새롭게 시작하고 싶은 것들을 모두 적어보세요.\n· 그 중 지금 가장 중요한 것 하나를 선택하세요.\n· 그 하나에 집중하여 새로운 시작의 경험을 쌓아보세요.',
     coachingMessage: '새로운 시작의 에너지가 넘칩니다.\n지금 가장 중요한 것 하나부터 시작해보세요.',
+    wellness: {
+      tea: '캐모마일 또는 화이트 티',
+      breath: '부드러운 복식호흡',
+      routine: [
+        '새로운 시작을 위한 준비',
+        '신뢰하는 사람과 대화',
+        '감사 일기 쓰기',
+      ],
+    },
   },
   {
     id: 'white_hexagon', color: 'white', shape: 'hexagon',
@@ -931,6 +1432,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '공동체 안에서 자신의 순수한 에너지를 보호하면서 정화를 이끄는 것이 지금의 회복 방향입니다.\n· 공동체의 부정적인 에너지에 휩쓸리지 않도록 자신의 경계를 설정해보세요.\n· 공동체 안에서 긍정적인 변화를 위한 작은 행동을 해보세요.\n· 자신의 순수한 에너지를 채우는 개인 시간을 확보해보세요.',
     coachingMessage: '당신의 순수한 에너지는 공동체를 정화합니다.\n그 에너지를 먼저 자신에게 채워보세요.',
+    wellness: {
+      tea: '화이트 티 또는 캐모마일',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '내려놓기 글쓰기',
+        '충분한 수면',
+      ],
+    },
   },
 
   // ═══════════════════════════════════════════
@@ -950,6 +1460,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '내면의 강인함을 유지하면서 따뜻한 연결도 허용하는 것이 지금의 회복 방향입니다.\n· 신뢰하는 사람에게 내면의 이야기를 조금씩 나눠보세요.\n· 강인함과 따뜻함이 함께 존재할 수 있음을 경험해보세요.\n· 혼자만의 깊은 시간과 연결의 시간을 균형 있게 가져보세요.',
     coachingMessage: '당신의 내면 강인함은 귀한 힘입니다.\n그 힘 안에 따뜻함도 함께 품어보세요.',
+    wellness: {
+      tea: '쌍화차 또는 루이보스',
+      breath: '깊고 느린 복식호흡 (4-7-8 호흡)',
+      routine: [
+        '혼자만의 조용한 시간',
+        '깊이 있는 독서',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'black_triangle', color: 'black', shape: 'triangle',
@@ -965,6 +1484,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '강인함과 함께 자신을 돌보는 균형이 지금의 회복 방향입니다.\n· 지금 얼마나 지쳐 있는지 솔직하게 인정해보세요.\n· 강인하게 버티는 것만큼 쉬는 것도 성장임을 기억하세요.\n· 신뢰하는 사람에게 "힘들어"라고 솔직하게 말해보세요.',
     coachingMessage: '당신의 강인함은 깊은 성장에서 옵니다.\n그 과정에서 자신을 잘 돌봐주세요.',
+    wellness: {
+      tea: '쌍화차 또는 루이보스',
+      breath: '깊고 느린 복식호흡',
+      routine: [
+        '변화를 위한 한 가지 결단',
+        '글쓰기로 내면 정리',
+        '짧은 산책',
+      ],
+    },
   },
   {
     id: 'black_inverted_triangle', color: 'black', shape: 'inverted_triangle',
@@ -980,6 +1508,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '변환의 과정을 신뢰하며 전문적인 도움을 받는 것이 지금의 회복 방향입니다.\n· 변환의 과정에서 혼자 버티려 하지 말고 전문가나 신뢰하는 사람의 도움을 받아보세요.\n· 이 어두운 시기가 새로운 빛으로 이어진다는 것을 믿어보세요.\n· 변환의 과정을 일기에 기록하며 자신의 여정을 확인해보세요.',
     coachingMessage: '어둠 속에서 새로운 빛이 태어납니다.\n이 변환의 과정을 신뢰해보세요.',
+    wellness: {
+      tea: '루이보스 또는 쌍화차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '감정 일기 쓰기',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'black_square', color: 'black', shape: 'square',
@@ -995,6 +1532,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '강인한 안정 속에서 감정도 허용하는 것이 지금의 회복 방향입니다.\n· 강인하게 버티는 것과 감정을 느끼는 것이 함께 가능함을 경험해보세요.\n· 신뢰하는 사람에게 내면의 이야기를 조금씩 나눠보세요.\n· 강인함 뒤에 있는 진짜 감정을 일기에 써보세요.',
     coachingMessage: '당신의 강인한 안정은 주변을 지탱합니다.\n그 안에서 자신의 감정도 돌봐주세요.',
+    wellness: {
+      tea: '쌍화차 또는 대추차',
+      breath: '4-4-4 박스 호흡',
+      routine: [
+        '규칙적인 수면 루틴',
+        '하루 마무리 글쓰기',
+        '따뜻한 물 한 잔',
+      ],
+    },
   },
   {
     id: 'black_diamond', color: 'black', shape: 'diamond',
@@ -1010,6 +1556,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '변화 속에서도 자신의 강인한 본질을 신뢰하는 것이 지금의 회복 방향입니다.\n· "어떤 상황에서도 나는 나다"라는 것을 확인하는 시간을 가져보세요.\n· 변화를 경험하면서 자신의 본질이 유지됨을 확인해보세요.\n· 자신의 강인한 본질을 글로 써서 자주 읽어보세요.',
     coachingMessage: '당신의 강인함은 변화 속에서도 빛납니다.\n그 본질을 신뢰해보세요.',
+    wellness: {
+      tea: '루이보스 또는 쌍화차',
+      breath: '깊고 느린 복식호흡',
+      routine: [
+        '깊이 있는 독서',
+        '내면 탐구 글쓰기',
+        '짧은 산책',
+      ],
+    },
   },
   {
     id: 'black_pentagon', color: 'black', shape: 'pentagon',
@@ -1025,6 +1580,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '감당하는 것의 우선순위를 정하고 일부는 내려놓는 것이 지금의 회복 방향입니다.\n· 지금 감당하고 있는 것들을 모두 적어보세요.\n· 그 중 지금 당장 하지 않아도 되는 것을 하나 내려놓아보세요.\n· "모든 것을 혼자 감당하지 않아도 된다"고 자신에게 말해주세요.',
     coachingMessage: '당신의 강인함은 많은 것을 가능하게 합니다.\n지금은 그 힘을 현명하게 사용할 시간입니다.',
+    wellness: {
+      tea: '쌍화차 또는 루이보스',
+      breath: '부드러운 복식호흡',
+      routine: [
+        '신뢰하는 사람과 깊은 대화',
+        '명상 또는 기도',
+        '충분한 수면',
+      ],
+    },
   },
   {
     id: 'black_hexagon', color: 'black', shape: 'hexagon',
@@ -1040,6 +1604,15 @@ export const CARD_DATA: CardData[] = [
     ],
     recoveryDirection: '공동체를 지키는 강인함과 자신을 돌보는 균형이 지금의 회복 방향입니다.\n· "나도 돌봄이 필요하다"는 것을 인정하고 도움을 요청해보세요.\n· 공동체를 위한 역할에서 잠시 물러나 자신을 재충전하는 시간을 가져보세요.\n· 공동체 안에서 받는 것에도 감사하고 받아들이는 연습을 해보세요.',
     coachingMessage: '당신의 강인함이 공동체를 지탱합니다.\n그 힘을 유지하기 위해 자신을 먼저 돌봐주세요.',
+    wellness: {
+      tea: '루이보스 또는 쌍화차',
+      breath: '천천히 깊게 호흡하기',
+      routine: [
+        '혼자만의 조용한 시간',
+        '내면 탐구 글쓰기',
+        '충분한 수면',
+      ],
+    },
   },
 ];
 
