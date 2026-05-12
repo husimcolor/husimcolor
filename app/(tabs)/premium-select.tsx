@@ -8,7 +8,7 @@ import {
   Animated,
   Dimensions,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -169,7 +169,7 @@ export default function PremiumSelectScreen() {
     });
   }, []);
 
-  const [shuffledCards] = useState<CardData[]>(() => shuffleArray(CARD_DATA));
+  const [shuffledCards, setShuffledCards] = useState<CardData[]>(() => shuffleArray(CARD_DATA));
   const [selectedCards, setSelectedCards] = useState<(CardData | null)[]>([null, null, null]);
   const [flippedIndices, setFlippedIndices] = useState<Set<number>>(new Set());
   const [isShuffling, setIsShuffling] = useState(true);
@@ -178,6 +178,17 @@ export default function PremiumSelectScreen() {
   const flipAnims = useRef<Animated.Value[]>(
     Array.from({ length: 63 }, () => new Animated.Value(0))
   ).current;
+
+  // 화면 포커스 시마다 카드 상태 초기화 (이전 선택 카드 남아있는 문제 방지)
+  useFocusEffect(
+    useCallback(() => {
+      setShuffledCards(shuffleArray(CARD_DATA));
+      setSelectedCards([null, null, null]);
+      setFlippedIndices(new Set());
+      setIsShuffling(true);
+      flipAnims.forEach((anim) => anim.setValue(0));
+    }, [])
+  );
 
   const selectedCount = selectedCards.filter(Boolean).length;
 
