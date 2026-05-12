@@ -522,7 +522,7 @@ export default function PremiumResultScreen() {
           <TouchableOpacity
             style={[styles.coachingLinkBtn, { backgroundColor: "#03C75A" }]}
             onPress={() => {
-              Linking.openURL("https://booking.naver.com/booking/13/bizes/1076765");
+              Linking.openURL("https://naver.me/ID3fxw2W");
             }}
             activeOpacity={0.8}
           >
@@ -562,7 +562,7 @@ export default function PremiumResultScreen() {
           <TouchableOpacity
             style={[styles.coachingLinkBtn, { backgroundColor: "#E1306C" }]}
             onPress={() => {
-              Linking.openURL("https://www.instagram.com/husimcolor");
+              Linking.openURL("https://www.instagram.com/husim_lumiere?igsh=MTh6bWhpdWRjb2Rtcw==");
             }}
             activeOpacity={0.8}
           >
@@ -572,7 +572,7 @@ export default function PremiumResultScreen() {
               </View>
               <View style={styles.coachingLinkTexts}>
                 <Text style={styles.coachingLinkTitle}>인스타그램</Text>
-                <Text style={styles.coachingLinkDesc}>@husimcolor 팔로우</Text>
+                <Text style={styles.coachingLinkDesc}>@husim_lumiere 팔로우</Text>
               </View>
               <Text style={styles.coachingLinkArrow}>→</Text>
             </View>

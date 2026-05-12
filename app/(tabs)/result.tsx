@@ -180,6 +180,11 @@ export default function ResultScreen() {
 
   const openLink = async (url: string, name: string) => {
     try {
+      // 인스타그램은 앱으로 직접 열기 (WebBrowser에서 정지 화면 문제 방지)
+      if (url.includes('instagram.com')) {
+        await Linking.openURL(url);
+        return;
+      }
       await WebBrowser.openBrowserAsync(url);
     } catch {
       try {
