@@ -146,6 +146,20 @@ export default function PaymentScreen() {
           </Text>
         </TouchableOpacity>
 
+        {/* 테스트 모드 버튼 - 개발/테스트용 */}
+        <TouchableOpacity
+          style={[styles.testButton, { borderColor: "#C4956A" }]}
+          onPress={handleDevSkip}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.testButtonLabel, { color: "#C4956A" }]}>
+            개발자 테스트 모드
+          </Text>
+          <Text style={[styles.testButtonText, { color: "#A08060" }]}>
+            결제 없이 바로 카드 선택 시작 (테스트용)
+          </Text>
+        </TouchableOpacity>
+
         {/* 무료 체험 버튼 */}
         <TouchableOpacity
           style={[styles.freeButton, { borderColor: colors.border }]}
@@ -278,5 +292,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     textAlign: "center",
+  },
+  testButton: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 4,
+    backgroundColor: "#FFF8F0",
+  },
+  testButtonLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  testButtonText: {
+    fontSize: 13,
   },
 });
