@@ -425,7 +425,7 @@ export default function PremiumResultScreen() {
               <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>추천 루틴</Text>
               {card3.wellness.routine.map((item, idx) => (
                 <Text key={idx} style={[styles.wellnessRoutineItem, { color: '#5C4A1E' }]}>
-                  · {item}
+                  · {sanitizeRecovery(item, profile?.faith ?? '')}
                 </Text>
               ))}
             </View>
