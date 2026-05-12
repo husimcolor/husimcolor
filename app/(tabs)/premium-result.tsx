@@ -365,7 +365,7 @@ export default function PremiumResultScreen() {
             style={[styles.coachingLinkBtn, { backgroundColor: "#FEE500" }]}
             onPress={() => {
               if (Platform.OS === "web") {
-                window.open("https://open.kakao.com/o/husimcolor", "_blank");
+                window.open("https://open.kakao.com/o/sp6nBerh", "_blank");
               }
             }}
             activeOpacity={0.8}
@@ -375,8 +375,9 @@ export default function PremiumResultScreen() {
                 <Text style={[styles.coachingLinkIconText, { color: "#3A1D00" }]}>💬</Text>
               </View>
               <View style={styles.coachingLinkTexts}>
-                <Text style={[styles.coachingLinkTitle, { color: "#3A1D00" }]}>카카오톡 상담</Text>
-                <Text style={[styles.coachingLinkDesc, { color: "#3A1D00AA" }]}>1:1 컬러심리 상담 연결</Text>
+                <Text style={[styles.coachingLinkTitle, { color: "#3A1D00" }]}>온라인 상담 문의</Text>
+                <Text style={[styles.coachingLinkDesc, { color: "#3A1D00AA" }]}>멀리 계시거나 방문이 어려운 분은</Text>
+                <Text style={[styles.coachingLinkDesc, { color: "#3A1D00AA" }]}>카카오톡으로 온라인 코칭 가능 여부를 문의해 주세요.</Text>
               </View>
               <Text style={[styles.coachingLinkArrow, { color: "#3A1D00" }]}>→</Text>
             </View>
