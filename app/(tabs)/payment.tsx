@@ -59,7 +59,7 @@ const PAYMENT_PLANS = [
     ],
     qrImage: require("@/assets/images/qr_60000.jpg") as number,
     qrNote: "카카오페이 · 토스 · 계좌이체 가능",
-    available: true,
+    available: false,
   },
 ];
 
@@ -256,31 +256,66 @@ export default function PaymentScreen() {
                 </View>
               ))}
             </View>
-            <TouchableOpacity
-              style={[
-                styles.payButton,
-                { backgroundColor: plan.id === "couple" ? "#C4956A" : "#8BAF8B" },
-              ]}
-              onPress={() => handlePayPress(plan)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.payButtonText}>
-                {`${plan.price} 결제하기`}
-              </Text>
-            </TouchableOpacity>
+            {plan.available ? (
+              <TouchableOpacity
+                style={[
+                  styles.payButton,
+                  { backgroundColor: plan.id === "couple" ? "#C4956A" : "#8BAF8B" },
+                ]}
+                onPress={() => handlePayPress(plan)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.payButtonText}>
+                  {`${plan.price} 결제하기`}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <View
+                style={[
+                  styles.payButton,
+                  { backgroundColor: "#C4956A44" },
+                ]}
+              >
+                <Text style={[styles.payButtonText, { color: "#C4956A" }]}>
+                  🔜 커플코칭 곧 오픈 예정
+                </Text>
+              </View>
+            )}
           </View>
         ))}
 
-        {/* 뒤로 가기 버튼 */}
-        <TouchableOpacity
-          style={[styles.freeButton, { borderColor: colors.border }]}
-          onPress={() => router.canGoBack() ? router.back() : router.push("/" as any)}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.freeButtonText, { color: colors.muted }]}>
-            이전으로 돌아가기
-          </Text>
-        </TouchableOpacity>
+        {/* 무료체험 / 이전으로 버튼 */}
+        {trialStatus === "none" ? (
+          <TouchableOpacity
+            style={[styles.freeButton, { borderColor: "#8BAF8B", backgroundColor: "#8BAF8B12" }]}
+            onPress={handleStartTrial}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.freeButtonText, { color: "#5A8A5A", fontWeight: "600" }]}>
+              🌿 1인 1회 · 48시간 무료체험 시작하기
+            </Text>
+          </TouchableOpacity>
+        ) : trialStatus === "active" ? (
+          <TouchableOpacity
+            style={[styles.freeButton, { borderColor: "#8BAF8B", backgroundColor: "#8BAF8B12" }]}
+            onPress={handleContinueTrial}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.freeButtonText, { color: "#5A8A5A", fontWeight: "600" }]}>
+              🌿 심화 분석 계속하기 →
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.freeButton, { borderColor: colors.border }]}
+            onPress={() => router.canGoBack() ? router.back() : router.push("/" as any)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.freeButtonText, { color: colors.muted }]}>
+              이전으로 돌아가기
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* 안내 문구 */}
         <Text style={[styles.notice, { color: colors.muted }]}>
