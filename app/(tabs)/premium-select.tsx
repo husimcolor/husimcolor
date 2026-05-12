@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { CARD_DATA, type CardData } from "@/constants/cardData";
+import { isPremiumActive } from "@/lib/trialUtils";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - 48 - 32) / 5;
@@ -158,6 +159,15 @@ function AnimatedCard({
 export default function PremiumSelectScreen() {
   const colors = useColors();
   const router = useRouter();
+
+  // 진입 시 체험/결제 상태 확인 - 미활성화면 결제 화면으로 이동
+  useEffect(() => {
+    isPremiumActive().then((active) => {
+      if (!active) {
+        router.replace("/payment" as any);
+      }
+    });
+  }, []);
 
   const [shuffledCards] = useState<CardData[]>(() => shuffleArray(CARD_DATA));
   const [selectedCards, setSelectedCards] = useState<(CardData | null)[]>([null, null, null]);

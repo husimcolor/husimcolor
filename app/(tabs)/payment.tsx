@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,11 +16,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
+import {
+  getTrialStatus,
+  getTrialRemainingLabel,
+  startTrial,
+  type TrialStatus,
+} from "@/lib/trialUtils";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // ─── 결제 상품 목록 ───────────────────────────────────────────────
-// 추후 커플 코칭(6만원) 등 상품 추가 시 이 배열에 항목만 추가하면 됩니다.
 const PAYMENT_PLANS = [
   {
     id: "single",
@@ -65,6 +70,20 @@ export default function PaymentScreen() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [qrVisible, setQrVisible] = useState(false);
+  const [trialStatus, setTrialStatus] = useState<TrialStatus>("none");
+  const [remainingLabel, setRemainingLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      const status = await getTrialStatus();
+      setTrialStatus(status);
+      if (status === "active") {
+        const label = await getTrialRemainingLabel();
+        setRemainingLabel(label);
+      }
+    };
+    load();
+  }, []);
 
   const handlePayPress = (plan: Plan) => {
     if (!plan.available) return;
@@ -81,12 +100,88 @@ export default function PaymentScreen() {
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-    router.push("/profile" as any);
+    router.push("/premium-select" as any);
   };
 
-  const handleDevSkip = async () => {
-    await AsyncStorage.setItem("premiumUnlocked", "true");
-    router.push("/profile" as any);
+  const handleStartTrial = async () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    await startTrial();
+    setTrialStatus("active");
+    const label = await getTrialRemainingLabel();
+    setRemainingLabel(label);
+    router.push("/premium-select" as any);
+  };
+
+  const handleContinueTrial = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    router.push("/premium-select" as any);
+  };
+
+  // 무료체험 버튼 렌더링
+  const renderTrialButton = () => {
+    if (trialStatus === "paid") return null;
+
+    if (trialStatus === "none") {
+      return (
+        <TouchableOpacity
+          style={[styles.trialButton, { borderColor: "#8BAF8B", backgroundColor: "#8BAF8B18" }]}
+          onPress={handleStartTrial}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.trialButtonTitle, { color: "#5A8A5A" }]}>
+            🌿 휴심컬러 심화코칭 베타 체험
+          </Text>
+          <Text style={[styles.trialButtonDesc, { color: "#5A8A5A" }]}>
+            1인 1회, 48시간 동안 무료로 체험 가능합니다
+          </Text>
+          <View style={[styles.trialButtonBadge, { backgroundColor: "#8BAF8B" }]}>
+            <Text style={styles.trialButtonBadgeText}>무료체험 시작하기</Text>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    if (trialStatus === "active") {
+      return (
+        <TouchableOpacity
+          style={[styles.trialButton, { borderColor: "#8BAF8B", backgroundColor: "#8BAF8B18" }]}
+          onPress={handleContinueTrial}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.trialButtonTitle, { color: "#5A8A5A" }]}>
+            🌿 무료체험 진행 중
+          </Text>
+          {remainingLabel && (
+            <Text style={[styles.trialButtonDesc, { color: "#5A8A5A" }]}>
+              남은 체험 시간: {remainingLabel}
+            </Text>
+          )}
+          <View style={[styles.trialButtonBadge, { backgroundColor: "#8BAF8B" }]}>
+            <Text style={styles.trialButtonBadgeText}>심층 해석 계속하기 →</Text>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    if (trialStatus === "expired") {
+      return (
+        <View style={[styles.trialButton, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+          <Text style={[styles.trialButtonTitle, { color: colors.muted }]}>
+            무료체험이 종료되었습니다
+          </Text>
+          <Text style={[styles.trialButtonDesc, { color: colors.muted }]}>
+            1인 1회 48시간 무료체험이 완료되었습니다.{"\n"}
+            아래에서 결제 후 계속 이용하실 수 있습니다.
+          </Text>
+        </View>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -105,6 +200,9 @@ export default function PaymentScreen() {
             깊은 내면의 흐름을 확인해 보세요
           </Text>
         </View>
+
+        {/* 무료체험 버튼 (최상단 강조) */}
+        {renderTrialButton()}
 
         {/* 상품 카드 목록 */}
         {PAYMENT_PLANS.map((plan) => (
@@ -128,14 +226,12 @@ export default function PaymentScreen() {
                 </Text>
               </View>
             </View>
-
             <Text style={[styles.planPrice, { color: plan.id === "couple" ? "#C4956A" : "#8BAF8B" }]}>
               {plan.price}
             </Text>
             <Text style={[styles.planDesc, { color: colors.muted }]}>
               {plan.description}
             </Text>
-
             <View style={styles.featureList}>
               {plan.features.map((f) => (
                 <View key={f.title} style={styles.featureRow}>
@@ -151,7 +247,6 @@ export default function PaymentScreen() {
                 </View>
               ))}
             </View>
-
             <TouchableOpacity
               style={[
                 styles.payButton,
@@ -167,21 +262,7 @@ export default function PaymentScreen() {
           </View>
         ))}
 
-        {/* 테스트 모드 버튼 */}
-        <TouchableOpacity
-          style={[styles.testButton, { borderColor: "#C4956A" }]}
-          onPress={handleDevSkip}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.testButtonLabel, { color: "#C4956A" }]}>
-            개발자 테스트 모드
-          </Text>
-          <Text style={[styles.testButtonText, { color: "#A08060" }]}>
-            결제 없이 바로 카드 선택 시작 (테스트용)
-          </Text>
-        </TouchableOpacity>
-
-        {/* 무료 체험 버튼 */}
+        {/* 무료 체험 버튼 (홈으로) */}
         <TouchableOpacity
           style={[styles.freeButton, { borderColor: colors.border }]}
           onPress={() => router.push("/" as any)}
@@ -215,30 +296,22 @@ export default function PaymentScreen() {
         onRequestClose={() => setQrVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.foreground }]}>
-                QR 코드로 결제하기
+                {selectedPlan?.label} 결제
               </Text>
-              <TouchableOpacity
-                onPress={() => setQrVisible(false)}
-                style={styles.closeBtn}
-              >
-                <Text style={[styles.closeBtnText, { color: colors.muted }]}>✕</Text>
+              <TouchableOpacity onPress={() => setQrVisible(false)}>
+                <Text style={[styles.closeBtn, { color: colors.muted }]}>✕</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={[styles.amountBox, { backgroundColor: "#8BAF8B15", borderColor: "#8BAF8B44" }]}>
-              <Text style={[styles.amountLabel, { color: colors.muted }]}>결제 금액</Text>
-              <Text style={[styles.amountValue, { color: "#8BAF8B" }]}>
-                {selectedPlan?.price}
-              </Text>
-              <Text style={[styles.amountNote, { color: colors.muted }]}>
-                {selectedPlan?.qrNote}
-              </Text>
-            </View>
+            <Text style={[styles.modalDesc, { color: colors.muted }]}>
+              아래 QR 코드를 스캔하여 {selectedPlan?.price}을 송금해 주세요.{"\n"}
+              {selectedPlan?.qrNote}
+            </Text>
 
-            {selectedPlan?.qrImage != null && (
+            {selectedPlan?.qrImage && (
               <View style={styles.qrWrapper}>
                 <Image
                   source={selectedPlan.qrImage}
@@ -248,9 +321,8 @@ export default function PaymentScreen() {
               </View>
             )}
 
-            <Text style={[styles.qrGuide, { color: colors.muted }]}>
-              카카오페이 · 토스 · 계좌이체 앱에서{"\n"}
-              QR 코드를 스캔하여 결제해 주세요
+            <Text style={[styles.modalStep, { color: colors.muted }]}>
+              송금 완료 후 아래 버튼을 눌러주세요
             </Text>
 
             <TouchableOpacity
@@ -262,12 +334,10 @@ export default function PaymentScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.cancelBtn}
+              style={[styles.cancelBtn, { borderColor: colors.border }]}
               onPress={() => setQrVisible(false)}
             >
-              <Text style={[styles.cancelBtnText, { color: colors.muted }]}>
-                나중에 결제하기
-              </Text>
+              <Text style={[styles.cancelBtnText, { color: colors.muted }]}>취소</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -276,25 +346,23 @@ export default function PaymentScreen() {
   );
 }
 
-const QR_SIZE = Math.min(SCREEN_WIDTH * 0.62, 240);
-
 const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 48,
-    gap: 16,
+    paddingTop: 24,
+    paddingBottom: 60,
+    gap: 20,
   },
   header: {
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 4,
     gap: 8,
   },
   title: {
     fontSize: 26,
     fontWeight: "800",
     textAlign: "center",
-    lineHeight: 36,
+    lineHeight: 34,
     letterSpacing: -0.5,
   },
   subtitle: {
@@ -302,6 +370,36 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
+  // ─── 무료체험 버튼 ───
+  trialButton: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    padding: 20,
+    gap: 8,
+    alignItems: "center",
+  },
+  trialButtonTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  trialButtonDesc: {
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  trialButtonBadge: {
+    marginTop: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
+  },
+  trialButtonBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  // ─── 상품 카드 ───
   planCard: {
     borderRadius: 20,
     borderWidth: 1,
@@ -320,25 +418,24 @@ const styles = StyleSheet.create({
   planBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 20,
+    borderRadius: 12,
   },
   planBadgeText: {
     fontSize: 12,
     fontWeight: "600",
   },
   planPrice: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: "800",
     letterSpacing: -0.5,
   },
   planDesc: {
     fontSize: 13,
-    marginTop: -4,
+    lineHeight: 20,
   },
   featureList: {
     gap: 10,
     marginTop: 4,
-    marginBottom: 4,
   },
   featureRow: {
     flexDirection: "row",
@@ -346,24 +443,25 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   featureIcon: {
-    fontSize: 20,
-    width: 28,
+    fontSize: 18,
+    width: 24,
     textAlign: "center",
   },
   featureTexts: {
     flex: 1,
-    gap: 1,
+    gap: 2,
   },
   featureTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
   },
   featureDesc: {
     fontSize: 12,
+    lineHeight: 18,
   },
   payButton: {
     borderRadius: 14,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: "center",
     marginTop: 4,
   },
@@ -371,26 +469,8 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
-    letterSpacing: 0.3,
   },
-  testButton: {
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderStyle: "dashed",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#FFF8F0",
-  },
-  testButtonLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  testButtonText: {
-    fontSize: 13,
-  },
+  // ─── 기타 버튼 ───
   freeButton: {
     borderRadius: 12,
     borderWidth: 1,
@@ -412,6 +492,7 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     paddingVertical: 4,
   },
+  // ─── QR 모달 ───
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.55)",
@@ -435,61 +516,43 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   closeBtn: {
+    fontSize: 20,
     padding: 4,
   },
-  closeBtnText: {
-    fontSize: 18,
-  },
-  amountBox: {
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 16,
-    alignItems: "center",
-    gap: 2,
-  },
-  amountLabel: {
-    fontSize: 12,
-  },
-  amountValue: {
-    fontSize: 32,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-  amountNote: {
-    fontSize: 12,
-    marginTop: 2,
+  modalDesc: {
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "center",
   },
   qrWrapper: {
     alignItems: "center",
-    justifyContent: "center",
-    padding: 12,
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    alignSelf: "center",
+    padding: 16,
   },
   qrImage: {
-    width: QR_SIZE,
-    height: QR_SIZE,
+    width: SCREEN_WIDTH - 120,
+    height: SCREEN_WIDTH - 120,
   },
-  qrGuide: {
+  modalStep: {
     fontSize: 13,
     textAlign: "center",
-    lineHeight: 20,
   },
   doneButton: {
     borderRadius: 14,
-    paddingVertical: 17,
+    paddingVertical: 16,
     alignItems: "center",
   },
   doneButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
-    letterSpacing: 0.3,
   },
   cancelBtn: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 12,
     alignItems: "center",
-    paddingVertical: 6,
   },
   cancelBtnText: {
     fontSize: 14,

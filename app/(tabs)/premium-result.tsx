@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Linking } from "react-native";
 import {
   View,
   Text,
@@ -14,6 +15,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { type CardData } from "@/constants/cardData";
 import { type UserProfile } from "./profile";
+import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
 
 const POSITION_LABELS = [
   { label: "1번 카드", sub: "무의식 · 내면 에너지", color: "#8BAF8B" },
@@ -132,6 +134,8 @@ export default function PremiumResultScreen() {
   const router = useRouter();
   const [cards, setCards] = useState<CardData[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [trialStatus, setTrialStatus] = useState<TrialStatus>("none");
+  const [remainingLabel, setRemainingLabel] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -139,6 +143,12 @@ export default function PremiumResultScreen() {
       const profileRaw = await AsyncStorage.getItem("userProfile");
       if (raw) setCards(JSON.parse(raw));
       if (profileRaw) setProfile(JSON.parse(profileRaw));
+      const status = await getTrialStatus();
+      setTrialStatus(status);
+      if (status === "active") {
+        const label = await getTrialRemainingLabel();
+        setRemainingLabel(label);
+      }
     })();
   }, []);
 
@@ -451,6 +461,44 @@ export default function PremiumResultScreen() {
           )}
         </View>
 
+        {/* 체험 중 결제 유도 배너 */}
+        {(trialStatus === "active" || trialStatus === "expired") && (
+          <View style={[styles.trialBanner, {
+            backgroundColor: trialStatus === "expired" ? "#F5EDE0" : "#EDF5ED",
+            borderColor: trialStatus === "expired" ? "#C4956A55" : "#8BAF8B55",
+          }]}>
+            {trialStatus === "active" && remainingLabel ? (
+              <>
+                <Text style={[styles.trialBannerTitle, { color: "#5A8A5A" }]}>
+                  🌿 무료체험 중 · 남은 시간 {remainingLabel}
+                </Text>
+                <Text style={[styles.trialBannerDesc, { color: "#5A8A5A" }]}>
+                  체험 기간 종료 후에는 결제 후 이용 가능합니다
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={[styles.trialBannerTitle, { color: "#C4956A" }]}>
+                  무료체험이 종료되었습니다
+                </Text>
+                <Text style={[styles.trialBannerDesc, { color: "#C4956A" }]}>
+                  심층 해석을 계속 이용하시려면 결제해 주세요
+                </Text>
+              </>
+            )}
+            <TouchableOpacity
+              style={[styles.trialBannerBtn, {
+                backgroundColor: trialStatus === "expired" ? "#C4956A" : "#8BAF8B",
+              }]}
+              onPress={() => router.push("/payment" as any)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.trialBannerBtnText}>
+                {trialStatus === "expired" ? "지금 결제하기 →" : "심화코칭 예약 · 결제하기 →"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {/* 공유 버튼 */}
         <TouchableOpacity
           style={[styles.shareButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -474,9 +522,7 @@ export default function PremiumResultScreen() {
           <TouchableOpacity
             style={[styles.coachingLinkBtn, { backgroundColor: "#03C75A" }]}
             onPress={() => {
-              if (Platform.OS === "web") {
-                window.open("https://booking.naver.com/booking/13/bizes/1076765", "_blank");
-              }
+              Linking.openURL("https://booking.naver.com/booking/13/bizes/1076765");
             }}
             activeOpacity={0.8}
           >
@@ -496,9 +542,7 @@ export default function PremiumResultScreen() {
           <TouchableOpacity
             style={[styles.coachingLinkBtn, { backgroundColor: "#FEE500" }]}
             onPress={() => {
-              if (Platform.OS === "web") {
-                window.open("https://open.kakao.com/o/sp6nBerh", "_blank");
-              }
+              Linking.openURL("https://open.kakao.com/o/sp6nBerh");
             }}
             activeOpacity={0.8}
           >
@@ -518,9 +562,7 @@ export default function PremiumResultScreen() {
           <TouchableOpacity
             style={[styles.coachingLinkBtn, { backgroundColor: "#E1306C" }]}
             onPress={() => {
-              if (Platform.OS === "web") {
-                window.open("https://www.instagram.com/husimcolor", "_blank");
-              }
+              Linking.openURL("https://www.instagram.com/husimcolor");
             }}
             activeOpacity={0.8}
           >
@@ -540,9 +582,7 @@ export default function PremiumResultScreen() {
           <TouchableOpacity
             style={[styles.coachingLinkBtn, { backgroundColor: "#FF0000" }]}
             onPress={() => {
-              if (Platform.OS === "web") {
-                window.open("https://youtube.com/@huali7603?si=4R0Hk-Xna6iS3OP9", "_blank");
-              }
+              Linking.openURL("https://youtube.com/@huali7603?si=4R0Hk-Xna6iS3OP9");
             }}
             activeOpacity={0.8}
           >
@@ -891,5 +931,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     fontWeight: '500',
+  },
+  // 체험 중/만료 배너
+  trialBanner: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 18,
+    gap: 8,
+    alignItems: 'center',
+  },
+  trialBannerTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  trialBannerDesc: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  trialBannerBtn: {
+    marginTop: 4,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  trialBannerBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
