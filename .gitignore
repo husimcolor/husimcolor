@@ -7,7 +7,7 @@ node_modules/
 .expo/
 web-build/
 expo-env.d.ts
-# dist/ - Vercel builds from source, so dist is not committed
+# dist/ is committed for pre-built static deployment on Vercel
 
 # Native
 .kotlin/
