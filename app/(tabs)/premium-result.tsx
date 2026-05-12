@@ -163,11 +163,22 @@ export default function PremiumResultScreen() {
   const combinedCoaching = generateCombinedCoaching(card1, card2, card3);
 
   const handleShare = async () => {
+    // 보완 루틴 텍스트 구성 (card3 wellness 기준)
+    const routineLines = card3.wellness.routine
+      .slice(0, 2)
+      .map((r: string) => `  · ${sanitizeRecovery(r, profile?.faith ?? '')}`);
+    const wellnessText =
+      `🌿 오늘의 보완 루틴\n` +
+      `  · 추천 차: ${card3.wellness.tea}\n` +
+      `  · 추천 호흡: ${card3.wellness.breath}\n` +
+      routineLines.join('\n');
+
     const shareText = `[휴심컬러 컬러에너지 흐름 해석]\n\n` +
       `1번(내면): ${card1.colorKor} ${card1.shapeKor} - ${card1.energyTitle}\n` +
       `2번(현재): ${card2.colorKor} ${card2.shapeKor} - ${card2.energyTitle}\n` +
       `3번(회복): ${card3.colorKor} ${card3.shapeKor} - ${card3.energyTitle}\n\n` +
-      `${combinedCoaching}\n\nhusimcolor.vercel.app`;
+      `${combinedCoaching}\n\n` +
+      `${wellnessText}\n\nhusimcolor.vercel.app`;
 
     if (Platform.OS !== "web" && typeof navigator !== "undefined" && navigator.share) {
       try {
