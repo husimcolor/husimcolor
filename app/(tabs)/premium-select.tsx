@@ -32,6 +32,11 @@ function shuffleArray<T>(arr: T[]): T[] {
 const POSITION_LABELS = ["무의식 · 내면 에너지", "현재 현실 에너지", "미래 · 회복 · 희망 에너지"];
 const POSITION_COLORS = ["#8BAF8B", "#B5A0C8", "#C4956A"];
 
+// 따뜻한 크림 아이보리 카드 뒷면 색상
+const CARD_BACK_COLOR = "#F5F0E8"; // 크림 아이보리
+const CARD_BACK_BORDER = "#E0D8CC"; // 베이지 테두리
+const CARD_BACK_SYMBOL_COLOR = "rgba(160, 148, 130, 0.6)"; // 따뜻한 세이지 베이지 심볼
+
 export default function PremiumSelectScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -43,9 +48,58 @@ export default function PremiumSelectScreen() {
     Array.from({ length: 63 }, () => new Animated.Value(0))
   ).current;
 
+  // 셔플 애니메이션 - 각 카드의 opacity와 translateY
+  const shuffleAnims = useRef<{ opacity: Animated.Value; translateY: Animated.Value }[]>(
+    Array.from({ length: 63 }, () => ({
+      opacity: new Animated.Value(0),
+      translateY: new Animated.Value(20),
+    }))
+  ).current;
+
+  const [isShuffling, setIsShuffling] = useState(true);
   const selectedCount = selectedCards.filter(Boolean).length;
 
+  // 진입 시 셔플 애니메이션 실행
+  useEffect(() => {
+    setIsShuffling(true);
+
+    // 카드들을 그룹으로 나눠서 순차적으로 fade-in
+    const GROUP_SIZE = 9; // 7개씩 묶어서 등장
+    const GROUP_DELAY = 60; // 그룹 간 딜레이 (ms)
+    const CARD_DELAY = 15; // 카드 간 딜레이 (ms)
+
+    const animations: Animated.CompositeAnimation[] = [];
+
+    for (let i = 0; i < 63; i++) {
+      const groupIndex = Math.floor(i / GROUP_SIZE);
+      const delay = groupIndex * GROUP_DELAY + (i % GROUP_SIZE) * CARD_DELAY;
+
+      animations.push(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.parallel([
+            Animated.timing(shuffleAnims[i].opacity, {
+              toValue: 1,
+              duration: 350,
+              useNativeDriver: true,
+            }),
+            Animated.timing(shuffleAnims[i].translateY, {
+              toValue: 0,
+              duration: 350,
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      );
+    }
+
+    Animated.parallel(animations).start(() => {
+      setIsShuffling(false);
+    });
+  }, []);
+
   const handleCardPress = (index: number) => {
+    if (isShuffling) return; // 셔플 중 선택 방지
     const card = shuffledCards[index];
 
     // 이미 선택된 카드 클릭 → 선택 해제
@@ -167,7 +221,9 @@ export default function PremiumSelectScreen() {
 
         {/* 진행 안내 */}
         <Text style={[styles.progressText, { color: colors.muted }]}>
-          {selectedCount < 3
+          {isShuffling
+            ? "카드를 섞는 중..."
+            : selectedCount < 3
             ? `${3 - selectedCount}장 더 선택해 주세요`
             : "3장 선택 완료 · 아래 버튼을 눌러 해석을 확인하세요"}
         </Text>
@@ -188,56 +244,63 @@ export default function PremiumSelectScreen() {
             });
 
             return (
-              <TouchableOpacity
+              <Animated.View
                 key={card.id}
-                onPress={() => handleCardPress(index)}
-                activeOpacity={0.85}
-                style={[
-                  styles.cardWrapper,
-                  { width: CARD_WIDTH, height: CARD_HEIGHT },
-                ]}
+                style={{
+                  opacity: shuffleAnims[index].opacity,
+                  transform: [{ translateY: shuffleAnims[index].translateY }],
+                }}
               >
-                {/* 카드 뒷면 (기본) */}
-                <Animated.View
+                <TouchableOpacity
+                  onPress={() => handleCardPress(index)}
+                  activeOpacity={0.85}
                   style={[
-                    styles.cardFace,
-                    styles.cardBack,
-                    {
-                      width: CARD_WIDTH,
-                      height: CARD_HEIGHT,
-                      transform: [{ rotateY: frontRotate }],
-                      backfaceVisibility: "hidden",
-                      position: "absolute",
-                    },
+                    styles.cardWrapper,
+                    { width: CARD_WIDTH, height: CARD_HEIGHT },
                   ]}
                 >
-                  <View style={styles.cardBackPattern}>
-                    <Text style={styles.cardBackSymbol}>✦</Text>
-                  </View>
-                </Animated.View>
+                  {/* 카드 뒷면 (기본) - 크림 아이보리 */}
+                  <Animated.View
+                    style={[
+                      styles.cardFace,
+                      styles.cardBack,
+                      {
+                        width: CARD_WIDTH,
+                        height: CARD_HEIGHT,
+                        transform: [{ rotateY: frontRotate }],
+                        backfaceVisibility: "hidden",
+                        position: "absolute",
+                      },
+                    ]}
+                  >
+                    <View style={styles.cardBackPattern}>
+                      <Text style={styles.cardBackSymbol}>✦</Text>
+                    </View>
+                  </Animated.View>
 
-                {/* 카드 앞면 (선택 후) */}
-                <Animated.View
-                  style={[
-                    styles.cardFace,
-                    {
-                      width: CARD_WIDTH,
-                      height: CARD_HEIGHT,
-                      backgroundColor: card.colorHex,
-                      transform: [{ rotateY: backRotate }],
-                      backfaceVisibility: "hidden",
-                      position: "absolute",
-                      borderWidth: isSelected ? 2.5 : 0,
-                      borderColor: "#FFFFFF",
-                    },
-                  ]}
-                >
-                  <Text style={styles.shapeSymbol}>{card.shapeSymbol}</Text>
-                  <Text style={styles.cardFrontColorName} numberOfLines={1}>
-                    {card.colorKor}
-                  </Text>
-                </Animated.View>
-              </TouchableOpacity>
+                  {/* 카드 앞면 (선택 후) */}
+                  <Animated.View
+                    style={[
+                      styles.cardFace,
+                      {
+                        width: CARD_WIDTH,
+                        height: CARD_HEIGHT,
+                        backgroundColor: card.colorHex,
+                        transform: [{ rotateY: backRotate }],
+                        backfaceVisibility: "hidden",
+                        position: "absolute",
+                        borderWidth: isSelected ? 2.5 : 0,
+                        borderColor: "#FFFFFF",
+                      },
+                    ]}
+                  >
+                    <Text style={styles.shapeSymbol}>{card.shapeSymbol}</Text>
+                    <Text style={styles.cardFrontColorName} numberOfLines={1}>
+                      {card.colorKor}
+                    </Text>
+                  </Animated.View>
+                </TouchableOpacity>
+              </Animated.View>
             );
           })}
         </View>
@@ -357,26 +420,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
+  // 크림 아이보리 카드 뒷면
   cardBack: {
-    backgroundColor: "#2A2A3A",
+    backgroundColor: CARD_BACK_COLOR,
+    borderWidth: 1,
+    borderColor: CARD_BACK_BORDER,
+    shadowColor: "#B8A898",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 3,
   },
   cardBackPattern: {
     alignItems: "center",
     justifyContent: "center",
   },
   cardBackSymbol: {
-    color: "rgba(255,255,255,0.3)",
+    color: CARD_BACK_SYMBOL_COLOR,
     fontSize: 18,
   },
   shapeSymbol: {
-    fontSize: 22,
-    color: "rgba(255,255,255,0.85)",
+    fontSize: 24,
+    color: "rgba(255,255,255,0.9)",
     marginBottom: 2,
   },
   cardFrontColorName: {
     fontSize: 8,
-    color: "rgba(255,255,255,0.9)",
-    fontWeight: "600",
+    color: "rgba(255,255,255,0.95)",
+    fontWeight: "700",
   },
   confirmButton: {
     borderRadius: 16,
