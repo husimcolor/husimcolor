@@ -115,6 +115,7 @@ export default function HomeScreen() {
 
         {/* 시작 버튼 */}
         <Animated.View style={[styles.buttonSection, { opacity: fadeAnim }]}>
+          {/* 무료 버전 버튼 */}
           <Pressable
             style={({ pressed }) => [
               styles.startButton,
@@ -123,11 +124,25 @@ export default function HomeScreen() {
             ]}
             onPress={handleStart}
           >
-            <Text style={styles.startButtonText}>컬러 선택 시작하기</Text>
+            <Text style={styles.startButtonText}>무료 체험 · 컬러 선택 시작하기</Text>
           </Pressable>
           <Text style={[styles.hint, { color: colors.muted }]}>
             직관적으로 끌리는 색을 선택해 주세요
           </Text>
+          {/* 유료 버전 버튼 */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.premiumButton,
+              pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+            ]}
+            onPress={() => router.push('/payment' as any)}
+          >
+            <View style={styles.premiumButtonInner}>
+              <Text style={styles.premiumButtonBadge}>NEW</Text>
+              <Text style={styles.premiumButtonText}>🎴 컬러+도형 심층 해석 (유료)</Text>
+            </View>
+            <Text style={styles.premiumButtonSub}>63장 카드 · 3만원 · 심층 분석</Text>
+          </Pressable>
         </Animated.View>
       </View>
     </ScreenContainer>
@@ -258,6 +273,41 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   hint: {
+    fontSize: 12,
+  },
+  premiumButton: {
+    width: '100%',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    backgroundColor: '#F5F0E8',
+    borderWidth: 1.5,
+    borderColor: '#C4956A55',
+    alignItems: 'center',
+    gap: 4,
+  },
+  premiumButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  premiumButtonBadge: {
+    backgroundColor: '#C4956A',
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  premiumButtonText: {
+    color: '#7A5A3A',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  premiumButtonSub: {
+    color: '#A08060',
     fontSize: 12,
   },
 });
