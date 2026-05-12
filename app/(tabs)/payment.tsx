@@ -5,68 +5,86 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Modal,
+  Image,
+  Dimensions,
   Platform,
-  Alert,
-  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 
-const FEATURES = [
-  { icon: "🎴", title: "63장 컬러+도형 심리카드", desc: "9가지 컬러 × 7가지 도형 조합 카드" },
-  { icon: "🔮", title: "3장 카드 심층 해석", desc: "무의식 · 현재 · 회복 방향 분석" },
-  { icon: "💚", title: "개인 맞춤 코칭 메시지", desc: "나이·직업·신앙 여부 반영 해석" },
-  { icon: "🌿", title: "보완 컬러 에너지 안내", desc: "지금 필요한 컬러 에너지 제안" },
-  { icon: "📋", title: "결과 저장 및 공유", desc: "이미지 저장 · SNS 공유 가능" },
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+// ─── 결제 상품 목록 ───────────────────────────────────────────────
+// 추후 커플 코칭(6만원) 등 상품 추가 시 이 배열에 항목만 추가하면 됩니다.
+const PAYMENT_PLANS = [
+  {
+    id: "single",
+    label: "개인 심층 해석",
+    price: "30,000원",
+    badge: "가장 인기",
+    badgeColor: "#8BAF8B",
+    description: "나의 컬러 에너지 흐름 심층 분석",
+    features: [
+      { icon: "🎴", title: "63장 컬러+도형 심리카드", desc: "9가지 컬러 × 7가지 도형 조합" },
+      { icon: "🔮", title: "3장 카드 심층 해석", desc: "무의식 · 현재 · 회복 방향 분석" },
+      { icon: "💚", title: "개인 맞춤 코칭 메시지", desc: "나이·직업·신앙 여부 반영 해석" },
+      { icon: "🌿", title: "보완 컬러 에너지 안내", desc: "지금 필요한 컬러 에너지 제안" },
+    ],
+    qrImage: require("@/assets/images/qr_30000.jpg") as number,
+    qrNote: "카카오페이 · 토스 · 계좌이체 가능",
+    available: true,
+  },
+  {
+    id: "couple",
+    label: "커플 심리코칭",
+    price: "60,000원",
+    badge: "준비 중",
+    badgeColor: "#C4956A",
+    description: "두 사람의 컬러 에너지 흐름 비교 분석",
+    features: [
+      { icon: "💑", title: "커플 카드 각자 선택", desc: "두 사람이 각각 3장씩 선택" },
+      { icon: "🔗", title: "관계 에너지 흐름 분석", desc: "두 사람의 에너지 조화·충돌 해석" },
+      { icon: "💬", title: "관계 맞춤 코칭 메시지", desc: "두 사람의 회복 방향 제안" },
+      { icon: "🌿", title: "함께하는 보완 컬러 안내", desc: "관계 회복에 도움이 되는 컬러 제안" },
+    ],
+    // 추후 커플 QR 이미지 추가 시: require("@/assets/images/qr_60000.jpg")
+    qrImage: null as number | null,
+    qrNote: "준비 중입니다",
+    available: false,
+  },
 ];
+
+type Plan = typeof PAYMENT_PLANS[0];
 
 export default function PaymentScreen() {
   const colors = useColors();
   const router = useRouter();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [qrVisible, setQrVisible] = useState(false);
 
-  const handlePayment = async () => {
-    setIsProcessing(true);
-    try {
-      // 결제 방식: 토스페이먼츠 결제 링크 또는 네이버 예약으로 연결
-      // 실제 결제 링크로 교체 필요
-      const paymentUrl = "https://booking.naver.com/booking/13/bizes/1076765";
-
-      if (Platform.OS === "web") {
-        // 웹에서는 새 탭으로 결제 페이지 열기
-        window.open(paymentUrl, "_blank");
-        // 결제 완료 후 사용자가 돌아왔을 때 처리
-        // 실제 결제 연동 시 webhook 또는 return URL로 처리
-        setTimeout(() => {
-          Alert.alert(
-            "결제 안내",
-            "결제 페이지에서 결제를 완료하신 후 아래 '결제 완료' 버튼을 눌러주세요.",
-            [
-              { text: "취소", style: "cancel" },
-              {
-                text: "결제 완료",
-                onPress: async () => {
-                  await AsyncStorage.setItem("premiumUnlocked", "true");
-                  router.push("/profile" as any);
-                },
-              },
-            ]
-          );
-        }, 1000);
-      } else {
-        Linking.openURL(paymentUrl);
-      }
-    } catch (e) {
-      Alert.alert("오류", "결제 페이지 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.");
-    } finally {
-      setIsProcessing(false);
+  const handlePayPress = (plan: Plan) => {
+    if (!plan.available) return;
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    setSelectedPlan(plan);
+    setQrVisible(true);
+  };
+
+  const handlePaymentDone = async () => {
+    await AsyncStorage.setItem("premiumUnlocked", "true");
+    setQrVisible(false);
+    if (Platform.OS !== "web") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    router.push("/profile" as any);
   };
 
   const handleDevSkip = async () => {
-    // 개발/테스트용 결제 건너뛰기
     await AsyncStorage.setItem("premiumUnlocked", "true");
     router.push("/profile" as any);
   };
@@ -79,15 +97,8 @@ export default function PaymentScreen() {
       >
         {/* 헤더 */}
         <View style={styles.header}>
-          <View style={styles.badgeRow}>
-            <View style={[styles.badge, { backgroundColor: "#8BAF8B22" }]}>
-              <Text style={[styles.badgeText, { color: "#8BAF8B" }]}>
-                컬러+도형 심리카드
-              </Text>
-            </View>
-          </View>
           <Text style={[styles.title, { color: colors.foreground }]}>
-            나의 컬러 에너지 흐름{"\n"}심층 해석
+            컬러 에너지 흐름{"\n"}심층 해석
           </Text>
           <Text style={[styles.subtitle, { color: colors.muted }]}>
             63장의 카드 중 마음이 이끄는 3장을 선택하고{"\n"}
@@ -95,58 +106,70 @@ export default function PaymentScreen() {
           </Text>
         </View>
 
-        {/* 가격 */}
-        <View
-          style={[
-            styles.priceBox,
-            { backgroundColor: "#8BAF8B18", borderColor: "#8BAF8B55" },
-          ]}
-        >
-          <Text style={[styles.priceLabel, { color: colors.muted }]}>
-            1회 해석 비용
-          </Text>
-          <Text style={[styles.price, { color: "#8BAF8B" }]}>30,000원</Text>
-          <Text style={[styles.priceNote, { color: colors.muted }]}>
-            결제 후 즉시 카드 선택 및 해석 진행
-          </Text>
-        </View>
-
-        {/* 포함 기능 */}
-        <View style={styles.featuresSection}>
-          <Text style={[styles.featuresTitle, { color: colors.foreground }]}>
-            포함 내용
-          </Text>
-          {FEATURES.map((f) => (
-            <View key={f.title} style={styles.featureRow}>
-              <Text style={styles.featureIcon}>{f.icon}</Text>
-              <View style={styles.featureTexts}>
-                <Text style={[styles.featureTitle, { color: colors.foreground }]}>
-                  {f.title}
-                </Text>
-                <Text style={[styles.featureDesc, { color: colors.muted }]}>
-                  {f.desc}
+        {/* 상품 카드 목록 */}
+        {PAYMENT_PLANS.map((plan) => (
+          <View
+            key={plan.id}
+            style={[
+              styles.planCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: plan.available ? "#8BAF8B55" : colors.border,
+                opacity: plan.available ? 1 : 0.65,
+              },
+            ]}
+          >
+            <View style={styles.planHeader}>
+              <Text style={[styles.planLabel, { color: colors.foreground }]}>
+                {plan.label}
+              </Text>
+              <View style={[styles.planBadge, { backgroundColor: plan.badgeColor + "22" }]}>
+                <Text style={[styles.planBadgeText, { color: plan.badgeColor }]}>
+                  {plan.badge}
                 </Text>
               </View>
             </View>
-          ))}
-        </View>
 
-        {/* 결제 버튼 */}
-        <TouchableOpacity
-          style={[
-            styles.payButton,
-            { backgroundColor: isProcessing ? colors.border : "#8BAF8B" },
-          ]}
-          onPress={handlePayment}
-          activeOpacity={0.8}
-          disabled={isProcessing}
-        >
-          <Text style={styles.payButtonText}>
-            {isProcessing ? "연결 중..." : "30,000원 결제하기"}
-          </Text>
-        </TouchableOpacity>
+            <Text style={[styles.planPrice, { color: plan.available ? "#8BAF8B" : colors.muted }]}>
+              {plan.price}
+            </Text>
+            <Text style={[styles.planDesc, { color: colors.muted }]}>
+              {plan.description}
+            </Text>
 
-        {/* 테스트 모드 버튼 - 개발/테스트용 */}
+            <View style={styles.featureList}>
+              {plan.features.map((f) => (
+                <View key={f.title} style={styles.featureRow}>
+                  <Text style={styles.featureIcon}>{f.icon}</Text>
+                  <View style={styles.featureTexts}>
+                    <Text style={[styles.featureTitle, { color: colors.foreground }]}>
+                      {f.title}
+                    </Text>
+                    <Text style={[styles.featureDesc, { color: colors.muted }]}>
+                      {f.desc}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.payButton,
+                { backgroundColor: plan.available ? "#8BAF8B" : colors.border },
+              ]}
+              onPress={() => handlePayPress(plan)}
+              activeOpacity={plan.available ? 0.8 : 1}
+              disabled={!plan.available}
+            >
+              <Text style={styles.payButtonText}>
+                {plan.available ? `${plan.price} 결제하기` : "준비 중입니다"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        {/* 테스트 모드 버튼 */}
         <TouchableOpacity
           style={[styles.testButton, { borderColor: "#C4956A" }]}
           onPress={handleDevSkip}
@@ -177,32 +200,89 @@ export default function PaymentScreen() {
           · 결제 관련 문의: 카카오톡 채널 @휴심컬러
         </Text>
       </ScrollView>
+
+      {/* QR 결제 모달 */}
+      <Modal
+        visible={qrVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setQrVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.foreground }]}>
+                QR 코드로 결제하기
+              </Text>
+              <TouchableOpacity
+                onPress={() => setQrVisible(false)}
+                style={styles.closeBtn}
+              >
+                <Text style={[styles.closeBtnText, { color: colors.muted }]}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.amountBox, { backgroundColor: "#8BAF8B15", borderColor: "#8BAF8B44" }]}>
+              <Text style={[styles.amountLabel, { color: colors.muted }]}>결제 금액</Text>
+              <Text style={[styles.amountValue, { color: "#8BAF8B" }]}>
+                {selectedPlan?.price}
+              </Text>
+              <Text style={[styles.amountNote, { color: colors.muted }]}>
+                {selectedPlan?.qrNote}
+              </Text>
+            </View>
+
+            {selectedPlan?.qrImage != null && (
+              <View style={styles.qrWrapper}>
+                <Image
+                  source={selectedPlan.qrImage}
+                  style={styles.qrImage}
+                  resizeMode="contain"
+                />
+              </View>
+            )}
+
+            <Text style={[styles.qrGuide, { color: colors.muted }]}>
+              카카오페이 · 토스 · 계좌이체 앱에서{"\n"}
+              QR 코드를 스캔하여 결제해 주세요
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.doneButton, { backgroundColor: "#8BAF8B" }]}
+              onPress={handlePaymentDone}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.doneButtonText}>결제 완료했어요 →</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={() => setQrVisible(false)}
+            >
+              <Text style={[styles.cancelBtnText, { color: colors.muted }]}>
+                나중에 결제하기
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
 
+const QR_SIZE = Math.min(SCREEN_WIDTH * 0.62, 240);
+
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 48,
+    gap: 16,
   },
   header: {
     alignItems: "center",
-    marginBottom: 24,
-    gap: 10,
-  },
-  badgeRow: {
-    flexDirection: "row",
-  },
-  badge: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  badgeText: {
-    fontSize: 13,
-    fontWeight: "600",
+    marginBottom: 8,
+    gap: 8,
   },
   title: {
     fontSize: 26,
@@ -216,82 +296,76 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
-  priceBox: {
-    borderRadius: 16,
+  planCard: {
+    borderRadius: 20,
     borderWidth: 1,
     padding: 20,
+    gap: 10,
+  },
+  planHeader: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
-    gap: 4,
+    justifyContent: "space-between",
   },
-  priceLabel: {
-    fontSize: 13,
-  },
-  price: {
-    fontSize: 36,
-    fontWeight: "800",
-    letterSpacing: -1,
-  },
-  priceNote: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  featuresSection: {
-    marginBottom: 28,
-    gap: 14,
-  },
-  featuresTitle: {
-    fontSize: 16,
+  planLabel: {
+    fontSize: 18,
     fontWeight: "700",
+  },
+  planBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  planBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  planPrice: {
+    fontSize: 32,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  planDesc: {
+    fontSize: 13,
+    marginTop: -4,
+  },
+  featureList: {
+    gap: 10,
+    marginTop: 4,
     marginBottom: 4,
   },
   featureRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 12,
+    gap: 10,
   },
   featureIcon: {
-    fontSize: 22,
-    width: 32,
+    fontSize: 20,
+    width: 28,
     textAlign: "center",
   },
   featureTexts: {
     flex: 1,
-    gap: 2,
+    gap: 1,
   },
   featureTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
   featureDesc: {
-    fontSize: 13,
+    fontSize: 12,
   },
   payButton: {
-    borderRadius: 16,
-    paddingVertical: 18,
+    borderRadius: 14,
+    paddingVertical: 16,
     alignItems: "center",
-    marginBottom: 12,
+    marginTop: 4,
   },
   payButtonText: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
     letterSpacing: 0.3,
-  },
-  freeButton: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  freeButtonText: {
-    fontSize: 14,
-  },
-  notice: {
-    fontSize: 12,
-    lineHeight: 20,
-    textAlign: "center",
   },
   testButton: {
     borderRadius: 12,
@@ -300,7 +374,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     alignItems: "center",
-    marginBottom: 12,
     gap: 4,
     backgroundColor: "#FFF8F0",
   },
@@ -311,5 +384,101 @@ const styles = StyleSheet.create({
   },
   testButtonText: {
     fontSize: 13,
+  },
+  freeButton: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  freeButtonText: {
+    fontSize: 14,
+  },
+  notice: {
+    fontSize: 12,
+    lineHeight: 20,
+    textAlign: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "flex-end",
+  },
+  modalCard: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 40,
+    gap: 16,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  closeBtnText: {
+    fontSize: 18,
+  },
+  amountBox: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+    alignItems: "center",
+    gap: 2,
+  },
+  amountLabel: {
+    fontSize: 12,
+  },
+  amountValue: {
+    fontSize: 32,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  amountNote: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  qrWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    alignSelf: "center",
+  },
+  qrImage: {
+    width: QR_SIZE,
+    height: QR_SIZE,
+  },
+  qrGuide: {
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  doneButton: {
+    borderRadius: 14,
+    paddingVertical: 17,
+    alignItems: "center",
+  },
+  doneButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  cancelBtn: {
+    alignItems: "center",
+    paddingVertical: 6,
+  },
+  cancelBtnText: {
+    fontSize: 14,
   },
 });
