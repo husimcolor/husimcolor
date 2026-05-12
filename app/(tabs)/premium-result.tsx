@@ -277,22 +277,40 @@ export default function PremiumResultScreen() {
             colors={colors}
           >
             <View style={styles.cardDetailContent}>
-              <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: colors.muted }]}>
-                  에너지 흐름
-                </Text>
-                <Text style={[styles.detailText, { color: colors.foreground }]}>
-                  {card.psychologyFlow}
-                </Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: colors.muted }]}>
-                  성격 흐름
-                </Text>
-                <Text style={[styles.detailText, { color: colors.foreground }]}>
-                  {card.personalityFlow}
-                </Text>
-              </View>
+              {/* 1번 카드: 무의식/내면 에너지 흐름 */}
+              {i === 0 && (
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.muted }]}>
+                    무의식 에너지 흐름
+                  </Text>
+                  <Text style={[styles.detailText, { color: colors.foreground }]}>
+                    {card.psychologyFlow}
+                  </Text>
+                </View>
+              )}
+              {/* 2번 카드: 현재 에너지 흐름 */}
+              {i === 1 && (
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.muted }]}>
+                    현재 에너지 흐름
+                  </Text>
+                  <Text style={[styles.detailText, { color: colors.foreground }]}>
+                    {card.personalityFlow}
+                  </Text>
+                </View>
+              )}
+              {/* 3번 카드: 회복 방향 */}
+              {i === 2 && (
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: colors.muted }]}>
+                    회복 방향
+                  </Text>
+                  <Text style={[styles.detailText, { color: colors.foreground }]}>
+                    {sanitizeRecovery(card.recoveryDirection, profile?.faith ?? '')}
+                  </Text>
+                </View>
+              )}
+              {/* 감정 패턴 - 공통 */}
               <View style={styles.detailRow}>
                 <Text style={[styles.detailLabel, { color: colors.muted }]}>
                   감정 패턴
@@ -301,6 +319,7 @@ export default function PremiumResultScreen() {
                   {card.emotionPattern}
                 </Text>
               </View>
+              {/* 장점 - 공통 */}
               <View style={styles.detailRow}>
                 <Text style={[styles.detailLabel, { color: colors.muted }]}>
                   장점
@@ -329,18 +348,6 @@ export default function PremiumResultScreen() {
                   ))}
                 </View>
               </View>
-              {i === 2 && (
-                <View style={styles.detailRow}>
-                  <Text style={[styles.detailLabel, { color: colors.muted }]}>
-                    회복 방향
-                  </Text>
-                  <Text
-                    style={[styles.detailText, { color: colors.foreground }]}
-                  >
-                    {sanitizeRecovery(card.recoveryDirection, profile?.faith ?? '')}
-                  </Text>
-                </View>
-              )}
             </View>
           </SectionCard>
         ))}
@@ -365,17 +372,33 @@ export default function PremiumResultScreen() {
                 ];
                 // 강한 확장·추진 에너지 콜러: 정화·안정 회복 방향에는 제외
                 const HIGH_ENERGY = ['레드', '오렌지', '마젠타'];
+                // 유사 계열 그룹: 같은 그룹에서 하나만 추천
+                const SIMILAR_GROUPS: string[][] = [
+                  ['블루', '네이비', '인디고', '미드나이트'],
+                  ['레드', '코랄', '마젠타'],
+                  ['그린', '세이지그린', '올리브'],
+                  ['라벤더', '라일랙', '퍼플'],
+                  ['화이트', '아이보리', '크림', '비이지'],
+                  ['민트', '스카이블루', '라이트블루', '틸'],
+                ];
                 const isCalm = CALM_RECOVERY.includes(card3.colorKor);
-                // card3 콜러를 먼저 정렬하고, card1 콜러를 뒤에 추가
+                // card3 보완 컬러를 우선, card1 보완 컬러를 보조로 추가
                 const allColors = [...card3.complementColors, ...card1.complementColors];
                 const seen = new Set<string>();
+                const usedGroups = new Set<number>();
                 return allColors.filter(c => {
                   if (seen.has(c.name)) return false;
                   seen.add(c.name);
                   // 회복 방향이 안정·정리 성향이면 고에너지 콜러는 제외
                   if (isCalm && HIGH_ENERGY.includes(c.name)) return false;
+                  // 유사 계열 중복 방지: 같은 그룹에서 이미 추천된 컬러가 있으면 제외
+                  const groupIdx = SIMILAR_GROUPS.findIndex(g => g.includes(c.name));
+                  if (groupIdx >= 0) {
+                    if (usedGroups.has(groupIdx)) return false;
+                    usedGroups.add(groupIdx);
+                  }
                   return true;
-                });
+                }).slice(0, 3); // 최대 3개까지만 표시
               })().map((c) => (
                 <View
                   key={c.name}
