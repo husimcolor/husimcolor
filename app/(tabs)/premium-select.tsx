@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
-  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -16,10 +15,9 @@ import { useColors } from "@/hooks/use-colors";
 import { CARD_DATA, type CardData } from "@/constants/cardData";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_WIDTH = (SCREEN_WIDTH - 48 - 32) / 5; // 5 columns
+const CARD_WIDTH = (SCREEN_WIDTH - 48 - 32) / 5;
 const CARD_HEIGHT = CARD_WIDTH * 1.5;
 
-// 카드 배열 셔플
 function shuffleArray<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -32,10 +30,124 @@ function shuffleArray<T>(arr: T[]): T[] {
 const POSITION_LABELS = ["무의식 · 내면 에너지", "현재 현실 에너지", "미래 · 회복 · 희망 에너지"];
 const POSITION_COLORS = ["#8BAF8B", "#B5A0C8", "#C4956A"];
 
-// 따뜻한 연베이지 카드 뒷면 색상
-const CARD_BACK_COLOR = "#EDE8DF"; // 연베이지 (크림보다 약간 더 따뜻하고 구분감 있는 톤)
-const CARD_BACK_BORDER = "#C8BFB0"; // 베이지 테두리 (더 선명하게)
-const CARD_BACK_SYMBOL_COLOR = "rgba(140, 128, 112, 0.65)"; // 따뜻한 브라운 세이지 심볼
+const CARD_BACK_COLOR = "#EDE8DF";
+const CARD_BACK_BORDER = "#C8BFB0";
+const CARD_BACK_SYMBOL_COLOR = "rgba(140, 128, 112, 0.65)";
+
+// 각 카드에 개별 Animated.Value를 생성하는 컴포넌트
+function AnimatedCard({
+  card,
+  index,
+  isFlipped,
+  isSelected,
+  flipAnim,
+  revealDelay,
+  onPress,
+}: {
+  card: CardData;
+  index: number;
+  isFlipped: boolean;
+  isSelected: boolean;
+  flipAnim: Animated.Value;
+  revealDelay: number;
+  onPress: () => void;
+}) {
+  const revealAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      Animated.timing(revealAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, revealDelay);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const frontRotate = flipAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "180deg"],
+  });
+  const backRotate = flipAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["180deg", "360deg"],
+  });
+
+  return (
+    <Animated.View
+      style={{
+        opacity: revealAnim,
+        transform: [
+          {
+            translateY: revealAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [16, 0],
+            }),
+          },
+        ],
+      }}
+    >
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.85}
+        style={[styles.cardWrapper, { width: CARD_WIDTH, height: CARD_HEIGHT }]}
+      >
+        {/* 카드 뒷면 - 연베이지 */}
+        <Animated.View
+          style={[
+            styles.cardFace,
+            styles.cardBack,
+            {
+              width: CARD_WIDTH,
+              height: CARD_HEIGHT,
+              transform: [{ rotateY: frontRotate }],
+              backfaceVisibility: "hidden",
+              position: "absolute",
+            },
+          ]}
+        >
+          <Text style={styles.cardBackSymbol}>✦</Text>
+        </Animated.View>
+
+        {/* 카드 앞면 */}
+        <Animated.View
+          style={[
+            styles.cardFace,
+            {
+              width: CARD_WIDTH,
+              height: CARD_HEIGHT,
+              backgroundColor: card.colorHex,
+              transform: [{ rotateY: backRotate }],
+              backfaceVisibility: "hidden",
+              position: "absolute",
+              borderWidth: isSelected ? 2.5 : 0,
+              borderColor: "#FFFFFF",
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.shapeSymbol,
+              card.colorKor === "화이트" && { color: "rgba(30, 30, 30, 0.85)" },
+            ]}
+          >
+            {card.shapeSymbol}
+          </Text>
+          <Text
+            style={[
+              styles.cardFrontColorName,
+              card.colorKor === "화이트" && { color: "rgba(30, 30, 30, 0.9)" },
+            ]}
+            numberOfLines={1}
+          >
+            {card.colorKor}
+          </Text>
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
 
 export default function PremiumSelectScreen() {
   const colors = useColors();
@@ -44,105 +156,66 @@ export default function PremiumSelectScreen() {
   const [shuffledCards] = useState<CardData[]>(() => shuffleArray(CARD_DATA));
   const [selectedCards, setSelectedCards] = useState<(CardData | null)[]>([null, null, null]);
   const [flippedIndices, setFlippedIndices] = useState<Set<number>>(new Set());
+  const [isShuffling, setIsShuffling] = useState(true);
+
+  // 각 카드의 flip 애니메이션
   const flipAnims = useRef<Animated.Value[]>(
     Array.from({ length: 63 }, () => new Animated.Value(0))
   ).current;
 
-  // 셔플 애니메이션 - 각 카드의 opacity와 translateY
-  const shuffleAnims = useRef<{ opacity: Animated.Value; translateY: Animated.Value }[]>(
-    Array.from({ length: 63 }, () => ({
-      opacity: new Animated.Value(0),
-      translateY: new Animated.Value(20),
-    }))
-  ).current;
-
-  const [isShuffling, setIsShuffling] = useState(true);
   const selectedCount = selectedCards.filter(Boolean).length;
 
-  // 진입 시 셔플 애니메이션 실행
+  // 셔플 완료 타이머 - 마지막 카드가 나타나는 시간 이후 isShuffling = false
   useEffect(() => {
-    setIsShuffling(true);
-
-    // 카드들을 그룹으로 나눠서 순차적으로 fade-in
-    const GROUP_SIZE = 9; // 7개씩 묶어서 등장
-    const GROUP_DELAY = 60; // 그룹 간 딜레이 (ms)
-    const CARD_DELAY = 15; // 카드 간 딜레이 (ms)
-
-    const animations: Animated.CompositeAnimation[] = [];
-
-    for (let i = 0; i < 63; i++) {
-      const groupIndex = Math.floor(i / GROUP_SIZE);
-      const delay = groupIndex * GROUP_DELAY + (i % GROUP_SIZE) * CARD_DELAY;
-
-      animations.push(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.parallel([
-            Animated.timing(shuffleAnims[i].opacity, {
-              toValue: 1,
-              duration: 350,
-              useNativeDriver: true,
-            }),
-            Animated.timing(shuffleAnims[i].translateY, {
-              toValue: 0,
-              duration: 350,
-              useNativeDriver: true,
-            }),
-          ]),
-        ])
-      );
-    }
-
-    Animated.parallel(animations).start(() => {
+    // 63장 카드의 마지막 딜레이: 62 * 18 = 1116ms + 300ms 애니메이션 = 약 1420ms
+    const timer = setTimeout(() => {
       setIsShuffling(false);
-    });
+    }, 1500);
+    return () => clearTimeout(timer);
   }, []);
 
-  const handleCardPress = (index: number) => {
-    if (isShuffling) return; // 셔플 중 선택 방지
-    const card = shuffledCards[index];
+  const handleCardPress = useCallback(
+    (index: number) => {
+      if (isShuffling) return;
+      const card = shuffledCards[index];
 
-    // 이미 선택된 카드 클릭 → 선택 해제
-    const selectedIndex = selectedCards.findIndex(
-      (c) => c?.id === card.id
-    );
-    if (selectedIndex !== -1) {
-      const newSelected = [...selectedCards];
-      newSelected[selectedIndex] = null;
-      setSelectedCards(newSelected);
-      setFlippedIndices((prev) => {
-        const next = new Set(prev);
-        next.delete(index);
-        return next;
-      });
+      const selectedIndex = selectedCards.findIndex((c) => c?.id === card.id);
+      if (selectedIndex !== -1) {
+        const newSelected = [...selectedCards];
+        newSelected[selectedIndex] = null;
+        setSelectedCards(newSelected);
+        setFlippedIndices((prev) => {
+          const next = new Set(prev);
+          next.delete(index);
+          return next;
+        });
+        Animated.timing(flipAnims[index], {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+        return;
+      }
+
+      if (selectedCount >= 3) return;
+
       Animated.timing(flipAnims[index], {
-        toValue: 0,
-        duration: 300,
+        toValue: 1,
+        duration: 400,
         useNativeDriver: true,
       }).start();
-      return;
-    }
 
-    // 이미 3장 선택된 경우 무시
-    if (selectedCount >= 3) return;
+      setFlippedIndices((prev) => new Set([...prev, index]));
 
-    // 카드 뒤집기 애니메이션
-    Animated.timing(flipAnims[index], {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start();
-
-    setFlippedIndices((prev) => new Set([...prev, index]));
-
-    // 빈 슬롯에 추가
-    const newSelected = [...selectedCards];
-    const emptyIndex = newSelected.findIndex((c) => c === null);
-    if (emptyIndex !== -1) {
-      newSelected[emptyIndex] = card;
-      setSelectedCards(newSelected);
-    }
-  };
+      const newSelected = [...selectedCards];
+      const emptyIndex = newSelected.findIndex((c) => c === null);
+      if (emptyIndex !== -1) {
+        newSelected[emptyIndex] = card;
+        setSelectedCards(newSelected);
+      }
+    },
+    [isShuffling, shuffledCards, selectedCards, selectedCount, flipAnims]
+  );
 
   const handleConfirm = async () => {
     if (selectedCount < 3) return;
@@ -207,10 +280,7 @@ export default function PremiumSelectScreen() {
                 )}
               </View>
               <Text
-                style={[
-                  styles.slotLabel,
-                  { color: POSITION_COLORS[i] },
-                ]}
+                style={[styles.slotLabel, { color: POSITION_COLORS[i] }]}
                 numberOfLines={2}
               >
                 {POSITION_LABELS[i]}
@@ -222,9 +292,9 @@ export default function PremiumSelectScreen() {
         {/* 진행 안내 */}
         <Text style={[styles.progressText, { color: colors.muted }]}>
           {isShuffling
-            ? "카드를 섞는 중..."
+            ? "✨ 카드를 섞는 중..."
             : selectedCount < 3
-            ? `${3 - selectedCount}장 더 선택해 주세요`
+            ? `마음이 이끄는 카드를 ${3 - selectedCount}장 더 선택해 주세요`
             : "3장 선택 완료 · 아래 버튼을 눌러 해석을 확인하세요"}
         </Text>
 
@@ -233,82 +303,20 @@ export default function PremiumSelectScreen() {
           {shuffledCards.map((card, index) => {
             const isFlipped = flippedIndices.has(index);
             const isSelected = selectedCards.some((c) => c?.id === card.id);
-
-            const frontRotate = flipAnims[index].interpolate({
-              inputRange: [0, 1],
-              outputRange: ["0deg", "180deg"],
-            });
-            const backRotate = flipAnims[index].interpolate({
-              inputRange: [0, 1],
-              outputRange: ["180deg", "360deg"],
-            });
+            // 카드마다 순차적 딜레이 (0~62번 카드: 0ms ~ 1116ms)
+            const revealDelay = index * 18;
 
             return (
-              <Animated.View
+              <AnimatedCard
                 key={card.id}
-                style={{
-                  opacity: shuffleAnims[index].opacity,
-                  transform: [{ translateY: shuffleAnims[index].translateY }],
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() => handleCardPress(index)}
-                  activeOpacity={0.85}
-                  style={[
-                    styles.cardWrapper,
-                    { width: CARD_WIDTH, height: CARD_HEIGHT },
-                  ]}
-                >
-                  {/* 카드 뒷면 (기본) - 크림 아이보리 */}
-                  <Animated.View
-                    style={[
-                      styles.cardFace,
-                      styles.cardBack,
-                      {
-                        width: CARD_WIDTH,
-                        height: CARD_HEIGHT,
-                        transform: [{ rotateY: frontRotate }],
-                        backfaceVisibility: "hidden",
-                        position: "absolute",
-                      },
-                    ]}
-                  >
-                    <View style={styles.cardBackPattern}>
-                      <Text style={styles.cardBackSymbol}>✦</Text>
-                    </View>
-                  </Animated.View>
-
-                  {/* 카드 앞면 (선택 후) */}
-                  <Animated.View
-                    style={[
-                      styles.cardFace,
-                      {
-                        width: CARD_WIDTH,
-                        height: CARD_HEIGHT,
-                        backgroundColor: card.colorHex,
-                        transform: [{ rotateY: backRotate }],
-                        backfaceVisibility: "hidden",
-                        position: "absolute",
-                        borderWidth: isSelected ? 2.5 : 0,
-                        borderColor: "#FFFFFF",
-                      },
-                    ]}
-                  >
-                  <Text style={[
-                    styles.shapeSymbol,
-                    // 화이트 카드는 도형을 블랙으로 표시
-                    card.colorKor === '화이트' && { color: 'rgba(30, 30, 30, 0.85)' },
-                  ]}>{card.shapeSymbol}</Text>
-                  <Text style={[
-                    styles.cardFrontColorName,
-                    // 화이트 카드는 텍스트도 다크로
-                    card.colorKor === '화이트' && { color: 'rgba(30, 30, 30, 0.9)' },
-                  ]} numberOfLines={1}>
-                    {card.colorKor}
-                  </Text>
-                  </Animated.View>
-                </TouchableOpacity>
-              </Animated.View>
+                card={card}
+                index={index}
+                isFlipped={isFlipped}
+                isSelected={isSelected}
+                flipAnim={flipAnims[index]}
+                revealDelay={revealDelay}
+                onPress={() => handleCardPress(index)}
+              />
             );
           })}
         </View>
@@ -326,7 +334,9 @@ export default function PremiumSelectScreen() {
           disabled={selectedCount < 3}
         >
           <Text style={styles.confirmButtonText}>
-            {selectedCount === 3 ? "컬러 에너지 흐름 해석하기 →" : `${selectedCount} / 3 선택됨`}
+            {selectedCount === 3
+              ? "컬러 에너지 흐름 해석하기 →"
+              : `${selectedCount} / 3 선택됨`}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -411,6 +421,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 13,
     marginBottom: 16,
+    lineHeight: 20,
   },
   cardGrid: {
     flexDirection: "row",
@@ -428,7 +439,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
-  // 연베이지 카드 뒷면 (입체감 강화)
   cardBack: {
     backgroundColor: CARD_BACK_COLOR,
     borderWidth: 1.5,
@@ -438,10 +448,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 5,
     elevation: 4,
-  },
-  cardBackPattern: {
-    alignItems: "center",
-    justifyContent: "center",
   },
   cardBackSymbol: {
     color: CARD_BACK_SYMBOL_COLOR,
