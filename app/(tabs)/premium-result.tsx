@@ -322,11 +322,19 @@ export default function PremiumResultScreen() {
             </Text>
             <View style={styles.tagsRow}>
               {(() => {
-                const allColors = [...card1.complementColors, ...card3.complementColors];
+                // 회복 방향 컨셉트별 충돌 콜러 정의
+                // 안정·정리·단순화 성향의 회복 방향일 때 고에너지 콜러는 우선순위 낙실
+                const CALM_RECOVERY = ['화이트', '아이보리', '비이지', '그린', '네이비', '블루', '라이트블루', '스카이블루', '라욤더', '실버'];
+                const HIGH_ENERGY = ['레드', '오렌지', '마젠타', '핑크'];
+                const isCalm = CALM_RECOVERY.includes(card3.colorKor);
+                // card3 콜러를 먼저 정렬하고, card1 콜러를 뒤에 추가
+                const allColors = [...card3.complementColors, ...card1.complementColors];
                 const seen = new Set<string>();
                 return allColors.filter(c => {
                   if (seen.has(c.name)) return false;
                   seen.add(c.name);
+                  // 회복 방향이 안정·정리 성향이면 고에너지 콜러는 제외
+                  if (isCalm && HIGH_ENERGY.includes(c.name)) return false;
                   return true;
                 });
               })().map((c) => (
@@ -537,13 +545,32 @@ export default function PremiumResultScreen() {
   );
 }
 
+// energyTitle 끝에 '에너지'가 포함되어 있으면 '의 에너지' 대신 자연스러운 조사로 연결
+function toFlowPhrase(title: string): string {
+  if (title.endsWith('에너지')) {
+    return `${title}의 흐름이 나타나고 있으며`;
+  }
+  if (title.endsWith('흐름') || title.endsWith('균형') || title.endsWith('조화')) {
+    return `${title}이 이어지고 있으며`;
+  }
+  return `${title}의 에너지가 흐르고 있으며`;
+}
+
+function toRecoveryPhrase(title: string): string {
+  if (title.endsWith('에너지')) {
+    return `${title}이 회복의 방향을 안내하고 있습니다`;
+  }
+  if (title.endsWith('흐름') || title.endsWith('균형') || title.endsWith('조화')) {
+    return `${title}이 회복의 방향을 안내하고 있습니다`;
+  }
+  return `${title}의 에너지가 회복의 방향을 안내하고 있습니다`;
+}
+
 function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardData): string {
-  return (
-    `내면에서는 ${card1.energyTitle}의 에너지가 흐르고 있으며, ` +
-    `현재는 ${card2.energyTitle}의 흐름 속에 있습니다.\n` +
-    `${card3.energyTitle}의 에너지가 회복의 방향을 안내하고 있습니다.\n\n` +
-    card3.coachingMessage
-  );
+  const line1 = `내면에서는 ${toFlowPhrase(card1.energyTitle)}, `;
+  const line2 = `현재는 ${card2.energyTitle.endsWith('에너지') ? card2.energyTitle + '의 흐름' : card2.energyTitle} 속에 있습니다.\n`;
+  const line3 = `${toRecoveryPhrase(card3.energyTitle)}.\n\n`;
+  return line1 + line2 + line3 + card3.coachingMessage;
 }
 
 const styles = StyleSheet.create({
