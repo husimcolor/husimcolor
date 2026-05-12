@@ -27,6 +27,20 @@ type JobCoaching = {
   coachingNote: string;  // 종합 코칭 메시지 하단에 추가될 한 문장
 };
 
+// 무교 사용자에게는 기도·예배 표현을 명상·조용한 시간으로 치환
+function sanitizeRecovery(text: string, faith: string): string {
+  if (faith === '기독교' || faith === '천주교') return text;
+  return text
+    .replace(/기도, 예배, 상담/g, '명상, 감정 정리, 상담')
+    .replace(/기도나 묵상/g, '명상이나 조용한 성찰')
+    .replace(/기도, 명상/g, '명상, 조용한 시간')
+    .replace(/기도나 명상/g, '명상이나 조용한 시간')
+    .replace(/\(기도 등\)/g, '(감정 일기, 조용한 산책 등)')
+    .replace(/\(글쓰기, 기도, 정리 등\)/g, '(글쓰기, 감정 정리, 산책 등)')
+    .replace(/기도/g, '명상')
+    .replace(/예배/g, '조용한 휴식');
+}
+
 function getJobCoaching(job: string, faith: string): JobCoaching {
   const faithNote =
     faith === "기독교"
@@ -302,7 +316,7 @@ export default function PremiumResultScreen() {
                   <Text
                     style={[styles.detailText, { color: colors.foreground }]}
                   >
-                    {card.recoveryDirection}
+                    {sanitizeRecovery(card.recoveryDirection, profile?.faith ?? '')}
                   </Text>
                 </View>
               )}
@@ -322,10 +336,14 @@ export default function PremiumResultScreen() {
             </Text>
             <View style={styles.tagsRow}>
               {(() => {
-                // 회복 방향 컨셉트별 충돌 콜러 정의
-                // 안정·정리·단순화 성향의 회복 방향일 때 고에너지 콜러는 우선순위 낙실
-                const CALM_RECOVERY = ['화이트', '아이보리', '비이지', '그린', '네이비', '블루', '라이트블루', '스카이블루', '라욤더', '실버'];
-                const HIGH_ENERGY = ['레드', '오렌지', '마젠타', '핑크'];
+                // 정화·안정·내면 성향 콜러: 레드·오렌지 같은 고에너지 콜러와 충돌
+                const CALM_RECOVERY = [
+                  '화이트', '아이보리', '비이지', '그린', '세이지그린',
+                  '네이비', '블루', '라이트블루', '스카이블루',
+                  '라벤더', '퍼플', '라일랙', '인디고', '실버', '미드나이트',
+                ];
+                // 강한 확장·추진 에너지 콜러: 정화·안정 회복 방향에는 제외
+                const HIGH_ENERGY = ['레드', '오렌지', '마젠타'];
                 const isCalm = CALM_RECOVERY.includes(card3.colorKor);
                 // card3 콜러를 먼저 정렬하고, card1 콜러를 뒤에 추가
                 const allColors = [...card3.complementColors, ...card1.complementColors];
