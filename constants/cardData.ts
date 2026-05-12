@@ -86,7 +86,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 열정은 주변을 살리는 에너지입니다.\n그 에너지를 먼저 자신에게 선물해보세요.',
     wellness: {
       tea: '생강차 또는 쌍화차',
-      breath: '깊게 들이쉬고 천천히 내쉬기 (4-6 호흡)',
+      breath: '숨을 깊게 들이마시고 천천히 내쉬는 호흡',
       routine: [
         '햇빛 아래 10분 걷기',
         '몸을 움직이는 가벼운 스트레칭',
@@ -110,7 +110,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '앞으로 나아가는 힘이 있습니다.\n방향을 잘 잡으면 그 힘이 더 빛납니다.',
     wellness: {
       tea: '대추차 또는 생강차',
-      breath: '깊고 리듬감 있는 복식호흡',
+      breath: '호흡의 리듬을 천천히 안정시키는 시간',
       routine: [
         '아침 햇빛 쬐기',
         '짧은 산책으로 에너지 발산',
@@ -134,7 +134,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '감정을 꺼내는 것은 용기 있는 일입니다.\n그 감정들이 당신을 더 깊이 이해하게 해줍니다.',
     wellness: {
       tea: '쌍화차 또는 루이보스',
-      breath: '천천히 깊게 호흡하기 (긴 내쉬기)',
+      breath: '편안하게 숨을 길게 내쉬는 복식호흡',
       routine: [
         '충분한 수면 확보',
         '감정 일기 쓰기',
@@ -158,7 +158,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '열정과 안정은 함께 갈 수 있습니다.\n하나씩 쌓아가는 당신의 흐름을 믿어보세요.',
     wellness: {
       tea: '대추차 또는 국화차',
-      breath: '4-4-4 박스 호흡 (들이쉬기-멈추기-내쉬기)',
+      breath: '마음을 안정시키는 느린 복식호흡',
       routine: [
         '규칙적인 취침 시간 지키기',
         '하루 루틴 정리하기',
@@ -182,7 +182,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '변화는 당신에게 새로운 가능성을 열어줍니다.\n그 흐름 안에서 자신을 잃지 마세요.',
     wellness: {
       tea: '생강차 또는 계피차',
-      breath: '리듬감 있는 복식호흡',
+      breath: '몸의 긴장을 천천히 풀어주는 호흡',
       routine: [
         '짧은 달리기 또는 빠른 걷기',
         '오늘의 우선순위 3가지 정하기',
@@ -206,7 +206,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 다양한 에너지는 큰 자산입니다.\n지금은 그 에너지를 한 곳에 모아볼 시간입니다.',
     wellness: {
       tea: '쌍화차 또는 대추차',
-      breath: '깊은 복식호흡 (5초 들이쉬기, 7초 내쉬기)',
+      breath: '숨을 깊이 들이마시고 천천히 내쉬는 호흡',
       routine: [
         '햇빛 아래 산책',
         '좋아하는 음악 들으며 휴식',
@@ -230,7 +230,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '함께할 때 빛나는 당신의 에너지가 있습니다.\n그 에너지를 먼저 자신에게도 나눠주세요.',
     wellness: {
       tea: '루이보스 또는 생강차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '글쓰기 또는 그림 그리기',
@@ -258,7 +258,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 따뜻함은 세상을 밝힙니다.\n그 온기를 자신에게도 충분히 주세요.',
     wellness: {
       tea: '캐모마일 또는 루이보스',
-      breath: '부드러운 복식호흡 (코로 들이쉬고 입으로 내쉬기)',
+      breath: '편안하게 숨을 길게 내쉬는 복식호흡',
       routine: [
         '신뢰하는 사람과 따뜻한 대화',
         '좋아하는 음식 천천히 즐기기',
@@ -282,7 +282,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신 안에 아직 꺼내지 못한 창의성이 있습니다.\n오늘 그것을 작게라도 표현해보세요.',
     wellness: {
       tea: '루이보스 또는 오렌지 허브차',
-      breath: '리듬감 있는 복식호흡',
+      breath: '몸의 긴장을 천천히 풀어주는 호흡',
       routine: [
         '새로운 사람과 짧은 대화',
         '창의적인 활동 (그림, 요리)',
@@ -306,7 +306,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 따뜻한 감정은 소중한 선물입니다.\n그 감정을 조금씩 세상에 꺼내보세요.',
     wellness: {
       tea: '캐모마일 또는 국화차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '감정 일기 쓰기',
@@ -330,7 +330,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '따뜻함과 실용성을 모두 가진 당신은\n관계와 일 모두에서 빛납니다.',
     wellness: {
       tea: '대추차 또는 루이보스',
-      breath: '4-4-4 박스 호흡',
+      breath: '마음을 안정시키는 느린 복식호흡',
       routine: [
         '규칙적인 식사 시간 지키기',
         '가까운 사람에게 연락하기',
@@ -354,7 +354,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '변화 속에서도 당신의 따뜻함은 변하지 않습니다.\n그 본질을 믿어보세요.',
     wellness: {
       tea: '생강차 또는 루이보스',
-      breath: '리듬감 있는 복식호흡',
+      breath: '몸의 긴장을 천천히 풀어주는 호흡',
       routine: [
         '짧은 산책',
         '좋아하는 음악 들으며 기분 전환',
@@ -378,7 +378,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 따뜻한 에너지는 많은 사람에게 닿습니다.\n그 에너지를 깊이 있게 나눠보세요.',
     wellness: {
       tea: '캐모마일 또는 라벤더 허브차',
-      breath: '부드러운 복식호흡',
+      breath: '몸과 마음을 부드럽게 이완시키는 호흡',
       routine: [
         '신뢰하는 사람과 대화',
         '자신에게 작은 선물하기',
@@ -402,7 +402,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 따뜻한 돌봄은 공동체를 살립니다.\n그 돌봄을 자신에게도 아낌없이 주세요.',
     wellness: {
       tea: '루이보스 또는 대추차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 창의적 활동',
         '충분한 수면',
@@ -430,7 +430,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 밝음은 진짜입니다.\n그 안에 있는 솔직한 감정도 함께 빛납니다.',
     wellness: {
       tea: '레몬 허브차 또는 국화차',
-      breath: '가볍고 부드러운 복식호흡',
+      breath: '가볍고 자연스럽게 흐르는 호흡',
       routine: [
         '햇빛 아래 산책',
         '새로운 것 배우기',
@@ -454,7 +454,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 지적 탐구는 삶을 풍요롭게 합니다.\n그 지식을 삶 속에서 꽃피워보세요.',
     wellness: {
       tea: '레몬 허브차 또는 페퍼민트차',
-      breath: '리듬감 있는 복식호흡',
+      breath: '몸의 긴장을 천천히 풀어주는 호흡',
       routine: [
         '아이디어 노트 쓰기',
         '새로운 장소 방문',
@@ -478,7 +478,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '생각이 뒤집히는 것은 새로운 문이 열리는 것입니다.\n그 문을 용기 있게 열어보세요.',
     wellness: {
       tea: '캐모마일 또는 국화차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '생각을 글로 정리하기',
         '충분한 수면',
@@ -502,7 +502,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 체계적인 지성은 큰 힘입니다.\n때로는 그 체계를 내려놓고 흐르는 것도 지혜입니다.',
     wellness: {
       tea: '국화차 또는 레몬 허브차',
-      breath: '4-4-4 박스 호흡',
+      breath: '마음을 안정시키는 느린 복식호흡',
       routine: [
         '규칙적인 루틴 만들기',
         '하루 계획 세우기',
@@ -526,7 +526,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 창의적 시각은 세상을 새롭게 봅니다.\n그 빛나는 아이디어를 현실로 만들어보세요.',
     wellness: {
       tea: '페퍼민트차 또는 레몬 허브차',
-      breath: '리듬감 있는 복식호흡',
+      breath: '몸의 긴장을 천천히 풀어주는 호흡',
       routine: [
         '빠른 걷기',
         '새로운 아이디어 탐색',
@@ -550,7 +550,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 넓은 지식은 세상을 연결합니다.\n지금은 그 깊이를 더할 시간입니다.',
     wellness: {
       tea: '국화차 또는 캐모마일',
-      breath: '부드러운 복식호흡',
+      breath: '몸과 마음을 부드럽게 이완시키는 호흡',
       routine: [
         '햇빛 아래 독서',
         '좋아하는 음악 들으며 휴식',
@@ -574,7 +574,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 지혜는 세상을 밝힙니다.\n그 지혜를 먼저 자신에게도 나눠주세요.',
     wellness: {
       tea: '캐모마일 또는 국화차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '생각 정리 글쓰기',
@@ -602,7 +602,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신은 자연처럼 조용히 성장합니다.\n그 성장의 속도를 믿어보세요.',
     wellness: {
       tea: '녹차 또는 캐모마일',
-      breath: '배가 부드럽게 올라오는 복식호흡',
+      breath: '편안하게 숨을 길게 내쉬는 복식호흡',
       routine: [
         '자연 속 산책',
         '식물 돌보기',
@@ -626,7 +626,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 성장은 뿌리 깊은 나무처럼 단단합니다.\n그 뿌리를 더 깊이 내려보세요.',
     wellness: {
       tea: '녹차 또는 페퍼민트차',
-      breath: '리듬감 있는 복식호흡',
+      breath: '몸의 긴장을 천천히 풀어주는 호흡',
       routine: [
         '자연 속 걷기',
         '새로운 성장 목표 세우기',
@@ -650,7 +650,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '자연처럼 당신도 쉬어야 다시 피어납니다.\n지금 그 쉼을 허락해주세요.',
     wellness: {
       tea: '캐모마일 또는 녹차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '감정 일기 쓰기',
@@ -674,7 +674,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신이 만든 안정은 성장의 토대입니다.\n그 위에서 새로운 꽃을 피워보세요.',
     wellness: {
       tea: '녹차 또는 대추차',
-      breath: '4-4-4 박스 호흡',
+      breath: '마음을 안정시키는 느린 복식호흡',
       routine: [
         '규칙적인 산책',
         '식물 돌보기',
@@ -698,7 +698,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '어떤 환경에서도 당신은 성장합니다.\n그 생명력을 믿어보세요.',
     wellness: {
       tea: '녹차 또는 페퍼민트차',
-      breath: '리듬감 있는 복식호흡',
+      breath: '몸의 긴장을 천천히 풀어주는 호흡',
       routine: [
         '자연 속 빠른 걷기',
         '성장 목표 점검',
@@ -722,7 +722,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 성장은 삶 전체를 풍요롭게 합니다.\n지금 가장 필요한 곳부터 시작해보세요.',
     wellness: {
       tea: '캐모마일 또는 녹차',
-      breath: '부드러운 복식호흡',
+      breath: '몸과 마음을 부드럽게 이완시키는 호흡',
       routine: [
         '자연 속 산책',
         '좋아하는 사람과 함께하는 시간',
@@ -746,7 +746,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '함께 성장하는 것이 당신의 방식입니다.\n그 안에서 자신의 성장도 잊지 마세요.',
     wellness: {
       tea: '녹차 또는 캐모마일',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 자연 시간',
         '글쓰기 또는 독서',
@@ -774,7 +774,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 진실한 마음은 관계를 깊게 합니다.\n그 마음을 조금씩 표현해보세요.',
     wellness: {
       tea: '캐모마일 또는 블루 말로우 허브차',
-      breath: '천천히 깊게 호흡하기 (긴 내쉬기)',
+      breath: '편안하게 숨을 길게 내쉬는 복식호흡',
       routine: [
         '신뢰하는 사람과 깊은 대화',
         '감정 일기 쓰기',
@@ -798,7 +798,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 진실함이 당신을 빛나게 합니다.\n그 진실한 방향을 믿어보세요.',
     wellness: {
       tea: '페퍼민트차 또는 블루 말로우 허브차',
-      breath: '리듬감 있는 복식호흡',
+      breath: '몸의 긴장을 천천히 풀어주는 호흡',
       routine: [
         '감정을 글로 표현하기',
         '새로운 소통 방식 시도',
@@ -822,7 +822,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '감정을 흘려보내는 것은 약함이 아닙니다.\n그것이 당신을 더 깊이 치유합니다.',
     wellness: {
       tea: '캐모마일 또는 라벤더 허브차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '감정 일기 쓰기',
@@ -846,7 +846,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '신뢰는 천천히 쌓이지만 오래 갑니다.\n자신을 먼저 신뢰해보세요.',
     wellness: {
       tea: '캐모마일 또는 국화차',
-      breath: '4-4-4 박스 호흡',
+      breath: '마음을 안정시키는 느린 복식호흡',
       routine: [
         '규칙적인 취침 시간',
         '감정 정리 글쓰기',
@@ -870,7 +870,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 진실한 목소리는 어떤 상황에서도 가치 있습니다.\n그 목소리를 잃지 마세요.',
     wellness: {
       tea: '페퍼민트차 또는 블루 말로우 허브차',
-      breath: '리듬감 있는 복식호흡',
+      breath: '몸의 긴장을 천천히 풀어주는 호흡',
       routine: [
         '빠른 걷기',
         '감정 표현 연습',
@@ -894,7 +894,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 다양한 표현은 세상을 풍요롭게 합니다.\n지금 가장 자연스러운 방식으로 시작해보세요.',
     wellness: {
       tea: '캐모마일 또는 블루 말로우 허브차',
-      breath: '부드러운 복식호흡',
+      breath: '몸과 마음을 부드럽게 이완시키는 호흡',
       routine: [
         '신뢰하는 사람과 대화',
         '좋아하는 음악 감상',
@@ -918,7 +918,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 소통은 공동체를 하나로 만듭니다.\n그 에너지를 현명하게 사용해보세요.',
     wellness: {
       tea: '캐모마일 또는 라벤더 허브차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '감정 일기 쓰기',
@@ -946,7 +946,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 깊은 통찰은 세상을 밝히는 빛입니다.\n그 빛을 나눠보세요.',
     wellness: {
       tea: '국화차 또는 캐모마일',
-      breath: '깊고 느린 복식호흡 (4-7-8 호흡)',
+      breath: '숨을 깊이 들이마시고 천천히 내쉬는 호흡',
       routine: [
         '조용한 독서',
         '명상 또는 기도',
@@ -970,7 +970,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '깊이 있는 성장은 오래 지속됩니다.\n그 과정을 신뢰해보세요.',
     wellness: {
       tea: '녹차 또는 국화차',
-      breath: '깊고 느린 복식호흡',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '새로운 지식 탐구',
         '글쓰기로 생각 정리',
@@ -994,7 +994,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 깊은 성찰은 진정한 자유로 이어집니다.\n그 여정에서 자신을 잘 돌봐주세요.',
     wellness: {
       tea: '캐모마일 또는 국화차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '명상',
@@ -1018,7 +1018,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '진정한 안정은 내면에서 옵니다.\n그 깊은 안정을 찾아가는 여정을 시작해보세요.',
     wellness: {
       tea: '국화차 또는 대추차',
-      breath: '4-4-4 박스 호흡',
+      breath: '마음을 안정시키는 느린 복식호흡',
       routine: [
         '규칙적인 수면 루틴',
         '하루 마무리 글쓰기',
@@ -1042,7 +1042,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 깊은 통찰은 행동으로 완성됩니다.\n이제 한 걸음 내딛어보세요.',
     wellness: {
       tea: '녹차 또는 국화차',
-      breath: '깊고 느린 복식호흡',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '깊이 있는 독서',
         '생각 정리 글쓰기',
@@ -1066,7 +1066,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 깊고 넓은 통찰은 귀한 선물입니다.\n지금 가장 필요한 것에 그 통찰을 집중해보세요.',
     wellness: {
       tea: '캐모마일 또는 국화차',
-      breath: '부드러운 복식호흡',
+      breath: '몸과 마음을 부드럽게 이완시키는 호흡',
       routine: [
         '명상 또는 기도',
         '신뢰하는 사람과 깊은 대화',
@@ -1090,7 +1090,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 깊은 통찰은 공동체의 방향을 밝힙니다.\n그 빛을 함께 나눠보세요.',
     wellness: {
       tea: '국화차 또는 캐모마일',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '명상',
@@ -1118,7 +1118,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 직관은 깊은 지혜에서 옵니다.\n그 목소리를 신뢰해보세요.',
     wellness: {
       tea: '라벤더 허브차 또는 국화차',
-      breath: '깊고 느린 복식호흡 (명상 호흡)',
+      breath: '마음을 고요히 가라앉히는 명상 호흡',
       routine: [
         '명상 또는 기도',
         '조용한 음악 감상',
@@ -1142,7 +1142,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 영적 성장은 삶 전체를 변화시킵니다.\n그 여정의 매 순간이 소중합니다.',
     wellness: {
       tea: '라벤더 허브차 또는 녹차',
-      breath: '깊고 느린 복식호흡',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '영적 성장 활동',
         '창의적인 표현 (글, 그림)',
@@ -1166,7 +1166,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '내려놓는 것이 새로운 시작의 문을 엽니다.\n그 용기 있는 선택을 응원합니다.',
     wellness: {
       tea: '라벤더 허브차 또는 캐모마일',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '감정 일기 쓰기',
@@ -1190,7 +1190,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 영적 규율은 내면을 단단하게 합니다.\n그 실천을 기쁨으로 이어가보세요.',
     wellness: {
       tea: '라벤더 허브차 또는 국화차',
-      breath: '4-4-4 박스 호흡',
+      breath: '마음을 안정시키는 느린 복식호흡',
       routine: [
         '규칙적인 영적 실천',
         '하루 마무리 묵상',
@@ -1214,7 +1214,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 영적 탐구는 더 깊은 자유로 이어집니다.\n그 여정을 두려워하지 마세요.',
     wellness: {
       tea: '라벤더 허브차 또는 녹차',
-      breath: '깊고 느린 복식호흡',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '창의적인 활동',
         '영적 탐구',
@@ -1238,7 +1238,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 영적 감수성은 삶을 풍요롭게 합니다.\n지금 가장 필요한 곳에 그 감수성을 집중해보세요.',
     wellness: {
       tea: '라벤더 허브차 또는 캐모마일',
-      breath: '부드러운 복식호흡',
+      breath: '몸과 마음을 부드럽게 이완시키는 호흡',
       routine: [
         '명상 또는 기도',
         '신뢰하는 사람과 대화',
@@ -1262,7 +1262,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '함께하는 영적 여정은 더 깊고 풍요롭습니다.\n그 안에서 자신의 영적 중심도 잃지 마세요.',
     wellness: {
       tea: '라벤더 허브차 또는 국화차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '명상',
@@ -1290,7 +1290,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '새로운 시작은 언제나 가능합니다.\n그 첫 걸음을 오늘 내딛어보세요.',
     wellness: {
       tea: '캐모마일 또는 화이트 티',
-      breath: '부드럽고 가벼운 복식호흡',
+      breath: '가볍고 자연스럽게 흐르는 호흡',
       routine: [
         '아침 햇빛 쬐기',
         '공간 정리 정돈',
@@ -1314,7 +1314,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 순수한 성장 동기는 가장 강한 힘입니다.\n그 순수함을 지켜나가세요.',
     wellness: {
       tea: '화이트 티 또는 페퍼민트차',
-      breath: '리듬감 있는 복식호흡',
+      breath: '몸의 긴장을 천천히 풀어주는 호흡',
       routine: [
         '새로운 시작 선언',
         '공간 정리',
@@ -1338,7 +1338,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '비움은 새로운 채움의 시작입니다.\n용기 있게 내려놓아보세요.',
     wellness: {
       tea: '캐모마일 또는 화이트 티',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '내려놓기 글쓰기',
@@ -1362,7 +1362,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '단순함 속에 진정한 평안이 있습니다.\n불필요한 것들을 내려놓아보세요.',
     wellness: {
       tea: '화이트 티 또는 국화차',
-      breath: '4-4-4 박스 호흡',
+      breath: '마음을 안정시키는 느린 복식호흡',
       routine: [
         '공간 정리 정돈',
         '규칙적인 루틴 시작',
@@ -1386,7 +1386,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '순수한 변화의 에너지가 당신 안에 있습니다.\n오늘 작은 한 걸음을 내딛어보세요.',
     wellness: {
       tea: '화이트 티 또는 페퍼민트차',
-      breath: '리듬감 있는 복식호흡',
+      breath: '몸의 긴장을 천천히 풀어주는 호흡',
       routine: [
         '새로운 목표 설정',
         '공간 정리',
@@ -1410,7 +1410,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '새로운 시작의 에너지가 넘칩니다.\n지금 가장 중요한 것 하나부터 시작해보세요.',
     wellness: {
       tea: '캐모마일 또는 화이트 티',
-      breath: '부드러운 복식호흡',
+      breath: '몸과 마음을 부드럽게 이완시키는 호흡',
       routine: [
         '새로운 시작을 위한 준비',
         '신뢰하는 사람과 대화',
@@ -1434,7 +1434,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 순수한 에너지는 공동체를 정화합니다.\n그 에너지를 먼저 자신에게 채워보세요.',
     wellness: {
       tea: '화이트 티 또는 캐모마일',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '내려놓기 글쓰기',
@@ -1462,7 +1462,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 내면 강인함은 귀한 힘입니다.\n그 힘 안에 따뜻함도 함께 품어보세요.',
     wellness: {
       tea: '쌍화차 또는 루이보스',
-      breath: '깊고 느린 복식호흡 (4-7-8 호흡)',
+      breath: '숨을 깊이 들이마시고 천천히 내쉬는 호흡',
       routine: [
         '혼자만의 조용한 시간',
         '깊이 있는 독서',
@@ -1486,7 +1486,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 강인함은 깊은 성장에서 옵니다.\n그 과정에서 자신을 잘 돌봐주세요.',
     wellness: {
       tea: '쌍화차 또는 루이보스',
-      breath: '깊고 느린 복식호흡',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '변화를 위한 한 가지 결단',
         '글쓰기로 내면 정리',
@@ -1510,7 +1510,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '어둠 속에서 새로운 빛이 태어납니다.\n이 변환의 과정을 신뢰해보세요.',
     wellness: {
       tea: '루이보스 또는 쌍화차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '감정 일기 쓰기',
@@ -1534,7 +1534,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 강인한 안정은 주변을 지탱합니다.\n그 안에서 자신의 감정도 돌봐주세요.',
     wellness: {
       tea: '쌍화차 또는 대추차',
-      breath: '4-4-4 박스 호흡',
+      breath: '마음을 안정시키는 느린 복식호흡',
       routine: [
         '규칙적인 수면 루틴',
         '하루 마무리 글쓰기',
@@ -1558,7 +1558,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 강인함은 변화 속에서도 빛납니다.\n그 본질을 신뢰해보세요.',
     wellness: {
       tea: '루이보스 또는 쌍화차',
-      breath: '깊고 느린 복식호흡',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '깊이 있는 독서',
         '내면 탐구 글쓰기',
@@ -1582,7 +1582,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 강인함은 많은 것을 가능하게 합니다.\n지금은 그 힘을 현명하게 사용할 시간입니다.',
     wellness: {
       tea: '쌍화차 또는 루이보스',
-      breath: '부드러운 복식호흡',
+      breath: '몸과 마음을 부드럽게 이완시키는 호흡',
       routine: [
         '신뢰하는 사람과 깊은 대화',
         '명상 또는 기도',
@@ -1606,7 +1606,7 @@ export const CARD_DATA: CardData[] = [
     coachingMessage: '당신의 강인함이 공동체를 지탱합니다.\n그 힘을 유지하기 위해 자신을 먼저 돌봐주세요.',
     wellness: {
       tea: '루이보스 또는 쌍화차',
-      breath: '천천히 깊게 호흡하기',
+      breath: '마음이 고요해지는 느린 복식호흡',
       routine: [
         '혼자만의 조용한 시간',
         '내면 탐구 글쓰기',
