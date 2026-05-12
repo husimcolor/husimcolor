@@ -277,6 +277,14 @@ export default function PremiumResultScreen() {
             colors={colors}
           >
             <View style={styles.cardDetailContent}>
+              {/* 오각형 안내 배지 */}
+              {card.shape === 'pentagon' && (
+                <View style={[styles.pentagonBadge, { backgroundColor: POSITION_LABELS[i].color + '18', borderColor: POSITION_LABELS[i].color + '40' }]}>
+                  <Text style={[styles.pentagonBadgeText, { color: POSITION_LABELS[i].color }]}>
+                    ⬠ 오각형 에너지 · 연결 · 통합 · 의미 확장
+                  </Text>
+                </View>
+              )}
               {/* 1번 카드: 무의식/내면 에너지 흐름 */}
               {i === 0 && (
                 <View style={styles.detailRow}>
@@ -753,6 +761,19 @@ const styles = StyleSheet.create({
   },
   detailRow: {
     gap: 4,
+  },
+  pentagonBadge: {
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginBottom: 4,
+    alignSelf: 'flex-start',
+  },
+  pentagonBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   detailLabel: {
     fontSize: 12,
