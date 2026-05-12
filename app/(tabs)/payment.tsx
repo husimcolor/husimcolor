@@ -10,6 +10,8 @@ import {
   Dimensions,
   Platform,
   Linking,
+  TextInput,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -26,6 +28,17 @@ import {
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // ─── 결제 상품 목록 ───────────────────────────────────────────────
+// ─── 프로필 입력 옵션 ─────────────────────────────────────────────
+const JOB_OPTIONS = [
+  "생산직", "서비스직", "사역자", "주부",
+  "학생", "프리랜서", "자영업", "무직", "기타",
+];
+const FAITH_OPTIONS = ["기독교", "타종교", "무교"];
+const CONCERN_OPTIONS = [
+  "관계", "감정 회복", "진로/일", "영성/내면",
+  "가족", "자기이해", "번아웃/스트레스", "미래 방향성",
+];
+
 const PAYMENT_PLANS = [
   {
     id: "single",
@@ -72,6 +85,12 @@ export default function PaymentScreen() {
   const [qrVisible, setQrVisible] = useState(false);
   const [trialStatus, setTrialStatus] = useState<TrialStatus>("none");
   const [remainingLabel, setRemainingLabel] = useState<string | null>(null);
+  // 프로필 입력 단계
+  const [profileStep, setProfileStep] = useState(false);
+  const [profileAge, setProfileAge] = useState("");
+  const [profileJob, setProfileJob] = useState("");
+  const [profileFaith, setProfileFaith] = useState("");
+  const [profileConcerns, setProfileConcerns] = useState<string[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -107,19 +126,65 @@ export default function PaymentScreen() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    await startTrial();
-    setTrialStatus("active");
-    const label = await getTrialRemainingLabel();
-    setRemainingLabel(label);
-    // 체험 활성화 후 심화 카드 선택 화면으로 이동
-    router.push("/premium-select" as any);
+    // 기존 프로필 불러오기
+    const saved = await AsyncStorage.getItem("userProfile");
+    if (saved) {
+      const p = JSON.parse(saved);
+      if (p.age) setProfileAge(p.age);
+      if (p.job) setProfileJob(p.job);
+      if (p.faith) setProfileFaith(p.faith);
+      if (p.concerns) setProfileConcerns(p.concerns);
+    }
+    // 프로필 입력 단계 표시
+    setProfileStep(true);
   };
-  const handleContinueTrial = () => {
+  const handleContinueTrial = async () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // 심화 카드 선택 화면으로 이동
+    // 기존 프로필 불러오기
+    const saved = await AsyncStorage.getItem("userProfile");
+    if (saved) {
+      const p = JSON.parse(saved);
+      if (p.age) setProfileAge(p.age);
+      if (p.job) setProfileJob(p.job);
+      if (p.faith) setProfileFaith(p.faith);
+      if (p.concerns) setProfileConcerns(p.concerns);
+    }
+    setProfileStep(true);
+  };
+  const handleProfileNext = async () => {
+    if (!profileAge || !profileJob || !profileFaith) {
+      return; // 버튼 비활성화로 처리
+    }
+    if (Platform.OS !== "web") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    // 프로필 저장
+    const profile = {
+      age: profileAge,
+      job: profileJob,
+      faith: profileFaith,
+      concerns: profileConcerns,
+    };
+    await AsyncStorage.setItem("userProfile", JSON.stringify(profile));
+    setProfileStep(false);
+    // 무료체험 활성화 (아직 안 된 경우)
+    const currentStatus = await getTrialStatus();
+    if (currentStatus === "none") {
+      await startTrial();
+      setTrialStatus("active");
+      const label = await getTrialRemainingLabel();
+      setRemainingLabel(label);
+    }
     router.push("/premium-select" as any);
+  };
+  const toggleConcern = (item: string) => {
+    setProfileConcerns(prev => {
+      if (prev.includes(item)) return prev.filter(c => c !== item);
+      if (prev.length >= 2) return prev; // 최대 2개
+      return [...prev, item];
+    });
   };
 
   // 무료체험 버튼 렌더링
@@ -187,6 +252,140 @@ export default function PaymentScreen() {
 
   return (
     <ScreenContainer>
+      {/* 프로필 입력 모달 */}
+      <Modal
+        visible={profileStep}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setProfileStep(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.profileOverlay}>
+            <View style={[styles.profileSheet, { backgroundColor: colors.background }]}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+                {/* 헤더 */}
+                <View style={styles.profileHeader}>
+                  <Text style={[styles.profileTitle, { color: colors.foreground }]}>
+                    심화 코칭 정보 입력
+                  </Text>
+                  <Text style={[styles.profileSubtitle, { color: colors.muted }]}>
+                    더 정확한 맞춤 해석을 위해{"\n"}간단한 정보를 입력해 주세요
+                  </Text>
+                </View>
+                {/* 나이 */}
+                <View style={styles.profileSection}>
+                  <Text style={[styles.profileLabel, { color: colors.foreground }]}>나이</Text>
+                  <TextInput
+                    style={[styles.profileAgeInput, {
+                      borderColor: profileAge ? "#8BAF8B" : colors.border,
+                      color: colors.foreground,
+                      backgroundColor: colors.surface,
+                    }]}
+                    placeholder="나이를 입력하세요 (예: 35)"
+                    placeholderTextColor={colors.muted}
+                    keyboardType="numeric"
+                    value={profileAge}
+                    onChangeText={(t) => setProfileAge(t.replace(/[^0-9]/g, ""))}
+                    maxLength={3}
+                    returnKeyType="done"
+                  />
+                </View>
+                {/* 직업 */}
+                <View style={styles.profileSection}>
+                  <Text style={[styles.profileLabel, { color: colors.foreground }]}>직업</Text>
+                  <View style={styles.chipGrid}>
+                    {JOB_OPTIONS.map((job) => (
+                      <TouchableOpacity
+                        key={job}
+                        style={[styles.chip, {
+                          backgroundColor: profileJob === job ? "#8BAF8B" : colors.surface,
+                          borderColor: profileJob === job ? "#8BAF8B" : colors.border,
+                        }]}
+                        onPress={() => setProfileJob(job)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.chipText, {
+                          color: profileJob === job ? "#FFFFFF" : colors.foreground,
+                          fontWeight: profileJob === job ? "700" : "400",
+                        }]}>{job}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+                {/* 신앙 여부 */}
+                <View style={styles.profileSection}>
+                  <Text style={[styles.profileLabel, { color: colors.foreground }]}>신앙 여부</Text>
+                  <View style={styles.faithRow}>
+                    {FAITH_OPTIONS.map((faith) => (
+                      <TouchableOpacity
+                        key={faith}
+                        style={[styles.faithChip, {
+                          backgroundColor: profileFaith === faith ? "#8BAF8B" : colors.surface,
+                          borderColor: profileFaith === faith ? "#8BAF8B" : colors.border,
+                        }]}
+                        onPress={() => setProfileFaith(faith)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.faithChipText, {
+                          color: profileFaith === faith ? "#FFFFFF" : colors.foreground,
+                          fontWeight: profileFaith === faith ? "700" : "400",
+                        }]}>{faith}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+                {/* 고민 분야 (최대 2개) */}
+                <View style={styles.profileSection}>
+                  <Text style={[styles.profileLabel, { color: colors.foreground }]}>
+                    현재 가장 고민되는 분야
+                    <Text style={[styles.profileLabelSub, { color: colors.muted }]}> (최대 2개)</Text>
+                  </Text>
+                  <View style={styles.chipGrid}>
+                    {CONCERN_OPTIONS.map((item) => {
+                      const selected = profileConcerns.includes(item);
+                      const disabled = !selected && profileConcerns.length >= 2;
+                      return (
+                        <TouchableOpacity
+                          key={item}
+                          style={[styles.chip, {
+                            backgroundColor: selected ? "#7B9FBF" : colors.surface,
+                            borderColor: selected ? "#7B9FBF" : disabled ? colors.border + "60" : colors.border,
+                            opacity: disabled ? 0.45 : 1,
+                          }]}
+                          onPress={() => !disabled && toggleConcern(item)}
+                          activeOpacity={disabled ? 1 : 0.7}
+                        >
+                          <Text style={[styles.chipText, {
+                            color: selected ? "#FFFFFF" : colors.foreground,
+                            fontWeight: selected ? "700" : "400",
+                          }]}>{item}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+                {/* 다음 버튼 */}
+                <TouchableOpacity
+                  style={[styles.profileNextBtn, {
+                    backgroundColor: profileAge && profileJob && profileFaith ? "#8BAF8B" : colors.border,
+                  }]}
+                  onPress={handleProfileNext}
+                  activeOpacity={0.85}
+                  disabled={!profileAge || !profileJob || !profileFaith}
+                >
+                  <Text style={styles.profileNextBtnText}>카드 선택하기 →</Text>
+                </TouchableOpacity>
+                <Text style={[styles.profilePrivacy, { color: colors.muted }]}>
+                  입력하신 정보는 결과 해석에만 활용되며{"\n"}외부로 전송되지 않습니다.
+                </Text>
+              </ScrollView>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -592,5 +791,98 @@ const styles = StyleSheet.create({
   },
   cancelBtnText: {
     fontSize: 14,
+  },
+  // ─── 프로필 입력 모달 스타일 ─────────────────────────────────────
+  profileOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  profileSheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '92%',
+    paddingTop: 20,
+    paddingHorizontal: 24,
+  },
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  profileTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 8,
+    letterSpacing: -0.3,
+  },
+  profileSubtitle: {
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  profileSection: {
+    marginBottom: 24,
+  },
+  profileLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  profileLabelSub: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  profileAgeInput: {
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+  },
+  chipGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 1.5,
+  },
+  chipText: {
+    fontSize: 14,
+  },
+  faithRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  faithChip: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: 'center',
+  },
+  faithChipText: {
+    fontSize: 15,
+  },
+  profileNextBtn: {
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  profileNextBtnText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  profilePrivacy: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

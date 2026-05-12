@@ -216,6 +216,15 @@ export default function PremiumResultScreen() {
               {profile.age}세 · {profile.job} · {profile.faith}
             </Text>
           )}
+          {profile?.concerns && profile.concerns.length > 0 && (
+            <View style={styles.concernsRow}>
+              {profile.concerns.map((c) => (
+                <View key={c} style={[styles.concernBadge, { backgroundColor: '#7B9FBF22', borderColor: '#7B9FBF55' }]}>
+                  <Text style={[styles.concernBadgeText, { color: '#5A7FA0' }]}>{c}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* 선택 카드 3장 요약 */}
@@ -699,6 +708,23 @@ const styles = StyleSheet.create({
   },
   headerProfile: {
     fontSize: 13,
+  },
+  concernsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 10,
+    justifyContent: 'center',
+  },
+  concernBadge: {
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  concernBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   cardSummaryRow: {
     flexDirection: "row",

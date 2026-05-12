@@ -17,6 +17,7 @@ export type UserProfile = {
   age: string;
   job: string;
   faith: string;
+  concerns?: string[];
 };
 
 const JOB_OPTIONS = [
