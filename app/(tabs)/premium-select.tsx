@@ -121,15 +121,21 @@ function AnimatedCard({
               transform: [{ rotateY: backRotate }],
               backfaceVisibility: "hidden",
               position: "absolute",
+              // 블랙 카드: 골드 테두리, 화이트 카드: 다크 테두리, 나머지: 흰색 테두리
               borderWidth: isSelected ? 2.5 : 0,
-              borderColor: "#FFFFFF",
+              borderColor: card.colorKor === "블랙"
+                ? "#D4AF37"
+                : card.colorKor === "화이트"
+                ? "#555555"
+                : "#FFFFFF",
             },
           ]}
         >
+          {/* 화이트·블랙 카드는 도형과 텍스트를 다크 컬러로 */}
           <Text
             style={[
               styles.shapeSymbol,
-              card.colorKor === "화이트" && { color: "rgba(30, 30, 30, 0.85)" },
+              (card.colorKor === "화이트" || card.colorKor === "블랙") && { color: "rgba(30, 30, 30, 0.85)" },
             ]}
           >
             {card.shapeSymbol}
@@ -137,7 +143,7 @@ function AnimatedCard({
           <Text
             style={[
               styles.cardFrontColorName,
-              card.colorKor === "화이트" && { color: "rgba(30, 30, 30, 0.9)" },
+              (card.colorKor === "화이트" || card.colorKor === "블랙") && { color: "rgba(30, 30, 30, 0.9)" },
             ]}
             numberOfLines={1}
           >

@@ -190,10 +190,22 @@ export default function PremiumResultScreen() {
               <View
                 style={[
                   styles.cardSummaryBadge,
-                  { backgroundColor: card.colorHex },
+                  {
+                    backgroundColor: card.colorHex,
+                    // 블랙 카드: 골드 테두리
+                    borderWidth: card.colorKor === "블랙" ? 2 : 0,
+                    borderColor: card.colorKor === "블랙" ? "#D4AF37" : "transparent",
+                  },
                 ]}
               >
-                <Text style={styles.cardSummarySymbol}>{card.shapeSymbol}</Text>
+                <Text
+                  style={[
+                    styles.cardSummarySymbol,
+                    (card.colorKor === "화이트" || card.colorKor === "블랙") && { color: "rgba(30, 30, 30, 0.85)" },
+                  ]}
+                >
+                  {card.shapeSymbol}
+                </Text>
               </View>
               <Text
                 style={[
