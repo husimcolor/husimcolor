@@ -4,17 +4,21 @@ const path = require("path");
 
 const config = getDefaultConfig(__dirname);
 
-// Fix for Vercel build: Metro tries to watch symlinked node_modules files
-// which don't exist in Vercel's build environment, causing SHA-1 errors.
-// Disable symlink resolution to prevent this issue.
+// Fix for Vercel build: Metro tries to watch symlinked files inside node_modules
+// which causes "Failed to get SHA-1" errors in Vercel's sandboxed environment.
 config.resolver = {
   ...config.resolver,
   unstable_enableSymlinks: false,
+  blockList: [
+    // Block any file inside node_modules that Metro tries to watch via symlinks
+    /node_modules\/.*\/node_modules\/.*/,
+  ],
 };
+
+// Prevent Metro from watching node_modules symlinks
+config.watchFolders = [__dirname];
 
 module.exports = withNativeWind(config, {
   input: "./global.css",
-  // Force write CSS to file system instead of virtual modules
-  // This fixes iOS styling issues in development mode
   forceWriteFileSystem: true,
 });
