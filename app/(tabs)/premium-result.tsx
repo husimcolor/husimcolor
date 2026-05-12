@@ -242,24 +242,27 @@ export default function PremiumResultScreen() {
               지금의 에너지 흐름을 보완해 줄 컬러입니다
             </Text>
             <View style={styles.tagsRow}>
-              {[...new Set([...card1.complementColors, ...card3.complementColors])].map(
-                (c) => (
-                  <View
-                    key={c}
-                    style={[
-                      styles.tag,
-                      {
-                        backgroundColor: "#C4956A22",
-                        borderColor: "#C4956A55",
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.tagText, { color: "#C4956A" }]}>
-                      {c}
-                    </Text>
-                  </View>
-                )
-              )}
+              {(() => {
+                const allColors = [...card1.complementColors, ...card3.complementColors];
+                const seen = new Set<string>();
+                return allColors.filter(c => {
+                  if (seen.has(c.name)) return false;
+                  seen.add(c.name);
+                  return true;
+                });
+              })().map((c) => (
+                <View
+                  key={c.name}
+                  style={[styles.tag, { backgroundColor: '#C4956A22', borderColor: '#C4956A55', flexDirection: 'column', alignItems: 'flex-start', paddingVertical: 6, paddingHorizontal: 10, minWidth: 100 }]}
+                >
+                  <Text style={[styles.tagText, { color: '#C4956A', fontWeight: '700' }]}>
+                    {c.name}
+                  </Text>
+                  <Text style={{ color: '#C4956A', fontSize: 11, marginTop: 2, lineHeight: 15 }}>
+                    {c.meaning}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
         </SectionCard>
