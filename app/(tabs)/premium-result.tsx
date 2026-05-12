@@ -403,6 +403,28 @@ export default function PremiumResultScreen() {
               <Text style={styles.coachingLinkArrow}>→</Text>
             </View>
           </TouchableOpacity>
+
+          {/* 유튜브 묵상채널 */}
+          <TouchableOpacity
+            style={[styles.coachingLinkBtn, { backgroundColor: "#FF0000" }]}
+            onPress={() => {
+              if (Platform.OS === "web") {
+                window.open("https://youtube.com/@huali7603?si=4R0Hk-Xna6iS3OP9", "_blank");
+              }
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.coachingLinkInner}>
+              <View style={[styles.coachingLinkIcon, { backgroundColor: "#FFFFFF33" }]}>
+                <Text style={styles.coachingLinkIconText}>▶️</Text>
+              </View>
+              <View style={styles.coachingLinkTexts}>
+                <Text style={styles.coachingLinkTitle}>유튜브 묵상채널</Text>
+                <Text style={styles.coachingLinkDesc}>마음을 쉬게 하는 묵상 영상</Text>
+              </View>
+              <Text style={styles.coachingLinkArrow}>→</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* 다시 선택 */}
