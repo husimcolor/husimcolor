@@ -85,8 +85,37 @@ export default function ResultScreen() {
     }
   };
 
+  // 웹 환경 공유 헬퍼 - navigator.share() 또는 URL 클립보드 복사
+  const handleWebShare = async (title: string) => {
+    const shareUrl = typeof window !== 'undefined' ? window.location.href : 'https://husimcolor.vercel.app';
+    // Web Share API 지원 여부 확인
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: '휴심컬러 - 나의 컬러 해석 결과',
+          text: '25가지 컬러로 읽는 나의 마음 흐름 💫 지금 확인해보세요!',
+          url: shareUrl,
+        });
+        return;
+      } catch {
+        // 공유 취소 등 - 아래 클립보드 복사로 폴백
+      }
+    }
+    // 클립보드 복사 폴백
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      Alert.alert('링크 복사 완료', `${title}에 붙여넣기 하여 공유해보세요!\n\n${shareUrl}`);
+    } catch {
+      Alert.alert('공유 링크', `아래 링크를 복사하여 ${title}에 공유해보세요:\n\n${shareUrl}`);
+    }
+  };
+
   // 카카오톡 공유
   const handleKakaoShare = async () => {
+    if (Platform.OS === 'web') {
+      await handleWebShare('카카오톡');
+      return;
+    }
     try {
       const uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
       const available = await Sharing.isAvailableAsync();
@@ -102,6 +131,10 @@ export default function ResultScreen() {
 
   // 인스타그램 스토리 공유
   const handleInstaShare = async () => {
+    if (Platform.OS === 'web') {
+      await handleWebShare('인스타그램');
+      return;
+    }
     try {
       const uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
       const available = await Sharing.isAvailableAsync();
@@ -394,10 +427,10 @@ export default function ResultScreen() {
 
           {/* 브랜드 문구 */}
           <View style={styles.brandMessageBox}>
-            <Text style={[styles.socialTitle, { color: colors.foreground }]}>
+            <Text style={[styles.socialTitle, { color: '#2A2A2A' }]}>
               지금의 마음 흐름을{'\n'}더 깊이 이해하고 싶다면
             </Text>
-            <Text style={[styles.socialSubtitle, { color: colors.muted }]}>
+            <Text style={[styles.socialSubtitle, { color: '#666666' }]}>
               휴심컬러와 함께하는 1:1 컬러코칭을 만나보세요
             </Text>
           </View>
@@ -770,15 +803,17 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   socialTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     textAlign: 'center',
-    lineHeight: 28,
+    lineHeight: 32,
+    letterSpacing: 0.3,
   },
   socialSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
+    fontWeight: '500',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
   },
   socialButtons: {
     gap: 10,
