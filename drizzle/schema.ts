@@ -37,3 +37,18 @@ export const reviews = mysqlTable("reviews", {
 
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = typeof reviews.$inferInsert;
+
+// 입금 기록 테이블
+export const paymentRecords = mysqlTable("payment_records", {
+  id: int("id").autoincrement().primaryKey(),
+  senderName: varchar("senderName", { length: 100 }).notNull(),   // 이름/닉네임
+  contact: varchar("contact", { length: 100 }).notNull(),          // 연락처
+  depositorName: varchar("depositorName", { length: 100 }).notNull(), // 입금자명
+  amount: int("amount").default(30000).notNull(),                  // 결제 금액
+  status: mysqlEnum("status", ["pending", "confirmed", "rejected"]).default("pending").notNull(),
+  memo: text("memo"),                                              // 관리자 메모
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PaymentRecord = typeof paymentRecords.$inferSelect;
+export type InsertPaymentRecord = typeof paymentRecords.$inferInsert;

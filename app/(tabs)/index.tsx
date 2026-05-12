@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
@@ -145,6 +145,14 @@ export default function HomeScreen() {
           </Pressable>
         </Animated.View>
       </View>
+      {/* 관리자 진입 (숫김) */}
+      <TouchableOpacity
+        style={{ position: 'absolute', bottom: 8, right: 16, padding: 8 }}
+        onPress={() => router.push('/admin' as any)}
+        activeOpacity={0.3}
+      >
+        <Text style={{ fontSize: 10, color: 'transparent' }}>admin</Text>
+      </TouchableOpacity>
     </ScreenContainer>
   );
 }

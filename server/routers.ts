@@ -2,7 +2,7 @@ import { z } from "zod";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 
 export const appRouter = router({
@@ -17,6 +17,32 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+  }),
+
+  // 입금 기록 API
+  payments: router({
+    create: publicProcedure
+      .input(z.object({
+        senderName: z.string().min(1).max(100),
+        contact: z.string().min(1).max(100),
+        depositorName: z.string().min(1).max(100),
+        amount: z.number().int().default(30000),
+      }))
+      .mutation(({ input }) => {
+        return db.createPaymentRecord(input);
+      }),
+    list: protectedProcedure.query(() => {
+      return db.getPaymentRecords();
+    }),
+    updateStatus: protectedProcedure
+      .input(z.object({
+        id: z.number().int(),
+        status: z.enum(['pending', 'confirmed', 'rejected']),
+        memo: z.string().max(500).optional(),
+      }))
+      .mutation(({ input }) => {
+        return db.updatePaymentStatus(input.id, input.status, input.memo);
+      }),
   }),
 
   // 후기 API

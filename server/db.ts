@@ -105,3 +105,28 @@ export async function createReview(data: InsertReview) {
   const result = await db.insert(reviews).values(data);
   return result[0].insertId;
 }
+
+// 입금 기록 관련 DB 함수
+import { InsertPaymentRecord, paymentRecords } from "../drizzle/schema";
+
+export async function createPaymentRecord(data: InsertPaymentRecord) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(paymentRecords).values(data);
+  return result[0].insertId;
+}
+
+export async function getPaymentRecords() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(paymentRecords).orderBy(desc(paymentRecords.createdAt)).limit(200);
+}
+
+export async function updatePaymentStatus(id: number, status: 'pending' | 'confirmed' | 'rejected', memo?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(paymentRecords)
+    .set({ status, ...(memo !== undefined ? { memo } : {}) })
+    .where(eq(paymentRecords.id, id));
+  return { success: true };
+}

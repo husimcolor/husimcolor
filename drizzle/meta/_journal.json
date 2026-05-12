@@ -15,6 +15,13 @@
       "when": 1778589104151,
       "tag": "0001_slimy_franklin_richards",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1778600455806,
+      "tag": "0002_polite_boom_boom",
+      "breakpoints": true
     }
   ]
 }

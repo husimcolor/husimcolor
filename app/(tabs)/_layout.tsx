@@ -61,6 +61,13 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="admin"
+        options={{
+          title: "관리자",
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

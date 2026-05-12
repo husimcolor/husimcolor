@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
+import { trpc } from "@/lib/trpc";
 import {
   getTrialStatus,
   getTrialRemainingLabel,
@@ -85,12 +86,20 @@ export default function PaymentScreen() {
   const [qrVisible, setQrVisible] = useState(false);
   const [trialStatus, setTrialStatus] = useState<TrialStatus>("none");
   const [remainingLabel, setRemainingLabel] = useState<string | null>(null);
+  // 입금 정보 입력 단계
+  const [depositorStep, setDepositorStep] = useState(false);
+  const [senderName, setSenderName] = useState("");
+  const [contact, setContact] = useState("");
+  const [depositorName, setDepositorName] = useState("");
+  const [depositSubmitting, setDepositSubmitting] = useState(false);
   // 프로필 입력 단계
   const [profileStep, setProfileStep] = useState(false);
   const [profileAge, setProfileAge] = useState("");
   const [profileJob, setProfileJob] = useState("");
   const [profileFaith, setProfileFaith] = useState("");
   const [profileConcerns, setProfileConcerns] = useState<string[]>([]);
+
+  const createPayment = trpc.payments.create.useMutation();
 
   useEffect(() => {
     const load = async () => {
@@ -114,12 +123,44 @@ export default function PaymentScreen() {
   };
 
   const handlePaymentDone = async () => {
-    await AsyncStorage.setItem("premiumUnlocked", "true");
+    // QR 모달 닫고 입금 정보 입력 단계로 이동
     setQrVisible(false);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setDepositorStep(true);
+  };
+
+  const handleDepositSubmit = async () => {
+    if (!senderName.trim() || !contact.trim() || !depositorName.trim()) return;
+    setDepositSubmitting(true);
+    try {
+      await createPayment.mutateAsync({
+        senderName: senderName.trim(),
+        contact: contact.trim(),
+        depositorName: depositorName.trim(),
+        amount: selectedPlan?.id === "couple" ? 60000 : 30000,
+      });
+    } catch (e) {
+      // DB 저장 실패해도 진행 (로컬에만 기록)
+      console.warn("[Payment] DB 저장 실패:", e);
+    }
+    await AsyncStorage.setItem("premiumUnlocked", "true");
+    setDepositSubmitting(false);
+    setDepositorStep(false);
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-    router.push("/premium-select" as any);
+    // 기존 프로필 불러오기
+    const saved = await AsyncStorage.getItem("userProfile");
+    if (saved) {
+      const p = JSON.parse(saved);
+      if (p.age) setProfileAge(p.age);
+      if (p.job) setProfileJob(p.job);
+      if (p.faith) setProfileFaith(p.faith);
+      if (p.concerns) setProfileConcerns(p.concerns);
+    }
+    setProfileStep(true);
   };
 
   const handleStartTrial = async () => {
@@ -522,6 +563,107 @@ export default function PaymentScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* 입금 정보 입력 모달 */}
+      <Modal
+        visible={depositorStep}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setDepositorStep(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.profileOverlay}>
+            <View style={[styles.profileSheet, { backgroundColor: colors.background }]}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+                <View style={styles.profileHeader}>
+                  <Text style={[styles.profileTitle, { color: colors.foreground }]}>
+                    입금 확인 정보 입력
+                  </Text>
+                  <Text style={[styles.profileSubtitle, { color: colors.muted }]}>
+                    운영자 확인용으로만 사용되며{"\n"}외부로 전송되지 않습니다
+                  </Text>
+                </View>
+
+                {/* 이름/닉네임 */}
+                <View style={styles.profileSection}>
+                  <Text style={[styles.profileLabel, { color: colors.foreground }]}>이름 또는 닉네임</Text>
+                  <TextInput
+                    style={[styles.profileAgeInput, {
+                      borderColor: senderName ? "#8BAF8B" : colors.border,
+                      color: colors.foreground,
+                      backgroundColor: colors.surface,
+                    }]}
+                    placeholder="이름 또는 닉네임을 입력해 주세요"
+                    placeholderTextColor={colors.muted}
+                    value={senderName}
+                    onChangeText={setSenderName}
+                    maxLength={50}
+                    returnKeyType="next"
+                  />
+                </View>
+
+                {/* 연락처 */}
+                <View style={styles.profileSection}>
+                  <Text style={[styles.profileLabel, { color: colors.foreground }]}>연락처</Text>
+                  <TextInput
+                    style={[styles.profileAgeInput, {
+                      borderColor: contact ? "#8BAF8B" : colors.border,
+                      color: colors.foreground,
+                      backgroundColor: colors.surface,
+                    }]}
+                    placeholder="연락처를 입력해 주세요 (예: 010-1234-5678)"
+                    placeholderTextColor={colors.muted}
+                    keyboardType="phone-pad"
+                    value={contact}
+                    onChangeText={setContact}
+                    maxLength={20}
+                    returnKeyType="next"
+                  />
+                </View>
+
+                {/* 입금자명 */}
+                <View style={styles.profileSection}>
+                  <Text style={[styles.profileLabel, { color: colors.foreground }]}>입금자명</Text>
+                  <Text style={[styles.profileLabelSub, { color: colors.muted }]}>  · 실제 입금 시 사용하신 이름을 입력해 주세요</Text>
+                  <TextInput
+                    style={[styles.profileAgeInput, {
+                      borderColor: depositorName ? "#8BAF8B" : colors.border,
+                      color: colors.foreground,
+                      backgroundColor: colors.surface,
+                      marginTop: 8,
+                    }]}
+                    placeholder="입금자명을 입력해 주세요"
+                    placeholderTextColor={colors.muted}
+                    value={depositorName}
+                    onChangeText={setDepositorName}
+                    maxLength={50}
+                    returnKeyType="done"
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.profileNextBtn, {
+                    backgroundColor: (senderName && contact && depositorName) ? "#8BAF8B" : colors.border,
+                  }]}
+                  onPress={handleDepositSubmit}
+                  disabled={!senderName || !contact || !depositorName || depositSubmitting}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.profileNextBtnText}>
+                    {depositSubmitting ? "처리 중..." : "다음 단계 · 정보 입력하기 →"}
+                  </Text>
+                </TouchableOpacity>
+                <Text style={[styles.profilePrivacy, { color: colors.muted }]}>
+                  입력하신 정보는 운영자 확인 후 심화 해석에 활용됩니다
+                </Text>
+              </ScrollView>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* QR 결제 모달 */}
       <Modal
