@@ -122,7 +122,7 @@ export default function PremiumSelectScreen() {
                   styles.slot,
                   {
                     backgroundColor: selectedCards[i]
-                      ? POSITION_COLORS[i] + "22"
+                      ? POSITION_COLORS[i] + "33"
                       : colors.surface,
                     borderColor: selectedCards[i]
                       ? POSITION_COLORS[i]
@@ -155,7 +155,7 @@ export default function PremiumSelectScreen() {
               <Text
                 style={[
                   styles.slotLabel,
-                  { color: POSITION_COLORS[i], fontSize: 9 },
+                  { color: POSITION_COLORS[i] },
                 ]}
                 numberOfLines={2}
               >
@@ -296,35 +296,45 @@ const styles = StyleSheet.create({
   },
   slot: {
     width: "100%",
-    aspectRatio: 0.7,
-    borderRadius: 10,
-    borderWidth: 1.5,
+    aspectRatio: 0.65,
+    borderRadius: 14,
+    borderWidth: 2.5,
     alignItems: "center",
     justifyContent: "center",
-    padding: 4,
+    padding: 8,
+    gap: 5,
   },
   slotColorDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    marginBottom: 4,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    marginBottom: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 5,
   },
   slotCardName: {
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: 13,
+    fontWeight: "800",
     textAlign: "center",
+    letterSpacing: -0.2,
   },
   slotShapeName: {
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: "600",
     textAlign: "center",
   },
   slotEmpty: {
-    fontSize: 16,
-    fontWeight: "300",
+    fontSize: 22,
+    fontWeight: "200",
   },
   slotLabel: {
     textAlign: "center",
-    lineHeight: 13,
+    lineHeight: 14,
+    fontWeight: "600",
+    fontSize: 10,
   },
   progressText: {
     textAlign: "center",
