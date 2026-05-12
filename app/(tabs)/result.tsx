@@ -21,6 +21,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import { generateInterpretation } from '@/constants/colorData';
+import { isPremiumActive, getTrialStatus } from '@/lib/trialUtils';
 
 const SOCIAL_LINKS = {
   naver: 'https://naver.me/ID3fxw2W',
@@ -30,6 +31,7 @@ const SOCIAL_LINKS = {
 
 export default function ResultScreen() {
   const router = useRouter();
+  const [trialStatus, setTrialStatus] = useState<'none' | 'active' | 'expired' | 'paid'>('none');
   const { selectedColors, resetColors } = useColorContext();
   const colors = useColors();
 
@@ -151,6 +153,10 @@ export default function ResultScreen() {
   const card1 = selectedColors[0];
   const card2 = selectedColors[1];
   const card3 = selectedColors[2];
+
+  useEffect(() => {
+    getTrialStatus().then(setTrialStatus);
+  }, []);
 
   useEffect(() => {
     if (!card1 || !card2 || !card3) {
@@ -493,6 +499,43 @@ export default function ResultScreen() {
           </View>
         </View>
 
+        {/* 심화 코칭 결제 유도 배너 */}
+        <View style={styles.upsellBanner}>
+          <Text style={styles.upsellTitle}>
+            🌿 더 깊은 내면의 흐름이 궁금하신가요?
+          </Text>
+          <Text style={styles.upsellDesc}>
+            63장 컬러+도형 카드로 무의식 · 현재 심리 · 회복 방향을{"\n"}
+            심층 분석해 드립니다
+          </Text>
+          {trialStatus === 'none' && (
+            <TouchableOpacity
+              style={[styles.upsellTrialBtn]}
+              onPress={() => router.push('/payment' as any)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.upsellTrialBtnText}>🌿 48시간 무료체험 시작하기</Text>
+            </TouchableOpacity>
+          )}
+          {trialStatus === 'active' && (
+            <TouchableOpacity
+              style={[styles.upsellActiveBtn]}
+              onPress={() => router.push('/premium-select' as any)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.upsellActiveBtnText}>심화 분석 열기 →</Text>
+            </TouchableOpacity>
+          )}
+          {(trialStatus === 'expired' || trialStatus === 'paid') && (
+            <TouchableOpacity
+              style={[styles.upsellPayBtn]}
+              onPress={() => router.push('/payment' as any)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.upsellPayBtnText}>심화 코칭 전체 보기 (30,000원) →</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         {/* 후기 남기기 버튼 */}
         <View style={styles.reviewButtonSection}>
           <TouchableOpacity
@@ -917,6 +960,65 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  upsellBanner: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: '#F0F7F0',
+    borderWidth: 1,
+    borderColor: '#8BAF8B55',
+  },
+  upsellTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#3A6B3A',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  upsellDesc: {
+    fontSize: 13,
+    color: '#5A7A5A',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+  upsellTrialBtn: {
+    backgroundColor: '#8BAF8B',
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center' as const,
+  },
+  upsellTrialBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  upsellActiveBtn: {
+    backgroundColor: '#5A8A5A',
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center' as const,
+  },
+  upsellActiveBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  upsellPayBtn: {
+    backgroundColor: '#3A6B3A',
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center' as const,
+  },
+  upsellPayBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
   },
   reviewButtonSection: {
     marginHorizontal: 16,

@@ -111,14 +111,23 @@ export default function PaymentScreen() {
     setTrialStatus("active");
     const label = await getTrialRemainingLabel();
     setRemainingLabel(label);
-    router.push("/premium-select" as any);
+    // 체험 활성화 후 이전 화면(심화 결과)으로 복귀
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push("/premium-select" as any);
+    }
   };
 
   const handleContinueTrial = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    router.push("/premium-select" as any);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push("/premium-select" as any);
+    }
   };
 
   // 무료체험 버튼 렌더링
@@ -139,7 +148,7 @@ export default function PaymentScreen() {
             1인 1회, 48시간 동안 무료로 체험 가능합니다
           </Text>
           <View style={[styles.trialButtonBadge, { backgroundColor: "#8BAF8B" }]}>
-            <Text style={styles.trialButtonBadgeText}>무료체험 시작하기</Text>
+            <Text style={styles.trialButtonBadgeText}>48시간 무료체험 시작하기</Text>
           </View>
         </TouchableOpacity>
       );
@@ -262,14 +271,14 @@ export default function PaymentScreen() {
           </View>
         ))}
 
-        {/* 무료 체험 버튼 (홈으로) */}
+        {/* 뒤로 가기 버튼 */}
         <TouchableOpacity
           style={[styles.freeButton, { borderColor: colors.border }]}
-          onPress={() => router.push("/" as any)}
+          onPress={() => router.canGoBack() ? router.back() : router.push("/" as any)}
           activeOpacity={0.7}
         >
           <Text style={[styles.freeButtonText, { color: colors.muted }]}>
-            무료 버전으로 먼저 체험하기
+            이전으로 돌아가기
           </Text>
         </TouchableOpacity>
 
