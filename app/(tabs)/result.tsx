@@ -223,7 +223,7 @@ export default function ResultScreen() {
           <Text style={[styles.sectionLabel, { color: colors.muted }]}>오늘 선택한 컬러</Text>
           <View style={styles.colorCards}>
             {[
-              { card: card1, label: '1번 카드', desc: '무의식 / 내면 흐름' },
+              { card: card1, label: '1번 카드', desc: '무의식 / 내면 성향' },
               { card: card2, label: '2번 카드', desc: '현재 상태' },
               { card: card3, label: '3번 카드', desc: '회복 방향' },
             ].map(({ card, label, desc }, i) => (
@@ -274,7 +274,7 @@ export default function ResultScreen() {
           {/* 현재 심리 흐름 */}
           <ResultCard
             icon="🌊"
-            title="현재 심리 흐름"
+            title="지금 나의 마음"
             content={interpretation.psychologyFlow}
             bgColor={colors.surface}
             borderColor={colors.border}
@@ -285,7 +285,7 @@ export default function ResultScreen() {
           {/* 성격 흐름 */}
           <ResultCard
             icon="🌿"
-            title="성격 흐름"
+            title="나의 성향"
             content={interpretation.personalityFlow}
             bgColor={colors.surface}
             borderColor={colors.border}
@@ -318,7 +318,7 @@ export default function ResultScreen() {
               ]}
             >
               <Text style={styles.halfCardIcon}>💛</Text>
-              <Text style={[styles.halfCardTitle, { color: '#8A6A3A' }]}>감정 패턴</Text>
+              <Text style={[styles.halfCardTitle, { color: '#8A6A3A' }]}>마음 습관</Text>
               {interpretation.shadows.map((s, i) => (
                 <View key={i} style={styles.tagRow}>
                   <View style={[styles.tag, { backgroundColor: '#E8D8C0' }]}>
@@ -341,7 +341,7 @@ export default function ResultScreen() {
               <Text style={[styles.complementTitle, { color: '#2A2A2A' }]}>보완 컬러</Text>
             </View>
             <Text style={[styles.complementDesc, { color: colors.muted }]}>
-              지금 당신에게 필요한 에너지의 색
+              지금 나에게 도움이 되는 컬러
             </Text>
             <View style={styles.complementTags}>
               {interpretation.complementColors.map((c, i) => (
@@ -368,7 +368,7 @@ export default function ResultScreen() {
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               <View style={[styles.recoveryBadge, { backgroundColor: '#B8D8C0', borderColor: '#8ABF9A' }]}>
-                <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{card3.korName} 에너지</Text>
+                <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{card3.korName} 컬러</Text>
               </View>
               <View style={[styles.recoveryBadge, { backgroundColor: '#D8EED8', borderColor: '#A8CEB0' }]}>
                 <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{card3.recovery}</Text>
@@ -439,10 +439,10 @@ export default function ResultScreen() {
           {/* 브랜드 문구 */}
           <View style={styles.brandMessageBox}>
             <Text style={[styles.socialTitle, { color: '#2A2A2A' }]}>
-              지금의 마음 흐름을{'\n'}더 깊이 이해하고 싶다면
+              {'나를 더 깊이 이해하고 싶다면\n컬러 코칭이 도움이 될 수 있습니다'}
             </Text>
             <Text style={[styles.socialSubtitle, { color: '#666666' }]}>
-              휴심컬러와 함께하는 1:1 컬러코칭을 만나보세요
+              휴심컬러와 함께하는 1:1 컬러 코칭을 만나보세요
             </Text>
           </View>
 
@@ -459,7 +459,7 @@ export default function ResultScreen() {
                 </View>
                 <View style={styles.socialTextGroup}>
                   <Text style={styles.socialButtonTitle}>네이버 예약</Text>
-                  <Text style={styles.socialButtonDesc}>1:1 콜러코칭 예약하기</Text>
+                  <Text style={styles.socialButtonDesc}>1:1 컬러 코칭 예약하기</Text>
                   <Text style={styles.socialButtonAddr}>이음트레이드 · 동소문로 47 701호</Text>
                 </View>
                 <Text style={styles.socialArrow}>→</Text>
