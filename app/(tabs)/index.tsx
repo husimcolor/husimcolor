@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -15,6 +15,20 @@ export default function HomeScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
   const logoAnim = useRef(new Animated.Value(0)).current;
+  // 로고 5번 탭 관리자 진입
+  const [logoTapCount, setLogoTapCount] = useState(0);
+  const logoTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleLogoTap = () => {
+    const newCount = logoTapCount + 1;
+    setLogoTapCount(newCount);
+    if (logoTapTimer.current) clearTimeout(logoTapTimer.current);
+    if (newCount >= 5) {
+      setLogoTapCount(0);
+      router.push('/admin' as any);
+      return;
+    }
+    logoTapTimer.current = setTimeout(() => setLogoTapCount(0), 2000);
+  };
 
   useEffect(() => {
     Animated.sequence([
@@ -54,15 +68,19 @@ export default function HomeScreen() {
         <View style={[styles.decorCircle2, { backgroundColor: colors.warmgold + '15' }]} />
         <View style={[styles.decorCircle3, { backgroundColor: colors.primary + '10' }]} />
 
-        {/* 로고 영역 */}
+        {/* 로고 영역 - 5번 탭 시 관리자 진입 */}
         <Animated.View style={[styles.logoSection, { opacity: logoAnim }]}>
-          <View style={[styles.logoContainer, { backgroundColor: colors.surface, shadowColor: colors.foreground }]}>
+          <TouchableOpacity
+            onPress={handleLogoTap}
+            activeOpacity={0.9}
+            style={[styles.logoContainer, { backgroundColor: colors.surface, shadowColor: colors.foreground }]}
+          >
             <Image
               source={{ uri: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663646006927/mTvBGzpe4naoi2CdDkbujz/icon-fBSxKFHiCtYA4p9pczpHqG.png' }}
               style={styles.logoImage}
               resizeMode="contain"
             />
-          </View>
+          </TouchableOpacity>
         </Animated.View>
 
         {/* 텍스트 영역 */}
@@ -144,14 +162,7 @@ export default function HomeScreen() {
             <Text style={styles.premiumButtonSub}>63장 카드 · 3만원 · 심층 분석</Text>
           </Pressable>
         </Animated.View>
-        {/* 관리자 진입 (숙김) - 유료 버튼 아래 우측 코너 */}
-        <TouchableOpacity
-          style={{ alignSelf: 'flex-end', padding: 20, marginTop: -8 }}
-          onPress={() => router.push('/admin' as any)}
-          activeOpacity={0.01}
-        >
-          <Text style={{ fontSize: 9, color: 'transparent' }}>©</Text>
-        </TouchableOpacity>
+
       </View>
 
     </ScreenContainer>

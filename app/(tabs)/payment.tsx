@@ -467,10 +467,7 @@ export default function PaymentScreen() {
           </Text>
         </View>
 
-        {/* 무료체험 버튼 (최상단 강조) */}
-        {renderTrialButton()}
-
-        {/* 상품 카드 목록 */}
+         {/* 상품 카드 목록 */}
         {PAYMENT_PLANS.map((plan) => (
           <View
             key={plan.id}
