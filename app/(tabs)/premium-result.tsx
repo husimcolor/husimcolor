@@ -762,7 +762,7 @@ export default function PremiumResultScreen() {
         <View style={[styles.reviewSection, { backgroundColor: colors.surface, borderColor: "#8BAF8B44" }]}>
           {/* 마무리 문구 */}
           <Text style={[styles.reviewClosingText, { color: colors.muted }]}>
-            오늘의 흐름이{"\n"}당신에게 작은 쉬음과 이해가 되었기를 바랍니다 🌿
+           오늘의 코칭이{"\n"}당신에게 작은 쉼과 이해가 되었기를 바랍니다 🌿
           </Text>
 
           {reviewDone ? (
@@ -780,7 +780,7 @@ export default function PremiumResultScreen() {
             /* 후기 입력 폼 */
             <View style={styles.reviewForm}>
               <Text style={[styles.reviewAskText, { color: colors.foreground }]}>
-                짧은 후기를 남겨주시면{"\n"}휘심콜러가 더 따뜻하게 성장하는 데 큰 힘이 됩니다 😊
+                짧은 후기를 남겨주시면{"\n"}휴심컬러가 더 따뜻하게 성장하는 데 큰 힘이 됩니다 😊
               </Text>
 
               {/* 별점 */}
@@ -888,7 +888,7 @@ function toFlowPhrase(title: string): string {
 
 function toRecoveryPhrase(title: string): string {
   if (title.endsWith('에너지')) {
-    return `${title}이 회복의 방향을 안내하고 있습니다`;
+    return `${title}가 회복의 방향을 안내하고 있습니다`;
   }
   if (title.endsWith('흐름') || title.endsWith('균형') || title.endsWith('조화')) {
     return `${title}이 회복의 방향을 안내하고 있습니다`;
