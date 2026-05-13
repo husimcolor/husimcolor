@@ -20,7 +20,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
-import { generateInterpretation } from '@/constants/colorData';
+import { generateInterpretation, COLOR_DATA } from '@/constants/colorData';
 import { isPremiumActive, getTrialStatus } from '@/lib/trialUtils';
 
 const SOCIAL_LINKS = {
@@ -344,14 +344,20 @@ export default function ResultScreen() {
               지금 나에게 도움이 되는 컬러
             </Text>
             <View style={styles.complementTags}>
-              {interpretation.complementColors.map((c, i) => (
-                <View
-                  key={i}
-                  style={[styles.complementTag, { backgroundColor: '#4A7A5A', borderColor: '#2E5C3E' }]}
-                >
-                  <Text style={[styles.complementTagText, { color: '#FFFFFF' }]}>{c}</Text>
-                </View>
-              ))}
+              {interpretation.complementColors.map((c, i) => {
+                const colorInfo = COLOR_DATA.find(d => d.korName === c);
+                return (
+                  <View
+                    key={i}
+                    style={[styles.complementTag, { backgroundColor: '#4A7A5A', borderColor: '#2E5C3E', flexDirection: 'column', alignItems: 'flex-start', paddingVertical: 7, paddingHorizontal: 12, minWidth: 90 }]}
+                  >
+                    <Text style={[styles.complementTagText, { color: '#FFFFFF', fontWeight: '700' }]}>{c}</Text>
+                    {colorInfo && (
+                      <Text style={{ color: '#CCEAD6', fontSize: 11, marginTop: 2, lineHeight: 15 }}>{colorInfo.recovery}</Text>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           </View>
 
