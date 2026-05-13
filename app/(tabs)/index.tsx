@@ -176,7 +176,7 @@ export default function HomeScreen() {
           >
             <View style={styles.premiumButtonInner}>
               <Text style={styles.premiumButtonBadge}>NEW</Text>
-              <Text style={styles.premiumButtonText}>🎴 컬러+도형 심층 해석 (유료)</Text>
+              <Text style={styles.premiumButtonText}>🎨 컬러+도형 심층 해석 (유료)</Text>
             </View>
             <Text style={styles.premiumButtonSub}>63장 카드 · 3만원 · 심층 분석</Text>
           </Pressable>

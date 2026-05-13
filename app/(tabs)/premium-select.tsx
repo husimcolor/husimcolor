@@ -32,9 +32,9 @@ function shuffleArray<T>(arr: T[]): T[] {
 const POSITION_LABELS = ["무의식 · 내면 에너지", "현재 현실 에너지", "미래 · 회복 · 희망 에너지"];
 const POSITION_COLORS = ["#8BAF8B", "#B5A0C8", "#C4956A"];
 
-const CARD_BACK_COLOR = "#EDE8DF";
-const CARD_BACK_BORDER = "#C8BFB0";
-const CARD_BACK_SYMBOL_COLOR = "rgba(140, 128, 112, 0.65)";
+const CARD_BACK_COLOR = "#D8CEBC";
+const CARD_BACK_BORDER = "#B8A898";
+const CARD_BACK_SYMBOL_COLOR = "rgba(120, 105, 88, 0.60)";
 
 // 각 카드에 개별 Animated.Value를 생성하는 컴포넌트
 function AnimatedCard({

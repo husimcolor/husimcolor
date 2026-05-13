@@ -49,8 +49,8 @@ const PAYMENT_PLANS = [
     badgeColor: "#8BAF8B",
     description: "나의 컬러 에너지 흐름 심층 분석",
     features: [
-      { icon: "🎴", title: "63장 컬러+도형 심리카드", desc: "9가지 컬러 × 7가지 도형 조합" },
-      { icon: "🔮", title: "3장 카드 심층 해석", desc: "무의식 · 현재 · 회복 방향 분석" },
+      { icon: "🎨", title: "63장 컬러+도형 심리카드", desc: "9가지 컬러 × 7가지 도형 조합" },
+      { icon: "🌿", title: "3장 카드 심층 해석", desc: "무의식 · 현재 · 회복 방향 분석" },
       { icon: "💚", title: "개인 맞춤 코칭 메시지", desc: "나이·직업·신앙 여부 반영 해석" },
       { icon: "🌿", title: "지금 나에게 필요한 컬러 안내", desc: "지금 마음을 채워줄 컬러 제안" },
     ],
