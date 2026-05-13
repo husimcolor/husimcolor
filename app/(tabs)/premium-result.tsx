@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { type CardData } from "@/constants/cardData";
+import { type ColorData } from "@/constants/colorData";
 import { type UserProfile } from "./profile";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
 
@@ -136,13 +137,18 @@ export default function PremiumResultScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [trialStatus, setTrialStatus] = useState<TrialStatus>("none");
   const [remainingLabel, setRemainingLabel] = useState<string | null>(null);
+  const [prevColors, setPrevColors] = useState<ColorData[]>([]);
 
   useEffect(() => {
     (async () => {
       const raw = await AsyncStorage.getItem("premiumSelectedCards");
       const profileRaw = await AsyncStorage.getItem("userProfile");
+      const colorsRaw = await AsyncStorage.getItem("premiumSelectedColors");
       if (raw) setCards(JSON.parse(raw));
       if (profileRaw) setProfile(JSON.parse(profileRaw));
+      if (colorsRaw) {
+        try { setPrevColors(JSON.parse(colorsRaw)); } catch {}
+      }
       const status = await getTrialStatus();
       setTrialStatus(status);
       if (status === "active") {
@@ -170,7 +176,7 @@ export default function PremiumResultScreen() {
   const jobCoaching = profile ? getJobCoaching(profile.job, profile.faith) : null;
 
   // 3카드 조합 종합 코칭 메시지 생성
-  const combinedCoaching = generateCombinedCoaching(card1, card2, card3);
+  const combinedCoaching = generateCombinedCoaching(card1, card2, card3, prevColors.length >= 3 ? prevColors : undefined);
 
   const handleShare = async () => {
     // 보완 루틴 텍스트 구성 (card3 wellness 기준)
@@ -433,6 +439,30 @@ export default function PremiumResultScreen() {
           </View>
         </SectionCard>
 
+        {/* 컬러 성향 흐름 섹션 */}
+        {prevColors.length >= 3 && (
+          <View style={[styles.colorFlowSection, { backgroundColor: "#F8F4EE", borderColor: "#D4C8B844" }]}>
+            <Text style={[styles.colorFlowSectionTitle, { color: "#8B6914" }]}>
+              🎨 컬러 성향 흐름
+            </Text>
+            <Text style={[styles.colorFlowSectionSub, { color: "#A0845C" }]}>
+              1단계에서 선택한 컬러가 보여주는 기질과 성향
+            </Text>
+            <View style={styles.colorFlowSectionRow}>
+              {prevColors.map((c: ColorData, i: number) => (
+                <View key={c.id} style={styles.colorFlowSectionItem}>
+                  <View style={[styles.colorFlowSectionDot, { backgroundColor: c.hex }]} />
+                  <Text style={[styles.colorFlowSectionName, { color: "#5C4A1E" }]}>{c.korName}</Text>
+                  <Text style={[styles.colorFlowSectionKeyword, { color: "#A0845C" }]}>{c.keywords[0]}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={[styles.colorFlowSectionDesc, { color: "#7A6040" }]}>
+              {prevColors[0].korName}의 {prevColors[0].keywords[0]}·{prevColors[1].korName}의 {prevColors[1].keywords[0]}·{prevColors[2].korName}의 {prevColors[2].keywords[0]} 흐름이
+              {" "}당신의 기질과 성향을 이루고 있습니다.
+            </Text>
+          </View>
+        )}
         {/* 종합 코칭 메시지 */}
         <View
           style={[
@@ -675,14 +705,63 @@ function toRecoveryPhrase(title: string): string {
   return `${title}의 에너지가 회복의 방향을 안내하고 있습니다`;
 }
 
-function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardData): string {
+function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardData, colorFlow?: ColorData[]): string {
   const line1 = `내면에서는 ${toFlowPhrase(card1.energyTitle)}, `;
   const line2 = `현재는 ${card2.energyTitle.endsWith('에너지') ? card2.energyTitle + '의 흐름' : card2.energyTitle} 속에 있습니다.\n`;
   const line3 = `${toRecoveryPhrase(card3.energyTitle)}.\n\n`;
-  return line1 + line2 + line3 + card3.coachingMessage;
+  // 컬러 흐름 통합 문장
+  let colorLine = '';
+  if (colorFlow && colorFlow.length >= 3) {
+    const [c1, c2, c3] = colorFlow;
+    colorLine = `\n\n${c1.korName}·${c2.korName}·${c3.korName}의 컬러 흐름이 이 여정을 함께 안내하고 있습니다. ` +
+      `${c1.korName}의 ${c1.keywords[0]}과 ${c3.korName}의 ${c3.recovery} 방향이 ` +
+      `지금 당신에게 필요한 회복의 실마리가 될 것입니다.`;
+  }
+  return line1 + line2 + line3 + card3.coachingMessage + colorLine;
 }
 
 const styles = StyleSheet.create({
+  colorFlowSection: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
+    gap: 8,
+  },
+  colorFlowSectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  colorFlowSectionSub: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  colorFlowSectionRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 8,
+  },
+  colorFlowSectionItem: {
+    alignItems: "center",
+    gap: 4,
+  },
+  colorFlowSectionDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  colorFlowSectionName: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  colorFlowSectionKeyword: {
+    fontSize: 11,
+  },
+  colorFlowSectionDesc: {
+    fontSize: 13,
+    lineHeight: 20,
+    paddingTop: 4,
+  },
   scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 16,

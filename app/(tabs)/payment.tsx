@@ -243,7 +243,7 @@ export default function PaymentScreen() {
       const label = await getTrialRemainingLabel();
       setRemainingLabel(label);
     }
-    router.push("/premium-select" as any);
+    router.push("/premium-color-select" as any);
   };
   const toggleConcern = (item: string) => {
     setProfileConcerns(prev => {

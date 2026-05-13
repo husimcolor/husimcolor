@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { CARD_DATA, type CardData } from "@/constants/cardData";
+import { COLOR_DATA, type ColorData } from "@/constants/colorData";
 import { isPremiumActive } from "@/lib/trialUtils";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -173,6 +174,18 @@ export default function PremiumSelectScreen() {
   const [selectedCards, setSelectedCards] = useState<(CardData | null)[]>([null, null, null]);
   const [flippedIndices, setFlippedIndices] = useState<Set<number>>(new Set());
   const [isShuffling, setIsShuffling] = useState(true);
+  const [prevSelectedColors, setPrevSelectedColors] = useState<ColorData[]>([]);
+  // 이전 단계에서 선택한 컬러 불러오기
+  useEffect(() => {
+    AsyncStorage.getItem("premiumSelectedColors").then(data => {
+      if (data) {
+        try {
+          const ids: ColorData[] = JSON.parse(data);
+          setPrevSelectedColors(ids);
+        } catch {}
+      }
+    });
+  }, []);
 
   // 각 카드의 flip 애니메이션
   const flipAnims = useRef<Animated.Value[]>(
@@ -246,6 +259,31 @@ export default function PremiumSelectScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* 단계 배지 */}
+        <View style={styles.stepBadgeRow}>
+          <View style={styles.stepBadge}>
+            <Text style={styles.stepBadgeText}>2단계 · 심리카드 흐름</Text>
+          </View>
+        </View>
+        {/* 이전 단계 컬러 요약 */}
+        {prevSelectedColors.length > 0 && (
+          <View style={[styles.colorFlowBanner, { backgroundColor: "#8BAF8B11", borderColor: "#8BAF8B44" }]}>
+            <Text style={[styles.colorFlowTitle, { color: "#8BAF8B" }]}>
+              🌿 1단계 컬러 흐름
+            </Text>
+            <View style={styles.colorFlowRow}>
+              {prevSelectedColors.map((c: ColorData) => (
+                <View key={c.id} style={styles.colorFlowItem}>
+                  <View style={[styles.colorFlowDot, { backgroundColor: c.hex }]} />
+                  <Text style={[styles.colorFlowName, { color: "#8BAF8B" }]}>{c.korName}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={[styles.colorFlowDesc, { color: colors.muted }]}>
+              이 컬러 흐름을 바탕으로, 직관이 이끄는 카드를 선택해 주세요
+            </Text>
+          </View>
+        )}
         {/* 헤더 */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.foreground }]}>
@@ -488,5 +526,56 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
+  },
+  stepBadgeRow: {
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  stepBadge: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#8BAF8B55",
+    backgroundColor: "#8BAF8B11",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  stepBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#8BAF8B",
+  },
+  colorFlowBanner: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 12,
+    gap: 6,
+  },
+  colorFlowTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  colorFlowRow: {
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "center",
+  },
+  colorFlowItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  colorFlowDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  colorFlowName: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  colorFlowDesc: {
+    fontSize: 12,
+    lineHeight: 18,
   },
 });
