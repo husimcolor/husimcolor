@@ -144,15 +144,16 @@ export default function HomeScreen() {
             <Text style={styles.premiumButtonSub}>63장 카드 · 3만원 · 심층 분석</Text>
           </Pressable>
         </Animated.View>
+        {/* 관리자 진입 (숙김) - 유료 버튼 아래 우측 코너 */}
+        <TouchableOpacity
+          style={{ alignSelf: 'flex-end', padding: 20, marginTop: -8 }}
+          onPress={() => router.push('/admin' as any)}
+          activeOpacity={0.01}
+        >
+          <Text style={{ fontSize: 9, color: 'transparent' }}>©</Text>
+        </TouchableOpacity>
       </View>
-      {/* 관리자 진입 (숫김) */}
-      <TouchableOpacity
-        style={{ position: 'absolute', bottom: 8, right: 16, padding: 8 }}
-        onPress={() => router.push('/admin' as any)}
-        activeOpacity={0.3}
-      >
-        <Text style={{ fontSize: 10, color: 'transparent' }}>admin</Text>
-      </TouchableOpacity>
+
     </ScreenContainer>
   );
 }
