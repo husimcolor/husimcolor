@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { trpc } from '@/lib/trpc';
 
 const { width, height } = Dimensions.get('window');
 
@@ -50,6 +52,23 @@ export default function HomeScreen() {
         }),
       ]),
     ]).start();
+  }, []);
+
+  // 방문자 수 집계 (앱 최초 진입 시 1회)  
+  const logVisitor = trpc.visitors.log.useMutation();
+  useEffect(() => {
+    const trackVisit = async () => {
+      try {
+        const key = 'visitor_logged_today';
+        const today = new Date().toDateString();
+        const last = await AsyncStorage.getItem(key);
+        if (last !== today) {
+          await AsyncStorage.setItem(key, today);
+          logVisitor.mutate({ deviceId: 'app_home', visitType: 'home' });
+        }
+      } catch (_) {}
+    };
+    trackVisit();
   }, []);
 
   const handleStart = () => {

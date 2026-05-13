@@ -130,3 +130,39 @@ export async function updatePaymentStatus(id: number, status: 'pending' | 'confi
     .where(eq(paymentRecords.id, id));
   return { success: true };
 }
+
+// 방문자 수 추적 DB 함수
+import { InsertVisitorLog, visitorLogs } from "../drizzle/schema";
+import { count, sql } from "drizzle-orm";
+
+export async function logVisitor(data: InsertVisitorLog) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.insert(visitorLogs).values(data);
+  } catch (e) {
+    console.warn("[DB] logVisitor failed", e);
+  }
+}
+
+export async function getVisitorStats() {
+  const db = await getDb();
+  if (!db) return { totalVisitors: 0, freeTrial: 0, premium: 0 };
+  // 고유 기기 수 기준 전체 방문자
+  const totalResult = await db
+    .select({ cnt: sql<number>`COUNT(DISTINCT ${visitorLogs.deviceId})` })
+    .from(visitorLogs);
+  const freeResult = await db
+    .select({ cnt: sql<number>`COUNT(DISTINCT ${visitorLogs.deviceId})` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'free_trial'));
+  const premiumResult = await db
+    .select({ cnt: sql<number>`COUNT(DISTINCT ${visitorLogs.deviceId})` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'premium'));
+  return {
+    totalVisitors: Number(totalResult[0]?.cnt ?? 0),
+    freeTrial: Number(freeResult[0]?.cnt ?? 0),
+    premium: Number(premiumResult[0]?.cnt ?? 0),
+  };
+}

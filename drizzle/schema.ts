@@ -52,3 +52,14 @@ export const paymentRecords = mysqlTable("payment_records", {
 
 export type PaymentRecord = typeof paymentRecords.$inferSelect;
 export type InsertPaymentRecord = typeof paymentRecords.$inferInsert;
+
+// 방문자 수 추적 테이블
+export const visitorLogs = mysqlTable("visitor_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  deviceId: varchar("deviceId", { length: 128 }).notNull(), // 기기별 고유 ID
+  visitType: mysqlEnum("visitType", ["home", "free_trial", "premium"]).default("home").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VisitorLog = typeof visitorLogs.$inferSelect;
+export type InsertVisitorLog = typeof visitorLogs.$inferInsert;

@@ -31,10 +31,10 @@ export const appRouter = router({
       .mutation(({ input }) => {
         return db.createPaymentRecord(input);
       }),
-    list: protectedProcedure.query(() => {
+    list: publicProcedure.query(() => {
       return db.getPaymentRecords();
     }),
-    updateStatus: protectedProcedure
+    updateStatus: publicProcedure
       .input(z.object({
         id: z.number().int(),
         status: z.enum(['pending', 'confirmed', 'rejected']),
@@ -43,6 +43,21 @@ export const appRouter = router({
       .mutation(({ input }) => {
         return db.updatePaymentStatus(input.id, input.status, input.memo);
       }),
+  }),
+
+  // 방문자 수 추적 API
+  visitors: router({
+    log: publicProcedure
+      .input(z.object({
+        deviceId: z.string().min(1).max(128),
+        visitType: z.enum(['home', 'free_trial', 'premium']),
+      }))
+      .mutation(({ input }) => {
+        return db.logVisitor(input);
+      }),
+    stats: publicProcedure.query(() => {
+      return db.getVisitorStats();
+    }),
   }),
 
   // 후기 API
