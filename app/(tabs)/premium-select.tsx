@@ -389,7 +389,7 @@ export default function PremiumSelectScreen() {
         >
           <Text style={styles.confirmButtonText}>
             {selectedCount === 3
-              ? "컬러 에너지 흐름 해석하기 →"
+              ? "나의 컬러 심리 해석하기 →"
               : `${selectedCount} / 3 선택됨`}
           </Text>
         </TouchableOpacity>

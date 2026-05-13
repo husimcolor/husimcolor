@@ -325,7 +325,7 @@ export default function PremiumResultScreen() {
       `  · 추천 호흡: ${card3.wellness.breath}\n` +
       routineLines.join('\n');
 
-    const shareText = `[휴심컬러 컬러에너지 흐름 해석]\n\n` +
+    const shareText = `[휴심컬러 나의 컬러 심리 해석]\n\n` +
       `1번(내면): ${card1.colorKor} ${card1.shapeKor} - ${card1.energyTitle}\n` +
       `2번(현재): ${card2.colorKor} ${card2.shapeKor} - ${card2.energyTitle}\n` +
       `3번(회복): ${card3.colorKor} ${card3.shapeKor} - ${card3.energyTitle}\n\n` +
@@ -334,7 +334,7 @@ export default function PremiumResultScreen() {
 
     if (Platform.OS !== "web" && typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ text: shareText, title: "휴심컬러 에너지 흐름 해석" });
+        await navigator.share({ text: shareText, title: "휴심나의 컬러 심리 해석" });
       } catch {}
     } else if (typeof navigator !== "undefined" && navigator.clipboard) {
       await navigator.clipboard.writeText(shareText);
@@ -351,7 +351,7 @@ export default function PremiumResultScreen() {
         {/* 헤더 */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-            컬러 에너지 흐름 해석
+            나의 컬러 심리 해석
           </Text>
           {profile && (
             <Text style={[styles.headerProfile, { color: colors.muted }]}>
@@ -513,13 +513,13 @@ export default function PremiumResultScreen() {
 
         {/* 보완 컬러 */}
         <SectionCard
-          title="보완 컬러 에너지"
+          title="지금 나에게 필요한 컬러"
           accentColor="#C4956A"
           colors={colors}
         >
           <View style={styles.complementContent}>
             <Text style={[styles.complementDesc, { color: colors.muted }]}>
-              지금의 에너지 흐름을 보완해 줄 컬러입니다
+              지금 마음을 채워줄 컬러입니다
             </Text>
             <View style={styles.tagsRow}>
               {(() => {
@@ -614,10 +614,10 @@ export default function PremiumResultScreen() {
         {prevColors.length >= 3 && (
           <View style={[styles.colorFlowSection, { backgroundColor: "#F8F4EE", borderColor: "#D4C8B844" }]}>
             <Text style={[styles.colorFlowSectionTitle, { color: "#8B6914" }]}>
-              🎨 컬러 성향 흐름
+              🎨 나의 컬러 성향
             </Text>
             <Text style={[styles.colorFlowSectionSub, { color: "#A0845C" }]}>
-              1단계에서 선택한 컬러가 보여주는 기질과 성향
+              선택한 컬러가 보여주는 나의 성향
             </Text>
             <View style={styles.colorFlowSectionRow}>
               {prevColors.map((c: ColorData, i: number) => (
@@ -629,8 +629,8 @@ export default function PremiumResultScreen() {
               ))}
             </View>
             <Text style={[styles.colorFlowSectionDesc, { color: "#7A6040" }]}>
-              {prevColors[0].korName}의 {prevColors[0].keywords[0]}·{prevColors[1].korName}의 {prevColors[1].keywords[0]}·{prevColors[2].korName}의 {prevColors[2].keywords[0]} 흐름이
-              {" "}당신의 기질과 성향을 이루고 있습니다.
+              {prevColors[0].korName}의 {prevColors[0].keywords[0]}·{prevColors[1].korName}의 {prevColors[1].keywords[0]}·{prevColors[2].korName}의 {prevColors[2].keywords[0]} 이
+              {" "}당신의 성향을 이루고 있습니다.
             </Text>
           </View>
         )}
@@ -984,12 +984,12 @@ function toFlowPhrase(title: string): string {
 function toRecoveryPhrase(title: string): string {
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
-    return `지금은 ${base}을(를) 향해 조금씩 나아가고 있습니다`;
+    return `지금은 ${base} 방향으로 조금씩 나아가고 있습니다`;
   }
   if (title.endsWith('흐름') || title.endsWith('균형') || title.endsWith('조화')) {
-    return `지금은 ${title}을 향해 조금씩 나아가고 있습니다`;
+    return `지금은 ${title} 방향으로 조금씩 나아가고 있습니다`;
   }
-  return `지금은 ${title}을(를) 향해 조금씩 나아가고 있습니다`;
+  return `지금은 ${title} 방향으로 조금씩 나아가고 있습니다`;
 }
 function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardData, colorFlow?: ColorData[]): string {
   // 1번 카드: 무의식 성향 설명
@@ -1009,7 +1009,7 @@ function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardD
     colorLine = `\n\n${c1.korName}·${c2.korName}·${c3.korName} 컬러가 ` +
       `지금 당신의 마음을 함께 이야기하고 있습니다. ` +
       `${c1.korName}의 ${c1.keywords[0]}와 ${c3.korName}의 ${c3.recovery}이 ` +
-      `지금 당신에게 필요한 회복의 실마리가 될 것입니다.`;
+      `지금 당신에게 도움이 될 것입니다.`;
   }
   return line1 + line2 + line3 + card3.coachingMessage + colorLine;
 }
