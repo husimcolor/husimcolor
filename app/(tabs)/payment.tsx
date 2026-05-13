@@ -539,17 +539,7 @@ export default function PaymentScreen() {
         ))}
 
         {/* 무료체험 / 이전으로 버튼 */}
-        {trialStatus === "none" ? (
-          <TouchableOpacity
-            style={[styles.freeButton, { borderColor: "#8BAF8B", backgroundColor: "#8BAF8B12" }]}
-            onPress={handleStartTrial}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.freeButtonText, { color: "#5A8A5A", fontWeight: "600" }]}>
-              🌿 1인 1회 · 48시간 무료체험 시작하기
-            </Text>
-          </TouchableOpacity>
-        ) : trialStatus === "active" ? (
+        {trialStatus === "active" ? (
           <TouchableOpacity
             style={[styles.freeButton, { borderColor: "#8BAF8B", backgroundColor: "#8BAF8B12" }]}
             onPress={handleContinueTrial}
@@ -559,7 +549,7 @@ export default function PaymentScreen() {
               🌿 1인 1회 · 48시간 무료체험 시작하기
             </Text>
           </TouchableOpacity>
-        ) : trialStatus === "expired" ? (
+        ) : (
           <TouchableOpacity
             style={[styles.freeButton, { borderColor: "#8BAF8B", backgroundColor: "#8BAF8B12" }]}
             onPress={handleStartTrial}
@@ -569,7 +559,7 @@ export default function PaymentScreen() {
               🌿 1인 1회 · 48시간 무료체험 시작하기
             </Text>
           </TouchableOpacity>
-        ) : null}
+        )}
 
         {/* 안내 문구 */}
         <Text style={[styles.notice, { color: colors.muted }]}>
