@@ -56,10 +56,10 @@ function buildColorInterpretation(colors: ColorData[]): {
 
   // 관계 성향
   const relationshipTendency =
-    `관계 안에서 ${c1.keywords[0]}과 ${c2.keywords[1]}을 중요하게 여기는 성향이 나타납니다. ` +
-    `${c1.korName}의 ${c1.recovery} 성향은 관계에서 자연스럽게 드러나고, ` +
-    `${c3.korName}의 ${c3.keywords[0]} 흐름은 관계 속에서 안정을 찾는 방식으로 연결됩니다. ` +
-    `깊이 있는 연결을 원하면서도, 자신만의 공간과 리듬이 필요한 관계 스타일입니다.`;
+    `${c1.korName}의 따뜻함과 ${c2.korName}의 편안함을 중요하게 여기는 성향이 있습니다. ` +
+    `${c1.korName}의 성향은 관계에서 자연스럽게 드러나고, ` +
+    `${c3.korName}의 성향은 관계 속에서 안정감을 찾는 방식으로 연결됩니다. ` +
+    `깊이 있는 연결을 원하면서도, 자신만의 시간과 리듬이 필요한 스타일입니다.`;
 
   return { psychologyTendency, personalityTendency, strengths, shadows, relationshipTendency };
 }
