@@ -15,6 +15,7 @@ import { useColors } from "@/hooks/use-colors";
 import { CARD_DATA, type CardData } from "@/constants/cardData";
 import { COLOR_DATA, type ColorData } from "@/constants/colorData";
 import { isPremiumActive } from "@/lib/trialUtils";
+import Svg, { Path, Circle, Line } from "react-native-svg";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - 48 - 32) / 5;
@@ -109,7 +110,39 @@ function AnimatedCard({
             },
           ]}
         >
-          <Text style={styles.cardBackSymbol}>✦</Text>
+          {/* 은은한 물결 + 점 패턴 */}
+          <Svg
+            width={CARD_WIDTH}
+            height={CARD_HEIGHT}
+            viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`}
+            style={{ position: "absolute", top: 0, left: 0 }}
+          >
+            {/* 물결 라인 1 */}
+            <Path
+              d={`M -10 ${CARD_HEIGHT * 0.25} Q ${CARD_WIDTH * 0.25} ${CARD_HEIGHT * 0.18} ${CARD_WIDTH * 0.5} ${CARD_HEIGHT * 0.25} Q ${CARD_WIDTH * 0.75} ${CARD_HEIGHT * 0.32} ${CARD_WIDTH + 10} ${CARD_HEIGHT * 0.25}`}
+              stroke="rgba(120, 105, 88, 0.18)"
+              strokeWidth="1"
+              fill="none"
+            />
+            {/* 물결 라인 2 */}
+            <Path
+              d={`M -10 ${CARD_HEIGHT * 0.5} Q ${CARD_WIDTH * 0.25} ${CARD_HEIGHT * 0.43} ${CARD_WIDTH * 0.5} ${CARD_HEIGHT * 0.5} Q ${CARD_WIDTH * 0.75} ${CARD_HEIGHT * 0.57} ${CARD_WIDTH + 10} ${CARD_HEIGHT * 0.5}`}
+              stroke="rgba(120, 105, 88, 0.14)"
+              strokeWidth="1"
+              fill="none"
+            />
+            {/* 물결 라인 3 */}
+            <Path
+              d={`M -10 ${CARD_HEIGHT * 0.75} Q ${CARD_WIDTH * 0.25} ${CARD_HEIGHT * 0.68} ${CARD_WIDTH * 0.5} ${CARD_HEIGHT * 0.75} Q ${CARD_WIDTH * 0.75} ${CARD_HEIGHT * 0.82} ${CARD_WIDTH + 10} ${CARD_HEIGHT * 0.75}`}
+              stroke="rgba(120, 105, 88, 0.12)"
+              strokeWidth="1"
+              fill="none"
+            />
+            {/* 중앙 작은 점 장식 */}
+            <Circle cx={CARD_WIDTH * 0.5} cy={CARD_HEIGHT * 0.5} r="2.5" fill="rgba(120, 105, 88, 0.25)" />
+            <Circle cx={CARD_WIDTH * 0.5} cy={CARD_HEIGHT * 0.5} r="5" stroke="rgba(120, 105, 88, 0.15)" strokeWidth="0.8" fill="none" />
+            <Circle cx={CARD_WIDTH * 0.5} cy={CARD_HEIGHT * 0.5} r="8.5" stroke="rgba(120, 105, 88, 0.10)" strokeWidth="0.6" fill="none" />
+          </Svg>
         </Animated.View>
 
         {/* 카드 앞면 */}
