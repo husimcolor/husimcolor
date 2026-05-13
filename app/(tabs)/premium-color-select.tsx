@@ -28,13 +28,11 @@ function buildColorInterpretation(colors: ColorData[]): {
 } {
   const [c1, c2, c3] = colors;
 
-  // 심리 성향: 3가지 컬러의 reading1(내면 흐름)을 연결
+  // 심리 성향: 3가지 컬러의 현재 성향·기질 흐름을 연결
   const psychologyTendency =
-    `${c1.korName} 컬러가 보여주는 내면의 흐름은, ` +
-    `${c1.keywords[0]}과 ${c1.keywords[1]}이 함께 작동하는 에너지입니다. ` +
-    `여기에 ${c2.korName}의 ${c2.keywords[0]} 성향과 ${c3.korName}의 ${c3.keywords[0]} 흐름이 더해지면서, ` +
-    `당신은 ${c1.recovery} 방향을 내면 깊이 원하면서도 ` +
-    `${c2.keywords[1]}과 ${c3.keywords[1]}을 통해 균형을 찾으려는 성향이 있습니다.`;
+    `${c1.korName} 컬러는 ${c1.keywords[0]}과 ${c1.keywords[1]}을 중요하게 여기는 성향을 나타냅니다. ` +
+    `여기에 ${c2.korName}의 ${c2.keywords[0]} 기질과 ${c3.korName}의 ${c3.keywords[0]} 성향이 더해지면서, ` +
+    `${c2.keywords[1]}과 ${c3.keywords[1]}을 통해 균형을 찾으려는 흐름이 자연스럽게 나타나고 있습니다.`;
 
   // 성격 경향: 3가지 컬러의 strengths 조합
   const allStrengths = [...new Set([...c1.strengths, ...c2.strengths, ...c3.strengths])];
@@ -46,17 +44,17 @@ function buildColorInterpretation(colors: ColorData[]): {
 
   // 성격 경향 텍스트
   const personalityTendency =
-    `${c1.korName}·${c2.korName}·${c3.korName} 에너지가 함께 흐르는 당신은, ` +
+    `${c1.korName}·${c2.korName}·${c3.korName} 에너지를 선택한 당신은, ` +
     `${strengths.slice(0, 2).join('과 ')}이 자연스럽게 드러나는 성향입니다. ` +
-    `${c2.korName}의 ${c2.keywords[0]} 흐름이 현재 삶에서 중요한 역할을 하고 있으며, ` +
-    `${c3.korName}의 ${c3.keywords[0]} 에너지가 앞으로 나아가는 방향을 안내하고 있습니다.`;
+    `${c2.korName}의 ${c2.keywords[0]} 기질이 현재 삶에서 중요한 역할을 하고 있으며, ` +
+    `${c3.korName}의 ${c3.keywords[0]} 성향이 앞으로 나아가는 방향에 영향을 주고 있습니다.`;
 
   // 관계 성향
   const relationshipTendency =
-    `관계 안에서 당신은 ${c1.keywords[0]}과 ${c2.keywords[1]}을 중요하게 여기는 편입니다. ` +
-    `${c1.korName} 에너지는 관계에서 ${c1.recovery} 방향을 원하게 하고, ` +
-    `${c3.korName} 에너지는 관계 속에서 ${c3.keywords[0]}을 통해 회복하는 흐름을 만들어냅니다. ` +
-    `깊이 있는 연결을 원하면서도, 자신만의 공간과 리듬이 필요한 성향입니다.`;
+    `관계 안에서 ${c1.keywords[0]}과 ${c2.keywords[1]}을 중요하게 여기는 성향이 나타납니다. ` +
+    `${c1.korName} 에너지는 관계에서 ${c1.recovery}을 자연스럽게 추구하게 하고, ` +
+    `${c3.korName} 에너지는 관계 속에서 ${c3.keywords[0]}을 통해 안정을 찾는 흐름을 만들어냅니다. ` +
+    `깊이 있는 연결을 원하면서도, 자신만의 공간과 리듬이 필요한 관계 스타일입니다.`;
 
   return { psychologyTendency, personalityTendency, strengths, shadows, relationshipTendency };
 }
