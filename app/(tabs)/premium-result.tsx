@@ -770,7 +770,7 @@ export default function PremiumResultScreen() {
             <View style={styles.reviewDoneBox}>
               <Text style={[styles.reviewDoneIcon]}>🌿</Text>
               <Text style={[styles.reviewDoneText, { color: "#8BAF8B" }]}>
-                후기를 남겼주셔서 감사합니다
+                후기를 남겨주셔서 감사합니다
               </Text>
               <Text style={[styles.reviewDoneSub, { color: colors.muted }]}>
                 {"⭐".repeat(reviewRating)} · {reviewTags.join(" · ")}
