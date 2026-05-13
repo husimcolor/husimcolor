@@ -211,7 +211,9 @@ export default function PremiumResultScreen() {
     setReviewSubmitting(true);
     Keyboard.dismiss();
     try {
-      const nickname = "익명";
+      // 결제 시 입력한 이름 불러오기 (없으면 "익명")
+      const storedName = await AsyncStorage.getItem("senderName");
+      const nickname = storedName?.trim() || "익명";
       const colorCombo = prevColors.length > 0
         ? prevColors.map(c => c.korName).join(' + ')
         : undefined;

@@ -151,6 +151,7 @@ export default function PaymentScreen() {
       console.warn("[Payment] DB 저장 실패:", e);
     }
     await AsyncStorage.setItem("premiumUnlocked", "true");
+    await AsyncStorage.setItem("senderName", senderName.trim());
     setDepositSubmitting(false);
     setDepositorStep(false);
     if (Platform.OS !== "web") {
