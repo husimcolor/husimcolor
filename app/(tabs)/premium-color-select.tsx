@@ -28,10 +28,15 @@ function buildColorInterpretation(colors: ColorData[]): {
 } {
   const [c1, c2, c3] = colors;
 
-  // 심리 성향: 3가지 컬러의 현재 성향·기질 흐름을 연결
+  // 심리 성향: 3가지 컬러의 현재 성향·기질 흐름을 연결 + reading1 핵심 한 줄 반영
+  // 각 컬러 reading1에서 첫 문장만 추출 (첫 마침표 기준)
+  const c1Reading = c1.reading1.split('.')[0].trim();
+  const c2Reading = c2.reading1.split('.')[0].trim();
+  const c3Reading = c3.reading1.split('.')[0].trim();
+
   const psychologyTendency =
     `${c1.korName} 컬러는 ${c1.keywords[0]}과 ${c1.keywords[1]}을 중요하게 여기는 성향을 나타냅니다. ` +
-    `여기에 ${c2.korName}의 ${c2.keywords[0]} 기질과 ${c3.korName}의 ${c3.keywords[0]} 성향이 더해지면서, ` +
+    `현재 삶에서 ${c2.korName}의 ${c2.keywords[0]} 기질과 ${c3.korName}의 ${c3.keywords[0]} 성향이 함께 작동하면서, ` +
     `${c2.keywords[1]}과 ${c3.keywords[1]}을 통해 균형을 찾으려는 흐름이 자연스럽게 나타나고 있습니다.`;
 
   // 성격 경향: 3가지 컬러의 strengths 조합
@@ -42,18 +47,18 @@ function buildColorInterpretation(colors: ColorData[]): {
   const allShadows = [...new Set([...c1.shadows, ...c2.shadows, ...c3.shadows])];
   const shadows = allShadows.slice(0, 3);
 
-  // 성격 경향 텍스트
+  // 성격 경향 텍스트 + reading1 핵심 한 줄 자연스럽게 연결
   const personalityTendency =
-    `${c1.korName}·${c2.korName}·${c3.korName} 에너지를 선택한 당신은, ` +
-    `${strengths.slice(0, 2).join('과 ')}이 자연스럽게 드러나는 성향입니다. ` +
-    `${c2.korName}의 ${c2.keywords[0]} 기질이 현재 삶에서 중요한 역할을 하고 있으며, ` +
-    `${c3.korName}의 ${c3.keywords[0]} 성향이 앞으로 나아가는 방향에 영향을 주고 있습니다.`;
+    `${c1.korName}·${c2.korName}·${c3.korName} 성향을 선택한 당신은, ` +
+    `${strengths.slice(0, 2).join('과 ')}이 자연스럽게 드러나는 기질입니다. ` +
+    `${c2Reading}, ${c3Reading}. ` +
+    `이러한 성향이 서로 연결되면서 지금의 삶을 만들어가고 있습니다.`;
 
   // 관계 성향
   const relationshipTendency =
     `관계 안에서 ${c1.keywords[0]}과 ${c2.keywords[1]}을 중요하게 여기는 성향이 나타납니다. ` +
-    `${c1.korName} 에너지는 관계에서 ${c1.recovery}을 자연스럽게 추구하게 하고, ` +
-    `${c3.korName} 에너지는 관계 속에서 ${c3.keywords[0]}을 통해 안정을 찾는 흐름을 만들어냅니다. ` +
+    `${c1.korName}의 ${c1.recovery} 성향은 관계에서 자연스럽게 드러나고, ` +
+    `${c3.korName}의 ${c3.keywords[0]} 흐름은 관계 속에서 안정을 찾는 방식으로 연결됩니다. ` +
     `깊이 있는 연결을 원하면서도, 자신만의 공간과 리듬이 필요한 관계 스타일입니다.`;
 
   return { psychologyTendency, personalityTendency, strengths, shadows, relationshipTendency };
@@ -204,6 +209,13 @@ export default function PremiumColorSelectScreen() {
         {/* 해석 결과 */}
         {showResult && interpretation && (
           <View style={styles.resultContainer}>
+            {/* 1단계 역할 안내 문구 */}
+            <View style={[styles.stageGuide, { backgroundColor: "#8BAF8B0D", borderColor: "#8BAF8B33" }]}>
+              <Text style={[styles.stageGuideText, { color: colors.muted }]}>
+                1단계는 현재 스스로 인식하고 있는 성향과 관계 흐름을 살펴보는 단계입니다.
+              </Text>
+            </View>
+
             {/* 선택 컬러 요약 */}
             <View style={[styles.colorSummary, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Text style={[styles.colorSummaryTitle, { color: colors.foreground }]}>
@@ -551,5 +563,17 @@ const styles = StyleSheet.create({
   resetBtnText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  stageGuide: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  stageGuideText: {
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "center",
   },
 });
