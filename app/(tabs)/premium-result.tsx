@@ -8,6 +8,8 @@ import {
   StyleSheet,
   Platform,
   Alert,
+  TextInput,
+  Keyboard,
 } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -152,15 +154,54 @@ export default function PremiumResultScreen() {
   const [remainingLabel, setRemainingLabel] = useState<string | null>(null);
   const [prevColors, setPrevColors] = useState<ColorData[]>([]);
 
+  // 후기 state
+  const [reviewDone, setReviewDone] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewTags, setReviewTags] = useState<string[]>([]);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+
+  const REVIEW_TAGS = ["성향 해석", "관계 흐름", "무의식 흐름", "회복 방향", "코칭 메시지", "보완 루틴"];
+
+  const handleReviewSubmit = async () => {
+    if (reviewRating === 0) {
+      Alert.alert("별점을 선택해 주세요");
+      return;
+    }
+    setReviewSubmitting(true);
+    Keyboard.dismiss();
+    try {
+      const reviewData = {
+        rating: reviewRating,
+        text: reviewText.trim(),
+        tags: reviewTags,
+        createdAt: new Date().toISOString(),
+      };
+      await AsyncStorage.setItem("premiumReview", JSON.stringify(reviewData));
+      setReviewDone(true);
+    } catch {}
+    setReviewSubmitting(false);
+  };
+
   useEffect(() => {
     (async () => {
       const raw = await AsyncStorage.getItem("premiumSelectedCards");
       const profileRaw = await AsyncStorage.getItem("userProfile");
       const colorsRaw = await AsyncStorage.getItem("premiumSelectedColors");
+      const reviewRaw = await AsyncStorage.getItem("premiumReview");
       if (raw) setCards(JSON.parse(raw));
       if (profileRaw) setProfile(JSON.parse(profileRaw));
       if (colorsRaw) {
         try { setPrevColors(JSON.parse(colorsRaw)); } catch {}
+      }
+      if (reviewRaw) {
+        try {
+          const saved = JSON.parse(reviewRaw);
+          setReviewDone(true);
+          setReviewRating(saved.rating ?? 0);
+          setReviewText(saved.text ?? "");
+          setReviewTags(saved.tags ?? []);
+        } catch {}
       }
       const status = await getTrialStatus();
       setTrialStatus(status);
@@ -717,6 +758,108 @@ export default function PremiumResultScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* 코칭 흐름 마무리 + 후기 인라인 섹션 */}
+        <View style={[styles.reviewSection, { backgroundColor: colors.surface, borderColor: "#8BAF8B44" }]}>
+          {/* 마무리 문구 */}
+          <Text style={[styles.reviewClosingText, { color: colors.muted }]}>
+            오늘의 흐름이{"\n"}당신에게 작은 쉬음과 이해가 되었기를 바랍니다 🌿
+          </Text>
+
+          {reviewDone ? (
+            /* 후기 완료 상태 */
+            <View style={styles.reviewDoneBox}>
+              <Text style={[styles.reviewDoneIcon]}>🌿</Text>
+              <Text style={[styles.reviewDoneText, { color: "#8BAF8B" }]}>
+                후기를 남겼주셔서 감사합니다
+              </Text>
+              <Text style={[styles.reviewDoneSub, { color: colors.muted }]}>
+                {"⭐".repeat(reviewRating)} · {reviewTags.join(" · ")}
+              </Text>
+            </View>
+          ) : (
+            /* 후기 입력 폼 */
+            <View style={styles.reviewForm}>
+              <Text style={[styles.reviewAskText, { color: colors.foreground }]}>
+                짧은 후기를 남겨주시면{"\n"}휘심콜러가 더 따뜻하게 성장하는 데 큰 힘이 됩니다 😊
+              </Text>
+
+              {/* 별점 */}
+              <View style={styles.reviewStarRow}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => setReviewRating(star)}
+                    activeOpacity={0.7}
+                    style={styles.reviewStarBtn}
+                  >
+                    <Text style={[styles.reviewStarText, { color: star <= reviewRating ? "#F59E0B" : colors.border }]}>
+                      ★
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* 공감 포인트 선택 */}
+              <Text style={[styles.reviewTagLabel, { color: colors.muted }]}>
+                어떤 부분이 가장 공감되셨나요?
+              </Text>
+              <View style={styles.reviewTagRow}>
+                {REVIEW_TAGS.map((tag) => {
+                  const selected = reviewTags.includes(tag);
+                  return (
+                    <TouchableOpacity
+                      key={tag}
+                      onPress={() => {
+                        setReviewTags(prev =>
+                          prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+                        );
+                      }}
+                      activeOpacity={0.75}
+                      style={[
+                        styles.reviewTag,
+                        selected
+                          ? { backgroundColor: "#8BAF8B", borderColor: "#8BAF8B" }
+                          : { backgroundColor: colors.surface, borderColor: colors.border },
+                      ]}
+                    >
+                      <Text style={[styles.reviewTagText, { color: selected ? "#FFFFFF" : colors.muted }]}>
+                        {tag}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* 한줄 후기 */}
+              <TextInput
+                style={[
+                  styles.reviewInput,
+                  { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground },
+                ]}
+                placeholder="짧은 후기를 남겨주세요 (선택)"
+                placeholderTextColor={colors.muted}
+                value={reviewText}
+                onChangeText={setReviewText}
+                maxLength={100}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+
+              {/* 제출 버튼 */}
+              <TouchableOpacity
+                style={[styles.reviewSubmitBtn, { backgroundColor: "#8BAF8B" }]}
+                onPress={handleReviewSubmit}
+                activeOpacity={0.85}
+                disabled={reviewSubmitting}
+              >
+                <Text style={styles.reviewSubmitBtnText}>
+                  {reviewSubmitting ? "저장 중..." : "후기 남기기"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
         {/* 다시 선택 */}
         <TouchableOpacity
           style={[styles.retryButton, { borderColor: colors.border }]}
@@ -1156,6 +1299,94 @@ const styles = StyleSheet.create({
   trialBannerBtnText: {
     color: '#FFFFFF',
     fontSize: 14,
+    fontWeight: '700',
+  },
+  // 후기 섹션 스타일
+  reviewSection: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+    marginBottom: 12,
+    gap: 16,
+  },
+  reviewClosingText: {
+    fontSize: 15,
+    lineHeight: 24,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  reviewAskText: {
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  reviewDoneBox: {
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+  },
+  reviewDoneIcon: {
+    fontSize: 28,
+  },
+  reviewDoneText: {
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  reviewDoneSub: {
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  reviewForm: {
+    gap: 12,
+  },
+  reviewStarRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  reviewStarBtn: {
+    padding: 4,
+  },
+  reviewStarText: {
+    fontSize: 32,
+  },
+  reviewTagLabel: {
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  reviewTagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  reviewTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  reviewTagText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  reviewInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  reviewSubmitBtn: {
+    paddingVertical: 13,
+    borderRadius: 24,
+    alignItems: 'center',
+  },
+  reviewSubmitBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '700',
   },
 });
