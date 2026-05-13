@@ -70,11 +70,14 @@ function buildColorInterpretation(colors: ColorData[]): {
     `${c2Reading}, ${c3Reading}. ` +
     `이러한 성향이 서로 연결되면서 지금의 삶을 만들어가고 있습니다.`;
 
-  // 관계 성향 (컬러별 고유 relStyle 키워드 기반)
+  // 관계 성향 (콜러별 고유 relStyle 키워드 기반)
+  const c1Rel0 = c1.relStyle?.[0] ?? '자연스럽게 연결되는';
+  const c2Rel1 = c2.relStyle?.[1] ?? '진심으로 소통하는';
+  const c3Rel0 = c3.relStyle?.[0] ?? '안정적으로 연결되는';
   const relationshipTendency =
-    `${c1.korName}의 ${c1.relStyle[0]} 방식과 ${c2.korName}의 ${c2.relStyle[1]} 성향이 함께 드러납니다. ` +
+    `${c1.korName}의 ${c1Rel0} 방식과 ${c2.korName}의 ${c2Rel1} 성향이 함께 드러납니다. ` +
     `${c1.korName}의 성향은 관계에서 자연스럽게 드러나고, ` +
-    `${c3.korName}의 ${c3.relStyle[0]} 흐름이 관계 속 안정감을 만들어줍니다. ` +
+    `${c3.korName}의 ${c3Rel0} 흐름이 관계 속 안정감을 만들어줍니다. ` +
     `깊이 있는 연결을 원하면서도, 자신만의 시간과 리듬이 필요한 스타일입니다.`;
 
   return { psychologyTendency, personalityTendency, strengths, shadows, relationshipTendency };
