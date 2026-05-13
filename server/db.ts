@@ -120,6 +120,13 @@ export async function getReviewById(id: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function deleteReview(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(reviews).where(eq(reviews.id, id));
+  return { success: true };
+}
+
 export async function getReviewStats() {
   const db = await getDb();
   if (!db) return { total: 0, avgRating: 0, tagCounts: {} as Record<string, number> };

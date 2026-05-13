@@ -90,6 +90,11 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateReview(id, data);
       }),
+    delete: publicProcedure
+      .input(z.object({ id: z.number().int() }))
+      .mutation(({ input }) => {
+        return db.deleteReview(input.id);
+      }),
   }),
 });
 

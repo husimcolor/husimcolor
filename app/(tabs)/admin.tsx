@@ -82,6 +82,17 @@ export default function AdminScreen() {
 
   const [reviewExpanded, setReviewExpanded] = useState<number | null>(null);
 
+  const deleteReview = trpc.reviews.delete.useMutation({
+    onSuccess: () => { refetchReviewList(); refetchReviewStats(); },
+    onError: (e) => Alert.alert("오류", e.message),
+  });
+  const handleDeleteReview = (id: number) => {
+    Alert.alert('후기 삭제', '이 후기를 삭제하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      { text: '삭제', style: 'destructive', onPress: () => deleteReview.mutate({ id }) },
+    ]);
+  };
+
   const updateStatus = trpc.payments.updateStatus.useMutation({
     onSuccess: () => { refetchPayments(); refetchStats(); },
     onError: (e) => Alert.alert("오류", e.message),
@@ -445,7 +456,15 @@ export default function AdminScreen() {
                     <Text style={[styles.cardSubtitle, { color: colors.muted }]}>태그: {r.tags}</Text>
                   )}
                 </View>
-                <Text style={[styles.expandIcon, { color: colors.muted }]}>{reviewExpanded === r.id ? '▲' : '▼'}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <TouchableOpacity
+                    onPress={(e) => { e.stopPropagation?.(); handleDeleteReview(r.id); }}
+                    style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: '#FEE2E2', borderRadius: 6 }}
+                  >
+                    <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '600' }}>삭제</Text>
+                  </TouchableOpacity>
+                  <Text style={[styles.expandIcon, { color: colors.muted }]}>{reviewExpanded === r.id ? '▲' : '▼'}</Text>
+                </View>
               </View>
               {reviewExpanded === r.id && r.content ? (
                 <View style={styles.cardBody}>
