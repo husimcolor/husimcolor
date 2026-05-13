@@ -44,46 +44,53 @@ function buildColorInterpretation(colors: ColorData[]): {
 } {
   const [c1, c2, c3] = colors;
 
-  // 심리 성향: 3가지 컬러의 현재 성향·기질 흐름을 연결 + reading1 핵심 한 줄 반영
-  // 각 컬러 reading1에서 첫 문장만 추출 (첫 마침표 기준)
-  const c1Reading = c1.reading1.split('.')[0].trim();
-  const c2Reading = c2.reading1.split('.')[0].trim();
-  const c3Reading = c3.reading1.split('.')[0].trim();
-
+  // ── 심리 성향 ──
+  // 섹션 분위기: 현재 성향·기질 흐름 중심 (진단보다 공감)
   const psychologyTendency =
     `${eun_neun(c1.korName)} ${c1.keywords[0]}${josa(c1.keywords[0], '과', '와')} ${c1.keywords[1]}${josa(c1.keywords[1], '을', '를')} 중요하게 여기는 성향을 나타냅니다. ` +
-    `${c2.korName}의 ${c2.keywords[0]} 기질과 ${c3.korName}의 ${c3.keywords[0]} 성향이 함께 작동하면서, ` +
-    `${c2.keywords[1]}${josa(c2.keywords[1], '을', '를')} 바탕으로 ${c3.keywords[1]}${josa(c3.keywords[1], '을', '를')} 함께 추구하는 흐름이 나타나고 있습니다.`;
+    `여기에 ${c2.korName}의 ${c2.keywords[0]} 기질이 더해지면서, ` +
+    `${c3.korName}의 ${c3.keywords[0]}${josa(c3.keywords[0], '을', '를')} 함께 추구하는 흐름이 자연스럽게 나타나고 있습니다.`;
 
-  // 성격 경향: 3가지 컬러의 strengths 조합
+  // ── 성격 경향 ──
+  // 섹션 분위기: 강점 중심 + 삶에서 드러나는 기질 (긍정적 서술)
   const allStrengths = [...new Set([...c1.strengths, ...c2.strengths, ...c3.strengths])];
   const strengths = allStrengths.slice(0, 5);
-
-  // 그림자: 3가지 컬러의 shadows 조합
   const allShadows = [...new Set([...c1.shadows, ...c2.shadows, ...c3.shadows])];
   const shadows = allShadows.slice(0, 3);
-
-  // 성격 경향 텍스트 + reading1 핵심 한 줄 자연스럽게 연결
+  const s0 = strengths[0] ?? '';
+  const s1 = strengths[1] ?? '';
   const personalityTendency =
     `${c1.korName}·${c2.korName}·${c3.korName} 성향을 선택한 당신은, ` +
-    `${strengths[0] ?? ''}${josa(strengths[0] ?? '', '과', '와')} ${strengths[1] ?? ''}${josa(strengths[1] ?? '', '이', '가')} 자연스럽게 드러나는 기질입니다. ` +
-    `${c2Reading}. ${c3Reading}. ` +
-    `이러한 성향들이 서로 어우러지며 지금 당신의 삶을 만들어가고 있습니다.`;
+    `${s0}${josa(s0, '과', '와')} ${s1}${josa(s1, '이', '가')} 자연스럽게 드러나는 기질입니다. ` +
+    `사람들과 함께할 때 ${c2.keywords[0]}${josa(c2.keywords[0], '을', '를')} 느끼고, ` +
+    `${c3.keywords[0]}${josa(c3.keywords[0], '을', '를')} 매우 중요하게 여깁니다. ` +
+    `이러한 성향이 서로 연결되면서 지금의 삶을 만들어가고 있습니다.`;
 
-  // 관계 성향 (콜러별 고유 relStyle 키워드 기반)
+  // ── 관계 성향 ──
+  // 섹션 분위기: 실제 관계 언어 + 편안하고 공감되는 표현
   const c1Rel0 = c1.relStyle?.[0] ?? '자연스럽게 연결되는';
   const c2Rel1 = c2.relStyle?.[1] ?? '진심으로 소통하는';
-  const c3Rel0 = c3.relStyle?.[0] ?? '안정적으로 연결되는';
+  const c3Rel0 = c3.relStyle?.[0] ?? '안정적으로 이어가는';
+  // c1 컬러 기반 관계 마무리 문장 분기
+  const relEnding =
+    (c1.id === 'orange' || c1.id === 'peach' || c1.id === 'coral')
+      ? `따뜻하고 활기찬 관계 속에서 에너지를 얻는 편이며, 서로 편안하게 기댈 수 있는 관계를 소중히 여깁니다.`
+    : (c1.id === 'violet' || c1.id === 'purple')
+      ? `깊이 있는 대화와 진솔한 연결을 원하며, 혼자만의 성찰 시간도 관계만큼 소중하게 여깁니다.`
+    : (c1.id === 'blue' || c1.id === 'navy' || c1.id === 'indigo')
+      ? `신뢰를 바탕으로 한 안정적인 관계를 선호하며, 책임감 있게 관계를 이어가는 스타일입니다.`
+    : (c1.id === 'yellow' || c1.id === 'green')
+      ? `균형 잡힌 관계를 중요하게 여기며, 서로 부담 없이 성장할 수 있는 관계를 선호합니다.`
+    : (c1.id === 'red')
+      ? `열정적으로 관계에 임하며, 함께 목표를 향해 나아가는 관계에서 활력을 얻습니다.`
+    : (c1.id === 'lavender')
+      ? `섬세한 공감과 배려로 관계를 이어가며, 감정적으로 편안한 분위기를 중요하게 여깁니다.`
+    : `깊이 있는 연결을 원하면서도, 자신만의 시간과 리듬이 필요한 스타일입니다.`;
   const relationshipTendency =
-    `${c1.korName}의 ${c1Rel0} 방식과 ${c2.korName}의 ${c2Rel1} 성향이 함께 드러납니다. ` +
+    `${c1.korName}의 성향은 ${c1Rel0} 방식으로 관계에서 드러납니다. ` +
+    `${c2.korName}의 ${c2Rel1} 성향이 관계를 더 풍부하게 만들고, ` +
     `${c3.korName}의 ${c3Rel0} 흐름이 관계 속 안정감을 더해줍니다. ` +
-    (c1.id === 'orange' || c1.id === 'peach' || c1.id === 'coral'
-      ? `따뜻한 관계 속에서 활력을 얻고, 서로 편안하게 기댈 수 있는 관계를 소중히 여기는 스타일입니다.`
-      : c1.id === 'violet' || c1.id === 'indigo' || c1.id === 'blue'
-      ? `깊이 있는 연결을 원하면서도, 자신만의 조용한 시간이 필요한 스타일입니다.`
-      : c1.id === 'yellow' || c1.id === 'green'
-      ? `안정적이고 균형 잡힌 관계를 중요하게 여기며, 서로 편안하게 성장하는 관계를 선호합니다.`
-      : `깊이 있는 연결을 원하면서도, 자신만의 시간과 리듬이 필요한 스타일입니다.`);
+    relEnding;
 
   return { psychologyTendency, personalityTendency, strengths, shadows, relationshipTendency };
 }

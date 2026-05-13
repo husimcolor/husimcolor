@@ -968,82 +968,116 @@ export default function PremiumResultScreen() {
   );
 }
 
-// energyTitle을 자연스러운 흐름 문장으로 변환 (1번 카드: 무의식 성향)
+// 조사 처리 헬퍼
+function josaCoach(word: string, jong: string, noJong: string): string {
+  if (!word) return jong;
+  const code = word.charCodeAt(word.length - 1);
+  if (code >= 0xAC00 && code <= 0xD7A3) {
+    return (code - 0xAC00) % 28 > 0 ? jong : noJong;
+  }
+  return jong;
+}
+
+// 1번 카드: 무의식/내면 흐름 → 공감 어조로 시작 (진단이 아닌 공감)
 function toFlowPhrase(title: string): string {
-  // '마음' 또는 '성향'으로 끝나는 경우
-  if (title.endsWith('마음') || title.endsWith('성향')) {
-    return `${title}이 있으며`;
+  if (title.endsWith('마음')) {
+    return `마음 한편에 ${title}이 조용히 자리하고 있습니다.`;
   }
-  // '에너지'로 끝나는 경우 → 제거 후 성향으로 변환
+  if (title.endsWith('성향')) {
+    return `${title}이 지금 당신 안에서 자연스럽게 흐르고 있습니다.`;
+  }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
-    return `${base} 성향이 있으며`;
+    return `${base}을 향한 마음이 조용히 이어지고 있습니다.`;
   }
-  // '흐름', '균형', '조화'로 끝나는 경우
-  if (title.endsWith('흐름') || title.endsWith('균형') || title.endsWith('조화')) {
-    return `${title}을 원하는 마음이 있으며`;
+  if (title.endsWith('흐름')) {
+    return `${title}이 지금 당신의 내면에서 이어지고 있습니다.`;
   }
-  return `${title} 성향이 있으며`;
+  if (title.endsWith('균형') || title.endsWith('조화')) {
+    return `${title}을 찾고 싶은 마음이 있습니다.`;
+  }
+  if (title.endsWith('기질')) {
+    return `${title}이 지금 당신 안에 자연스럽게 자리하고 있습니다.`;
+  }
+  return `${title}을 향한 마음이 조용히 이어지고 있습니다.`;
 }
-// 2번 카드 현재 성향을 자연스럽게 표현
+
+// 2번 카드: 현재 상태를 담담하고 공감되게 표현
 function toCurrentPhrase(title: string): string {
-  if (title.endsWith('마음') || title.endsWith('성향')) {
-    return title;
+  if (title.endsWith('마음')) {
+    return `지금은 ${title}으로 하루를 보내고 있는 것 같습니다.`;
   }
-  if (title.endsWith('에너지')) {
-    return title.replace(/에너지$/, '').trim() + ' 성향';
-  }
-  return title;
-}
-// 3번 카드 회복 방향을 따뜻한 코칭 톤으로 표현
-function toRecoveryPhrase(title: string): string {
-  if (title.endsWith('마음') || title.endsWith('성향')) {
-    return `지금은 ${title}으로 조금씩 나아가고 있습니다`;
+  if (title.endsWith('성향')) {
+    return `지금 삶에서 ${title}이 자연스럽게 나타나고 있습니다.`;
   }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
-    return `지금은 ${base} 방향으로 조금씩 나아가고 있습니다`;
+    return `지금은 ${base}을 중심으로 움직이고 있는 시기입니다.`;
   }
-  if (title.endsWith('흐름') || title.endsWith('균형') || title.endsWith('조화')) {
-    return `지금은 ${title} 방향으로 조금씩 나아가고 있습니다`;
+  if (title.endsWith('흐름')) {
+    return `지금은 ${title} 안에 있는 시간입니다.`;
   }
-  return `지금은 ${title} 방향으로 조금씩 나아가고 있습니다`;
+  if (title.endsWith('기질')) {
+    return `지금 삶에서 ${title}이 자연스럽게 드러나고 있습니다.`;
+  }
+  return `지금은 ${title} 상태로 지내고 있습니다.`;
 }
+
+// 3번 카드: 회복 방향을 따뜻하고 구체적인 제안으로 표현
+function toRecoveryPhrase(title: string): string {
+  if (title.endsWith('마음')) {
+    return `지금은 ${title}을 억지로 바꾸려 하기보다, 천천히 따라가 보는 것이 더 도움이 됩니다.`;
+  }
+  if (title.endsWith('성향')) {
+    return `지금은 ${title}을 조금씩 허용해 주는 것이 회복에 도움이 됩니다.`;
+  }
+  if (title.endsWith('에너지')) {
+    const base = title.replace(/에너지$/, '').trim();
+    return `지금 당신에게는 ${base}을 위한 작은 시간이 필요합니다.`;
+  }
+  if (title.endsWith('흐름')) {
+    return `지금은 ${title}을 억지로 바꾸기보다, 자연스럽게 받아들이는 것이 좋습니다.`;
+  }
+  if (title.endsWith('균형') || title.endsWith('조화')) {
+    return `지금은 ${title}을 되찾는 것이 가장 중요한 회복의 시작입니다.`;
+  }
+  if (title.endsWith('기질')) {
+    return `지금은 ${title}을 있는 그대로 받아들이고, 그 안에서 쉬어가는 것이 도움이 됩니다.`;
+  }
+  return `지금 당신에게는 ${title}을 위한 여유가 필요합니다.`;
+}
+
 function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardData, colorFlow?: ColorData[]): string {
-  // 1번 카드: 무의식 성향 설명
+  // 1번 카드: 무의식/내면 흐름 → 공감형 시작
   const flow1 = toFlowPhrase(card1.energyTitle);
-  const line1 = `마음 한편에서는 ${flow1},`;
-  // 2번 카드: 현재 성향
+  // 2번 카드: 현재 상태 → 담담하게
   const curr = toCurrentPhrase(card2.energyTitle);
-  const line2 = ` 지금은 ${curr}이 나타나고 있습니다.\n`;
-  // 3번 카드: 회복 방향
-  const line3 = `${toRecoveryPhrase(card3.energyTitle)}.\n\n`;
+  // 3번 카드: 회복 방향 → 따뜻한 제안
+  const recovery = toRecoveryPhrase(card3.energyTitle);
+
+  // 1·2번 카드 통합 문장 (자연스럽게 연결)
+  const line12 = `${flow1}\n${curr}\n`;
+  // 3번 카드 회복 제안 (줄바꿈으로 구분)
+  const line3 = `\n${recovery}\n`;
+  // 3번 카드 고유 코칭 메시지
+  const cardCoaching = `\n${card3.coachingMessage}`;
+
   // 컬러 통합 문장 (컬러 선택 시만 표시)
   let colorLine = '';
   if (colorFlow && colorFlow.length >= 3) {
     const [c1, c2, c3] = colorFlow;
-    const keyword1 = c1.keywords[0] ?? c1.recovery;
-    const recovery3 = c3.recovery;
-    const kw1Josa = (() => {
-      const w = keyword1 ?? '';
-      if (!w) return '와';
-      const code = w.charCodeAt(w.length - 1);
-      if (code >= 0xAC00 && code <= 0xD7A3) return (code - 0xAC00) % 28 > 0 ? '과' : '와';
-      return '와';
-    })();
-    const rv3Josa = (() => {
-      const w = recovery3 ?? '';
-      if (!w) return '이';
-      const code = w.charCodeAt(w.length - 1);
-      if (code >= 0xAC00 && code <= 0xD7A3) return (code - 0xAC00) % 28 > 0 ? '이' : '가';
-      return '이';
-    })();
-    colorLine = `\n\n${c1.korName}·${c2.korName}·${c3.korName} 컬러가 ` +
-      `지금 당신의 마음을 함께 이야기하고 있습니다. ` +
-      `${c1.korName}의 ${keyword1}${kw1Josa} ${c3.korName}의 ${recovery3}${rv3Josa} ` +
-      `지금 당신에게 도움이 될 것입니다.`;
+    const kw1 = c1.keywords[0] ?? '';
+    const kw2 = c2.keywords[0] ?? '';
+    const kw3 = c3.recovery ?? c3.keywords[0] ?? '';
+    const wa1 = josaCoach(kw1, '과', '와');
+    const eul2 = josaCoach(kw2, '을', '를');
+    const eul3 = josaCoach(kw3, '을', '를');
+    colorLine = `\n\n${c1.korName}의 ${kw1}${wa1} ${c2.korName}의 ${kw2}${eul2} 함께 가지고 있는 당신에게,\n` +
+      `지금은 ${c3.korName}의 ${kw3}${eul3} 조금씩 허용해 주는 것이 도움이 됩니다.\n` +
+      `많은 것을 한 번에 바꾸려 하기보다, 가장 마음이 가는 한 가지부터 천천히 시작해 보세요.`;
   }
-  return line1 + line2 + line3 + card3.coachingMessage + colorLine;
+
+  return line12 + line3 + cardCoaching + colorLine;
 }
 
 const styles = StyleSheet.create({
