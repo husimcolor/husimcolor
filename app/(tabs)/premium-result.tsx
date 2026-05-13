@@ -931,36 +931,47 @@ export default function PremiumResultScreen() {
 }
 
 // energyTitle 끝에 '에너지'가 포함되어 있으면 '의 에너지' 대신 자연스러운 조사로 연결
+// 콜러 energyTitle을 자연스러운 흐름 문장으로 변환 (단정형 표현 제거)
 function toFlowPhrase(title: string): string {
+  // '에너지' 로 끝나는 제목은 성향 중심으로
   if (title.endsWith('에너지')) {
-    return `${title}의 흐름이 나타나고 있으며`;
+    const base = title.replace(/에너지$/, '').trim();
+    return `${base} 성향이 흐르고 있으며`;
   }
   if (title.endsWith('흐름') || title.endsWith('균형') || title.endsWith('조화')) {
     return `${title}이 이어지고 있으며`;
   }
-  return `${title}의 에너지가 흐르고 있으며`;
+  return `${title} 성향이 나타나고 있으며`;
 }
-
+// 3번 카드 회복 방향을 따뜻한 코칭 톤으로 표현
 function toRecoveryPhrase(title: string): string {
   if (title.endsWith('에너지')) {
-    return `${title}가 회복의 방향을 안내하고 있습니다`;
+    const base = title.replace(/에너지$/, '').trim();
+    return `지금은 ${base}을(를) 향한 회복 흐름이 시작되고 있습니다`;
   }
   if (title.endsWith('흐름') || title.endsWith('균형') || title.endsWith('조화')) {
-    return `${title}이 회복의 방향을 안내하고 있습니다`;
+    return `지금은 ${title}을 향한 회복의 시간이 필요한 시기입니다`;
   }
-  return `${title}의 에너지가 회복의 방향을 안내하고 있습니다`;
+  return `지금은 ${title}을(를) 향한 회복 흐름이 시작되고 있습니다`;
 }
-
 function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardData, colorFlow?: ColorData[]): string {
-  const line1 = `내면에서는 ${toFlowPhrase(card1.energyTitle)}, `;
-  const line2 = `현재는 ${card2.energyTitle.endsWith('에너지') ? card2.energyTitle + '의 흐름' : card2.energyTitle} 속에 있습니다.\n`;
+  // 1번 카드: 무의식 흐름 설명 (단정형 제거, 열린 표현)
+  const flow1 = toFlowPhrase(card1.energyTitle);
+  const line1 = `마음 한편에서는 ${flow1},`;
+  // 2번 카드: 현재 흐름 (속에 있다 대신 이어지고 있다)
+  const curr = card2.energyTitle.endsWith('에너지')
+    ? card2.energyTitle.replace(/에너지$/, '').trim() + ' 성향'
+    : card2.energyTitle;
+  const line2 = ` 현재는 ${curr}이 이어지고 있습니다.\n`;
+  // 3번 카드: 회복 방향 (따뜻하고 열린 표현)
   const line3 = `${toRecoveryPhrase(card3.energyTitle)}.\n\n`;
-  // 컬러 흐름 통합 문장
+  // 콜러 흐름 통합 문장 (콜러 선택 시만 표시)
   let colorLine = '';
   if (colorFlow && colorFlow.length >= 3) {
     const [c1, c2, c3] = colorFlow;
-    colorLine = `\n\n${c1.korName}·${c2.korName}·${c3.korName}의 컬러 흐름이 이 여정을 함께 안내하고 있습니다. ` +
-      `${c1.korName}의 ${c1.keywords[0]}과 ${c3.korName}의 ${c3.recovery} 방향이 ` +
+    colorLine = `\n\n${c1.korName}·${c2.korName}·${c3.korName}의 콜러 흐름이 ` +
+      `이 여정을 함께 안내하고 있습니다. ` +
+      `${c1.korName}의 ${c1.keywords[0]}와 ${c3.korName}의 ${c3.recovery} 흐름이 ` +
       `지금 당신에게 필요한 회복의 실마리가 될 것입니다.`;
   }
   return line1 + line2 + line3 + card3.coachingMessage + colorLine;
