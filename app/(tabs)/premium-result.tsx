@@ -1024,9 +1024,23 @@ function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardD
     const [c1, c2, c3] = colorFlow;
     const keyword1 = c1.keywords[0] ?? c1.recovery;
     const recovery3 = c3.recovery;
+    const kw1Josa = (() => {
+      const w = keyword1 ?? '';
+      if (!w) return '와';
+      const code = w.charCodeAt(w.length - 1);
+      if (code >= 0xAC00 && code <= 0xD7A3) return (code - 0xAC00) % 28 > 0 ? '과' : '와';
+      return '와';
+    })();
+    const rv3Josa = (() => {
+      const w = recovery3 ?? '';
+      if (!w) return '이';
+      const code = w.charCodeAt(w.length - 1);
+      if (code >= 0xAC00 && code <= 0xD7A3) return (code - 0xAC00) % 28 > 0 ? '이' : '가';
+      return '이';
+    })();
     colorLine = `\n\n${c1.korName}·${c2.korName}·${c3.korName} 컬러가 ` +
       `지금 당신의 마음을 함께 이야기하고 있습니다. ` +
-      `${c1.korName}의 ${keyword1}와 ${c3.korName}의 ${recovery3}이 ` +
+      `${c1.korName}의 ${keyword1}${kw1Josa} ${c3.korName}의 ${recovery3}${rv3Josa} ` +
       `지금 당신에게 도움이 될 것입니다.`;
   }
   return line1 + line2 + line3 + card3.coachingMessage + colorLine;
