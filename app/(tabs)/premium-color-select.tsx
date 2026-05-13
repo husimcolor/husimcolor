@@ -51,9 +51,9 @@ function buildColorInterpretation(colors: ColorData[]): {
   const c3Reading = c3.reading1.split('.')[0].trim();
 
   const psychologyTendency =
-    `${eun_neun(c1.korName + ' 컬러')} ${wa(c1.keywords[0])} ${eul(c1.keywords[1])} 중요하게 여기는 성향을 나타냅니다. ` +
-    `현재 삶에서 ${c2.korName}의 ${c2.keywords[0]} 기질${josa(c2.keywords[0] + ' 기질', '과', '와')} ${c3.korName}의 ${c3.keywords[0]} 성향이 함께 작동하면서, ` +
-    `${wa(c2.keywords[1])} ${eul(c3.keywords[1])} 통해 균형을 찾으려는 흐름이 자연스럽게 나타나고 있습니다.`;
+    `${eun_neun(c1.korName)} ${c1.keywords[0]}${josa(c1.keywords[0], '과', '와')} ${c1.keywords[1]}${josa(c1.keywords[1], '을', '를')} 중요하게 여기는 성향을 나타냅니다. ` +
+    `${c2.korName}의 ${c2.keywords[0]} 기질과 ${c3.korName}의 ${c3.keywords[0]} 성향이 함께 작동하면서, ` +
+    `${c2.keywords[1]}${josa(c2.keywords[1], '을', '를')} 바탕으로 ${c3.keywords[1]}${josa(c3.keywords[1], '을', '를')} 함께 추구하는 흐름이 나타나고 있습니다.`;
 
   // 성격 경향: 3가지 컬러의 strengths 조합
   const allStrengths = [...new Set([...c1.strengths, ...c2.strengths, ...c3.strengths])];
@@ -66,9 +66,9 @@ function buildColorInterpretation(colors: ColorData[]): {
   // 성격 경향 텍스트 + reading1 핵심 한 줄 자연스럽게 연결
   const personalityTendency =
     `${c1.korName}·${c2.korName}·${c3.korName} 성향을 선택한 당신은, ` +
-    `${i_ga(strengths[0] ?? '')} ${i_ga(strengths[1] ?? '')} 자연스럽게 드러나는 기질입니다. ` +
-    `${c2Reading}, ${c3Reading}. ` +
-    `이러한 성향이 서로 연결되면서 지금의 삶을 만들어가고 있습니다.`;
+    `${strengths[0] ?? ''}${josa(strengths[0] ?? '', '과', '와')} ${strengths[1] ?? ''}${josa(strengths[1] ?? '', '이', '가')} 자연스럽게 드러나는 기질입니다. ` +
+    `${c2Reading}. ${c3Reading}. ` +
+    `이러한 성향들이 서로 어우러지며 지금 당신의 삶을 만들어가고 있습니다.`;
 
   // 관계 성향 (콜러별 고유 relStyle 키워드 기반)
   const c1Rel0 = c1.relStyle?.[0] ?? '자연스럽게 연결되는';
@@ -76,9 +76,14 @@ function buildColorInterpretation(colors: ColorData[]): {
   const c3Rel0 = c3.relStyle?.[0] ?? '안정적으로 연결되는';
   const relationshipTendency =
     `${c1.korName}의 ${c1Rel0} 방식과 ${c2.korName}의 ${c2Rel1} 성향이 함께 드러납니다. ` +
-    `${c1.korName}의 성향은 관계에서 자연스럽게 드러나고, ` +
-    `${c3.korName}의 ${c3Rel0} 흐름이 관계 속 안정감을 만들어줍니다. ` +
-    `깊이 있는 연결을 원하면서도, 자신만의 시간과 리듬이 필요한 스타일입니다.`;
+    `${c3.korName}의 ${c3Rel0} 흐름이 관계 속 안정감을 더해줍니다. ` +
+    (c1.id === 'orange' || c1.id === 'peach' || c1.id === 'coral'
+      ? `따뜻한 관계 속에서 활력을 얻고, 서로 편안하게 기댈 수 있는 관계를 소중히 여기는 스타일입니다.`
+      : c1.id === 'violet' || c1.id === 'indigo' || c1.id === 'blue'
+      ? `깊이 있는 연결을 원하면서도, 자신만의 조용한 시간이 필요한 스타일입니다.`
+      : c1.id === 'yellow' || c1.id === 'green'
+      ? `안정적이고 균형 잡힌 관계를 중요하게 여기며, 서로 편안하게 성장하는 관계를 선호합니다.`
+      : `깊이 있는 연결을 원하면서도, 자신만의 시간과 리듬이 필요한 스타일입니다.`);
 
   return { psychologyTendency, personalityTendency, strengths, shadows, relationshipTendency };
 }
