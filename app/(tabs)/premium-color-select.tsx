@@ -259,12 +259,13 @@ export default function PremiumColorSelectScreen() {
               </View>
             </View>
 
-            {/* 그림자 (성장 포인트) */}
+            {/* 성장 가능성 */}
             <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: "#7B9FBF44" }]}>
               <View style={styles.sectionHeader}>
                 <View style={[styles.sectionDot, { backgroundColor: "#7B9FBF" }]} />
-                <Text style={[styles.sectionLabel, { color: "#7B9FBF" }]}>성장 포인트</Text>
+                <Text style={[styles.sectionLabel, { color: "#7B9FBF" }]}>성장 가능성</Text>
               </View>
+              <Text style={[{ color: colors.muted, fontSize: 11, marginBottom: 8, lineHeight: 16 }]}>이 성향을 이해하면 더 자연스러운 성장의 방향이 보입니다</Text>
               <View style={styles.tagRow}>
                 {interpretation.shadows.map(s => (
                   <View key={s} style={[styles.tag, { backgroundColor: "#7B9FBF18", borderColor: "#7B9FBF44" }]}>

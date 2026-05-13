@@ -30,17 +30,30 @@ type JobCoaching = {
   coachingNote: string;  // 종합 코칭 메시지 하단에 추가될 한 문장
 };
 
-// 무교 사용자에게는 기도·예배 표현을 명상·조용한 시간으로 치환
+// 신앙에 따라 루틴 표현을 자연스럽게 치환
 function sanitizeRecovery(text: string, faith: string): string {
-  if (faith === '기독교' || faith === '천주교') return text;
+  const isChristian = faith === '기독교' || faith === '천주교';
+  if (isChristian) {
+    // 기독교/천주교: 명상 → 묵상 시간으로 자연스럽게 치환
+    return text
+      .replace(/명상 또는 기도/g, '묵상 또는 기도')
+      .replace(/'명상'/g, "'묵상 시간'")
+      .replace(/^명상$/gm, '묵상 시간')
+      .replace(/명상 호흡/g, '조용한 호흡 시간')
+      .replace(/명상이나 조용한/g, '묵상이나 조용한');
+  }
+  // 무교/기타: 기도·예배 표현을 마음 정리·조용한 시간으로 치환
   return text
-    .replace(/기도, 예배, 상담/g, '명상, 감정 정리, 상담')
-    .replace(/기도나 묵상/g, '명상이나 조용한 성찰')
-    .replace(/기도, 명상/g, '명상, 조용한 시간')
-    .replace(/기도나 명상/g, '명상이나 조용한 시간')
+    .replace(/기도, 예배, 상담/g, '마음 정리, 감정 일기, 상담')
+    .replace(/기도나 묵상/g, '조용한 호흡이나 내면 안정 시간')
+    .replace(/기도, 명상/g, '마음 정리 시간, 조용한 호흡')
+    .replace(/기도나 명상/g, '내면 안정 시간이나 조용한 호흡')
+    .replace(/명상 또는 기도/g, '조용한 호흡 또는 마음 정리 시간')
+    .replace(/'명상'/g, "'마음 정리 시간'")
+    .replace(/명상 호흡/g, '조용한 호흡 시간')
     .replace(/\(기도 등\)/g, '(감정 일기, 조용한 산책 등)')
     .replace(/\(글쓰기, 기도, 정리 등\)/g, '(글쓰기, 감정 정리, 산책 등)')
-    .replace(/기도/g, '명상')
+    .replace(/기도/g, '마음 정리 시간')
     .replace(/예배/g, '조용한 휴식');
 }
 
@@ -405,23 +418,58 @@ export default function PremiumResultScreen() {
                   ['민트', '스카이블루', '라이트블루', '틸'],
                 ];
                 const isCalm = CALM_RECOVERY.includes(card3.colorKor);
+                // 현재 이미 강하게 활성화된 컬러(3장 카드에 사용된 컬러) 목록
+                const activeColors = new Set([card1.colorKor, card2.colorKor, card3.colorKor]);
+                // 활성화 컬러와 같은 계열 그룹도 제외 대상에 포함
+                const activeGroups = new Set<number>();
+                activeColors.forEach(name => {
+                  const gIdx = SIMILAR_GROUPS.findIndex(g => g.includes(name));
+                  if (gIdx >= 0) activeGroups.add(gIdx);
+                });
                 // card3 보완 컬러를 우선, card1 보완 컬러를 보조로 추가
                 const allColors = [...card3.complementColors, ...card1.complementColors];
                 const seen = new Set<string>();
                 const usedGroups = new Set<number>();
-                return allColors.filter(c => {
+                const filtered = allColors.filter(c => {
                   if (seen.has(c.name)) return false;
                   seen.add(c.name);
+                  // 이미 카드에서 강하게 나타난 컬러 자체는 제외
+                  if (activeColors.has(c.name)) return false;
                   // 회복 방향이 안정·정리 성향이면 고에너지 콜러는 제외
                   if (isCalm && HIGH_ENERGY.includes(c.name)) return false;
                   // 유사 계열 중복 방지: 같은 그룹에서 이미 추천된 컬러가 있으면 제외
                   const groupIdx = SIMILAR_GROUPS.findIndex(g => g.includes(c.name));
                   if (groupIdx >= 0) {
+                    // 이미 활성화된 컬러와 같은 계열이면 우선순위 낮춤(뒤로 미룸)
+                    if (activeGroups.has(groupIdx)) return false;
                     if (usedGroups.has(groupIdx)) return false;
                     usedGroups.add(groupIdx);
                   }
                   return true;
-                }).slice(0, 3); // 최대 3개까지만 표시
+                });
+                // 필터 후 3개 미만이면 계열 제한 없이 보충 (activeColors 자체만 제외)
+                if (filtered.length < 3) {
+                  const seen2 = new Set(filtered.map(c => c.name));
+                  const usedGroups2 = new Set<number>();
+                  filtered.forEach(c => {
+                    const gIdx = SIMILAR_GROUPS.findIndex(g => g.includes(c.name));
+                    if (gIdx >= 0) usedGroups2.add(gIdx);
+                  });
+                  const extra = allColors.filter(c => {
+                    if (seen2.has(c.name)) return false;
+                    if (activeColors.has(c.name)) return false;
+                    if (isCalm && HIGH_ENERGY.includes(c.name)) return false;
+                    const gIdx = SIMILAR_GROUPS.findIndex(g => g.includes(c.name));
+                    if (gIdx >= 0) {
+                      if (usedGroups2.has(gIdx)) return false;
+                      usedGroups2.add(gIdx);
+                    }
+                    seen2.add(c.name);
+                    return true;
+                  });
+                  return [...filtered, ...extra].slice(0, 3);
+                }
+                return filtered.slice(0, 3); // 최대 3개까지만 표시
               })().map((c) => (
                 <View
                   key={c.name}
