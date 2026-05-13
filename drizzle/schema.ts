@@ -31,6 +31,7 @@ export const reviews = mysqlTable("reviews", {
   nickname: varchar("nickname", { length: 50 }).notNull(),
   rating: int("rating").notNull(), // 1~5
   content: text("content").notNull(),
+  tags: varchar("tags", { length: 255 }), // 공감 포인트 태그 (콤마 구분)
   colorCombo: varchar("colorCombo", { length: 100 }), // 예: "라벤더 + 인디고 + 세이지"
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

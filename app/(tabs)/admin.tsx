@@ -70,6 +70,18 @@ export default function AdminScreen() {
     retry: false,
   });
 
+  const { data: reviewStats, refetch: refetchReviewStats } = trpc.reviews.stats.useQuery(undefined, {
+    enabled: authenticated,
+    retry: false,
+  });
+
+  const { data: reviewList, refetch: refetchReviewList } = trpc.reviews.list.useQuery(undefined, {
+    enabled: authenticated,
+    retry: false,
+  });
+
+  const [reviewExpanded, setReviewExpanded] = useState<number | null>(null);
+
   const updateStatus = trpc.payments.updateStatus.useMutation({
     onSuccess: () => { refetchPayments(); refetchStats(); },
     onError: (e) => Alert.alert("오류", e.message),
@@ -78,9 +90,9 @@ export default function AdminScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchStats(), refetchPayments()]);
+    await Promise.all([refetchStats(), refetchPayments(), refetchReviewStats(), refetchReviewList()]);
     setRefreshing(false);
-  }, [refetchStats, refetchPayments]);
+  }, [refetchStats, refetchPayments, refetchReviewStats, refetchReviewList]);
 
   // ── 상태 변경 ─────────────────────────────────────────────────
   const [memoInputs, setMemoInputs] = useState<Record<number, string>>({});
@@ -377,6 +389,73 @@ export default function AdminScreen() {
             </View>
           );
         })}
+
+        {/* 후기 통계 섹션 */}
+        <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 24 }]}>후기 통계</Text>
+        {reviewStats && (
+          <View style={[styles.statsGrid, { marginBottom: 12 }]}>
+            <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.statNum, { color: colors.primary }]}>{reviewStats.total}</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>총 후기</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.statNum, { color: '#F59E0B' }]}>{reviewStats.avgRating.toFixed(1)} ⭐</Text>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>평균 별점</Text>
+            </View>
+          </View>
+        )}
+        {reviewStats && Object.keys(reviewStats.tagCounts).length > 0 && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+            {Object.entries(reviewStats.tagCounts)
+              .sort((a, b) => b[1] - a[1])
+              .map(([tag, cnt]) => (
+                <View key={tag} style={[styles.statusBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Text style={[styles.statusText, { color: colors.foreground }]}>{tag} {cnt}</Text>
+                </View>
+              ))}
+          </View>
+        )}
+
+        {/* 후기 목록 */}
+        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>후기 목록</Text>
+        {!reviewList || reviewList.length === 0 ? (
+          <Text style={[styles.emptyText, { color: colors.muted }]}>아직 후기가 없습니다.</Text>
+        ) : (
+          reviewList.map((r) => (
+            <TouchableOpacity
+              key={r.id}
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => setReviewExpanded(reviewExpanded === r.id ? null : r.id)}
+              activeOpacity={0.85}
+            >
+              <View style={styles.cardHeader}>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.cardTitleRow}>
+                    <Text style={[styles.cardName, { color: colors.foreground }]}>
+                      {'⭐'.repeat(r.rating)} {r.nickname}
+                    </Text>
+                    <Text style={[styles.cardSubtitle, { color: colors.muted }]}>
+                      {formatDate(r.createdAt)}
+                    </Text>
+                  </View>
+                  {r.colorCombo && (
+                    <Text style={[styles.cardSubtitle, { color: colors.muted }]}>컬러: {r.colorCombo}</Text>
+                  )}
+                  {r.tags && (
+                    <Text style={[styles.cardSubtitle, { color: colors.muted }]}>태그: {r.tags}</Text>
+                  )}
+                </View>
+                <Text style={[styles.expandIcon, { color: colors.muted }]}>{reviewExpanded === r.id ? '▲' : '▼'}</Text>
+              </View>
+              {reviewExpanded === r.id && r.content ? (
+                <View style={styles.cardBody}>
+                  <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                  <Text style={[styles.infoVal, { color: colors.foreground }]}>{r.content}</Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
     </ScreenContainer>
   );

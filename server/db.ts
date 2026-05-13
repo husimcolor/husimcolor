@@ -106,6 +106,37 @@ export async function createReview(data: InsertReview) {
   return result[0].insertId;
 }
 
+export async function updateReview(id: number, data: Partial<InsertReview>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(reviews).set(data).where(eq(reviews.id, id));
+  return { success: true };
+}
+
+export async function getReviewById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(reviews).where(eq(reviews.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getReviewStats() {
+  const db = await getDb();
+  if (!db) return { total: 0, avgRating: 0, tagCounts: {} as Record<string, number> };
+  const all = await db.select().from(reviews).orderBy(desc(reviews.createdAt)).limit(500);
+  const total = all.length;
+  const avgRating = total > 0 ? Math.round((all.reduce((s, r) => s + r.rating, 0) / total) * 10) / 10 : 0;
+  const tagCounts: Record<string, number> = {};
+  for (const r of all) {
+    if (r.tags) {
+      for (const t of r.tags.split(',').map(s => s.trim()).filter(Boolean)) {
+        tagCounts[t] = (tagCounts[t] ?? 0) + 1;
+      }
+    }
+  }
+  return { total, avgRating, tagCounts };
+}
+
 // 입금 기록 관련 DB 함수
 import { InsertPaymentRecord, paymentRecords } from "../drizzle/schema";
 

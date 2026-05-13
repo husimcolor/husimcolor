@@ -18,6 +18,7 @@ import { useColors } from "@/hooks/use-colors";
 import { type CardData } from "@/constants/cardData";
 import { type ColorData } from "@/constants/colorData";
 import { type UserProfile } from "./profile";
+import { trpc } from "@/lib/trpc";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
 
 const POSITION_LABELS = [
@@ -152,16 +153,19 @@ export default function PremiumResultScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [trialStatus, setTrialStatus] = useState<TrialStatus>("none");
   const [remainingLabel, setRemainingLabel] = useState<string | null>(null);
-  const [prevColors, setPrevColors] = useState<ColorData[]>([]);
-
+   const [prevColors, setPrevColors] = useState<ColorData[]>([]);
   // 후기 state
   const [reviewDone, setReviewDone] = useState(false);
+  const [reviewId, setReviewId] = useState<number | null>(null);
+  const [isEditingReview, setIsEditingReview] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [reviewTags, setReviewTags] = useState<string[]>([]);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
-
   const REVIEW_TAGS = ["성향 해석", "관계 흐름", "무의식 흐름", "회복 방향", "코칭 메시지", "보완 루틴"];
+
+  const createReviewMutation = trpc.reviews.create.useMutation();
+  const updateReviewMutation = trpc.reviews.update.useMutation();
 
   const handleReviewSubmit = async () => {
     if (reviewRating === 0) {
@@ -171,18 +175,57 @@ export default function PremiumResultScreen() {
     setReviewSubmitting(true);
     Keyboard.dismiss();
     try {
-      const reviewData = {
+      const nickname = "익명";
+      const colorCombo = prevColors.length > 0
+        ? prevColors.map(c => c.korName).join(' + ')
+        : undefined;
+      const tagsStr = reviewTags.join(',');
+
+      let savedId = reviewId;
+      if (isEditingReview && reviewId) {
+        // 수정
+        await updateReviewMutation.mutateAsync({
+          id: reviewId,
+          rating: reviewRating,
+          content: reviewText.trim(),
+          tags: tagsStr,
+        });
+      } else {
+        // 신규 저장
+        savedId = await createReviewMutation.mutateAsync({
+          nickname,
+          rating: reviewRating,
+          content: reviewText.trim(),
+          tags: tagsStr,
+          colorCombo,
+        }) as number;
+        setReviewId(savedId);
+      }
+
+      const localData = {
+        id: savedId,
         rating: reviewRating,
         text: reviewText.trim(),
         tags: reviewTags,
         createdAt: new Date().toISOString(),
       };
-      await AsyncStorage.setItem("premiumReview", JSON.stringify(reviewData));
+      await AsyncStorage.setItem("premiumReview", JSON.stringify(localData));
       setReviewDone(true);
-    } catch {}
+      setIsEditingReview(false);
+    } catch (e) {
+      // 서버 실패 시 로컈에만 저장
+      const localData = {
+        rating: reviewRating,
+        text: reviewText.trim(),
+        tags: reviewTags,
+        createdAt: new Date().toISOString(),
+      };
+      await AsyncStorage.setItem("premiumReview", JSON.stringify(localData));
+      setReviewDone(true);
+      setIsEditingReview(false);
+    }
     setReviewSubmitting(false);
   };
-
   useEffect(() => {
     (async () => {
       const raw = await AsyncStorage.getItem("premiumSelectedCards");
@@ -201,6 +244,7 @@ export default function PremiumResultScreen() {
           setReviewRating(saved.rating ?? 0);
           setReviewText(saved.text ?? "");
           setReviewTags(saved.tags ?? []);
+          if (saved.id) setReviewId(saved.id);
         } catch {}
       }
       const status = await getTrialStatus();
@@ -775,6 +819,17 @@ export default function PremiumResultScreen() {
               <Text style={[styles.reviewDoneSub, { color: colors.muted }]}>
                 {"⭐".repeat(reviewRating)} · {reviewTags.join(" · ")}
               </Text>
+              <TouchableOpacity
+                style={styles.reviewEditBtn}
+                onPress={() => {
+                  setIsEditingReview(true);
+                  setReviewDone(false);
+                }}
+              >
+                <Text style={[styles.reviewEditBtnText, { color: colors.muted }]}>
+                  수정하기
+                </Text>
+              </TouchableOpacity>
             </View>
           ) : (
             /* 후기 입력 폼 */
@@ -1388,5 +1443,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  reviewEditBtn: {
+    marginTop: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+  },
+  reviewEditBtnText: {
+    fontSize: 13,
+    textDecorationLine: 'underline',
   },
 });

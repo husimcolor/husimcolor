@@ -65,15 +65,30 @@ export const appRouter = router({
     list: publicProcedure.query(() => {
       return db.getReviews();
     }),
+    stats: publicProcedure.query(() => {
+      return db.getReviewStats();
+    }),
     create: publicProcedure
       .input(z.object({
         nickname: z.string().min(1).max(50),
         rating: z.number().int().min(1).max(5),
-        content: z.string().min(1).max(500),
+        content: z.string().max(500).default(''),
+        tags: z.string().max(255).optional(),
         colorCombo: z.string().max(100).optional(),
       }))
       .mutation(({ input }) => {
         return db.createReview(input);
+      }),
+    update: publicProcedure
+      .input(z.object({
+        id: z.number().int(),
+        rating: z.number().int().min(1).max(5).optional(),
+        content: z.string().max(500).optional(),
+        tags: z.string().max(255).optional(),
+      }))
+      .mutation(({ input }) => {
+        const { id, ...data } = input;
+        return db.updateReview(id, data);
       }),
   }),
 });
