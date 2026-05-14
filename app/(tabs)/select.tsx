@@ -17,6 +17,17 @@ import { useColors } from '@/hooks/use-colors';
 import { COLOR_DATA, ColorData } from '@/constants/colorData';
 
 const { width } = Dimensions.get('window');
+
+// 밝은 컬러(크림, 화이트 등) 자동 테두리 색상 처리
+function getLightBorderColor(hex: string, isSelected: boolean, foregroundColor: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  if (isSelected) return foregroundColor;
+  if (brightness >= 200) return '#C8BFB0'; // 밝은 컬러는 웸 테두리
+  return 'rgba(255,255,255,0.45)'; // 어두운 컬러는 기존 흰 테두리
+}
 const CIRCLE_SIZE = (width - 48 - 40) / 5;
 
 const CARD_INFO = [
@@ -180,7 +191,7 @@ export default function SelectScreen() {
               borderRadius,
               overflow: 'hidden',
               borderWidth: isSelected ? 2.5 : 1.5,
-              borderColor: isSelected ? colors.foreground : 'rgba(255,255,255,0.45)',
+              borderColor: getLightBorderColor(item.hex, isSelected, colors.foreground),
               shadowColor: item.hex,
               shadowOpacity: isSelected ? 0.60 : 0.28,
               shadowOffset: { width: 0, height: isSelected ? 5 : 2 },

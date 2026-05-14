@@ -23,6 +23,18 @@ import { useColors } from '@/hooks/use-colors';
 import { generateInterpretation, COLOR_DATA } from '@/constants/colorData';
 import { isPremiumActive, getTrialStatus } from '@/lib/trialUtils';
 
+// 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
+function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  if (brightness >= 200) {
+    return { borderWidth: 1.5, borderColor: '#C8BFB0' };
+  }
+  return {};
+}
+
 const SOCIAL_LINKS = {
   naver: 'https://naver.me/ID3fxw2W',
   youtube: 'https://youtube.com/@huali7603?si=zMMC1MRxIfrlWUIA',
@@ -246,6 +258,7 @@ export default function ResultScreen() {
                       elevation: 4,
                       overflow: 'hidden',
                     },
+                    getLightColorBorder(card.hex),
                   ]}
                 >
                   <LinearGradient

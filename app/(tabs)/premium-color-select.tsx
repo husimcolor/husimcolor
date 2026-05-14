@@ -18,6 +18,18 @@ import { isPremiumActive } from "@/lib/trialUtils";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SWATCH_SIZE = (SCREEN_WIDTH - 48 - 24) / 5; // 5열 배치
 
+// 밝은 컬러(크림, 화이트 등) 자동 테두리 처리
+function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  if (brightness >= 200) {
+    return { borderWidth: 1.5, borderColor: '#C8BFB0' };
+  }
+  return {};
+}
+
 // 한국어 조사 처리 헬퍼
 function josa(word: string, jong: string, noJong: string): string {
   if (!word) return jong;
@@ -196,6 +208,7 @@ export default function PremiumColorSelectScreen() {
                   style={[
                     styles.swatch,
                     { backgroundColor: color.hex },
+                    getLightColorBorder(color.hex),
                     isSelected && styles.swatchSelected,
                   ]}
                   onPress={() => handleColorToggle(color)}
@@ -257,7 +270,7 @@ export default function PremiumColorSelectScreen() {
               <View style={styles.colorSummaryRow}>
                 {selectedColors.map((c, i) => (
                   <View key={c.id} style={styles.colorSummaryItem}>
-                    <View style={[styles.colorDot, { backgroundColor: c.hex }]} />
+                    <View style={[styles.colorDot, { backgroundColor: c.hex }, getLightColorBorder(c.hex)]} />
                     <Text style={[styles.colorSummaryName, { color: colors.foreground }]}>{c.korName}</Text>
                     <Text style={[styles.colorSummaryKeyword, { color: colors.muted }]}>{c.keywords[0]}</Text>
                   </View>

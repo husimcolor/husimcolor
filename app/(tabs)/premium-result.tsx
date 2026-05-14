@@ -23,6 +23,20 @@ import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 
+// 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
+function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
+  // RGB 밝기 계산 (0~255)
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  // 밝기 200 이상이면 테두리 추가
+  if (brightness >= 200) {
+    return { borderWidth: 1.5, borderColor: '#C8BFB0' };
+  }
+  return {};
+}
+
 const POSITION_LABELS = [
   { label: "1번 카드", sub: "무의식 · 내면 에너지", color: "#8BAF8B" },
   { label: "2번 카드", sub: "현재 현실 에너지", color: "#B5A0C8" },
@@ -627,7 +641,7 @@ export default function PremiumResultScreen() {
             <View style={styles.colorFlowSectionRow}>
               {prevColors.map((c: ColorData, i: number) => (
                 <View key={c.id} style={styles.colorFlowSectionItem}>
-                  <View style={[styles.colorFlowSectionDot, { backgroundColor: c.hex }]} />
+                  <View style={[styles.colorFlowSectionDot, { backgroundColor: c.hex }, getLightColorBorder(c.hex)]} />
                   <Text style={[styles.colorFlowSectionName, { color: "#5C4A1E" }]}>{c.korName}</Text>
                   <Text style={[styles.colorFlowSectionKeyword, { color: "#A0845C" }]}>{c.keywords[0]}</Text>
                 </View>
