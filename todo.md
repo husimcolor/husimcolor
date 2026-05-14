@@ -208,3 +208,9 @@
 - [x] toFlowPhrase/toCurrentPhrase/toRecoveryPhrase 각 1문장으로 단문화
 - [x] generateCombinedCoaching 2문단 + 여운 1문장 구조로 압축 (4~5블록 → 2문단)
 - [x] closingLine 22개 정제 - 루틴 섹션 중복 표현 제거, 통찰형 여운 문장으로 교체
+
+## 38차 개선 - 마지막 공감 문장 및 루틴 하단 노트 중복 방지
+
+- [x] generateCombinedCoaching 마지막 공감 문장 콜러별 분기 로직 구현 (레드/옐로우/그린/블루/퍼플 등 콜러 특성별 다른 방향 출력)
+- [x] 보완 루틴 하단 routineNote 콜러별 다양화 - 행동 루틴 중심, 감성 위로 중복 제거
+- [x] 중복 방지 로직 추가 - 상단 문장 키워드 감지 시 하단에서 다른 방향 우선 출력

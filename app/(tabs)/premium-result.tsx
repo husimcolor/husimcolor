@@ -76,7 +76,7 @@ function sanitizeRecovery(text: string, faith: string): string {
     .replace(/예배/g, '조용한 휴식');
 }
 
-function getJobCoaching(job: string, faith: string): JobCoaching {
+function getJobCoaching(job: string, faith: string, colorId?: string): JobCoaching {
   // 신앙별 추가 문구
   const faithNote =
     faith === "기독교"
@@ -144,14 +144,47 @@ function getJobCoaching(job: string, faith: string): JobCoaching {
 
   const base = jobMap[job] ?? jobMap["기타"];
 
+  // 컬러 계열별 routineNote 보완 (행동 루틴 중심, 감성 위로 중복 방지)
+  const colorRoutineMap: Record<string, string> = {
+    warm_active:
+      "몸을 움직이는 것이 마음 회복의 가장 빠른 방법입니다.\n스트레칭 5분, 빠른 걸음 10분이 에너지 순환에 도움이 됩니다.",
+    warm_social:
+      "신뢰하는 사람과 짧은 대화 한 번이 오늘의 회복 루틴이 될 수 있습니다.\n혼자 담아두지 말고 가볍게 나눠보세요.",
+    yellow:
+      "오늘 할 일 중 가장 중요한 것 하나만 골라 먼저 해보세요.\n목록을 줄이는 것이 생각 정리의 시작입니다.",
+    green:
+      "잠깐 밖으로 나가 햇빛을 보거나 식물 한 그루를 바라보는 것만으로도\n마음의 균형이 회복됩니다.",
+    blue:
+      "오늘 하루 일정 중 하나를 의도적으로 비워두세요.\n빈 시간이 내면의 질서를 되찾는 공간이 됩니다.",
+    purple:
+      "오늘 느낀 것을 3줄 이내로 적어보세요.\n글로 꺼내는 것이 생각 과몰입을 줄이는 데 도움이 됩니다.",
+    lavender:
+      "좋아하는 향이나 음악을 5분만 즐겨보세요.\n감각을 통한 회복이 지금 당신에게 잘 맞는 루틴입니다.",
+    neutral:
+      "오늘 하루 작은 것 하나를 정리해보세요.\n책상 위, 가방 안, 메모 앱 — 작은 정리가 마음 정리로 이어집니다.",
+    cool:
+      "물 한 잔 마시기, 창문 열기, 짧은 스트레칭처럼\n몸에 신호를 보내는 작은 행동이 리듬 회복에 도움이 됩니다.",
+  };
+
+  const family = colorId ? getColorFamily(colorId) : 'neutral';
+  const colorRoutineNote = colorRoutineMap[family] ?? colorRoutineMap['neutral'];
+
+  // 기존 routineNote와 컬러 루틴 노트가 중복 키워드를 가지면 컬러 루틴 노트만 사용
+  const duplicateKeywords = ['산책', '조용한', '이완', '호흡', '고요'];
+  const hasOverlap = duplicateKeywords.some(
+    kw => base.routineNote.includes(kw) && colorRoutineNote.includes(kw)
+  );
+  const finalRoutineNote = hasOverlap
+    ? colorRoutineNote
+    : base.routineNote + (colorId ? "\n\n" + colorRoutineNote : "");
+
   if (faithNote) {
     return {
-      routineNote: base.routineNote,
+      routineNote: finalRoutineNote,
       coachingNote: base.coachingNote + "\n\n" + faithNote,
     };
   }
-
-  return base;
+  return { ...base, routineNote: finalRoutineNote };
 }
 
 function SectionCard({
@@ -309,7 +342,7 @@ export default function PremiumResultScreen() {
   const [card1, card2, card3] = cards;
 
   // 직업별 맞춤 문구
-  const jobCoaching = profile ? getJobCoaching(profile.job, profile.faith) : null;
+  const jobCoaching = profile ? getJobCoaching(profile.job, profile.faith, card1?.color) : null;
 
   // 3카드 조합 종합 코칭 메시지 생성 (감정 공감 중심)
   const combinedCoaching = generateCombinedCoaching(card1, card2, card3, prevColors.length >= 3 ? prevColors : undefined);
@@ -1031,6 +1064,98 @@ function toRecoveryPhrase(title: string): string {
   return `${title}${eul} 위한 여유를 스스로 허락해 보세요.`;
 }
 
+// 컬러 id → 계열 분류
+function getColorFamily(colorId: string): string {
+  if (['red', 'coral', 'magenta'].includes(colorId)) return 'warm_active';
+  if (['orange', 'peach'].includes(colorId)) return 'warm_social';
+  if (['yellow', 'gold'].includes(colorId)) return 'yellow';
+  if (['green', 'sage', 'teal'].includes(colorId)) return 'green';
+  if (['blue', 'navy'].includes(colorId)) return 'blue';
+  if (['indigo', 'violet', 'purple'].includes(colorId)) return 'purple';
+  if (['lavender', 'pink'].includes(colorId)) return 'lavender';
+  if (['white', 'ivory', 'beige', 'cream'].includes(colorId)) return 'neutral';
+  if (['silver', 'gray', 'charcoal'].includes(colorId)) return 'cool';
+  return 'neutral';
+}
+
+// 컬러 계열별 마지막 공감 문장 (상단 키워드 중복 방지용 - 다른 방향)
+function getColorClosingLine(colorId: string, usedKeywords: string[]): string {
+  const family = getColorFamily(colorId);
+  const hasQuiet = usedKeywords.some(k => ['조용', '산책', '이완', '호흡', '고요'].some(w => k.includes(w)));
+  const hasRecover = usedKeywords.some(k => ['회복', '안정', '쉼', '내려놓'].some(w => k.includes(w)));
+  const hasPrayer = usedKeywords.some(k => ['기도', '묵상', '말씀'].some(w => k.includes(w)));
+
+  const lines: Record<string, string[]> = {
+    warm_active: [
+      "마음속에 담아두기보다 작은 표현 하나가 흐름을 바꿔줄 수 있습니다.",
+      "지금 느끼는 것을 작게라도 밖으로 꺼내보는 것이 에너지 순환의 시작입니다.",
+      "몸을 움직이는 것이 마음을 움직이는 가장 빠른 방법일 수 있습니다.",
+      "감정을 억누르기보다 작은 행동 하나로 흐름을 만들어 보세요.",
+    ],
+    warm_social: [
+      "혼자 해결하려 하기보다 신뢰하는 한 사람에게 마음을 나눠보세요.",
+      "따뜻한 연결이 지금의 회복에 가장 큰 힘이 될 수 있습니다.",
+      "오늘 한 사람과의 짧은 대화가 마음의 온도를 높여줄 수 있습니다.",
+      "관계 속에서 에너지를 얻는 당신에게, 오늘은 가벼운 만남 하나를 허락해 보세요.",
+    ],
+    yellow: [
+      "모든 것을 완벽히 정리하려 하기보다 오늘 가장 중요한 한 가지에 집중해보세요.",
+      "생각이 많아질수록 가장 단순한 것 하나를 먼저 해보는 것이 도움이 됩니다.",
+      "우선순위를 하나 정하는 것만으로도 마음의 무게가 가벼워질 수 있습니다.",
+      "지금 당장 해결하려 하기보다 오늘 할 수 있는 것 하나에 집중해보세요.",
+    ],
+    green: [
+      "사람과 자연 속에서 숨을 고르는 시간이 마음의 균형을 회복시켜줄 수 있습니다.",
+      "관계와 나 자신 사이의 균형을 찾는 것이 지금 가장 필요한 회복입니다.",
+      "작은 자연의 변화를 느끼는 것만으로도 마음이 정돈되는 시간이 됩니다.",
+      "지금은 관계보다 자신의 마음 속도를 먼저 살펴보는 것이 중요합니다.",
+    ],
+    blue: [
+      "지금은 외부 자극보다 자신만의 리듬을 지켜가는 것이 중요합니다.",
+      "신뢰는 스스로를 믿는 것에서 시작됩니다. 오늘의 선택을 믿어보세요.",
+      "내면의 질서를 되찾는 것이 지금의 가장 중요한 회복입니다.",
+      "조급함보다 일관된 리듬이 지금 당신에게 더 필요한 에너지입니다.",
+    ],
+    purple: [
+      "작은 감정 하나를 가볍게 넘기지 않을 때 내면의 회복이 더 깊어질 수 있습니다.",
+      "지금 느끼는 것을 글로 적어보는 것이 내면 정리에 큰 도움이 됩니다.",
+      "깊이 생각하는 것은 강점입니다. 오늘은 그 생각을 잠시 내려두어도 됩니다.",
+      "성찰의 시간이 쌓일수록 자신을 더 깊이 이해하게 됩니다.",
+    ],
+    lavender: [
+      "섬세한 감각을 가진 당신에게, 오늘은 자신을 위한 작은 아름다움을 찾아보세요.",
+      "감정을 억누르기보다 부드럽게 흘려보내는 연습이 지금의 회복입니다.",
+      "억지로 붙잡기보다 편안한 거리감이 도움이 됩니다.",
+      "지금의 감정을 판단하지 않고 그대로 바라보는 것이 치유의 시작입니다.",
+    ],
+    neutral: [
+      "조용한 정리가 지금의 회복이 될 수 있습니다.",
+      "단순하게 하나씩 정리해 가는 것이 지금 가장 좋은 방향입니다.",
+      "오늘은 결과보다 과정을 믿어보세요.",
+      "지금의 고요함이 다음 흐름을 준비하는 시간입니다.",
+    ],
+    cool: [
+      "생각을 정리하려 애쓰기보다 마음을 먼저 쉬게 해보세요.",
+      "분석보다 느낌을 먼저 따라가 보는 것이 지금의 회복입니다.",
+      "지금은 버티는 힘보다 내려놓는 연습이 더 중요할 수 있습니다.",
+      "효율보다 리듬을 먼저 되찾는 것이 지금 필요한 방향입니다.",
+    ],
+  };
+
+  const pool = lines[family] ?? lines['neutral'];
+  // 상단에서 이미 '조용한/산책/이완' 사용 시 → 행동/관계/리듬 방향 우선
+  // 상단에서 이미 '회복/안정/쉼' 사용 시 → 행동/통찰 방향 우선
+  // 상단에서 이미 '기도/묵상' 사용 시 → 생활 루틴/행동 방향 우선
+  let idx = 0;
+  if (hasQuiet || hasRecover || hasPrayer) {
+    // 인덱스 1 이상 (행동/통찰 방향) 우선
+    idx = 1 + (Math.abs(colorId.charCodeAt(0) - 97) % (pool.length - 1));
+  } else {
+    idx = colorId.charCodeAt(0) % pool.length;
+  }
+  return pool[idx % pool.length];
+}
+
 function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardData, colorFlow?: ColorData[]): string {
   // 문단 1: 1번(내면 흐름) + 2번(현재 상태) 공감 통합
   const flow1 = toFlowPhrase(card1.energyTitle);
@@ -1041,14 +1166,13 @@ function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardD
   const recovery = toRecoveryPhrase(card3.energyTitle);
   const para2 = `${recovery} ${card3.coachingMessage}`;
 
-  // 콜러 통합 요약 (콜러 선택 시만 표시, 1문장)
+  // 컬러 계열별 마지막 공감 문장 (중복 방지 로직 포함)
   let colorLine = '';
   if (colorFlow && colorFlow.length >= 3) {
-    const [c1, c2, c3] = colorFlow;
-    const kw1 = c1.keywords[0] ?? '';
-    const kw3 = c3.recovery ?? c3.keywords[0] ?? '';
-    const eul3 = josaCoach(kw3, '을', '를');
-    colorLine = `\n\n${c1.korName}의 ${kw1}을 가진 당신에게, 지금은 ${c3.korName}의 ${kw3}${eul3} 조금씩 허락해 보세요.`;
+    const [c1] = colorFlow;
+    // 상단 문단에서 사용된 키워드 수집 (중복 방지용)
+    const usedKeywords = [para1, para2].join(' ').split(/[.,\s]+/);
+    colorLine = `\n\n${getColorClosingLine(c1.id, usedKeywords)}`;
   }
 
   return `${para1}\n\n${para2}${colorLine}`;
