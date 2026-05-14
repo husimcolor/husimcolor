@@ -447,10 +447,10 @@ export default function PaymentScreen() {
       >
         {/* 헤더 */}
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.foreground }]}>
-            컬러 에너지 흐름{"\n"}심층 해석
+          <Text style={[styles.title, { color: '#3D2B1F' }]}>
+            컨러 에너지 흐름{"\n"}심층 해석
           </Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>
+          <Text style={[styles.subtitle, { color: '#5F4B3B' }]}>
             63장의 카드 중 마음이 이끄는 3장을 선택하고{"\n"}
             깊은 내면의 흐름을 확인해 보세요
           </Text>

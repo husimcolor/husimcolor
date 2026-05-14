@@ -112,7 +112,7 @@ export default function HomeScreen() {
             },
           ]}
         >
-          <Text style={[styles.brandName, { color: colors.foreground }]}>휴심컬러</Text>
+          <Text style={[styles.brandName, { color: '#3D2B1F' }]}>휴심컬러</Text>
           <Text style={[styles.slogan, { color: colors.primary }]}>색으로 읽는 나의 마음</Text>
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
