@@ -85,87 +85,56 @@ function getJobCoaching(job: string, faith: string, colorId?: string): JobCoachi
       ? "내면 안정과 고요한 시간을 루틴에 더하면 회복 흐름이 더 깊어질 수 있습니다."
       : "";
 
-  const jobMap: Record<string, JobCoaching> = {
-    서비스직: {
-      routineNote: "타인의 감정을 많이 담아내는 역할이라면, 퍼근 후 10분은 폰을 내려두고 아무것도 하지 않는 시간으로 비워두세요.",
-      coachingNote: "오늘도 많은 감정을 담아내셨을 것입니다. 그 수고가 보입니다.\n퍼근 후 5분, 아무것도 하지 않는 시간을 스스로에게 허락해 보세요.",
-    },
-    사역자: {
-      routineNote: "섬기는 역할 속에서도 나 자신을 돌보는 경계가 필요합니다. 쉬는 것도 사역의 일부임을 기억해 주세요.",
-      coachingNote: "주는 것에 익숙한 당신에게, 오늘은 받는 것을 연습해 보세요.\n경계를 지키는 것이 더 오래 섬길 수 있는 힘이 됩니다.",
-    },
-    프리랜서: {
-      routineNote: "일과 쉬의 경계가 흐릿할수록 에너지가 분산됩니다. 하루의 끝을 의식적으로 마무리하는 작은 루틴을 만들어 보세요.",
-      coachingNote: "자유로운 만큼 스스로 리듬을 만드는 것이 중요합니다.\n오늘 하루의 끝을 의식적으로 마무리하는 작은 루틴을 만들어 보세요.",
-    },
-    학생: {
-      routineNote: "잘해야 한다는 긴장이 쌓이면 집중력이 오히려 떨어집니다. 학습 전 3분 마음 정리 시간이 집중력 회복에 도움이 됩니다.",
-      coachingNote: "잘해야 한다는 마음이 클수록 몸과 마음이 먼저 지칉니다.\n오늘 하루 '충분히 했다'고 스스로에게 먼저 말해 주세요.",
-    },
-    주부: {
-      routineNote: "가족을 위한 돌봄 속에서 나를 위한 5분이 가장 중요한 회복 루틴입니다. 오늘 나를 위한 작은 시간을 허락해 주세요.",
-      coachingNote: "당신의 수고는 눈에 잘 보이지 않는 곳에서도 빛나고 있습니다.\n오늘 하루도 충분히 잘 하셨습니다.",
-    },
-    생산직: {
-      routineNote: "몸의 피로가 마음에도 영향을 줍니다. 퍼근 후 가벼운 스트레칭이나 따뜻한 목욕이 좋은 회복 루틴이 됩니다.",
-      coachingNote: "몸이 먼저 지쳤을 때는 마음도 함께 쉬어야 합니다.\n반복되는 일상 속 작은 변화 하나가 흐름을 바꾸 수 있습니다.",
-    },
-    자영업: {
-      routineNote: "책임감과 긴장이 쌓이기 쉬운 환경입니다. 하루 한 번, 일에서 완전히 단절하는 시간을 의도적으로 만들어 보세요.",
-      coachingNote: "모든 것을 혼자 감당하려 하지 않아도 됩니다.\n오늘 하루 한 가지만 내려놓는 연습을 해 보세요.",
-    },
-    무직: {
-      routineNote: "지금의 멈춤은 다음 흐름을 준비하는 시간입니다. 오늘 하루 작은 루틴 하나를 스스로 선택해 보세요.",
-      coachingNote: "쉬는 것도 용기가 필요합니다.\n지금 이 시간이 당신에게 꼭 필요한 과정일 수 있습니다.\n너무 서두르지 않아도 됩니다.",
-    },
-    기타: {
-      routineNote: "자신의 리듬에 맞는 회복 루틴을 하나씩 찾아가는 것이 가장 좋은 방법입니다. 오늘 작은 것부터 시작해 보세요.",
-      coachingNote: "당신만의 속도로 흐러가도 관찮습니다.\n지금 이 순간이 이미 회복의 시작입니다.",
-    },
+  // 직업별 맥락 한 문장 (콜러 루틴 노트 앞에 추가)
+  const jobContextMap: Record<string, string> = {
+    서비스직: "타인의 감정을 많이 담아내는 역할이라면, 퇴근 후 10분은 자신만을 위한 시간으로 비워두세요.",
+    사역자: "섬기는 역할 속에서도 나 자신을 돌보는 경계가 필요합니다.",
+    프리랜서: "일과 쉼의 경계가 흐릿할수록 하루의 끝을 의식적으로 마무리하는 작은 루틴이 중요합니다.",
+    학생: "잘해야 한다는 긴장이 쌓이면 집중력이 오히려 떨어집니다.",
+    주부: "가족을 위한 돌봄 속에서 나를 위한 5분이 가장 중요한 회복 루틴입니다.",
+    생산직: "몸의 피로가 마음에도 영향을 줍니다.",
+    자영업: "책임감과 긴장이 쌓이기 쉬운 환경에서, 하루 한 번 일에서 완전히 단절하는 시간이 필요합니다.",
+    무직: "지금의 멈춤은 다음 흐름을 준비하는 시간입니다.",
+    기타: "자신의 리듬에 맞는 회복 루틴을 하나씩 찾아가는 것이 가장 좋습니다.",
   };
 
-  const base = jobMap[job] ?? jobMap["기타"];
+  const jobContext = jobContextMap[job] ?? jobContextMap["기타"];
 
-  // 컬러 계열별 routineNote 보완 (행동 루틴 중심, 감성 위로 중복 방지)
+  // 콜러 계열별 행동 루틴 노트 (직업 맥락 후 출력)
   const colorRoutineMap: Record<string, string> = {
     warm_active:
-      "몸을 움직이는 것이 마음 회복의 가장 빠른 방법입니다.\n스트레칭 5분, 빠른 걸음 10분이 에너지 순환에 도움이 됩니다.",
+      "스트레칭 5분, 빠른 걸음 10분이 에너지 순환에 도움이 됩니다.",
     warm_social:
-      "신뢰하는 사람과 짧은 대화 한 번이 오늘의 회복 루틴이 될 수 있습니다.\n혼자 담아두지 말고 가볍게 나눠보세요.",
+      "신뢰하는 사람과 짧은 대화 한 번이 오늘의 회복 루틴이 될 수 있습니다.",
     yellow:
-      "오늘 할 일 중 가장 중요한 것 하나만 골라 먼저 해보세요.\n목록을 줄이는 것이 생각 정리의 시작입니다.",
+      "오늘 할 일 중 가장 중요한 것 하나만 골라 먼저 해보세요. 목록을 줄이는 것이 생각 정리의 시작입니다.",
     green:
-      "잠깐 밖으로 나가 햇빛을 보거나 식물 한 그루를 바라보는 것만으로도\n마음의 균형이 회복됩니다.",
+      "잠깐 밖으로 나가 햇빛을 보거나 식물 한 그루를 바라보는 것만으로도 마음의 균형이 회복됩니다.",
     blue:
-      "오늘 하루 일정 중 하나를 의도적으로 비워두세요.\n빈 시간이 내면의 질서를 되찾는 공간이 됩니다.",
+      "오늘 하루 일정 중 하나를 의도적으로 비워두세요. 빈 시간이 내면의 질서를 되찾는 공간이 됩니다.",
     purple:
-      "오늘 느낀 것을 3줄 이내로 적어보세요.\n글로 꺼내는 것이 생각 과몰입을 줄이는 데 도움이 됩니다.",
+      "오늘 느낀 것을 3줄 이내로 적어보세요. 글로 꺼내는 것이 생각 과몰입을 줄이는 데 도움이 됩니다.",
     lavender:
-      "좋아하는 향이나 음악을 5분만 즐겨보세요.\n감각을 통한 회복이 지금 당신에게 잘 맞는 루틴입니다.",
+      "좋아하는 향이나 음악을 5분만 즐겨보세요. 감각을 통한 회복이 지금 당신에게 잘 맞는 루틴입니다.",
     neutral:
-      "오늘 하루 작은 것 하나를 정리해보세요.\n책상 위, 가방 안, 메모 앱 — 작은 정리가 마음 정리로 이어집니다.",
+      "오늘 하루 작은 것 하나를 정리해보세요. 책상 위, 가방 안, 메모 앱 — 작은 정리가 마음 정리로 이어집니다.",
     cool:
-      "물 한 잔 마시기, 창문 열기, 짧은 스트레칭처럼\n몸에 신호를 보내는 작은 행동이 리듬 회복에 도움이 됩니다.",
+      "물 한 잔 마시기, 창문 열기, 짧은 스트레칭이 몸에 신호를 보내는 작은 행동입니다. 리듬 회복에 도움이 됩니다.",
   };
 
   const family = colorId ? getColorFamily(colorId) : 'neutral';
   const colorRoutineNote = colorRoutineMap[family] ?? colorRoutineMap['neutral'];
 
-  // 기존 routineNote와 컬러 루틴 노트가 중복 키워드를 가지면 컬러 루틴 노트만 사용
-  const duplicateKeywords = ['산책', '조용한', '이완', '호흡', '고요'];
-  const hasOverlap = duplicateKeywords.some(
-    kw => base.routineNote.includes(kw) && colorRoutineNote.includes(kw)
-  );
-  const finalRoutineNote = hasOverlap
-    ? colorRoutineNote
-    : base.routineNote + (colorId ? "\n\n" + colorRoutineNote : "");
+  // 직업 맥락 + 콜러 루틴만 출력 (직업별 routineNote 제거로 반복 방지)
+  const finalRoutineNote = jobContext + "\n" + colorRoutineNote;
 
   // faithNote는 루틴 노트에 추가 (코칭 박스 반복 방지)
   const finalRoutineWithFaith = faithNote
     ? finalRoutineNote + "\n" + faithNote
     : finalRoutineNote;
 
-  return { ...base, routineNote: finalRoutineWithFaith };
+  const base = { routineNote: finalRoutineWithFaith, coachingNote: "" };
+  return base;
 }
 
 function SectionCard({
@@ -1136,9 +1105,9 @@ function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardD
   const curr = toCurrentPhrase(card2.energyTitle);
   const para1 = `${flow1} ${curr}`;
 
-  // 문단 2: 3번(회복 방향) + card3 공감 메시지
+  // 문단 2: 3번(회복 방향) - recovery 문장만 사용 (card3.coachingMessage 제거로 반복 방지)
   const recovery = toRecoveryPhrase(card3.energyTitle);
-  const para2 = `${recovery} ${card3.coachingMessage}`;
+  const para2 = recovery;
 
   // 컬러 계열별 마지막 공감 문장 (중복 방지 로직 포함)
   let colorLine = '';
