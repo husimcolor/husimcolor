@@ -6,3 +6,9 @@
 :root {
   color-scheme: only light;
 }
+
+/* 인앱 브라우저(인스타, 카톡, 구글 등) JS 로드 전 배경색 보장 */
+html, body {
+  background-color: #FAF8F3 !important;
+  color: #3D3530;
+}
