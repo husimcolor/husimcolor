@@ -91,11 +91,11 @@ function AnimatedCard({
             height: CARD_HEIGHT,
             borderRadius: 8,
             overflow: "hidden",
-            borderWidth: isSelected ? 2.5 : 0,
+            borderWidth: card.colorKor === "화이트" ? (isSelected ? 2.5 : 1.5) : (isSelected ? 2.5 : 0),
             borderColor: card.colorKor === "블랙"
               ? "#D4AF37"
               : card.colorKor === "화이트"
-              ? "#555555"
+              ? (isSelected ? "#A08050" : "#D8C7A5")
               : "#FFFFFF",
             backgroundColor: isFlipped ? card.colorHex : CARD_BACK_COLOR,
           },
@@ -200,12 +200,12 @@ function AnimatedCard({
               transform: [{ rotateY: backRotate }],
               backfaceVisibility: "hidden",
               position: "absolute",
-              // 블랙 카드: 골드 테두리, 화이트 카드: 다크 테두리, 나머지: 흰색 테두리
-              borderWidth: isSelected ? 2.5 : 0,
+              // 블랙 카드: 골드 테두리, 화이트 카드: 연한 골드 테두리(항상 표시), 나머지: 흰색 테두리
+              borderWidth: card.colorKor === "화이트" ? (isSelected ? 2.5 : 1.5) : (isSelected ? 2.5 : 0),
               borderColor: card.colorKor === "블랙"
                 ? "#D4AF37"
                 : card.colorKor === "화이트"
-                ? "#555555"
+                ? (isSelected ? "#A08050" : "#D8C7A5")
                 : "#FFFFFF",
             },
           ]}
