@@ -47,8 +47,10 @@ export default function ResultScreen() {
   const { selectedColors, resetColors } = useColorContext();
   const colors = useColors();
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
+  // 웹(인앱 브라우저 포함)에서는 useNativeDriver가 동작하지 않아 opacity가 0에서 멈추는 버그 방지
+  // 웹에서는 즉시 1로 초기화
+  const fadeAnim = useRef(new Animated.Value(Platform.OS === 'web' ? 1 : 0)).current;
+  const slideAnim = useRef(new Animated.Value(Platform.OS === 'web' ? 0 : 30)).current;
   const viewShotRef = useRef<ViewShotRef>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -175,10 +177,13 @@ export default function ResultScreen() {
       router.replace('/(tabs)');
       return;
     }
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
-    ]).start();
+    // 웹에서는 이미 초기값이 1/0이므로 애니메이션 불필요
+    if (Platform.OS !== 'web') {
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
+      ]).start();
+    }
   }, []);
 
   if (!card1 || !card2 || !card3) return null;
