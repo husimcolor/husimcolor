@@ -297,7 +297,7 @@ export default function PremiumResultScreen() {
     return (
       <ScreenContainer>
         <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: colors.muted }]}>
+          <Text style={[styles.loadingText, { color: '#555555' }]}>
             카드 정보를 불러오는 중...
           </Text>
         </View>
@@ -373,7 +373,7 @@ export default function PremiumResultScreen() {
             나의 컬러 심리 해석
           </Text>
           {profile && (
-            <Text style={[styles.headerProfile, { color: colors.muted }]}>
+            <Text style={[styles.headerProfile, { color: '#555555' }]}>
               {profile.age}세 · {profile.job} · {profile.faith}
             </Text>
           )}
@@ -425,7 +425,7 @@ export default function PremiumResultScreen() {
               >
                 {card.colorKor}
               </Text>
-              <Text style={[styles.cardSummaryShape, { color: colors.muted }]}>
+              <Text style={[styles.cardSummaryShape, { color: '#555555' }]}>
                 {card.shapeKor}
               </Text>
               <Text
@@ -458,7 +458,7 @@ export default function PremiumResultScreen() {
               {/* 1번 카드: 무의식/내면 에너지 흐름 */}
               {i === 0 && (
                 <View style={styles.detailRow}>
-                  <Text style={[styles.detailLabel, { color: colors.muted }]}>
+                  <Text style={[styles.detailLabel, { color: '#555555' }]}>
                     무의식 에너지 흐름
                   </Text>
                   <Text style={[styles.detailText, { color: colors.foreground }]}>
@@ -469,7 +469,7 @@ export default function PremiumResultScreen() {
               {/* 2번 카드: 현재 에너지 흐름 */}
               {i === 1 && (
                 <View style={styles.detailRow}>
-                  <Text style={[styles.detailLabel, { color: colors.muted }]}>
+                  <Text style={[styles.detailLabel, { color: '#555555' }]}>
                     현재 에너지 흐름
                   </Text>
                   <Text style={[styles.detailText, { color: colors.foreground }]}>
@@ -480,7 +480,7 @@ export default function PremiumResultScreen() {
               {/* 3번 카드: 회복 방향 */}
               {i === 2 && (
                 <View style={styles.detailRow}>
-                  <Text style={[styles.detailLabel, { color: colors.muted }]}>
+                  <Text style={[styles.detailLabel, { color: '#555555' }]}>
                     회복 방향
                   </Text>
                   <Text style={[styles.detailText, { color: colors.foreground }]}>
@@ -490,7 +490,7 @@ export default function PremiumResultScreen() {
               )}
               {/* 감정 패턴 - 공통 */}
               <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: colors.muted }]}>
+                <Text style={[styles.detailLabel, { color: '#555555' }]}>
                   감정 패턴
                 </Text>
                 <Text style={[styles.detailText, { color: colors.foreground }]}>
@@ -499,7 +499,7 @@ export default function PremiumResultScreen() {
               </View>
               {/* 장점 - 공통 */}
               <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: colors.muted }]}>
+                <Text style={[styles.detailLabel, { color: '#555555' }]}>
                   장점
                 </Text>
                 <View style={styles.tagsRow}>
@@ -537,7 +537,7 @@ export default function PremiumResultScreen() {
           colors={colors}
         >
           <View style={styles.complementContent}>
-            <Text style={[styles.complementDesc, { color: colors.muted }]}>
+            <Text style={[styles.complementDesc, { color: '#555555' }]}>
               지금 마음을 채워줄 컬러입니다
             </Text>
             <View style={styles.tagsRow}>
@@ -768,7 +768,7 @@ export default function PremiumResultScreen() {
           <Text style={[styles.coachingSectionTitle, { color: colors.foreground }]}>
             지금의 마음 흐름을{"\n"}더 깊이 이해하고 싶다면
           </Text>
-          <Text style={[styles.coachingSectionSub, { color: colors.muted }]}>
+          <Text style={[styles.coachingSectionSub, { color: '#555555' }]}>
             휴심컬러와 함께하는 1:1 컬러코칭을 만나보세요
           </Text>
 
@@ -861,7 +861,7 @@ export default function PremiumResultScreen() {
               <Text style={[styles.reviewDoneText, { color: "#3D6B3D" }]}>
                 후기를 남겨주셔서 감사합니다
               </Text>
-              <Text style={[styles.reviewDoneSub, { color: colors.muted }]}>
+              <Text style={[styles.reviewDoneSub, { color: '#555555' }]}>
                 {"⭐".repeat(reviewRating)} · {reviewTags.join(" · ")}
               </Text>
               <TouchableOpacity
@@ -871,7 +871,7 @@ export default function PremiumResultScreen() {
                   setReviewDone(false);
                 }}
               >
-                <Text style={[styles.reviewEditBtnText, { color: colors.muted }]}>
+                <Text style={[styles.reviewEditBtnText, { color: '#555555' }]}>
                   수정하기
                 </Text>
               </TouchableOpacity>
@@ -900,7 +900,7 @@ export default function PremiumResultScreen() {
               </View>
 
               {/* 공감 포인트 선택 */}
-              <Text style={[styles.reviewTagLabel, { color: colors.muted }]}>
+              <Text style={[styles.reviewTagLabel, { color: '#444444' }]}>
                 어떤 부분이 가장 공감되셨나요?
               </Text>
               <View style={styles.reviewTagRow}>
@@ -922,7 +922,7 @@ export default function PremiumResultScreen() {
                           : { backgroundColor: colors.surface, borderColor: colors.border },
                       ]}
                     >
-                      <Text style={[styles.reviewTagText, { color: selected ? "#FFFFFF" : colors.muted }]}>
+                      <Text style={[styles.reviewTagText, { color: selected ? "#FFFFFF" : '#444444' }]}>
                         {tag}
                       </Text>
                     </TouchableOpacity>
@@ -966,7 +966,7 @@ export default function PremiumResultScreen() {
           onPress={() => router.push("/premium-select" as any)}
           activeOpacity={0.7}
         >
-          <Text style={[styles.retryButtonText, { color: colors.muted }]}>
+          <Text style={[styles.retryButtonText, { color: '#444444' }]}>
             다시 선택하기
           </Text>
         </TouchableOpacity>
@@ -1265,7 +1265,7 @@ const styles = StyleSheet.create({
   },
   cardSummarySymbol: {
     fontSize: 22,
-    color: "rgba(255,255,255,0.9)",
+    color: "rgba(255,255,255,0.95)",
   },
   cardSummaryPosition: {
     fontSize: 10,
@@ -1439,7 +1439,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   coachingLinkDesc: {
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(255,255,255,0.95)",
     fontSize: 12,
   },
   coachingLinkArrow: {
