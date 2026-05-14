@@ -38,9 +38,9 @@ function getLightColorBorder(hex: string): { borderWidth: number; borderColor: s
 }
 
 const POSITION_LABELS = [
-  { label: "1번 카드", sub: "무의식 · 내면 에너지", color: "#8BAF8B" },
-  { label: "2번 카드", sub: "현재 현실 에너지", color: "#B5A0C8" },
-  { label: "3번 카드", sub: "미래 · 회복 · 희망 에너지", color: "#C4956A" },
+  { label: "1번 카드", sub: "무의식 · 내면 에너지", color: "#4A7A4A" },
+  { label: "2번 카드", sub: "현재 현실 에너지", color: "#7A5CA8" },
+  { label: "3번 카드", sub: "미래 · 회복 · 희망 에너지", color: "#8B6030" },
 ];
 
 // 직업별 맞춤 코칭 문구
@@ -533,7 +533,7 @@ export default function PremiumResultScreen() {
         {/* 보완 컬러 */}
         <SectionCard
           title="지금 나에게 필요한 컬러"
-          accentColor="#C4956A"
+          accentColor="#7A4A10"
           colors={colors}
         >
           <View style={styles.complementContent}>
@@ -632,22 +632,22 @@ export default function PremiumResultScreen() {
         {/* 컬러 성향 흐름 섹션 */}
         {prevColors.length >= 3 && (
           <View style={[styles.colorFlowSection, { backgroundColor: "#F8F4EE", borderColor: "#D4C8B844" }]}>
-            <Text style={[styles.colorFlowSectionTitle, { color: "#8B6914" }]}>
+          <Text style={[styles.colorFlowSectionTitle, { color: "#5C3D00" }]}>
               🎨 나의 컬러 성향
             </Text>
-            <Text style={[styles.colorFlowSectionSub, { color: "#A0845C" }]}>
+            <Text style={[styles.colorFlowSectionSub, { color: "#6B5030" }]}>
               선택한 컬러가 보여주는 나의 성향
             </Text>
             <View style={styles.colorFlowSectionRow}>
               {prevColors.map((c: ColorData, i: number) => (
                 <View key={c.id} style={styles.colorFlowSectionItem}>
                   <View style={[styles.colorFlowSectionDot, { backgroundColor: c.hex }, getLightColorBorder(c.hex)]} />
-                  <Text style={[styles.colorFlowSectionName, { color: "#5C4A1E" }]}>{c.korName}</Text>
-                  <Text style={[styles.colorFlowSectionKeyword, { color: "#A0845C" }]}>{c.keywords[0]}</Text>
+                  <Text style={[styles.colorFlowSectionName, { color: "#3D2A00" }]}>{c.korName}</Text>
+                  <Text style={[styles.colorFlowSectionKeyword, { color: "#6B5030" }]}>{c.keywords[0]}</Text>
                 </View>
               ))}
             </View>
-            <Text style={[styles.colorFlowSectionDesc, { color: "#7A6040" }]}>
+            <Text style={[styles.colorFlowSectionDesc, { color: "#4A3010" }]}>
               {prevColors[0].korName}의 {prevColors[0].keywords[0]}·{prevColors[1].korName}의 {prevColors[1].keywords[0]}·{prevColors[2].korName}의 {prevColors[2].keywords[0]} 이
               {" "}당신의 성향을 이루고 있습니다.
             </Text>
@@ -660,7 +660,7 @@ export default function PremiumResultScreen() {
             { backgroundColor: "#8BAF8B18", borderColor: "#8BAF8B55" },
           ]}
         >
-          <Text style={[styles.coachingLabel, { color: "#8BAF8B" }]}>
+          <Text style={[styles.coachingLabel, { color: "#3D6B3D" }]}>
             💚 지금 마음의 흐름
           </Text>
           <Text style={[styles.coachingText, { color: colors.foreground }]}>
@@ -731,10 +731,10 @@ export default function PremiumResultScreen() {
               </>
             ) : (
               <>
-                <Text style={[styles.trialBannerTitle, { color: "#C4956A" }]}>
+                <Text style={[styles.trialBannerTitle, { color: "#7A4A10" }]}>
                   무료체험이 종료되었습니다
                 </Text>
-                <Text style={[styles.trialBannerDesc, { color: "#C4956A" }]}>
+                <Text style={[styles.trialBannerDesc, { color: "#7A4A10" }]}>
                   심층 해석을 계속 이용하시려면 결제해 주세요
                 </Text>
               </>
@@ -858,7 +858,7 @@ export default function PremiumResultScreen() {
             /* 후기 완료 상태 */
             <View style={styles.reviewDoneBox}>
               <Text style={[styles.reviewDoneIcon]}>🌿</Text>
-              <Text style={[styles.reviewDoneText, { color: "#8BAF8B" }]}>
+              <Text style={[styles.reviewDoneText, { color: "#3D6B3D" }]}>
                 후기를 남겨주셔서 감사합니다
               </Text>
               <Text style={[styles.reviewDoneSub, { color: colors.muted }]}>
