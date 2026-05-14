@@ -269,10 +269,10 @@ export default function PaymentScreen() {
             🌿 휴심컬러 심화코칭 베타 체험
           </Text>
           <Text style={[styles.trialButtonDesc, { color: "#5A8A5A" }]}>
-            1인 1회, 48시간 동안 무료로 체험 가능합니다
+            초기 오픈 기간 동안 무료로 체험 가능합니다
           </Text>
           <View style={[styles.trialButtonBadge, { backgroundColor: "#8BAF8B" }]}>
-            <Text style={styles.trialButtonBadgeText}>48시간 무료체험 시작하기</Text>
+            <Text style={styles.trialButtonBadgeText}>초기 오픈 체험 시작하기</Text>
           </View>
         </TouchableOpacity>
       );
@@ -547,7 +547,7 @@ export default function PaymentScreen() {
             activeOpacity={0.8}
           >
             <Text style={[styles.freeButtonText, { color: "#5A8A5A", fontWeight: "600" }]}>
-              🌿 1인 1회 · 48시간 무료체험 시작하기
+              🌿 초기 오픈 체험 중 · 지금 무료로 시작하기
             </Text>
           </TouchableOpacity>
         ) : (
@@ -557,7 +557,7 @@ export default function PaymentScreen() {
             activeOpacity={0.8}
           >
             <Text style={[styles.freeButtonText, { color: "#5A8A5A", fontWeight: "600" }]}>
-              🌿 1인 1회 · 48시간 무료체험 시작하기
+              🌿 초기 오픈 체험 중 · 지금 무료로 시작하기
             </Text>
           </TouchableOpacity>
         )}

@@ -525,7 +525,7 @@ export default function ResultScreen() {
               onPress={() => router.push('/payment' as any)}
               activeOpacity={0.85}
             >
-              <Text style={styles.upsellTrialBtnText}>🌿 48시간 무료체험 시작하기</Text>
+              <Text style={styles.upsellTrialBtnText}>🌿 초기 오픈 체험 중 · 지금 무료로 시작하기</Text>
             </TouchableOpacity>
           )}
           {trialStatus === 'active' && (
