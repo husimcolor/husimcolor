@@ -2,7 +2,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const TRIAL_KEY = "trialStartedAt";
 export const PREMIUM_KEY = "premiumUnlocked";
-export const TRIAL_DURATION_MS = 48 * 60 * 60 * 1000; // 48시간
+// 48시간 제한 일시 중지 - 주말 무료체험 오픈 기간 동안 비활성화
+// 재활성화 시: TRIAL_LIMIT_ENABLED = true 로 변경
+const TRIAL_LIMIT_ENABLED = false;
+export const TRIAL_DURATION_MS = 48 * 60 * 60 * 1000; // 48시간 (재활성화 시 사용)
 
 /** 현재 프리미엄 접근 가능 여부 (결제 완료 OR 체험 기간 내) */
 export async function isPremiumActive(): Promise<boolean> {
@@ -12,6 +15,8 @@ export async function isPremiumActive(): Promise<boolean> {
   ]);
   if (paid === "true") return true;
   if (trialStart) {
+    // 제한 비활성화 시: 체험 시작 기록만 있으면 항상 활성
+    if (!TRIAL_LIMIT_ENABLED) return true;
     const elapsed = Date.now() - parseInt(trialStart, 10);
     return elapsed < TRIAL_DURATION_MS;
   }
@@ -32,12 +37,15 @@ export async function getTrialStatus(): Promise<TrialStatus> {
   ]);
   if (paid === "true") return "paid";
   if (!trialStart) return "none";
+  // 제한 비활성화 시: 체험 시작 기록만 있으면 항상 active
+  if (!TRIAL_LIMIT_ENABLED) return "active";
   const elapsed = Date.now() - parseInt(trialStart, 10);
   return elapsed < TRIAL_DURATION_MS ? "active" : "expired";
 }
 
-/** 남은 체험 시간 문자열 반환 (예: "23시간 45분") */
+/** 남은 체험 시간 문자열 반환 (제한 비활성화 시 null 반환) */
 export async function getTrialRemainingLabel(): Promise<string | null> {
+  if (!TRIAL_LIMIT_ENABLED) return null;
   const trialStart = await AsyncStorage.getItem(TRIAL_KEY);
   if (!trialStart) return null;
   const remaining = TRIAL_DURATION_MS - (Date.now() - parseInt(trialStart, 10));
