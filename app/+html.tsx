@@ -65,13 +65,27 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="color-scheme" content="only light" />
 
         {/* 인앱 브라우저(인스타, 카톡, 구글 등) JS 로드 전 배경색 보장 - 투명 배경 방지 */}
+        {/* CSS 변수 폴백: 구버전 Android WebView(카카오/인스타 인앱 브라우저)에서 ThemeProvider JS 실행 전 CSS 변수가 없어 텍스트가 투명하게 보이는 문제 방지 */}
         {/* @ts-ignore */}
         <style dangerouslySetInnerHTML={{ __html: `
+          :root {
+            --color-foreground: #3D3530;
+            --color-background: #FAF8F3;
+            --color-surface: #F2EFE7;
+            --color-muted: #9B8E85;
+            --color-border: #DDD8CE;
+            --color-primary: #8FA68E;
+            --color-success: #5A8A5A;
+            --color-warning: #C4956A;
+            --color-error: #C45A5A;
+          }
           html, body, #root {
             background-color: #FAF8F3 !important;
+            color: #3D3530 !important;
             color-scheme: only light !important;
           }
           body { margin: 0; }
+          * { -webkit-text-fill-color: inherit; }
         `}} />
 
         <ScrollViewStyleReset />

@@ -168,11 +168,11 @@ function SectionCard({
     <View
       style={[
         styles.sectionCard,
-        { backgroundColor: colors.surface, borderColor: colors.border },
+        { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE' },
       ]}
     >
       <View style={[styles.sectionTitleBar, { borderLeftColor: accentColor }]}>
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+        <Text style={[styles.sectionTitle, { color: '#3D3530' }]}>
           {title}
         </Text>
       </View>
@@ -369,7 +369,7 @@ export default function PremiumResultScreen() {
       >
         {/* 헤더 */}
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>
+          <Text style={[styles.headerTitle, { color: '#3D3530' }]}>
             나의 컬러 심리 해석
           </Text>
           {profile && (
@@ -421,7 +421,7 @@ export default function PremiumResultScreen() {
                 {POSITION_LABELS[i].label}
               </Text>
               <Text
-                style={[styles.cardSummaryName, { color: colors.foreground }]}
+                style={[styles.cardSummaryName, { color: '#3D3530' }]}
               >
                 {card.colorKor}
               </Text>
@@ -461,7 +461,7 @@ export default function PremiumResultScreen() {
                   <Text style={[styles.detailLabel, { color: '#555555' }]}>
                     무의식 에너지 흐름
                   </Text>
-                  <Text style={[styles.detailText, { color: colors.foreground }]}>
+                  <Text style={[styles.detailText, { color: '#3D3530' }]}>
                     {card.psychologyFlow}
                   </Text>
                 </View>
@@ -472,7 +472,7 @@ export default function PremiumResultScreen() {
                   <Text style={[styles.detailLabel, { color: '#555555' }]}>
                     현재 에너지 흐름
                   </Text>
-                  <Text style={[styles.detailText, { color: colors.foreground }]}>
+                  <Text style={[styles.detailText, { color: '#3D3530' }]}>
                     {card.personalityFlow}
                   </Text>
                 </View>
@@ -483,7 +483,7 @@ export default function PremiumResultScreen() {
                   <Text style={[styles.detailLabel, { color: '#555555' }]}>
                     회복 방향
                   </Text>
-                  <Text style={[styles.detailText, { color: colors.foreground }]}>
+                  <Text style={[styles.detailText, { color: '#3D3530' }]}>
                     {extractFirstSentence(sanitizeRecovery(card.recoveryDirection, profile?.faith ?? ''))}
                   </Text>
                 </View>
@@ -493,7 +493,7 @@ export default function PremiumResultScreen() {
                 <Text style={[styles.detailLabel, { color: '#555555' }]}>
                   감정 패턴
                 </Text>
-                <Text style={[styles.detailText, { color: colors.foreground }]}>
+                <Text style={[styles.detailText, { color: '#3D3530' }]}>
                   {card.emotionPattern}
                 </Text>
               </View>
@@ -663,7 +663,7 @@ export default function PremiumResultScreen() {
           <Text style={[styles.coachingLabel, { color: "#3D6B3D" }]}>
             💚 지금 마음의 흐름
           </Text>
-          <Text style={[styles.coachingText, { color: colors.foreground }]}>
+          <Text style={[styles.coachingText, { color: '#3D3530' }]}>
             {combinedCoaching}
           </Text>
 
@@ -754,18 +754,18 @@ export default function PremiumResultScreen() {
         )}
         {/* 공유 버튼 */}
         <TouchableOpacity
-          style={[styles.shareButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          style={[styles.shareButton, { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE' }]}
           onPress={handleShare}
           activeOpacity={0.7}
         >
-          <Text style={[styles.shareButtonText, { color: colors.foreground }]}>
+          <Text style={[styles.shareButtonText, { color: '#3D3530' }]}>
             결과 공유하기
           </Text>
         </TouchableOpacity>
 
         {/* 1:1 코칭 연결 섹션 */}
         <View style={styles.coachingSection}>
-          <Text style={[styles.coachingSectionTitle, { color: colors.foreground }]}>
+          <Text style={[styles.coachingSectionTitle, { color: '#3D3530' }]}>
             지금의 마음 흐름을{"\n"}더 깊이 이해하고 싶다면
           </Text>
           <Text style={[styles.coachingSectionSub, { color: '#555555' }]}>
@@ -853,7 +853,7 @@ export default function PremiumResultScreen() {
         </View>
 
         {/* 하단 여운 한 문장 + 후기 인라인 섹션 */}
-        <View style={[styles.reviewSection, { backgroundColor: colors.surface, borderColor: "#8BAF8B44" }]}>
+        <View style={[styles.reviewSection, { backgroundColor: '#F2EFE7', borderColor: "#8BAF8B44" }]}>
           {reviewDone ? (
             /* 후기 완료 상태 */
             <View style={styles.reviewDoneBox}>
@@ -879,7 +879,7 @@ export default function PremiumResultScreen() {
           ) : (
             /* 후기 입력 폼 */
             <View style={styles.reviewForm}>
-              <Text style={[styles.reviewAskText, { color: colors.foreground }]}>
+              <Text style={[styles.reviewAskText, { color: '#3D3530' }]}>
                 짧은 후기를 남겨주시면{"\n"}휴심컬러가 더 따뜻하게 성장하는 데 큰 힘이 됩니다 😊
               </Text>
 
@@ -892,7 +892,7 @@ export default function PremiumResultScreen() {
                     activeOpacity={0.7}
                     style={styles.reviewStarBtn}
                   >
-                    <Text style={[styles.reviewStarText, { color: star <= reviewRating ? "#F59E0B" : colors.border }]}>
+                    <Text style={[styles.reviewStarText, { color: star <= reviewRating ? "#F59E0B" : '#DDD8CE' }]}>
                       ★
                     </Text>
                   </TouchableOpacity>
@@ -919,7 +919,7 @@ export default function PremiumResultScreen() {
                         styles.reviewTag,
                         selected
                           ? { backgroundColor: "#8BAF8B", borderColor: "#8BAF8B" }
-                          : { backgroundColor: colors.surface, borderColor: colors.border },
+                          : { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE' },
                       ]}
                     >
                       <Text style={[styles.reviewTagText, { color: selected ? "#FFFFFF" : '#444444' }]}>
@@ -932,12 +932,12 @@ export default function PremiumResultScreen() {
 
               {/* 한줄 후기 */}
               <TextInput
-                style={[
+                  style={[
                   styles.reviewInput,
-                  { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground },
+                  { backgroundColor: '#FAF8F3', borderColor: '#DDD8CE', color: '#3D3530' },
                 ]}
                 placeholder="짧은 후기를 남겨주세요 (선택)"
-                placeholderTextColor={colors.muted}
+                placeholderTextColor={'#9B8E85'}
                 value={reviewText}
                 onChangeText={setReviewText}
                 maxLength={100}
@@ -962,7 +962,7 @@ export default function PremiumResultScreen() {
 
         {/* 다시 선택 */}
         <TouchableOpacity
-          style={[styles.retryButton, { borderColor: colors.border }]}
+          style={[styles.retryButton, { borderColor: '#DDD8CE' }]}
           onPress={() => router.push("/premium-select" as any)}
           activeOpacity={0.7}
         >
