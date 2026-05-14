@@ -202,3 +202,9 @@
 - [x] colorData.ts 옐로우 keywords/strengths/reading1/2/3 수정 ('지혜' 단독 → 현실감각·균형감·명료한 사고·판단력·생각 정리)
 - [x] cardData.ts 옐로우 카드 8개 coachingMessage/recoveryDirection/strengths 수정
 - [x] premium-color-select.tsx buildColorInterpretation 옐로우 관련 문장 수정
+
+## 37차 개선 - 문장 압축 및 섹션 중복 정리
+
+- [x] toFlowPhrase/toCurrentPhrase/toRecoveryPhrase 각 1문장으로 단문화
+- [x] generateCombinedCoaching 2문단 + 여운 1문장 구조로 압축 (4~5블록 → 2문단)
+- [x] closingLine 22개 정제 - 루틴 섹션 중복 표현 제거, 통찰형 여운 문장으로 교체

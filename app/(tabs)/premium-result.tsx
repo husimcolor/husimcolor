@@ -980,37 +980,27 @@ function josaCoach(word: string, jong: string, noJong: string): string {
   return jong;
 }
 
-// 1번 카드: 무의식/내면 흐름 → 공감 어조로 시작 (진단이 아닌 공감)
+// 1번 카드: 무의식/내면 흐름 → 공감 어조 1문장
 function toFlowPhrase(title: string): string {
+  const eun = josaCoach(title, '은', '는');
   if (title.endsWith('마음')) {
-    return `마음 한편에 ${title}이 조용히 자리하고 있습니다.`;
-  }
-  if (title.endsWith('성향')) {
-    return `${title}이 지금 당신 안에서 자연스럽게 흐르고 있습니다.`;
+    return `${title}${eun} 지금 당신 안에 조용히 자리하고 있습니다.`;
   }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
     return `${base}을 향한 마음이 조용히 이어지고 있습니다.`;
   }
-  if (title.endsWith('흐름')) {
-    return `${title}이 지금 당신의 내면에서 이어지고 있습니다.`;
-  }
   if (title.endsWith('균형') || title.endsWith('조화')) {
     return `${title}을 찾고 싶은 마음이 있습니다.`;
   }
-  if (title.endsWith('기질')) {
-    return `${title}이 지금 당신 안에 자연스럽게 자리하고 있습니다.`;
-  }
-  return `${title}을 향한 마음이 조용히 이어지고 있습니다.`;
+  return `${title}${eun} 지금 당신 안에 자연스럽게 자리하고 있습니다.`;
 }
 
-// 2번 카드: 현재 상태를 담담하고 공감되게 표현
+// 2번 카드: 현재 상태 → 담담하고 공감되는 1문장
 function toCurrentPhrase(title: string): string {
+  const eun = josaCoach(title, '은', '는');
   if (title.endsWith('마음')) {
     return `지금은 ${title}으로 하루를 보내고 있는 것 같습니다.`;
-  }
-  if (title.endsWith('성향')) {
-    return `지금 삶에서 ${title}이 자연스럽게 나타나고 있습니다.`;
   }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
@@ -1019,66 +1009,49 @@ function toCurrentPhrase(title: string): string {
   if (title.endsWith('흐름')) {
     return `지금은 ${title} 안에 있는 시간입니다.`;
   }
-  if (title.endsWith('기질')) {
-    return `지금 삶에서 ${title}이 자연스럽게 드러나고 있습니다.`;
-  }
-  return `지금은 ${title} 상태로 지내고 있습니다.`;
+  return `지금${eun} ${title} 안에 있는 시간입니다.`;
 }
 
-// 3번 카드: 회복 방향을 따뜻하고 구체적인 제안으로 표현
+// 3번 카드: 회복 방향 → 따뜻하고 짧은 1문장
 function toRecoveryPhrase(title: string): string {
+  const eul = josaCoach(title, '을', '를');
   if (title.endsWith('마음')) {
-    return `지금은 ${title}을 억지로 바꾸려 하기보다, 천천히 따라가 보는 것이 더 도움이 됩니다.`;
-  }
-  if (title.endsWith('성향')) {
-    return `지금은 ${title}을 조금씩 허용해 주는 것이 회복에 도움이 됩니다.`;
+    return `${title}${eul} 억지로 바꾸려 하기보다 천천히 따라가 보세요.`;
   }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
-    return `지금 당신에게는 ${base}을 위한 작은 시간이 필요합니다.`;
-  }
-  if (title.endsWith('흐름')) {
-    return `지금은 ${title}을 억지로 바꾸기보다, 자연스럽게 받아들이는 것이 좋습니다.`;
+    return `${base}을 위한 작은 시간을 스스로 허락해 보세요.`;
   }
   if (title.endsWith('균형') || title.endsWith('조화')) {
-    return `지금은 ${title}을 되찾는 것이 가장 중요한 회복의 시작입니다.`;
+    return `${title}${eul} 되찾는 것이 지금 가장 중요한 한 걸음입니다.`;
   }
   if (title.endsWith('기질')) {
-    return `지금은 ${title}을 있는 그대로 받아들이고, 그 안에서 쉬어가는 것이 도움이 됩니다.`;
+    return `${title}${eul} 있는 그대로 받아들이는 것이 지금의 회복입니다.`;
   }
-  return `지금 당신에게는 ${title}을 위한 여유가 필요합니다.`;
+  return `${title}${eul} 위한 여유를 스스로 허락해 보세요.`;
 }
 
 function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardData, colorFlow?: ColorData[]): string {
-  // 1번 카드: 무의식/내면 흐름 → 공감형 시작
+  // 문단 1: 1번(내면 흐름) + 2번(현재 상태) 공감 통합
   const flow1 = toFlowPhrase(card1.energyTitle);
-  // 2번 카드: 현재 상태 → 담담하게
   const curr = toCurrentPhrase(card2.energyTitle);
-  // 3번 카드: 회복 방향 → 따뜻한 제안
+  const para1 = `${flow1} ${curr}`;
+
+  // 문단 2: 3번(회복 방향) + card3 공감 메시지
   const recovery = toRecoveryPhrase(card3.energyTitle);
+  const para2 = `${recovery} ${card3.coachingMessage}`;
 
-  // 1·2번 카드 통합 문장 (자연스럽게 연결)
-  const line12 = `${flow1}\n${curr}\n`;
-  // 3번 카드 회복 제안 (줄바꾸으로 구분)
-  const line3 = `\n${recovery}\n`;
-  // 3번 카드 감정 공감 메시지 (행동 제안 제거, 공감 중심)
-  const cardCoaching = `\n${card3.coachingMessage}`;
-
-  // 콜러 통합 문장 (콜러 선택 시만 표시)
+  // 콜러 통합 요약 (콜러 선택 시만 표시, 1문장)
   let colorLine = '';
   if (colorFlow && colorFlow.length >= 3) {
     const [c1, c2, c3] = colorFlow;
     const kw1 = c1.keywords[0] ?? '';
-    const kw2 = c2.keywords[0] ?? '';
     const kw3 = c3.recovery ?? c3.keywords[0] ?? '';
-    const wa1 = josaCoach(kw1, '과', '와');
-    const eul2 = josaCoach(kw2, '을', '를');
     const eul3 = josaCoach(kw3, '을', '를');
-    colorLine = `\n\n${c1.korName}의 ${kw1}${wa1} ${c2.korName}의 ${kw2}${eul2} 함께 가지고 있는 당신에게,\n` +
-      `지금은 ${c3.korName}의 ${kw3}${eul3} 조금씩 허용해 주는 것이 도움이 됩니다.`;
+    colorLine = `\n\n${c1.korName}의 ${kw1}을 가진 당신에게, 지금은 ${c3.korName}의 ${kw3}${eul3} 조금씩 허락해 보세요.`;
   }
 
-  return line12 + line3 + cardCoaching + colorLine;
+  return `${para1}\n\n${para2}${colorLine}`;
 }
 
 const styles = StyleSheet.create({
