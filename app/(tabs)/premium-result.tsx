@@ -134,17 +134,8 @@ function getJobCoaching(job: string, faith: string, colorId?: string): JobCoachi
   const family = colorId ? getColorFamily(colorId) : 'neutral';
   const colorRoutineNote = colorRoutineMap[family] ?? colorRoutineMap['neutral'];
 
-  // 직업 맥락 + 콜러 루틴만 출력 (직업별 routineNote 제거로 반복 방지)
-  const finalRoutineNote = jobContext + "\n" + colorRoutineNote;
-
-  // faithNote는 루틴 노트에 추가 (코칭 박스 반복 방지)
-  // lavender/purple 계열은 감성 성찰 방향이 겹치므로 faithNote 생략
-  const faithOverlapsColor = ['lavender', 'purple'].includes(family);
-  const finalRoutineWithFaith = (faithNote && !faithOverlapsColor)
-    ? finalRoutineNote + "\n" + faithNote
-    : finalRoutineNote;
-
-  const base = { routineNote: finalRoutineWithFaith, coachingNote: "" };
+  // 콜러 루틴 문장만 출력 (직업 맥락/신앙 문장 제거 - 반복 방지)
+  const base = { routineNote: colorRoutineNote, coachingNote: "" };
   return base;
 }
 
