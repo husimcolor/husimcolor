@@ -732,10 +732,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
     marginBottom: 4,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
   },
   tagText: {
     fontSize: 12,
     fontWeight: '500',
+    flexShrink: 1,
   },
   complementCard: {
     padding: 16,
