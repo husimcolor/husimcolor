@@ -3,8 +3,18 @@
 @tailwind utilities;
 
 /* Prevent browser forced dark mode from inverting color swatches */
+/* CSS 변수 폴백: 구버전 Android WebView(카카오/인스타 인앱 브라우저)에서 ThemeProvider JS 실행 전 CSS 변수 미정의 문제 방지 */
 :root {
   color-scheme: only light;
+  --color-foreground: #3D3530;
+  --color-background: #FAF8F3;
+  --color-surface: #F2EFE7;
+  --color-muted: #9B8E85;
+  --color-border: #DDD8CE;
+  --color-primary: #8FA68E;
+  --color-success: #5A8A5A;
+  --color-warning: #C4956A;
+  --color-error: #C45A5A;
 }
 
 /* 인앱 브라우저(인스타, 카톡, 구글 등) JS 로드 전 배경색 보장 */

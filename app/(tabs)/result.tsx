@@ -205,14 +205,14 @@ export default function ResultScreen() {
   return (
     <ScreenContainer containerClassName="bg-background" edges={['top', 'left', 'right']}>
       {/* 헤더 */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { borderBottomColor: '#DDD8CE' }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]}
           onPress={() => router.push({ pathname: '/(tabs)/select', params: { step: '2' } })}
         >
-          <Text style={[styles.backButtonText, { color: colors.muted }]}>← 다시 선택</Text>
+          <Text style={[styles.backButtonText, { color: '#9B8E85' }]}>← 다시 선택</Text>
         </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>나의 컬러 해석</Text>
+        <Text style={[styles.headerTitle, { color: '#3D3530' }]}>나의 컬러 해석</Text>
         <View style={{ minWidth: 60 }} />
       </View>
 
@@ -236,7 +236,7 @@ export default function ResultScreen() {
                 key={i}
                 style={[
                   styles.colorCard,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE' },
                 ]}
               >
                 <View
@@ -267,7 +267,7 @@ export default function ResultScreen() {
                   />
                 </View>
                 <Text style={[styles.colorCardLabel, { color: '#555555' }]}>{label}</Text>
-                <Text style={[styles.colorCardName, { color: colors.foreground }]}>{card.korName}</Text>
+                <Text style={[styles.colorCardName, { color: '#3D3530' }]}>{card.korName}</Text>
                 <Text style={[styles.colorCardDesc, { color: '#555555' }]}>{desc}</Text>
               </View>
             ))}
@@ -282,10 +282,10 @@ export default function ResultScreen() {
             icon="🌊"
             title="지금 나의 마음"
             content={interpretation.psychologyFlow}
-            bgColor={colors.surface}
-            borderColor={colors.border}
-            titleColor={colors.foreground}
-            contentColor="#444444"
+            bgColor="#F2EFE7"
+            borderColor="#DDD8CE"
+            titleColor="#3D3530"
+            contentColor="#3D3530"
           />
 
           {/* 성격 흐름 */}
@@ -293,10 +293,10 @@ export default function ResultScreen() {
             icon="🌿"
             title="나의 성향"
             content={interpretation.personalityFlow}
-            bgColor={colors.surface}
-            borderColor={colors.border}
-            titleColor={colors.foreground}
-            contentColor="#444444"
+            bgColor="#F2EFE7"
+            borderColor="#DDD8CE"
+            titleColor="#3D3530"
+            contentColor="#3D3530"
           />
 
           {/* 장점 & 감정 패턴 나란히 */}
@@ -417,11 +417,11 @@ export default function ResultScreen() {
           <View style={styles.shareButtons}>
             <TouchableOpacity
               activeOpacity={0.8}
-              style={[styles.shareButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              style={[styles.shareButton, { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE' }]}
               onPress={handleSaveImage}
             >
               <Text style={styles.shareButtonIcon}>📷</Text>
-              <Text style={[styles.shareButtonText, { color: colors.foreground }]}>
+              <Text style={[styles.shareButtonText, { color: '#3D3530' }]}>
                 {isSaving ? '저장 중...' : '이미지 저장'}
               </Text>
             </TouchableOpacity>
@@ -446,11 +446,11 @@ export default function ResultScreen() {
 
         {/* 소셜 링크 섹션 */}
         <View style={styles.socialSection}>
-          <View style={[styles.socialDivider, { backgroundColor: colors.border }]} />
+          <View style={[styles.socialDivider, { backgroundColor: '#DDD8CE' }]} />
 
           {/* 브랜드 문구 */}
           <View style={styles.brandMessageBox}>
-            <Text style={[styles.socialTitle, { color: colors.foreground }]}>
+            <Text style={[styles.socialTitle, { color: '#3D3530' }]}>
               {'나를 더 깊이 이해하고 싶다면\n컬러 코칭이 도움이 될 수 있습니다'}
             </Text>
             <Text style={[styles.socialSubtitle, { color: '#555555' }]}>
@@ -557,7 +557,7 @@ export default function ResultScreen() {
         <View style={styles.reviewButtonSection}>
           <TouchableOpacity
             activeOpacity={0.8}
-            style={[styles.reviewButton, { backgroundColor: colors.primary }]}
+            style={[styles.reviewButton, { backgroundColor: '#8FA68E' }]}
             onPress={() => router.push('/reviews' as any)}
           >
             <Text style={styles.reviewButtonText}>후기 남기기 혹은 후기 보기 →</Text>
@@ -569,7 +569,7 @@ export default function ResultScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.restartButton,
-              { borderColor: colors.border, backgroundColor: colors.surface },
+              { borderColor: '#DDD8CE', backgroundColor: '#F2EFE7' },
               pressed && { opacity: 0.7 },
             ]}
             onPress={handleRestart}
