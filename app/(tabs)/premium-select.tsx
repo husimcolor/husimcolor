@@ -31,7 +31,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 const POSITION_LABELS = ["무의식 · 내면 에너지", "현재 현실 에너지", "미래 · 회복 · 희망 에너지"];
-const POSITION_COLORS = ["#8BAF8B", "#B5A0C8", "#C4956A"];
+const POSITION_COLORS = ["#3D6B3D", "#B5A0C8", "#C4956A"];
 
 const CARD_BACK_COLOR = "#D8CEBC";
 const CARD_BACK_BORDER = "#B8A898";
@@ -301,14 +301,14 @@ export default function PremiumSelectScreen() {
         {/* 이전 단계 컬러 요약 */}
         {prevSelectedColors.length > 0 && (
           <View style={[styles.colorFlowBanner, { backgroundColor: "#8BAF8B11", borderColor: "#8BAF8B44" }]}>
-            <Text style={[styles.colorFlowTitle, { color: "#8BAF8B" }]}>
+            <Text style={[styles.colorFlowTitle, { color: "#3D6B3D" }]}>
               🌿 1단계 컬러 흐름
             </Text>
             <View style={styles.colorFlowRow}>
               {prevSelectedColors.map((c: ColorData) => (
                 <View key={c.id} style={styles.colorFlowItem}>
                   <View style={[styles.colorFlowDot, { backgroundColor: c.hex }]} />
-                  <Text style={[styles.colorFlowName, { color: "#8BAF8B" }]}>{c.korName}</Text>
+                  <Text style={[styles.colorFlowName, { color: "#3D6B3D" }]}>{c.korName}</Text>
                 </View>
               ))}
             </View>
@@ -413,7 +413,7 @@ export default function PremiumSelectScreen() {
           style={[
             styles.confirmButton,
             {
-              backgroundColor: selectedCount === 3 ? "#8BAF8B" : colors.border,
+              backgroundColor: selectedCount === 3 ? "#3D6B3D" : colors.border,
             },
           ]}
           onPress={handleConfirm}
@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
   stepBadgeText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#8BAF8B",
+    color: "#3D6B3D",
   },
   colorFlowBanner: {
     borderRadius: 12,

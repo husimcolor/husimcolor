@@ -162,7 +162,7 @@ export default function PremiumColorSelectScreen() {
       >
         {/* 헤더 */}
         <View style={styles.header}>
-          <Text style={[styles.stepBadge, { color: "#8BAF8B", borderColor: "#8BAF8B55", backgroundColor: "#8BAF8B11" }]}>
+          <Text style={[styles.stepBadge, { color: "#3D6B3D", borderColor: "#8BAF8B55", backgroundColor: "#8BAF8B11" }]}>
             1단계 · 컬러 에너지 흐름
           </Text>
           <Text style={[styles.title, { color: colors.foreground }]}>
@@ -234,8 +234,8 @@ export default function PremiumColorSelectScreen() {
             style={[
               styles.analyzeBtn,
               {
-                backgroundColor: selectedColors.length === 3 ? "#8BAF8B" : colors.surface,
-                borderColor: selectedColors.length === 3 ? "#8BAF8B" : colors.border,
+                backgroundColor: selectedColors.length === 3 ? "#3D6B3D" : colors.surface,
+                borderColor: selectedColors.length === 3 ? "#3D6B3D" : colors.border,
               },
             ]}
             onPress={handleAnalyze}
@@ -281,8 +281,8 @@ export default function PremiumColorSelectScreen() {
             {/* 심리 성향 */}
             <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: "#8BAF8B44" }]}>
               <View style={styles.sectionHeader}>
-                <View style={[styles.sectionDot, { backgroundColor: "#8BAF8B" }]} />
-                <Text style={[styles.sectionLabel, { color: "#8BAF8B" }]}>심리 성향</Text>
+                <View style={[styles.sectionDot, { backgroundColor: "#3D6B3D" }]} />
+                <Text style={[styles.sectionLabel, { color: "#3D6B3D" }]}>심리 성향</Text>
               </View>
               <Text style={[styles.sectionText, { color: colors.foreground }]}>
                 {interpretation.psychologyTendency}
@@ -292,8 +292,8 @@ export default function PremiumColorSelectScreen() {
             {/* 성격 경향 */}
             <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: "#B5A0C844" }]}>
               <View style={styles.sectionHeader}>
-                <View style={[styles.sectionDot, { backgroundColor: "#B5A0C8" }]} />
-                <Text style={[styles.sectionLabel, { color: "#B5A0C8" }]}>성격 경향</Text>
+                <View style={[styles.sectionDot, { backgroundColor: "#6B4A9A" }]} />
+                <Text style={[styles.sectionLabel, { color: "#6B4A9A" }]}>성격 경향</Text>
               </View>
               <Text style={[styles.sectionText, { color: colors.foreground }]}>
                 {interpretation.personalityTendency}
@@ -303,13 +303,13 @@ export default function PremiumColorSelectScreen() {
             {/* 장점 */}
             <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: "#C4956A44" }]}>
               <View style={styles.sectionHeader}>
-                <View style={[styles.sectionDot, { backgroundColor: "#C4956A" }]} />
-                <Text style={[styles.sectionLabel, { color: "#C4956A" }]}>주요 장점</Text>
+                <View style={[styles.sectionDot, { backgroundColor: "#7A4A10" }]} />
+                <Text style={[styles.sectionLabel, { color: "#7A4A10" }]}>주요 장점</Text>
               </View>
               <View style={styles.tagRow}>
                 {interpretation.strengths.map(s => (
                   <View key={s} style={[styles.tag, { backgroundColor: "#C4956A18", borderColor: "#C4956A44" }]}>
-                    <Text style={[styles.tagText, { color: "#C4956A" }]}>{s}</Text>
+                    <Text style={[styles.tagText, { color: "#7A4A10" }]}>{s}</Text>
                   </View>
                 ))}
               </View>
@@ -318,14 +318,14 @@ export default function PremiumColorSelectScreen() {
             {/* 성장 가능성 */}
             <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: "#7B9FBF44" }]}>
               <View style={styles.sectionHeader}>
-                <View style={[styles.sectionDot, { backgroundColor: "#7B9FBF" }]} />
-                <Text style={[styles.sectionLabel, { color: "#7B9FBF" }]}>성장 가능성</Text>
+                <View style={[styles.sectionDot, { backgroundColor: "#2A5A80" }]} />
+                <Text style={[styles.sectionLabel, { color: "#2A5A80" }]}>성장 가능성</Text>
               </View>
               <Text style={[{ color: colors.muted, fontSize: 11, marginBottom: 8, lineHeight: 16 }]}>이 성향을 이해하면 더 자연스러운 성장의 방향이 보입니다</Text>
               <View style={styles.tagRow}>
                 {interpretation.shadows.map(s => (
                   <View key={s} style={[styles.tag, { backgroundColor: "#7B9FBF18", borderColor: "#7B9FBF44" }]}>
-                    <Text style={[styles.tagText, { color: "#7B9FBF" }]}>{s}</Text>
+                    <Text style={[styles.tagText, { color: "#2A5A80" }]}>{s}</Text>
                   </View>
                 ))}
               </View>
@@ -334,8 +334,8 @@ export default function PremiumColorSelectScreen() {
             {/* 관계 성향 */}
             <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: "#A0845C44" }]}>
               <View style={styles.sectionHeader}>
-                <View style={[styles.sectionDot, { backgroundColor: "#A0845C" }]} />
-                <Text style={[styles.sectionLabel, { color: "#A0845C" }]}>관계 성향</Text>
+                <View style={[styles.sectionDot, { backgroundColor: "#6B4A10" }]} />
+                <Text style={[styles.sectionLabel, { color: "#6B4A10" }]}>관계 성향</Text>
               </View>
               <Text style={[styles.sectionText, { color: colors.foreground }]}>
                 {interpretation.relationshipTendency}
@@ -344,7 +344,7 @@ export default function PremiumColorSelectScreen() {
 
             {/* 다음 단계 안내 */}
             <View style={[styles.nextStepBanner, { backgroundColor: "#8BAF8B11", borderColor: "#8BAF8B44" }]}>
-              <Text style={[styles.nextStepTitle, { color: "#8BAF8B" }]}>
+              <Text style={[styles.nextStepTitle, { color: "#3D6B3D" }]}>
                 🌿 2단계 · 심리카드 흐름
               </Text>
               <Text style={[styles.nextStepDesc, { color: colors.muted }]}>
@@ -355,7 +355,7 @@ export default function PremiumColorSelectScreen() {
 
             {/* 다음 단계 버튼 */}
             <TouchableOpacity
-              style={[styles.continueBtn, { backgroundColor: "#8BAF8B" }]}
+              style={[styles.continueBtn, { backgroundColor: "#3D6B3D" }]}
               onPress={handleContinue}
               activeOpacity={0.8}
             >
