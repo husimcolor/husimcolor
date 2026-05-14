@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Modal,
   Image,
   Dimensions,
   Platform,
@@ -318,18 +317,14 @@ export default function PaymentScreen() {
   };
 
   return (
-    <ScreenContainer>
-      {/* 프로필 입력 모달 */}
-      <Modal
-        visible={profileStep}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setProfileStep(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
+    <ScreenContainer containerClassName="relative">
+      {/* 프로필 입력 오버레이 (Modal 대체 - 웹 호환) */}
+      {profileStep && (
+        <View style={styles.overlayContainer}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
           <View style={styles.profileOverlay}>
             <View style={[styles.profileSheet, { backgroundColor: colors.background }]}>
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
@@ -451,8 +446,9 @@ export default function PaymentScreen() {
               </ScrollView>
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
+          </KeyboardAvoidingView>
+        </View>
+      )}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -577,17 +573,13 @@ export default function PaymentScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* 무료체험 이름/연락처 입력 모달 */}
-      <Modal
-        visible={trialInfoStep}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setTrialInfoStep(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
+      {/* 무료체험 이름/연락처 입력 오버레이 (Modal 대체 - 웹 호환) */}
+      {trialInfoStep && (
+        <View style={styles.overlayContainer}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
           <View style={styles.profileOverlay}>
             <View style={[styles.profileSheet, { backgroundColor: colors.background }]}>
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
@@ -657,20 +649,17 @@ export default function PaymentScreen() {
               </ScrollView>
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
+          </KeyboardAvoidingView>
+        </View>
+      )}
 
-      {/* 입금 정보 입력 모달 */}
-      <Modal
-        visible={depositorStep}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setDepositorStep(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
+      {/* 입금 정보 입력 오버레이 (Modal 대체 - 웹 호환) */}
+      {depositorStep && (
+        <View style={styles.overlayContainer}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
           <View style={styles.profileOverlay}>
             <View style={[styles.profileSheet, { backgroundColor: colors.background }]}>
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
@@ -758,16 +747,13 @@ export default function PaymentScreen() {
               </ScrollView>
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
+          </KeyboardAvoidingView>
+        </View>
+      )}
 
-      {/* QR 결제 모달 */}
-      <Modal
-        visible={qrVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setQrVisible(false)}
-      >
+      {/* QR 결제 오버레이 (Modal 대체 - 웹 호환) */}
+      {qrVisible && (
+        <View style={styles.overlayContainer}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
             <View style={styles.modalHeader}>
@@ -814,7 +800,8 @@ export default function PaymentScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+        </View>
+      )}
     </ScreenContainer>
   );
 }
@@ -1029,6 +1016,15 @@ const styles = StyleSheet.create({
   },
   cancelBtnText: {
     fontSize: 14,
+  },
+  // ─── 오버레이 컨테이너 (Modal 대체) ────────────────────────────
+  overlayContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
   },
   // ─── 프로필 입력 모달 스타일 ─────────────────────────────────────
   profileOverlay: {
