@@ -225,3 +225,8 @@
 - [ ] getColorFamily black/silver 계열 추가 및 colorRoutineMap black 루틴 추가
 - [ ] faithNote 중복 방지 강화 (lavender/purple 컬러 시 조건부 출력)
 - [ ] cardData.ts 3번 카드 coachingMessage 63장 전체 1문장 단문화
+
+## 41차 개선 - 감정 패턴 키워드 및 오늘의 코칭 메시지 개선
+
+- [ ] emotionPattern 전체 교체 - AI 조합 느낌 표현을 사용자 친화적 표현으로 수정
+- [ ] 오늘의 코칭 메시지 2~3문장 브랜드 톤으로 확장

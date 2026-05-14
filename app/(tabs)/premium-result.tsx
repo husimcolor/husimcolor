@@ -965,55 +965,64 @@ function josaCoach(word: string, jong: string, noJong: string): string {
   return jong;
 }
 
-// 1번 카드: 무의식/내면 흐름 → 공감 어조 1문장
+// 1번 카드: 무의식/내면 흐름 → 공감 어조 2문장
 function toFlowPhrase(title: string): string {
   const eun = josaCoach(title, '은', '는');
   if (title.endsWith('마음')) {
-    return `${title}${eun} 지금 당신 안에 조용히 자리하고 있습니다.`;
+    return `${title}${eun} 지금 당신 안에 조용히 자리하고 있습니다. 그 마음은 억지로 바꾸거나 지워야 할 것이 아니라, 지금 이 순간 당신에게 필요한 신호일 수 있습니다.`;
   }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
-    return `${base}을 향한 마음이 조용히 이어지고 있습니다.`;
+    return `${base}을 향한 마음이 조용히 이어지고 있습니다. 그 흐름은 당신이 지금 어디에 있는지를 보여주는 자연스러운 신호입니다.`;
   }
   if (title.endsWith('균형') || title.endsWith('조화')) {
-    return `${title}을 찾고 싶은 마음이 있습니다.`;
+    return `${title}을 찾고 싶은 마음이 있습니다. 그 바람 자체가 이미 회복을 향한 첫 걸음입니다.`;
   }
-  return `${title}${eun} 지금 당신 안에 자연스럽게 자리하고 있습니다.`;
+  if (title.endsWith('기질') || title.endsWith('성향')) {
+    return `${title}${eun} 지금 당신 안에 자연스럽게 흐르고 있습니다. 그것은 당신이 세상과 연결되는 고유한 방식입니다.`;
+  }
+  return `${title}${eun} 지금 당신 안에 자연스럽게 자리하고 있습니다. 이 흐름을 판단하기보다 조용히 바라봐 주는 것이 지금 가장 좋은 시작입니다.`;
 }
 
-// 2번 카드: 현재 상태 → 담담하고 공감되는 1문장
+// 2번 카드: 현재 상태 → 담담하고 공감되는 2문장
 function toCurrentPhrase(title: string): string {
   const eun = josaCoach(title, '은', '는');
   if (title.endsWith('마음')) {
-    return `지금은 ${title}으로 하루를 보내고 있는 것 같습니다.`;
+    return `지금은 ${title}으로 하루를 보내고 있는 것 같습니다. 그 감정이 무겁게 느껴질 수 있지만, 지금 이 시간도 당신의 흐름 안에 있습니다.`;
   }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
-    return `지금은 ${base}을 중심으로 움직이고 있는 시기입니다.`;
+    return `지금은 ${base}을 중심으로 움직이고 있는 시기입니다. 이 흐름이 자연스럽게 이어지도록 스스로를 조금 더 허락해 주세요.`;
   }
   if (title.endsWith('흐름')) {
-    return `지금은 ${title} 안에 있는 시간입니다.`;
+    return `지금은 ${title} 안에 있는 시간입니다. 억지로 벗어나려 하기보다 이 흐름을 조용히 따라가는 것이 더 도움이 됩니다.`;
   }
-  return `지금${eun} ${title} 안에 있는 시간입니다.`;
+  if (title.endsWith('기질') || title.endsWith('성향')) {
+    return `지금${eun} ${title} 안에 있는 시간입니다. 그 성향이 지금의 삶에서 어떻게 나타나고 있는지 조용히 살펴보세요.`;
+  }
+  return `지금${eun} ${title} 안에 있는 시간입니다. 이 흐름을 있는 그대로 받아들이는 것이 지금 가장 자연스러운 방향입니다.`;
 }
 
-// 3번 카드: 회복 방향 → 따뜻하고 짧은 1문장
+// 3번 카드: 회복 방향 → 따뜻한 2문장 브랜드 톤
 function toRecoveryPhrase(title: string): string {
   const eul = josaCoach(title, '을', '를');
   if (title.endsWith('마음')) {
-    return `${title}${eul} 억지로 바꾸려 하기보다 천천히 따라가 보세요.`;
+    return `${title}${eul} 억지로 바꾸려 하기보다 천천히 따라가 보세요. 지금 느끼는 것을 그대로 인정해 주는 것이 회복의 시작입니다.`;
   }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
-    return `${base}을 위한 작은 시간을 스스로 허락해 보세요.`;
+    return `${base}을 위한 작은 시간을 스스로 허락해 보세요. 억지로 채우려 하기보다 자연스럽게 흘러오도록 기다리는 것도 좋은 방법입니다.`;
   }
   if (title.endsWith('균형') || title.endsWith('조화')) {
-    return `${title}${eul} 되찾는 것이 지금 가장 중요한 한 걸음입니다.`;
+    return `${title}${eul} 되찾는 것이 지금 가장 중요한 한 걸음입니다. 한 번에 모든 것을 맞추려 하기보다 오늘 하나씩 천천히 조율해 가세요.`;
   }
-  if (title.endsWith('기질')) {
-    return `${title}${eul} 있는 그대로 받아들이는 것이 지금의 회복입니다.`;
+  if (title.endsWith('기질') || title.endsWith('성향')) {
+    return `${title}${eul} 있는 그대로 받아들이는 것이 지금의 회복입니다. 자신의 고유한 성향을 이해할수록 삶이 더 편안해집니다.`;
   }
-  return `${title}${eul} 위한 여유를 스스로 허락해 보세요.`;
+  if (title.endsWith('흐름')) {
+    return `${title}${eul} 억지로 멈추거나 바꾸려 하기보다 조용히 따라가 보세요. 지금 이 흐름 안에서 자신에게 필요한 것이 무엇인지 느껴보는 시간을 가져보세요.`;
+  }
+  return `${title}${eul} 위한 여유를 스스로 허락해 보세요. 지금은 무언가를 더 하기보다 잠시 멈추고 자신을 돌봐주는 것이 더 중요한 시간입니다.`;
 }
 
 // 컬러 id → 계열 분류
