@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Animated,
   Platform,
   Linking,
   Alert,
@@ -47,10 +46,7 @@ export default function ResultScreen() {
   const { selectedColors, resetColors } = useColorContext();
   const colors = useColors();
 
-  // 웹(인앱 브라우저 포함)에서는 useNativeDriver가 동작하지 않아 opacity가 0에서 멈추는 버그 방지
-  // 웹에서는 즉시 1로 초기화
-  const fadeAnim = useRef(new Animated.Value(Platform.OS === 'web' ? 1 : 0)).current;
-  const slideAnim = useRef(new Animated.Value(Platform.OS === 'web' ? 0 : 30)).current;
+  // Animated 완전 제거 - 인앱 브라우저(인스타/카카오)에서 opacity 0 버그 방지
   const viewShotRef = useRef<ViewShotRef>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -177,13 +173,7 @@ export default function ResultScreen() {
       router.replace('/(tabs)');
       return;
     }
-    // 웹에서는 이미 초기값이 1/0이므로 애니메이션 불필요
-    if (Platform.OS !== 'web') {
-      Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
-      ]).start();
-    }
+    // 애니메이션 완전 제거 - 인앱 브라우저 호환성 우선
   }, []);
 
   if (!card1 || !card2 || !card3) return null;
@@ -234,9 +224,7 @@ export default function ResultScreen() {
         {/* ViewShot 캡처 영역 */}
         <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 0.95 }}>
         {/* 선택한 컬러 카드 3개 */}
-        <Animated.View
-          style={[styles.colorCardsSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
-        >
+        <View style={styles.colorCardsSection}>
           <Text style={[styles.sectionLabel, { color: '#555555' }]}>오늘 선택한 컬러</Text>
           <View style={styles.colorCards}>
             {[
@@ -284,10 +272,10 @@ export default function ResultScreen() {
               </View>
             ))}
           </View>
-        </Animated.View>
+        </View>
 
         {/* 해석 결과 섹션들 */}
-        <Animated.View style={[styles.resultSections, { opacity: fadeAnim }]}>
+        <View style={styles.resultSections}>
 
           {/* 현재 심리 흐름 */}
           <ResultCard
@@ -420,7 +408,7 @@ export default function ResultScreen() {
             </Text>
           </View>
 
-        </Animated.View>
+        </View>
         </ViewShot>{/* ViewShot 캡처 영역 끝 */}
 
         {/* 공유 버튼 섹션 */}
@@ -577,7 +565,7 @@ export default function ResultScreen() {
         </View>
 
         {/* 다시 시작 버튼 */}
-        <Animated.View style={[styles.restartSection, { opacity: fadeAnim }]}>
+        <View style={styles.restartSection}>
           <Pressable
             style={({ pressed }) => [
               styles.restartButton,
@@ -592,8 +580,7 @@ export default function ResultScreen() {
           </Pressable>
           <Text style={[styles.footer, { color: '#666666' }]}>
             휴심컬러 · 색으로 읽는 나의 마음
-          </Text>
-        </Animated.View>
+          </Text>        </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -928,16 +915,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   socialButtonDesc: {
-    color: 'rgba(255,255,255,0.95)',
+    color: '#FFFFFF',
     fontSize: 12,
   },
   socialButtonAddr: {
-    color: 'rgba(255,255,255,0.9)',
+    color: '#FFFFFF',
     fontSize: 11,
     marginTop: 2,
   },
   socialArrow: {
-    color: 'rgba(255,255,255,0.95)',
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '300',
   },
