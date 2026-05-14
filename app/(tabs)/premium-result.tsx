@@ -76,6 +76,11 @@ function sanitizeRecovery(text: string, faith: string): string {
     .replace(/예배/g, '조용한 휴식');
 }
 
+// recoveryDirection에서 첫 문장만 추출 (\n 이후 불릿 포인트 제거)
+function extractFirstSentence(text: string): string {
+  return text.split('\n')[0].trim();
+}
+
 function getJobCoaching(job: string, faith: string, colorId?: string): JobCoaching {
   // 신앙별 추가 문구
   const faithNote =
@@ -120,6 +125,8 @@ function getJobCoaching(job: string, faith: string, colorId?: string): JobCoachi
       "오늘 하루 작은 것 하나를 정리해보세요. 책상 위, 가방 안, 메모 앱 — 작은 정리가 마음 정리로 이어집니다.",
     cool:
       "물 한 잔 마시기, 창문 열기, 짧은 스트레칭이 몸에 신호를 보내는 작은 행동입니다. 리듬 회복에 도움이 됩니다.",
+    black:
+      "오늘은 외부 자극을 최소화하고 에너지를 보호하는 시간을 가져보세요. 완전한 휴식이 가장 강력한 회복입니다.",
   };
 
   const family = colorId ? getColorFamily(colorId) : 'neutral';
@@ -129,7 +136,9 @@ function getJobCoaching(job: string, faith: string, colorId?: string): JobCoachi
   const finalRoutineNote = jobContext + "\n" + colorRoutineNote;
 
   // faithNote는 루틴 노트에 추가 (코칭 박스 반복 방지)
-  const finalRoutineWithFaith = faithNote
+  // lavender/purple 계열은 감성 성찰 방향이 겹치므로 faithNote 생략
+  const faithOverlapsColor = ['lavender', 'purple'].includes(family);
+  const finalRoutineWithFaith = (faithNote && !faithOverlapsColor)
     ? finalRoutineNote + "\n" + faithNote
     : finalRoutineNote;
 
@@ -450,7 +459,7 @@ export default function PremiumResultScreen() {
                     회복 방향
                   </Text>
                   <Text style={[styles.detailText, { color: colors.foreground }]}>
-                    {sanitizeRecovery(card.recoveryDirection, profile?.faith ?? '')}
+                    {extractFirstSentence(sanitizeRecovery(card.recoveryDirection, profile?.faith ?? ''))}
                   </Text>
                 </View>
               )}
@@ -1018,6 +1027,7 @@ function getColorFamily(colorId: string): string {
   if (['lavender', 'pink'].includes(colorId)) return 'lavender';
   if (['white', 'ivory', 'beige', 'cream'].includes(colorId)) return 'neutral';
   if (['silver', 'gray', 'charcoal'].includes(colorId)) return 'cool';
+  if (['black', 'darkgray', 'dark'].includes(colorId)) return 'black';
   return 'neutral';
 }
 

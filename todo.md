@@ -219,3 +219,9 @@
 - [ ] generateCombinedCoaching para1=감정 상태, para2=회복 방향 분리 (3번 카드 coachingMessage 제거)
 - [ ] getJobCoaching 컬러별 routineNote 분기 확장 (레드/옐로우/그린/블루/퍼플/블랙 계열별 행동 루틴)
 - [ ] 중복 키워드 방지 로직 구현 (3번 카드 회복 방향 키워드 추출 → 루틴 노트 다른 방향 분기)
+
+## 40차 개선 - black/silver 계열, faithNote 중복 방지, 3번 카드 단문화
+
+- [ ] getColorFamily black/silver 계열 추가 및 colorRoutineMap black 루틴 추가
+- [ ] faithNote 중복 방지 강화 (lavender/purple 컬러 시 조건부 출력)
+- [ ] cardData.ts 3번 카드 coachingMessage 63장 전체 1문장 단문화
