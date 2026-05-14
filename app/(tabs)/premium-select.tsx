@@ -356,17 +356,17 @@ export default function PremiumSelectScreen() {
                 </View>
               ))}
             </View>
-            <Text style={[styles.colorFlowDesc, { color: colors.muted }]}>
+            <Text style={[styles.colorFlowDesc, { color: '#8A7A68' }]}>
               이 컬러 흐름을 바탕으로, 직관이 이끄는 카드를 선택해 주세요
             </Text>
           </View>
         )}
         {/* 헤더 */}
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.foreground }]}>
-            컬러 에너지 카드 선택
+          <Text style={[styles.title, { color: '#3D3530' }]}>
+            컨러 에너지 카드 선택
           </Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>
+          <Text style={[styles.subtitle, { color: '#5F4B3B' }]}>
             마음이 이끄는 카드를 3장 선택해 주세요
           </Text>
         </View>
@@ -381,10 +381,10 @@ export default function PremiumSelectScreen() {
                   {
                     backgroundColor: selectedCards[i]
                       ? POSITION_COLORS[i] + "33"
-                      : colors.surface,
+                      : '#F2EFE7',
                     borderColor: selectedCards[i]
                       ? POSITION_COLORS[i]
-                      : colors.border,
+                      : '#DDD8CE',
                     borderStyle: selectedCards[i] ? "solid" : "dashed",
                   },
                 ]}
@@ -397,15 +397,15 @@ export default function PremiumSelectScreen() {
                         { backgroundColor: selectedCards[i]!.colorHex },
                       ]}
                     />
-                    <Text style={[styles.slotCardName, { color: colors.foreground }]}>
+                    <Text style={[styles.slotCardName, { color: '#3D3530' }]}>
                       {selectedCards[i]!.colorKor}
                     </Text>
-                    <Text style={[styles.slotShapeName, { color: colors.muted }]}>
+                    <Text style={[styles.slotShapeName, { color: '#5F4B3B' }]}>
                       {selectedCards[i]!.shapeKor}
                     </Text>
                   </>
                 ) : (
-                  <Text style={[styles.slotEmpty, { color: colors.muted }]}>
+                  <Text style={[styles.slotEmpty, { color: '#8A7A68' }]}>
                     {i + 1}번
                   </Text>
                 )}
@@ -421,7 +421,7 @@ export default function PremiumSelectScreen() {
         </View>
 
         {/* 진행 안내 */}
-        <Text style={[styles.progressText, { color: colors.muted }]}>
+        <Text style={[styles.progressText, { color: '#5F4B3B' }]}>
           {isShuffling
             ? "✨ 카드를 섞는 중..."
             : selectedCount < 3
@@ -457,7 +457,7 @@ export default function PremiumSelectScreen() {
           style={[
             styles.confirmButton,
             {
-              backgroundColor: selectedCount === 3 ? "#3D6B3D" : colors.border,
+              backgroundColor: selectedCount === 3 ? "#3D6B3D" : '#DDD8CE',
             },
           ]}
           onPress={handleConfirm}

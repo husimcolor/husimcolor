@@ -191,7 +191,7 @@ export default function SelectScreen() {
               borderRadius,
               overflow: 'hidden',
               borderWidth: isSelected ? 2.5 : 1.5,
-              borderColor: getLightBorderColor(item.hex, isSelected, colors.foreground),
+              borderColor: getLightBorderColor(item.hex, isSelected, '#3D3530'),
               shadowColor: item.hex,
               shadowOpacity: isSelected ? 0.60 : 0.28,
               shadowOffset: { width: 0, height: isSelected ? 5 : 2 },
@@ -268,7 +268,7 @@ export default function SelectScreen() {
 
         {/* 선택 체크 마크 */}
         {isSelected && (
-          <View style={[styles.checkMark, { backgroundColor: colors.foreground }]}>
+          <View style={[styles.checkMark, { backgroundColor: '#3D3530' }]}>
             <Text style={styles.checkMarkText}>✓</Text>
           </View>
         )}
@@ -277,7 +277,7 @@ export default function SelectScreen() {
           style={[
             styles.colorName,
             {
-              color: isSelected ? colors.foreground : colors.muted,
+              color: isSelected ? '#3D3530' : '#8A7A68',
               fontWeight: isSelected ? '600' : '400',
             },
           ]}
@@ -292,14 +292,14 @@ export default function SelectScreen() {
   return (
     <ScreenContainer containerClassName="bg-background" edges={['top', 'left', 'right']}>
       {/* 헤더 */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { borderBottomColor: '#DDD8CE' }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]}
           onPress={handleBack}
         >
-          <Text style={[styles.backButtonText, { color: colors.muted }]}>← 이전</Text>
+          <Text style={[styles.backButtonText, { color: '#8A7A68' }]}>← 이전</Text>
         </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>휴심컬러</Text>
+        <Text style={[styles.headerTitle, { color: '#3D3530' }]}>휴심컬러</Text>
         <View style={styles.stepIndicator}>
           {[0, 1, 2].map((i) => (
             <View
@@ -307,12 +307,12 @@ export default function SelectScreen() {
               style={[
                 styles.stepDot,
                 {
-                  backgroundColor:
+                    backgroundColor:
                     i < step
-                      ? colors.primary
+                      ? '#8FA68E'
                       : i === step
                       ? cardInfo.accentColor
-                      : colors.border,
+                      : '#DDD8CE',
                   width: i === step ? 20 : 8,
                 },
               ]}
@@ -344,8 +344,8 @@ export default function SelectScreen() {
               {cardInfo.number}번 카드
             </Text>
           </View>
-          <Text style={[styles.cardTitle, { color: colors.foreground }]}>{cardInfo.title}</Text>
-          <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{cardInfo.subtitle}</Text>
+          <Text style={[styles.cardTitle, { color: '#3D3530' }]}>{cardInfo.title}</Text>
+          <Text style={[styles.cardSubtitle, { color: '#5F4B3B' }]}>{cardInfo.subtitle}</Text>
         </Animated.View>
 
         {/* 선택된 컬러 미리보기 */}
@@ -354,7 +354,7 @@ export default function SelectScreen() {
             <View
               style={[
                 styles.selectedPreviewCard,
-                { backgroundColor: colors.surface, borderColor: currentSelected.hex + '50' },
+                { backgroundColor: '#F2EFE7', borderColor: currentSelected.hex + '50' },
               ]}
             >
               {/* 선택된 컬러 서클 (광택 포함) */}
@@ -383,10 +383,10 @@ export default function SelectScreen() {
               </View>
 
               <View style={styles.selectedInfo}>
-                <Text style={[styles.selectedName, { color: colors.foreground }]}>
+                <Text style={[styles.selectedName, { color: '#3D3530' }]}>
                   {currentSelected.korName}
                 </Text>
-                <Text style={[styles.selectedKeywords, { color: colors.muted }]}>
+                <Text style={[styles.selectedKeywords, { color: '#8A7A68' }]}>
                   {currentSelected.keywords.join(' · ')}
                 </Text>
               </View>
@@ -415,7 +415,7 @@ export default function SelectScreen() {
       <View
         style={[
           styles.bottomBar,
-          { backgroundColor: colors.background, borderTopColor: colors.border },
+          { backgroundColor: '#FAF8F3', borderTopColor: '#DDD8CE' },
         ]}
       >
         {currentSelected ? (
@@ -424,7 +424,7 @@ export default function SelectScreen() {
               <View
                 style={[styles.summaryDot, { backgroundColor: currentSelected.hex }]}
               />
-              <Text style={[styles.summaryText, { color: colors.muted }]}>
+              <Text style={[styles.summaryText, { color: '#8A7A68' }]}>
                 {currentSelected.korName} 선택됨
               </Text>
             </View>
@@ -442,7 +442,7 @@ export default function SelectScreen() {
             </Pressable>
           </View>
         ) : (
-          <Text style={[styles.selectHint, { color: colors.muted }]}>
+          <Text style={[styles.selectHint, { color: '#8A7A68' }]}>
             위에서 컬러를 선택해 주세요
           </Text>
         )}
