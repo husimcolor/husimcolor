@@ -1265,7 +1265,7 @@ const styles = StyleSheet.create({
   },
   cardSummarySymbol: {
     fontSize: 22,
-    color: "rgba(255,255,255,0.95)",
+    color: "#FFFFFF",
   },
   cardSummaryPosition: {
     fontSize: 10,
@@ -1439,7 +1439,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   coachingLinkDesc: {
-    color: "rgba(255,255,255,0.95)",
+    color: "#FFFFFF",
     fontSize: 12,
   },
   coachingLinkArrow: {
