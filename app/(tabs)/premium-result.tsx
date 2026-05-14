@@ -20,6 +20,8 @@ import { type ColorData } from "@/constants/colorData";
 import { type UserProfile } from "./profile";
 import { trpc } from "@/lib/trpc";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const POSITION_LABELS = [
   { label: "1번 카드", sub: "무의식 · 내면 에너지", color: "#8BAF8B" },
@@ -326,13 +328,31 @@ export default function PremiumResultScreen() {
       `${combinedCoaching}\n\n` +
       `${wellnessText}\n\nhusimcolor.vercel.app`;
 
-    if (Platform.OS !== "web" && typeof navigator !== "undefined" && navigator.share) {
+    if (Platform.OS === "web") {
+      // 웹: navigator.share 또는 클립보드 복사
+      if (typeof navigator !== "undefined" && navigator.share) {
+        try {
+          await navigator.share({ text: shareText, title: "휴심COLOR 나의 콜러 심리 해석" });
+        } catch {}
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(shareText);
+        Alert.alert("복사 완료", "결과가 클립보드에 복사되었습니다.");
+      }
+    } else {
+      // 네이티브(iOS/Android): expo-sharing 사용
       try {
-        await navigator.share({ text: shareText, title: "휴심나의 컬러 심리 해석" });
-      } catch {}
-    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-      await navigator.clipboard.writeText(shareText);
-      Alert.alert("복사 완료", "결과가 클립보드에 복사되었습니다.");
+        const available = await Sharing.isAvailableAsync();
+        if (available) {
+          // 텍스트를 임시 파일로 저장 후 공유
+          const fileUri = `${FileSystem.cacheDirectory}husimcolor_share_${Date.now()}.txt`;
+          await FileSystem.writeAsStringAsync(fileUri, shareText, { encoding: FileSystem.EncodingType.UTF8 });
+          await Sharing.shareAsync(fileUri, { mimeType: 'text/plain', dialogTitle: '휴심COLOR 결과 공유' });
+        } else {
+          Alert.alert('공유', shareText, [{ text: '확인' }]);
+        }
+      } catch {
+        Alert.alert('공유 오류', '결과 공유에 실패했습니다. 다시 시도해 주세요.');
+      }
     }
   };
 
@@ -740,7 +760,7 @@ export default function PremiumResultScreen() {
 
         {/* 1:1 코칭 연결 섹션 */}
         <View style={styles.coachingSection}>
-          <Text style={[styles.coachingSectionTitle, { color: "#2A2A2A" }]}>
+          <Text style={[styles.coachingSectionTitle, { color: colors.foreground }]}>
             지금의 마음 흐름을{"\n"}더 깊이 이해하고 싶다면
           </Text>
           <Text style={[styles.coachingSectionSub, { color: colors.muted }]}>
