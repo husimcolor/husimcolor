@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -76,6 +77,49 @@ function AnimatedCard({
     inputRange: [0, 1],
     outputRange: ["180deg", "360deg"],
   });
+
+  // 웹 환경(인앱 브라우저 포함)에서는 3D 플립 미지원 → 단순 2D 렌더링
+  if (Platform.OS === "web") {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.85}
+        style={[
+          styles.cardWrapper,
+          {
+            width: CARD_WIDTH,
+            height: CARD_HEIGHT,
+            borderRadius: 8,
+            overflow: "hidden",
+            borderWidth: isSelected ? 2.5 : 0,
+            borderColor: card.colorKor === "블랙"
+              ? "#D4AF37"
+              : card.colorKor === "화이트"
+              ? "#555555"
+              : "#FFFFFF",
+            backgroundColor: isFlipped ? card.colorHex : CARD_BACK_COLOR,
+          },
+        ]}
+      >
+        {isFlipped ? (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <Text style={[
+              styles.shapeSymbol,
+              card.colorKor === "화이트" && { color: "#D4AF37" },
+            ]}>{card.shapeSymbol}</Text>
+            <Text style={[
+              styles.cardFrontColorName,
+              card.colorKor === "화이트" && { color: "#D4AF37" },
+            ]} numberOfLines={1}>{card.colorKor}</Text>
+          </View>
+        ) : (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontSize: 10, color: CARD_BACK_SYMBOL_COLOR }}>✦</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <Animated.View
