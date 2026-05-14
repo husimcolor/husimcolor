@@ -544,7 +544,7 @@ export default function ResultScreen() {
           {trialStatus === 'active' && (
             <TouchableOpacity
               style={[styles.upsellActiveBtn]}
-              onPress={() => router.push('/premium-select' as any)}
+              onPress={() => router.push('/payment' as any)}
               activeOpacity={0.85}
             >
               <Text style={styles.upsellActiveBtnText}>심화 분석 열기 →</Text>
