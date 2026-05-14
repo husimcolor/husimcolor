@@ -732,10 +732,10 @@ export default function PremiumResultScreen() {
             ) : (
               <>
                 <Text style={[styles.trialBannerTitle, { color: "#7A4A10" }]}>
-                  무료체험이 종료되었습니다
+                  현재 초기 오픈 체험중입니다
                 </Text>
                 <Text style={[styles.trialBannerDesc, { color: "#7A4A10" }]}>
-                  심층 해석을 계속 이용하시려면 결제해 주세요
+                  공유와 후기를 남겨주시면 큰 도움이 됩니다 🙂
                 </Text>
               </>
             )}
@@ -746,9 +746,7 @@ export default function PremiumResultScreen() {
               onPress={() => router.push("/payment" as any)}
               activeOpacity={0.85}
             >
-              <Text style={styles.trialBannerBtnText}>
-                {trialStatus === "expired" ? "지금 결제하기 →" : "심화코칭 예약 · 결제하기 →"}
-              </Text>
+              <Text style={styles.trialBannerBtnText}>컬러+도형 심층 해석 (유료)</Text>
             </TouchableOpacity>
           </View>
         )}
