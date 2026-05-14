@@ -849,11 +849,6 @@ export default function PremiumResultScreen() {
 
         {/* 하단 여운 한 문장 + 후기 인라인 섹션 */}
         <View style={[styles.reviewSection, { backgroundColor: colors.surface, borderColor: "#8BAF8B44" }]}>
-          {/* 여운 있는 한 문장 - 3번 카드 기준 */}
-          <Text style={[styles.reviewClosingText, { color: colors.foreground }]}>
-            {closingLine}
-          </Text>
-
           {reviewDone ? (
             /* 후기 완료 상태 */
             <View style={styles.reviewDoneBox}>
