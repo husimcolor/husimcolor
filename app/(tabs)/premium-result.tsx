@@ -311,8 +311,10 @@ export default function PremiumResultScreen() {
   // 직업별 맞춤 문구
   const jobCoaching = profile ? getJobCoaching(profile.job, profile.faith) : null;
 
-  // 3카드 조합 종합 코칭 메시지 생성
+  // 3카드 조합 종합 코칭 메시지 생성 (감정 공감 중심)
   const combinedCoaching = generateCombinedCoaching(card1, card2, card3, prevColors.length >= 3 ? prevColors : undefined);
+  // 하단 여운 문장: 3번 카드(회복 방향) 기준
+  const closingLine = card3.closingLine;
 
   const handleShare = async () => {
     // 보완 루틴 텍스트 구성 (card3 wellness 기준)
@@ -634,7 +636,7 @@ export default function PremiumResultScreen() {
             </Text>
           </View>
         )}
-        {/* 종합 코칭 메시지 */}
+        {/* 종합 코칭 메시지 - 감정 공감 중심 */}
         <View
           style={[
             styles.coachingBox,
@@ -642,12 +644,12 @@ export default function PremiumResultScreen() {
           ]}
         >
           <Text style={[styles.coachingLabel, { color: "#8BAF8B" }]}>
-            💚 종합 코칭 메시지
+            💚 지금 마음의 흐름
           </Text>
           <Text style={[styles.coachingText, { color: colors.foreground }]}>
             {combinedCoaching}
           </Text>
-          {/* 직업별 맞춤 코칭 메시지 */}
+          {/* 직업별 맞춤 공감 메시지 */}
           {jobCoaching && (
             <View style={styles.jobCoachingNote}>
               <Text style={[styles.jobCoachingText, { color: "#6B8F6B" }]}>
@@ -663,7 +665,7 @@ export default function PremiumResultScreen() {
             🌿 오늘의 보완 루틴
           </Text>
           <Text style={[styles.wellnessSectionSub, { color: '#A0845C' }]}>
-            지금 당신의 에너지 흐름에 맞는 회복 가이드입니다
+            오늘 실천할 수 있는 회복 행동 가이드입니다
           </Text>
           <View style={styles.wellnessRow}>
             <Text style={styles.wellnessIcon}>🍵</Text>
@@ -692,7 +694,7 @@ export default function PremiumResultScreen() {
               ))}
             </View>
           </View>
-          {/* 직업별 루틴 노트 */}
+          {/* 직업별 루틴 노트 - 행동 가이드 보완 */}
           {jobCoaching && (
             <View style={styles.jobRoutineNote}>
               <Text style={[styles.jobRoutineText, { color: '#8B6914' }]}>
@@ -840,11 +842,11 @@ export default function PremiumResultScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 코칭 흐름 마무리 + 후기 인라인 섹션 */}
+        {/* 하단 여운 한 문장 + 후기 인라인 섹션 */}
         <View style={[styles.reviewSection, { backgroundColor: colors.surface, borderColor: "#8BAF8B44" }]}>
-          {/* 마무리 문구 */}
-          <Text style={[styles.reviewClosingText, { color: colors.muted }]}>
-           오늘의 코칭이{"\n"}당신에게 작은 쉼과 이해가 되었기를 바랍니다 🌿
+          {/* 여운 있는 한 문장 - 3번 카드 기준 */}
+          <Text style={[styles.reviewClosingText, { color: colors.foreground }]}>
+            {closingLine}
           </Text>
 
           {reviewDone ? (
@@ -1057,12 +1059,12 @@ function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardD
 
   // 1·2번 카드 통합 문장 (자연스럽게 연결)
   const line12 = `${flow1}\n${curr}\n`;
-  // 3번 카드 회복 제안 (줄바꿈으로 구분)
+  // 3번 카드 회복 제안 (줄바꾸으로 구분)
   const line3 = `\n${recovery}\n`;
-  // 3번 카드 고유 코칭 메시지
+  // 3번 카드 감정 공감 메시지 (행동 제안 제거, 공감 중심)
   const cardCoaching = `\n${card3.coachingMessage}`;
 
-  // 컬러 통합 문장 (컬러 선택 시만 표시)
+  // 콜러 통합 문장 (콜러 선택 시만 표시)
   let colorLine = '';
   if (colorFlow && colorFlow.length >= 3) {
     const [c1, c2, c3] = colorFlow;
@@ -1073,8 +1075,7 @@ function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardD
     const eul2 = josaCoach(kw2, '을', '를');
     const eul3 = josaCoach(kw3, '을', '를');
     colorLine = `\n\n${c1.korName}의 ${kw1}${wa1} ${c2.korName}의 ${kw2}${eul2} 함께 가지고 있는 당신에게,\n` +
-      `지금은 ${c3.korName}의 ${kw3}${eul3} 조금씩 허용해 주는 것이 도움이 됩니다.\n` +
-      `많은 것을 한 번에 바꾸려 하기보다, 가장 마음이 가는 한 가지부터 천천히 시작해 보세요.`;
+      `지금은 ${c3.korName}의 ${kw3}${eul3} 조금씩 허용해 주는 것이 도움이 됩니다.`;
   }
 
   return line12 + line3 + cardCoaching + colorLine;
