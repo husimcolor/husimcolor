@@ -196,3 +196,9 @@
 
 - [ ] cardData.ts에 wellness 루틴 필드 추가 (추천 차·호흡·생활 루틴 - 카드 에너지별 맞춤)
 - [ ] premium-result.tsx에 보완 루틴 섹션 UI 추가 (코칭 메시지 아래, 1:1 코칭 연결 위)
+
+## 36차 개선 - 옐로우 컬러 표현 수정
+
+- [x] colorData.ts 옐로우 keywords/strengths/reading1/2/3 수정 ('지혜' 단독 → 현실감각·균형감·명료한 사고·판단력·생각 정리)
+- [x] cardData.ts 옐로우 카드 8개 coachingMessage/recoveryDirection/strengths 수정
+- [x] premium-color-select.tsx buildColorInterpretation 옐로우 관련 문장 수정
