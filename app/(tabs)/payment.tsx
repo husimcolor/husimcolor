@@ -208,16 +208,8 @@ export default function PaymentScreen() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // 기존 프로필 불러오기
-    const saved = await AsyncStorage.getItem("userProfile");
-    if (saved) {
-      const p = JSON.parse(saved);
-      if (p.age) setProfileAge(p.age);
-      if (p.job) setProfileJob(p.job);
-      if (p.faith) setProfileFaith(p.faith);
-      if (p.concerns) setProfileConcerns(p.concerns);
-    }
-    setProfileStep(true);
+    // 이름/연락처 입력 단계 먼저 표시 (이전 체험 기록이 있어도 매번 입력 받기)
+    setTrialInfoStep(true);
   };
   const handleProfileNext = async () => {
     if (!profileAge || !profileJob || !profileFaith) {

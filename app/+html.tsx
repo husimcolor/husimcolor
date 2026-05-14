@@ -61,6 +61,9 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-title" content="휴심컬러" />
         <meta name="theme-color" content="#F9F5F0" />
 
+        {/* 삼성 인터넷 등 브라우저 강제 다크모드 방지 */}
+        <meta name="color-scheme" content="only light" />
+
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>
