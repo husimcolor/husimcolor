@@ -444,10 +444,10 @@ export default function ResultScreen() {
 
           {/* 브랜드 문구 */}
           <View style={styles.brandMessageBox}>
-            <Text style={[styles.socialTitle, { color: '#2A2A2A' }]}>
+            <Text style={[styles.socialTitle, { color: colors.foreground }]}>
               {'나를 더 깊이 이해하고 싶다면\n컬러 코칭이 도움이 될 수 있습니다'}
             </Text>
-            <Text style={[styles.socialSubtitle, { color: '#666666' }]}>
+            <Text style={[styles.socialSubtitle, { color: colors.muted }]}>
               휴심컬러와 함께하는 1:1 컬러 코칭을 만나보세요
             </Text>
           </View>
