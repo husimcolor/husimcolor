@@ -59,10 +59,20 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="휴심컬러" />
-        <meta name="theme-color" content="#F9F5F0" />
+        <meta name="theme-color" content="#FAF8F3" />
 
         {/* 삼성 인터넷 등 브라우저 강제 다크모드 방지 */}
         <meta name="color-scheme" content="only light" />
+
+        {/* 인앱 브라우저(인스타, 카톡, 구글 등) JS 로드 전 배경색 보장 - 투명 배경 방지 */}
+        {/* @ts-ignore */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          html, body, #root {
+            background-color: #FAF8F3 !important;
+            color-scheme: only light !important;
+          }
+          body { margin: 0; }
+        `}} />
 
         <ScrollViewStyleReset />
       </head>
