@@ -232,7 +232,7 @@ export default function ResultScreen() {
         <Animated.View
           style={[styles.colorCardsSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
         >
-          <Text style={[styles.sectionLabel, { color: colors.muted }]}>오늘 선택한 컬러</Text>
+          <Text style={[styles.sectionLabel, { color: '#555555' }]}>오늘 선택한 컬러</Text>
           <View style={styles.colorCards}>
             {[
               { card: card1, label: '1번 카드', desc: '무의식 / 내면 성향' },
@@ -273,9 +273,9 @@ export default function ResultScreen() {
                     style={StyleSheet.absoluteFillObject}
                   />
                 </View>
-                <Text style={[styles.colorCardLabel, { color: colors.muted }]}>{label}</Text>
+                <Text style={[styles.colorCardLabel, { color: '#555555' }]}>{label}</Text>
                 <Text style={[styles.colorCardName, { color: colors.foreground }]}>{card.korName}</Text>
-                <Text style={[styles.colorCardDesc, { color: colors.muted }]}>{desc}</Text>
+                <Text style={[styles.colorCardDesc, { color: '#555555' }]}>{desc}</Text>
               </View>
             ))}
           </View>
@@ -292,7 +292,7 @@ export default function ResultScreen() {
             bgColor={colors.surface}
             borderColor={colors.border}
             titleColor={colors.foreground}
-            contentColor={colors.muted}
+            contentColor="#444444"
           />
 
           {/* 성격 흐름 */}
@@ -303,7 +303,7 @@ export default function ResultScreen() {
             bgColor={colors.surface}
             borderColor={colors.border}
             titleColor={colors.foreground}
-            contentColor={colors.muted}
+            contentColor="#444444"
           />
 
           {/* 장점 & 감정 패턴 나란히 */}
@@ -353,7 +353,7 @@ export default function ResultScreen() {
               <Text style={styles.complementIcon}>🎨</Text>
               <Text style={[styles.complementTitle, { color: '#2A2A2A' }]}>보완 컬러</Text>
             </View>
-            <Text style={[styles.complementDesc, { color: colors.muted }]}>
+            <Text style={[styles.complementDesc, { color: '#555555' }]}>
               지금 나에게 도움이 되는 컬러
             </Text>
             <View style={styles.complementTags}>
@@ -420,7 +420,7 @@ export default function ResultScreen() {
 
         {/* 공유 버튼 섹션 */}
         <View style={styles.shareSection}>
-          <Text style={[styles.shareSectionTitle, { color: colors.muted }]}>결과 저장 및 공유</Text>
+          <Text style={[styles.shareSectionTitle, { color: '#555555' }]}>결과 저장 및 공유</Text>
           <View style={styles.shareButtons}>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -460,7 +460,7 @@ export default function ResultScreen() {
             <Text style={[styles.socialTitle, { color: colors.foreground }]}>
               {'나를 더 깊이 이해하고 싶다면\n컬러 코칭이 도움이 될 수 있습니다'}
             </Text>
-            <Text style={[styles.socialSubtitle, { color: colors.muted }]}>
+            <Text style={[styles.socialSubtitle, { color: '#555555' }]}>
               휴심컬러와 함께하는 1:1 컬러 코칭을 만나보세요
             </Text>
           </View>
@@ -581,11 +581,11 @@ export default function ResultScreen() {
             ]}
             onPress={handleRestart}
           >
-            <Text style={[styles.restartButtonText, { color: colors.muted }]}>
+            <Text style={[styles.restartButtonText, { color: '#444444' }]}>
               ↺  처음부터 다시 시작하기
             </Text>
           </Pressable>
-          <Text style={[styles.footer, { color: colors.muted }]}>
+          <Text style={[styles.footer, { color: '#666666' }]}>
             휴심컬러 · 색으로 읽는 나의 마음
           </Text>
         </Animated.View>
@@ -923,16 +923,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   socialButtonDesc: {
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(255,255,255,0.95)',
     fontSize: 12,
   },
   socialButtonAddr: {
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.9)',
     fontSize: 11,
     marginTop: 2,
   },
   socialArrow: {
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.95)',
     fontSize: 18,
     fontWeight: '300',
   },
