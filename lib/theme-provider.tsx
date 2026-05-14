@@ -12,8 +12,10 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // 웹에서는 항상 라이트 모드 강제 (삼성 인터넷 등 강제 다크모드 방지)
   const systemScheme = useSystemColorScheme() ?? "light";
-  const [colorScheme, setColorSchemeState] = useState<ColorScheme>(systemScheme);
+  const isWeb = typeof document !== "undefined";
+  const [colorScheme, setColorSchemeState] = useState<ColorScheme>(isWeb ? "light" : systemScheme);
 
   const applyScheme = useCallback((scheme: ColorScheme) => {
     nativewindColorScheme.set(scheme);
@@ -30,9 +32,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setColorScheme = useCallback((scheme: ColorScheme) => {
-    setColorSchemeState(scheme);
-    applyScheme(scheme);
-  }, [applyScheme]);
+    // 웹에서는 라이트 모드만 허용
+    const effectiveScheme = isWeb ? "light" : scheme;
+    setColorSchemeState(effectiveScheme);
+    applyScheme(effectiveScheme);
+  }, [applyScheme, isWeb]);
 
   useEffect(() => {
     applyScheme(colorScheme);
