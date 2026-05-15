@@ -17,8 +17,11 @@ import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
 
-// AsyncStorage 비밀번호 저장 방식 제거 → 서버 DB 기반 인증으로 변경
-// 어느 브라우저에서 접속해도 동일한 비밀번호/데이터 보장
+// ── 관리자 비밀번호 설정 ──────────────────────────────────────────
+// 비밀번호를 변경하려면 아래 ADMIN_PASSWORD 값을 수정하고 재배포하세요.
+// 이 방식은 Vercel 정적 배포 환경에서 브라우저 무관하게 동작합니다.
+const ADMIN_PASSWORD = "hyusim2024";
+// ────────────────────────────────────────────────────────────────
 
 type PaymentRecord = {
   id: number;
@@ -41,29 +44,19 @@ export default function AdminScreen() {
   const colors = useColors();
   const router = useRouter();
 
-  // ── 인증 (DB 기반 - 브라우저 무관) ────────────────────────────
+  // ── 인증 ──────────────────────────────────────────────────────
   const [authenticated, setAuthenticated] = useState(false);
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState(false);
-  const [loginLoading, setLoginLoading] = useState(false);
-
-  const verifyPassword = trpc.admin.verifyPassword.useMutation({
-    onSuccess: () => {
-      setAuthenticated(true);
-      setPwError(false);
-      setLoginLoading(false);
-    },
-    onError: () => {
-      setPwError(true);
-      setPwInput("");
-      setLoginLoading(false);
-    },
-  });
 
   const handleLogin = () => {
-    if (!pwInput.trim()) return;
-    setLoginLoading(true);
-    verifyPassword.mutate({ password: pwInput });
+    if (pwInput === ADMIN_PASSWORD) {
+      setAuthenticated(true);
+      setPwError(false);
+    } else {
+      setPwError(true);
+      setPwInput("");
+    }
   };
 
   // ── 데이터 조회 ────────────────────────────────────────────────
@@ -131,37 +124,6 @@ export default function AdminScreen() {
     );
   };
 
-  // ── 비밀번호 변경 (DB 기반 - 카카오/네이버/크롬 모두 동일 적용) ──
-  const [changePwMode, setChangePwMode] = useState(false);
-  const [currentPw, setCurrentPw] = useState("");
-  const [newPw, setNewPw] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [changePwLoading, setChangePwLoading] = useState(false);
-
-  const changePassword = trpc.admin.changePassword.useMutation({
-    onSuccess: () => {
-      setChangePwMode(false);
-      setCurrentPw(""); setNewPw(""); setConfirmPw("");
-      setChangePwLoading(false);
-      Alert.alert("완료", "비밀번호가 변경되었습니다.\n카카오, 네이버, 크롬 등 모든 브라우저에서 새 비밀번호로 로그인하세요.");
-    },
-    onError: (e) => {
-      setChangePwLoading(false);
-      if (e.message.includes("WRONG_PASSWORD")) {
-        Alert.alert("오류", "현재 비밀번호가 올바르지 않습니다.");
-      } else {
-        Alert.alert("오류", "비밀번호 변경에 실패했습니다. 다시 시도해 주세요.");
-      }
-    },
-  });
-
-  const handleChangePassword = () => {
-    if (newPw.length < 4) { Alert.alert("오류", "비밀번호는 4자 이상이어야 합니다."); return; }
-    if (newPw !== confirmPw) { Alert.alert("오류", "비밀번호가 일치하지 않습니다."); return; }
-    setChangePwLoading(true);
-    changePassword.mutate({ currentPassword: currentPw, newPassword: newPw });
-  };
-
   // ── 통계 계산 ─────────────────────────────────────────────────
   const paidCount     = payments?.filter((p: PaymentRecord) => p.amount > 0).length ?? 0;
   const freeCount     = payments?.filter((p: PaymentRecord) => p.amount === 0).length ?? 0;
@@ -199,72 +161,14 @@ export default function AdminScreen() {
             />
             {pwError && <Text style={styles.pwError}>비밀번호가 올바르지 않습니다</Text>}
             <TouchableOpacity
-              style={[styles.loginBtn, { backgroundColor: loginLoading ? "#8AAA8A" : "#5A8A5A" }]}
+              style={[styles.loginBtn, { backgroundColor: "#5A8A5A" }]}
               onPress={handleLogin}
               activeOpacity={0.85}
-              disabled={loginLoading}
             >
-              {loginLoading
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.loginBtnText}>로그인</Text>
-              }
+              <Text style={styles.loginBtnText}>로그인</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ marginTop: 12 }}>
               <Text style={[styles.backText, { color: colors.muted }]}>← 돌아가기</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </ScreenContainer>
-    );
-  }
-
-  // ── 비밀번호 변경 화면 ─────────────────────────────────────────
-  if (changePwMode) {
-    return (
-      <ScreenContainer className="p-6">
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-          <View style={styles.loginContainer}>
-            <Text style={[styles.loginTitle, { color: colors.foreground }]}>비밀번호 변경</Text>
-            <Text style={[styles.loginSub, { color: colors.muted }]}>변경 후 모든 브라우저에 동일하게 적용됩니다</Text>
-            <TextInput
-              style={[styles.loginInput, { borderColor: colors.border, color: "#333333", backgroundColor: colors.surface }]}
-              placeholder="현재 비밀번호"
-              placeholderTextColor={colors.muted}
-              secureTextEntry
-              value={currentPw}
-              onChangeText={setCurrentPw}
-            />
-            <TextInput
-              style={[styles.loginInput, { borderColor: colors.border, color: "#333333", backgroundColor: colors.surface }]}
-              placeholder="새 비밀번호 (4자 이상)"
-              placeholderTextColor={colors.muted}
-              secureTextEntry
-              value={newPw}
-              onChangeText={setNewPw}
-            />
-            <TextInput
-              style={[styles.loginInput, { borderColor: colors.border, color: "#333333", backgroundColor: colors.surface }]}
-              placeholder="비밀번호 확인"
-              placeholderTextColor={colors.muted}
-              secureTextEntry
-              value={confirmPw}
-              onChangeText={setConfirmPw}
-              onSubmitEditing={handleChangePassword}
-              returnKeyType="done"
-            />
-            <TouchableOpacity
-              style={[styles.loginBtn, { backgroundColor: changePwLoading ? "#8AAA8A" : "#5A8A5A" }]}
-              onPress={handleChangePassword}
-              activeOpacity={0.85}
-              disabled={changePwLoading}
-            >
-              {changePwLoading
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.loginBtnText}>변경하기</Text>
-              }
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => { setChangePwMode(false); setCurrentPw(""); setNewPw(""); setConfirmPw(""); }} activeOpacity={0.7} style={{ marginTop: 12 }}>
-              <Text style={[styles.backText, { color: colors.muted }]}>← 취소</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -283,13 +187,6 @@ export default function AdminScreen() {
         <View style={styles.headerRow}>
           <Text style={[styles.pageTitle, { color: colors.foreground }]}>🌿 관리자 대시보드</Text>
           <View style={styles.headerBtns}>
-            <TouchableOpacity
-              style={[styles.smallBtn, { borderColor: colors.border }]}
-              onPress={() => setChangePwMode(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.smallBtnText, { color: colors.muted }]}>비번변경</Text>
-            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.smallBtn, { borderColor: "#EF4444" }]}
               onPress={() => { setAuthenticated(false); setPwInput(""); }}
