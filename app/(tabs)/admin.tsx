@@ -12,14 +12,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
 
-const ADMIN_PASSWORD_KEY = "admin_password_v1";
-const DEFAULT_PASSWORD = "hyusim2024";
+// AsyncStorage 비밀번호 저장 방식 제거 → 서버 DB 기반 인증으로 변경
+// 어느 브라우저에서 접속해도 동일한 비밀번호/데이터 보장
 
 type PaymentRecord = {
   id: number;
@@ -42,21 +41,29 @@ export default function AdminScreen() {
   const colors = useColors();
   const router = useRouter();
 
-  // ── 인증 ──────────────────────────────────────────────────────
+  // ── 인증 (DB 기반 - 브라우저 무관) ────────────────────────────
   const [authenticated, setAuthenticated] = useState(false);
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
 
-  const handleLogin = async () => {
-    const stored = await AsyncStorage.getItem(ADMIN_PASSWORD_KEY);
-    const correct = stored ?? DEFAULT_PASSWORD;
-    if (pwInput === correct) {
+  const verifyPassword = trpc.admin.verifyPassword.useMutation({
+    onSuccess: () => {
       setAuthenticated(true);
       setPwError(false);
-    } else {
+      setLoginLoading(false);
+    },
+    onError: () => {
       setPwError(true);
       setPwInput("");
-    }
+      setLoginLoading(false);
+    },
+  });
+
+  const handleLogin = () => {
+    if (!pwInput.trim()) return;
+    setLoginLoading(true);
+    verifyPassword.mutate({ password: pwInput });
   };
 
   // ── 데이터 조회 ────────────────────────────────────────────────
@@ -124,18 +131,35 @@ export default function AdminScreen() {
     );
   };
 
-  // ── 비밀번호 변경 ──────────────────────────────────────────────
+  // ── 비밀번호 변경 (DB 기반 - 카카오/네이버/크롬 모두 동일 적용) ──
   const [changePwMode, setChangePwMode] = useState(false);
+  const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
+  const [changePwLoading, setChangePwLoading] = useState(false);
 
-  const handleChangePassword = async () => {
+  const changePassword = trpc.admin.changePassword.useMutation({
+    onSuccess: () => {
+      setChangePwMode(false);
+      setCurrentPw(""); setNewPw(""); setConfirmPw("");
+      setChangePwLoading(false);
+      Alert.alert("완료", "비밀번호가 변경되었습니다.\n카카오, 네이버, 크롬 등 모든 브라우저에서 새 비밀번호로 로그인하세요.");
+    },
+    onError: (e) => {
+      setChangePwLoading(false);
+      if (e.message.includes("WRONG_PASSWORD")) {
+        Alert.alert("오류", "현재 비밀번호가 올바르지 않습니다.");
+      } else {
+        Alert.alert("오류", "비밀번호 변경에 실패했습니다. 다시 시도해 주세요.");
+      }
+    },
+  });
+
+  const handleChangePassword = () => {
     if (newPw.length < 4) { Alert.alert("오류", "비밀번호는 4자 이상이어야 합니다."); return; }
     if (newPw !== confirmPw) { Alert.alert("오류", "비밀번호가 일치하지 않습니다."); return; }
-    await AsyncStorage.setItem(ADMIN_PASSWORD_KEY, newPw);
-    setChangePwMode(false);
-    setNewPw(""); setConfirmPw("");
-    Alert.alert("완료", "비밀번호가 변경되었습니다.");
+    setChangePwLoading(true);
+    changePassword.mutate({ currentPassword: currentPw, newPassword: newPw });
   };
 
   // ── 통계 계산 ─────────────────────────────────────────────────
@@ -161,7 +185,7 @@ export default function AdminScreen() {
             <TextInput
               style={[styles.loginInput, {
                 borderColor: pwError ? "#EF4444" : colors.border,
-                color: colors.foreground,
+                color: "#333333",
                 backgroundColor: colors.surface,
               }]}
               placeholder="비밀번호를 입력하세요"
@@ -175,11 +199,15 @@ export default function AdminScreen() {
             />
             {pwError && <Text style={styles.pwError}>비밀번호가 올바르지 않습니다</Text>}
             <TouchableOpacity
-              style={[styles.loginBtn, { backgroundColor: "#5A8A5A" }]}
+              style={[styles.loginBtn, { backgroundColor: loginLoading ? "#8AAA8A" : "#5A8A5A" }]}
               onPress={handleLogin}
               activeOpacity={0.85}
+              disabled={loginLoading}
             >
-              <Text style={styles.loginBtnText}>로그인</Text>
+              {loginLoading
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.loginBtnText}>로그인</Text>
+              }
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ marginTop: 12 }}>
               <Text style={[styles.backText, { color: colors.muted }]}>← 돌아가기</Text>
@@ -197,8 +225,17 @@ export default function AdminScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
           <View style={styles.loginContainer}>
             <Text style={[styles.loginTitle, { color: colors.foreground }]}>비밀번호 변경</Text>
+            <Text style={[styles.loginSub, { color: colors.muted }]}>변경 후 모든 브라우저에 동일하게 적용됩니다</Text>
             <TextInput
-              style={[styles.loginInput, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.surface }]}
+              style={[styles.loginInput, { borderColor: colors.border, color: "#333333", backgroundColor: colors.surface }]}
+              placeholder="현재 비밀번호"
+              placeholderTextColor={colors.muted}
+              secureTextEntry
+              value={currentPw}
+              onChangeText={setCurrentPw}
+            />
+            <TextInput
+              style={[styles.loginInput, { borderColor: colors.border, color: "#333333", backgroundColor: colors.surface }]}
               placeholder="새 비밀번호 (4자 이상)"
               placeholderTextColor={colors.muted}
               secureTextEntry
@@ -206,7 +243,7 @@ export default function AdminScreen() {
               onChangeText={setNewPw}
             />
             <TextInput
-              style={[styles.loginInput, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.surface }]}
+              style={[styles.loginInput, { borderColor: colors.border, color: "#333333", backgroundColor: colors.surface }]}
               placeholder="비밀번호 확인"
               placeholderTextColor={colors.muted}
               secureTextEntry
@@ -216,13 +253,17 @@ export default function AdminScreen() {
               returnKeyType="done"
             />
             <TouchableOpacity
-              style={[styles.loginBtn, { backgroundColor: "#5A8A5A" }]}
+              style={[styles.loginBtn, { backgroundColor: changePwLoading ? "#8AAA8A" : "#5A8A5A" }]}
               onPress={handleChangePassword}
               activeOpacity={0.85}
+              disabled={changePwLoading}
             >
-              <Text style={styles.loginBtnText}>변경하기</Text>
+              {changePwLoading
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.loginBtnText}>변경하기</Text>
+              }
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setChangePwMode(false)} activeOpacity={0.7} style={{ marginTop: 12 }}>
+            <TouchableOpacity onPress={() => { setChangePwMode(false); setCurrentPw(""); setNewPw(""); setConfirmPw(""); }} activeOpacity={0.7} style={{ marginTop: 12 }}>
               <Text style={[styles.backText, { color: colors.muted }]}>← 취소</Text>
             </TouchableOpacity>
           </View>
@@ -265,17 +306,16 @@ export default function AdminScreen() {
           {/* 방문자 */}
           <View style={[styles.statCard, { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE', borderWidth: 1 }]}>
             <Text style={[styles.statNum, { color: "#5A8A5A" }]}>{stats?.totalVisitors ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: '#8A7A68' }]}>전체 방문자</Text>
-            <Text style={{ fontSize: 9, color: '#A89880', textAlign: 'center', marginTop: 2 }}>고유기기·하루1회</Text>
+            <Text style={[styles.statLabel, { color: "#5A8A5A" }]}>전체 방문자{"\n"}고유기기·하루1회</Text>
           </View>
-          {/* 무료체험 */}
+          {/* 무료체험 신청 */}
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statNum, { color: "#8B6A3E" }]}>{freeCount}</Text>
+            <Text style={[styles.statNum, { color: "#C4A35A" }]}>{freeCount}</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>무료체험 신청</Text>
           </View>
-          {/* 유료결제 */}
+          {/* 유료결제 신청 */}
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statNum, { color: "#0a7ea4" }]}>{paidCount}</Text>
+            <Text style={[styles.statNum, { color: "#5A7EA8" }]}>{paidCount}</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>유료결제 신청</Text>
           </View>
           {/* 입금대기 */}
@@ -297,135 +337,112 @@ export default function AdminScreen() {
 
         {/* 결제 신청 목록 */}
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>결제 신청 목록</Text>
-
-        {isLoading && <ActivityIndicator color={colors.primary} style={{ marginVertical: 24 }} />}
-
-        {!isLoading && (!payments || payments.length === 0) && (
+        {isLoading ? (
+          <ActivityIndicator color="#5A8A5A" style={{ marginVertical: 20 }} />
+        ) : !payments || payments.length === 0 ? (
           <Text style={[styles.emptyText, { color: colors.muted }]}>아직 신청 내역이 없습니다.</Text>
-        )}
+        ) : (
+          payments.map((p: PaymentRecord) => {
+            const si = STATUS_INFO[p.status] ?? STATUS_INFO.pending;
+            const isExpanded = expandedId === p.id;
+            return (
+              <View key={p.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <TouchableOpacity
+                  style={styles.cardHeader}
+                  onPress={() => setExpandedId(isExpanded ? null : p.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.cardTitleRow}>
+                      <Text style={[styles.cardName, { color: colors.foreground }]}>{p.senderName}</Text>
+                      <View style={[styles.statusBadge, { borderColor: si.color }]}>
+                        <Text style={[styles.statusText, { color: si.color }]}>{si.label}</Text>
+                      </View>
+                      {p.amount > 0 && (
+                        <View style={[styles.statusBadge, { borderColor: "#5A7EA8" }]}>
+                          <Text style={[styles.statusText, { color: "#5A7EA8" }]}>유료</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.cardSubtitle, { color: colors.muted }]}>
+                      {formatDate(p.createdAt)} · {p.amount > 0 ? `${p.amount.toLocaleString()}원` : "무료체험"}
+                    </Text>
+                  </View>
+                  <Text style={[styles.expandIcon, { color: colors.muted }]}>{isExpanded ? "▲" : "▼"}</Text>
+                </TouchableOpacity>
 
-        {payments?.map((p: PaymentRecord) => {
-          const si = STATUS_INFO[p.status];
-          const isExpanded = expandedId === p.id;
-          return (
-            <View
-              key={p.id}
-              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            >
-              {/* 카드 헤더 - 탭하면 펼치기/접기 */}
-              <TouchableOpacity
-                onPress={() => setExpandedId(isExpanded ? null : p.id)}
-                activeOpacity={0.85}
-                style={styles.cardHeader}
-              >
-                <View style={{ flex: 1 }}>
-                  <View style={styles.cardTitleRow}>
-                    <Text style={[styles.cardName, { color: colors.foreground }]}>{p.senderName}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: si.color + "22", borderColor: si.color }]}>
-                      <Text style={[styles.statusText, { color: si.color }]}>{si.label}</Text>
+                {isExpanded && (
+                  <View style={styles.cardBody}>
+                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                    <View style={styles.infoGrid}>
+                      <View style={styles.infoRow}>
+                        <Text style={[styles.infoKey, { color: colors.muted }]}>연락처</Text>
+                        <Text style={[styles.infoVal, { color: colors.foreground }]}>{p.contact}</Text>
+                      </View>
+                      <View style={styles.infoRow}>
+                        <Text style={[styles.infoKey, { color: colors.muted }]}>입금자명</Text>
+                        <Text style={[styles.infoVal, { color: colors.foreground }]}>{p.depositorName}</Text>
+                      </View>
+                      {p.memo && (
+                        <View style={styles.infoRow}>
+                          <Text style={[styles.infoKey, { color: colors.muted }]}>메모</Text>
+                          <Text style={[styles.infoVal, { color: colors.foreground }]}>{p.memo}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <TextInput
+                      style={[styles.memoInput, { borderColor: colors.border, color: "#333333", backgroundColor: colors.background }]}
+                      placeholder="관리자 메모 (선택)"
+                      placeholderTextColor={colors.muted}
+                      value={memoInputs[p.id] ?? ""}
+                      onChangeText={(t) => setMemoInputs((prev) => ({ ...prev, [p.id]: t }))}
+                      returnKeyType="done"
+                    />
+                    <View style={styles.actionRow}>
+                      <TouchableOpacity
+                        style={[styles.actionBtn, { borderColor: "#22C55E" }]}
+                        onPress={() => handleUpdateStatus(p.id, "confirmed")}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.actionBtnText, { color: "#22C55E" }]}>입금확인</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.actionBtn, { borderColor: "#F59E0B" }]}
+                        onPress={() => handleUpdateStatus(p.id, "pending")}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.actionBtnText, { color: "#F59E0B" }]}>입금대기</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.actionBtn, { borderColor: "#EF4444" }]}
+                        onPress={() => handleUpdateStatus(p.id, "rejected")}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.actionBtnText, { color: "#EF4444" }]}>취소</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
-                  <Text style={[styles.cardSubtitle, { color: colors.muted }]}>
-                    {formatDate(p.createdAt)} · {p.amount === 0 ? "무료체험" : `${p.amount.toLocaleString()}원`}
-                  </Text>
-                </View>
-                <Text style={[styles.expandIcon, { color: colors.muted }]}>{isExpanded ? "▲" : "▼"}</Text>
-              </TouchableOpacity>
-
-              {/* 펼쳐진 상세 정보 */}
-              {isExpanded && (
-                <View style={styles.cardBody}>
-                  <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-                  <View style={styles.infoGrid}>
-                    <InfoRow label="이름" value={p.senderName} colors={colors} />
-                    <InfoRow label="연락처" value={p.contact} colors={colors} />
-                    <InfoRow label="입금자명" value={p.depositorName} colors={colors} />
-                    <InfoRow
-                      label="결제금액"
-                      value={p.amount === 0 ? "무료체험" : `${p.amount.toLocaleString()}원`}
-                      colors={colors}
-                    />
-                    <InfoRow label="신청일시" value={formatDate(p.createdAt)} colors={colors} />
-                    <InfoRow label="결제상태" value={si.label} valueColor={si.color} colors={colors} />
-                    {p.memo ? <InfoRow label="메모" value={p.memo} colors={colors} /> : null}
-                  </View>
-
-                  {/* 메모 입력 */}
-                  <TextInput
-                    style={[styles.memoInput, {
-                      borderColor: colors.border,
-                      color: colors.foreground,
-                      backgroundColor: colors.background,
-                    }]}
-                    placeholder="메모 입력 (선택)"
-                    placeholderTextColor={colors.muted}
-                    value={memoInputs[p.id] ?? p.memo ?? ""}
-                    onChangeText={(t) => setMemoInputs(prev => ({ ...prev, [p.id]: t }))}
-                    maxLength={200}
-                    returnKeyType="done"
-                  />
-
-                  {/* 상태 변경 버튼 */}
-                  <View style={styles.actionRow}>
-                    {p.status !== "confirmed" && (
-                      <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: "#22C55E22", borderColor: "#22C55E" }]}
-                        onPress={() => handleUpdateStatus(p.id, "confirmed")}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.actionBtnText, { color: "#22C55E" }]}>✓ 입금확인</Text>
-                      </TouchableOpacity>
-                    )}
-                    {p.status !== "pending" && (
-                      <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: "#F59E0B22", borderColor: "#F59E0B" }]}
-                        onPress={() => handleUpdateStatus(p.id, "pending")}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.actionBtnText, { color: "#F59E0B" }]}>↩ 입금대기</Text>
-                      </TouchableOpacity>
-                    )}
-                    {p.status !== "rejected" && (
-                      <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: "#EF444422", borderColor: "#EF4444" }]}
-                        onPress={() => handleUpdateStatus(p.id, "rejected")}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.actionBtnText, { color: "#EF4444" }]}>✕ 취소</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              )}
-            </View>
-          );
-        })}
-
-        {/* 후기 통계 섹션 */}
-        <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 24 }]}>후기 통계</Text>
-        {reviewStats && (
-          <View style={[styles.statsGrid, { marginBottom: 12 }]}>
-            <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[styles.statNum, { color: colors.primary }]}>{reviewStats.total}</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>총 후기</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[styles.statNum, { color: '#F59E0B' }]}>{reviewStats.avgRating.toFixed(1)} ⭐</Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>평균 별점</Text>
-            </View>
-          </View>
+                )}
+              </View>
+            );
+          })
         )}
-        {reviewStats && Object.keys(reviewStats.tagCounts).length > 0 && (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-            {Object.entries(reviewStats.tagCounts)
-              .sort((a, b) => b[1] - a[1])
-              .map(([tag, cnt]) => (
-                <View key={tag} style={[styles.statusBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  <Text style={[styles.statusText, { color: colors.foreground }]}>{tag} {cnt}</Text>
-                </View>
-              ))}
-          </View>
+
+        {/* 후기 통계 */}
+        {reviewStats && (
+          <>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>후기 통계</Text>
+            <View style={styles.statsGrid}>
+              <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={[styles.statNum, { color: "#C4A35A" }]}>{reviewStats.total}</Text>
+                <Text style={[styles.statLabel, { color: colors.muted }]}>총 후기</Text>
+              </View>
+              <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={[styles.statNum, { color: "#5A8A5A" }]}>{reviewStats.avgRating}</Text>
+                <Text style={[styles.statLabel, { color: colors.muted }]}>평균 별점</Text>
+              </View>
+            </View>
+          </>
         )}
 
         {/* 후기 목록 */}
@@ -433,68 +450,46 @@ export default function AdminScreen() {
         {!reviewList || reviewList.length === 0 ? (
           <Text style={[styles.emptyText, { color: colors.muted }]}>아직 후기가 없습니다.</Text>
         ) : (
-          reviewList.map((r) => (
-            <TouchableOpacity
-              key={r.id}
-              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => setReviewExpanded(reviewExpanded === r.id ? null : r.id)}
-              activeOpacity={0.85}
-            >
-              <View style={styles.cardHeader}>
-                <View style={{ flex: 1 }}>
-                  <View style={styles.cardTitleRow}>
-                    <Text style={[styles.cardName, { color: colors.foreground }]}>
-                      {'⭐'.repeat(r.rating)} {r.nickname}
-                    </Text>
-                    <Text style={[styles.cardSubtitle, { color: colors.muted }]}>
-                      {formatDate(r.createdAt)}
-                    </Text>
+          reviewList.map((r: any) => {
+            const isExpanded = reviewExpanded === r.id;
+            return (
+              <View key={r.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <TouchableOpacity
+                  style={styles.cardHeader}
+                  onPress={() => setReviewExpanded(isExpanded ? null : r.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.cardTitleRow}>
+                      <Text style={[styles.cardName, { color: colors.foreground }]}>{r.nickname}</Text>
+                      <Text style={{ color: "#C4A35A", fontSize: 13 }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</Text>
+                    </View>
+                    <Text style={[styles.cardSubtitle, { color: colors.muted }]} numberOfLines={1}>{r.content}</Text>
                   </View>
-                  {r.colorCombo && (
-                    <Text style={[styles.cardSubtitle, { color: colors.muted }]}>컬러: {r.colorCombo}</Text>
-                  )}
-                  {r.tags && (
-                    <Text style={[styles.cardSubtitle, { color: colors.muted }]}>태그: {r.tags}</Text>
-                  )}
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <TouchableOpacity
-                    onPress={(e) => { e.stopPropagation?.(); handleDeleteReview(r.id); }}
-                    style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: '#FEE2E2', borderRadius: 6 }}
-                  >
-                    <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '600' }}>삭제</Text>
-                  </TouchableOpacity>
-                  <Text style={[styles.expandIcon, { color: colors.muted }]}>{reviewExpanded === r.id ? '▲' : '▼'}</Text>
-                </View>
+                  <Text style={[styles.expandIcon, { color: colors.muted }]}>{isExpanded ? "▲" : "▼"}</Text>
+                </TouchableOpacity>
+                {isExpanded && (
+                  <View style={styles.cardBody}>
+                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                    <Text style={[{ color: colors.foreground, fontSize: 14, lineHeight: 22, marginBottom: 8 }]}>{r.content}</Text>
+                    {r.tags && <Text style={[{ color: colors.muted, fontSize: 12, marginBottom: 8 }]}>태그: {r.tags}</Text>}
+                    {r.colorCombo && <Text style={[{ color: colors.muted, fontSize: 12, marginBottom: 8 }]}>컬러: {r.colorCombo}</Text>}
+                    <Text style={[{ color: colors.muted, fontSize: 11, marginBottom: 12 }]}>{formatDate(r.createdAt)}</Text>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { borderColor: "#EF4444", flex: 0, paddingHorizontal: 16 }]}
+                      onPress={() => handleDeleteReview(r.id)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.actionBtnText, { color: "#EF4444" }]}>삭제</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
-              {reviewExpanded === r.id && r.content ? (
-                <View style={styles.cardBody}>
-                  <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                  <Text style={[styles.infoVal, { color: colors.foreground }]}>{r.content}</Text>
-                </View>
-              ) : null}
-            </TouchableOpacity>
-          ))
+            );
+          })
         )}
       </ScrollView>
     </ScreenContainer>
-  );
-}
-
-// ── 정보 행 컴포넌트 ──────────────────────────────────────────────
-function InfoRow({
-  label, value, valueColor, colors,
-}: {
-  label: string;
-  value: string;
-  valueColor?: string;
-  colors: ReturnType<typeof useColors>;
-}) {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={[styles.infoKey, { color: colors.muted }]}>{label}</Text>
-      <Text style={[styles.infoVal, { color: valueColor ?? colors.foreground }]}>{value}</Text>
-    </View>
   );
 }
 

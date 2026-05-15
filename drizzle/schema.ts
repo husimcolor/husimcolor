@@ -64,3 +64,14 @@ export const visitorLogs = mysqlTable("visitor_logs", {
 
 export type VisitorLog = typeof visitorLogs.$inferSelect;
 export type InsertVisitorLog = typeof visitorLogs.$inferInsert;
+
+// 관리자 설정 테이블 (비밀번호 등 전역 설정 - DB 기반으로 브라우저 무관)
+export const adminSettings = mysqlTable("admin_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 100 }).notNull().unique(),   // 설정 키 (예: 'admin_password')
+  value: text("value").notNull(),                            // 설정 값
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AdminSetting = typeof adminSettings.$inferSelect;
+export type InsertAdminSetting = typeof adminSettings.$inferInsert;
