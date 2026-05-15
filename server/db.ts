@@ -154,10 +154,15 @@ export async function createPaymentRecord(data: InsertPaymentRecord) {
   return result[0].insertId;
 }
 
+// 통계/목록에서 제외할 관리자 연락처 목록
+const ADMIN_CONTACTS = ['01025997977'];
+
 export async function getPaymentRecords() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(paymentRecords).orderBy(desc(paymentRecords.createdAt)).limit(200);
+  const all = await db.select().from(paymentRecords).orderBy(desc(paymentRecords.createdAt)).limit(200);
+  // 관리자 연락처 제외
+  return all.filter(r => !ADMIN_CONTACTS.includes(r.contact.replace(/-/g, '')));
 }
 
 export async function updatePaymentStatus(id: number, status: 'pending' | 'confirmed' | 'rejected', memo?: string) {
