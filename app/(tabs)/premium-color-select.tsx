@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { COLOR_DATA, type ColorData } from "@/constants/colorData";
@@ -132,6 +133,7 @@ function buildColorInterpretation(colors: ColorData[]): {
 export default function PremiumColorSelectScreen() {
   const router = useRouter();
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const [selectedColors, setSelectedColors] = useState<ColorData[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [interpretation, setInterpretation] = useState<ReturnType<typeof buildColorInterpretation> | null>(null);
@@ -177,7 +179,10 @@ export default function PremiumColorSelectScreen() {
   return (
     <ScreenContainer>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 16) + 60 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* 헤더 */}
@@ -409,7 +414,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 16,
-    paddingBottom: 60,
   },
   header: {
     alignItems: "center",
