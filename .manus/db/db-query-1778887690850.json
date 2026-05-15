@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as visitor_total FROM visitor_logs; SELECT COUNT(*) as review_total FROM reviews;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3ZTUM6zDDidoFJZ.a71380ea8914 --database mTvBGzpe4naoi2CdDkbujz --execute SELECT COUNT(*) as visitor_total FROM visitor_logs; SELECT COUNT(*) as review_total FROM reviews;",
+  "rows": [
+    {
+      "visitor_total": "17"
+    },
+    {
+      "visitor_total": "review_total"
+    },
+    {
+      "visitor_total": "4"
+    }
+  ],
+  "messages": [],
+  "stdout": "visitor_total\n17\nreview_total\n4\n",
+  "stderr": "",
+  "execution_time_ms": 2027
+}

@@ -30,22 +30,26 @@ export const API_BASE_URL = env.apiBaseUrl;
  * URL pattern: https://PORT-sandboxid.region.domain
  */
 export function getApiBaseUrl(): string {
-  // If API_BASE_URL is set, use it
+  // On web, check current hostname first
+  if (ReactNative.Platform.OS === "web" && typeof window !== "undefined" && window.location) {
+    const { protocol, hostname } = window.location;
+    // Pattern: 8081-sandboxid.region.domain -> 3000-sandboxid.region.domain (dev sandbox)
+    const apiHostname = hostname.replace(/^8081-/, "3000-");
+    if (apiHostname !== hostname) {
+      // Dev sandbox: use the 3000 port API server
+      return `${protocol}//${apiHostname}`;
+    }
+    // Production (Vercel, custom domain, etc.): use relative URL so
+    // /api/trpc/* is served by Vercel Serverless Functions on the same domain
+    return "";
+  }
+
+  // Native: use EXPO_PUBLIC_API_BASE_URL if set (dev only)
   if (API_BASE_URL) {
     return API_BASE_URL.replace(/\/$/, "");
   }
 
-  // On web, derive from current hostname by replacing port 8081 with 3000
-  if (ReactNative.Platform.OS === "web" && typeof window !== "undefined" && window.location) {
-    const { protocol, hostname } = window.location;
-    // Pattern: 8081-sandboxid.region.domain -> 3000-sandboxid.region.domain
-    const apiHostname = hostname.replace(/^8081-/, "3000-");
-    if (apiHostname !== hostname) {
-      return `${protocol}//${apiHostname}`;
-    }
-  }
-
-  // Fallback to empty (will use relative URL)
+  // Fallback to empty (relative URL)
   return "";
 }
 
