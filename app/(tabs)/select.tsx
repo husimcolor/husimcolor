@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
@@ -131,6 +132,7 @@ export default function SelectScreen() {
   const step = parseInt(params.step ?? '0', 10);
   const { selectedColors, setSelectedColor } = useColorContext();
   const colors = useColors();
+  const insets = useSafeAreaInsets();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -323,7 +325,10 @@ export default function SelectScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 16) + 100 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* 카드 정보 */}
@@ -408,7 +413,6 @@ export default function SelectScreen() {
           />
         </Animated.View>
 
-        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* 하단 버튼 */}
