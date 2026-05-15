@@ -1,0 +1,15 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(CASE WHEN amount > 0 THEN 1 ELSE 0 END) as paid, SUM(CASE WHEN amount = 0 THEN 1 ELSE 0 END) as free_trial FROM payment_records;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3ZTUM6zDDidoFJZ.a71380ea8914 --database mTvBGzpe4naoi2CdDkbujz --execute SELECT COUNT(*) as total, SUM(CASE WHEN amount > 0 THEN 1 ELSE 0 END) as paid, SUM(CASE WHEN amount = 0 THEN 1 ELSE 0 END) as free_trial FROM payment_records;",
+  "rows": [
+    {
+      "total": "58",
+      "paid": "1",
+      "free_trial": "57"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tpaid\tfree_trial\n58\t1\t57\n",
+  "stderr": "",
+  "execution_time_ms": 1873
+}

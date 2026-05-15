@@ -19,6 +19,34 @@ export const appRouter = router({
     }),
   }),
 
+  // 관리자 인증 API (DB 기반 - 브라우저 무관)
+  admin: router({
+    // 비밀번호 검증
+    verifyPassword: publicProcedure
+      .input(z.object({ password: z.string() }))
+      .mutation(async ({ input }) => {
+        const correct = await db.getAdminPassword();
+        if (input.password !== correct) {
+          throw new Error("WRONG_PASSWORD");
+        }
+        return { success: true };
+      }),
+    // 비밀번호 변경
+    changePassword: publicProcedure
+      .input(z.object({
+        currentPassword: z.string(),
+        newPassword: z.string().min(4).max(100),
+      }))
+      .mutation(async ({ input }) => {
+        const correct = await db.getAdminPassword();
+        if (input.currentPassword !== correct) {
+          throw new Error("WRONG_PASSWORD");
+        }
+        await db.setAdminPassword(input.newPassword);
+        return { success: true };
+      }),
+  }),
+
   // 입금 기록 API
   payments: router({
     create: publicProcedure

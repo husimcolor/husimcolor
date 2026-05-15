@@ -1,0 +1,210 @@
+{
+  "query": "SELECT id, senderName, contact, depositorName, amount, status, memo, createdAt FROM payment_records ORDER BY createdAt DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3ZTUM6zDDidoFJZ.a71380ea8914 --database mTvBGzpe4naoi2CdDkbujz --execute SELECT id, senderName, contact, depositorName, amount, status, memo, createdAt FROM payment_records ORDER BY createdAt DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "1590001",
+      "senderName": "공은지",
+      "contact": "01053594236",
+      "depositorName": "공은지",
+      "amount": "30000",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-15 02:04:15"
+    },
+    {
+      "id": "1560001",
+      "senderName": "contessa",
+      "contact": "01080205249",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-15 00:29:50"
+    },
+    {
+      "id": "1530001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 23:59:21"
+    },
+    {
+      "id": "1500001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 23:46:09"
+    },
+    {
+      "id": "1470001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 23:42:28"
+    },
+    {
+      "id": "1440001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 23:29:33"
+    },
+    {
+      "id": "1410001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 23:19:14"
+    },
+    {
+      "id": "1380001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 23:15:46"
+    },
+    {
+      "id": "1350001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 23:06:54"
+    },
+    {
+      "id": "1320001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 23:02:05"
+    },
+    {
+      "id": "1290002",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 22:46:35"
+    },
+    {
+      "id": "1290001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 22:45:18"
+    },
+    {
+      "id": "1260001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 22:42:37"
+    },
+    {
+      "id": "1230001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 22:38:20"
+    },
+    {
+      "id": "1200001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 22:28:10"
+    },
+    {
+      "id": "1170001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 22:25:21"
+    },
+    {
+      "id": "1140002",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 22:16:58"
+    },
+    {
+      "id": "1140001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 22:15:21"
+    },
+    {
+      "id": "1110001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 22:08:34"
+    },
+    {
+      "id": "1080001",
+      "senderName": "이화",
+      "contact": "01025997977",
+      "depositorName": "무료체험",
+      "amount": "0",
+      "status": "pending",
+      "memo": "NULL",
+      "createdAt": "2026-05-14 22:03:17"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsenderName\tcontact\tdepositorName\tamount\tstatus\tmemo\tcreatedAt\n1590001\t공은지\t01053594236\t공은지\t30000\tpending\tNULL\t2026-05-15 02:04:15\n1560001\tcontessa\t01080205249\t무료체험\t0\tpending\tNULL\t2026-05-15 00:29:50\n1530001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 23:59:21\n1500001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 23:46:09\n1470001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 23:42:28\n1440001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 23:29:33\n1410001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 23:19:14\n1380001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 23:15:46\n1350001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 23:06:54\n1320001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 23:02:05\n1290002\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 22:46:35\n1290001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 22:45:18\n1260001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 22:42:37\n1230001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 22:38:20\n1200001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 22:28:10\n1170001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 22:25:21\n1140002\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 22:16:58\n1140001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 22:15:21\n1110001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 22:08:34\n1080001\t이화\t01025997977\t무료체험\t0\tpending\tNULL\t2026-05-14 22:03:17\n",
+  "stderr": "",
+  "execution_time_ms": 3120
+}

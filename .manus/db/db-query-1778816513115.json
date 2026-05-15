@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(*) as total_logs, COUNT(DISTINCT deviceId) as unique_devices FROM visitor_logs;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3ZTUM6zDDidoFJZ.a71380ea8914 --database mTvBGzpe4naoi2CdDkbujz --execute SELECT COUNT(*) as total_logs, COUNT(DISTINCT deviceId) as unique_devices FROM visitor_logs;",
+  "rows": [
+    {
+      "total_logs": "12",
+      "unique_devices": "12"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_logs\tunique_devices\n12\t12\n",
+  "stderr": "",
+  "execution_time_ms": 1894
+}

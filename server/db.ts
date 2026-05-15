@@ -169,6 +169,24 @@ export async function updatePaymentStatus(id: number, status: 'pending' | 'confi
   return { success: true };
 }
 
+// 관리자 설정 DB 함수
+import { adminSettings } from "../drizzle/schema";
+
+export async function getAdminPassword(): Promise<string> {
+  const db = await getDb();
+  if (!db) return "hyusim2024";
+  const result = await db.select().from(adminSettings).where(eq(adminSettings.key, "admin_password")).limit(1);
+  return result.length > 0 ? result[0].value : "hyusim2024";
+}
+
+export async function setAdminPassword(newPassword: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(adminSettings)
+    .values({ key: "admin_password", value: newPassword })
+    .onDuplicateKeyUpdate({ set: { value: newPassword } });
+}
+
 // 방문자 수 추적 DB 함수
 import { InsertVisitorLog, visitorLogs } from "../drizzle/schema";
 import { count, sql } from "drizzle-orm";
