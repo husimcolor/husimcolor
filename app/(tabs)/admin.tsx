@@ -263,9 +263,10 @@ export default function AdminScreen() {
         {/* 통계 대시보드 */}
         <View style={styles.statsGrid}>
           {/* 방문자 */}
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.statCard, { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE', borderWidth: 1 }]}>
             <Text style={[styles.statNum, { color: "#5A8A5A" }]}>{stats?.totalVisitors ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>전체 방문자</Text>
+            <Text style={[styles.statLabel, { color: '#8A7A68' }]}>전체 방문자</Text>
+            <Text style={{ fontSize: 9, color: '#A89880', textAlign: 'center', marginTop: 2 }}>고유기기·하루1회</Text>
           </View>
           {/* 무료체험 */}
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>

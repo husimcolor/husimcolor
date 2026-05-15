@@ -54,17 +54,30 @@ export default function HomeScreen() {
     ]).start();
   }, []);
 
-  // 방문자 수 집계 (앱 최초 진입 시 1회)  
+  // 방문자 수 집계 (기기별 고유 UUID, 하루 1회 기준)
   const logVisitor = trpc.visitors.log.useMutation();
   useEffect(() => {
     const trackVisit = async () => {
       try {
-        const key = 'visitor_logged_today';
+        // 기기별 고유 ID 생성 및 저장 (최초 1회)
+        const DEVICE_ID_KEY = 'husim_device_id';
+        let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
+        if (!deviceId) {
+          // UUID v4 생성 (crypto.randomUUID 미지원 환경 대비)
+          const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = Math.random() * 16 | 0;
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+          });
+          deviceId = uuid;
+          await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
+        }
+        // 하루 1회 방문 기록
+        const VISIT_DATE_KEY = 'husim_visit_date';
         const today = new Date().toDateString();
-        const last = await AsyncStorage.getItem(key);
-        if (last !== today) {
-          await AsyncStorage.setItem(key, today);
-          logVisitor.mutate({ deviceId: 'app_home', visitType: 'home' });
+        const lastVisit = await AsyncStorage.getItem(VISIT_DATE_KEY);
+        if (lastVisit !== today) {
+          await AsyncStorage.setItem(VISIT_DATE_KEY, today);
+          logVisitor.mutate({ deviceId, visitType: 'home' });
         }
       } catch (_) {}
     };
