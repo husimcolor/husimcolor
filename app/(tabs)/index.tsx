@@ -189,9 +189,9 @@ export default function HomeScreen() {
           >
             <View style={styles.premiumButtonInner}>
               <Text style={styles.premiumButtonBadge}>NEW</Text>
-              <Text style={styles.premiumButtonText}>🎨 컬러+도형 심층 해석 (유료)</Text>
+              <Text style={styles.premiumButtonText}>🎨 컬러+도형 심층 해석</Text>
             </View>
-            <Text style={styles.premiumButtonSub}>63장 카드 · 3만원 · 심층 분석</Text>
+            <Text style={styles.premiumButtonSub}>63장 카드 · 초기 오픈 무료체험중 · 정식 오픈 후 유료 전환 예정</Text>
           </Pressable>
         </Animated.View>
 
