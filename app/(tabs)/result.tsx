@@ -729,21 +729,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: 'column',
+    gap: 6,
   },
   tag: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    marginBottom: 4,
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
+    paddingVertical: 5,
+    borderRadius: 12,
+    alignSelf: 'stretch',
   },
   tagText: {
     fontSize: 12,
     fontWeight: '500',
-    flexShrink: 1,
+    lineHeight: 18,
+    flexWrap: 'wrap',
   },
   complementCard: {
     padding: 16,
