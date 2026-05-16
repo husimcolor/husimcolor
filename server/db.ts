@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -9,7 +10,20 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // Parse DATABASE_URL manually to handle ssl={...} JSON param that
+      // mysql2's URL parser may not support in all environments (e.g. Vercel).
+      const rawUrl = process.env.DATABASE_URL;
+      // Strip the ssl=... query param and pass ssl config explicitly
+      const urlWithoutSsl = rawUrl.replace(/[?&]ssl=[^&]*/g, "").replace(/\?$/, "");
+      const pool = mysql.createPool({
+        uri: urlWithoutSsl,
+        ssl: { rejectUnauthorized: true },
+        waitForConnections: true,
+        connectionLimit: 5,
+        connectTimeout: 10000,
+      }).promise();
+      _db = drizzle(pool) as any;
+      console.log("[Database] Connected successfully");
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
