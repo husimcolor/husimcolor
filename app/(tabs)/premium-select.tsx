@@ -12,11 +12,10 @@ import {
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenContainer } from "@/components/screen-container";
-import { useColors } from "@/hooks/use-colors";
 import { CARD_DATA, type CardData } from "@/constants/cardData";
 import { COLOR_DATA, type ColorData } from "@/constants/colorData";
 import { isPremiumActive } from "@/lib/trialUtils";
-import Svg, { Path, Circle, Line } from "react-native-svg";
+import Svg, { Path, Circle } from "react-native-svg";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - 48 - 32) / 5;
@@ -38,10 +37,234 @@ const CARD_BACK_COLOR = "#D8CEBC";
 const CARD_BACK_BORDER = "#B8A898";
 const CARD_BACK_SYMBOL_COLOR = "rgba(120, 105, 88, 0.60)";
 
-// 각 카드에 개별 Animated.Value를 생성하는 컴포넌트
-function AnimatedCard({
+// ─── CSS 주입 (웹 전용) ──────────────────────────────────────────────────────
+let premiumCSSInjected = false;
+function injectPremiumCSS() {
+  if (Platform.OS !== "web") return;
+  if (typeof document === "undefined") return;
+  if (premiumCSSInjected) return;
+  premiumCSSInjected = true;
+
+  const existing = document.getElementById("hyusim-premium-anim");
+  if (existing) existing.remove();
+
+  const style = document.createElement("style");
+  style.id = "hyusim-premium-anim";
+  style.textContent = `
+    /* 셔플 등장: 아래에서 페이드인 (0.9초) */
+    @keyframes premiumCardEnter {
+      0%   { opacity: 0; transform: translateY(20px) scale(0.96); }
+      60%  { opacity: 1; }
+      100% { opacity: 1; transform: translateY(0px) scale(1); }
+    }
+    /* 뒤집기 out: scaleX 1→0 (0.28초) */
+    @keyframes premiumFlipOut {
+      0%   { transform: scaleX(1); }
+      100% { transform: scaleX(0); }
+    }
+    /* 뒤집기 in: scaleX 0→1 (0.28초) */
+    @keyframes premiumFlipIn {
+      0%   { transform: scaleX(0); }
+      100% { transform: scaleX(1); }
+    }
+
+    /* 카드 래퍼: 초기 숨김 */
+    .premium-card-wrapper {
+      display: inline-block;
+      opacity: 0;
+    }
+    /* 셔플 등장 클래스 */
+    .premium-card-wrapper.entering {
+      animation: premiumCardEnter 0.9s ease both;
+    }
+    /* 뒤집기 래퍼 */
+    .premium-flip-inner {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .premium-flip-inner.flip-out {
+      animation: premiumFlipOut 0.28s ease forwards;
+    }
+    .premium-flip-inner.flip-in {
+      animation: premiumFlipIn 0.28s ease forwards;
+    }
+    .premium-flip-inner.selected {
+      transform: scale(1.06);
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// ─── 웹 카드 컴포넌트 ────────────────────────────────────────────────────────
+interface WebCardProps {
+  card: CardData;
+  index: number;
+  isFlipped: boolean;
+  isSelected: boolean;
+  onPress: () => void;
+  entryDelay: number;
+}
+
+function WebCard({ card, index, isFlipped, isSelected, onPress, entryDelay }: WebCardProps) {
+  const wrapperRef = useRef<any>(null);
+  const flipRef = useRef<any>(null);
+  const prevFlipped = useRef(isFlipped);
+  const [showFront, setShowFront] = useState(isFlipped);
+
+  // 셔플 등장 애니메이션 (rAF 두 번 중첩으로 첫 paint 후 시작)
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    // 딜레이 적용
+    const timer = setTimeout(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (el) {
+            el.style.animationDelay = "0ms";
+            el.classList.add("entering");
+          }
+        });
+      });
+    }, entryDelay);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 카드 뒤집기 애니메이션
+  useEffect(() => {
+    if (prevFlipped.current === isFlipped) return;
+    prevFlipped.current = isFlipped;
+
+    const flipEl = flipRef.current;
+    if (!flipEl) return;
+
+    // flip-out
+    flipEl.classList.remove("flip-in", "selected");
+    flipEl.classList.add("flip-out");
+
+    const onFlipOutEnd = () => {
+      flipEl.removeEventListener("animationend", onFlipOutEnd);
+      setShowFront(isFlipped);
+      flipEl.classList.remove("flip-out");
+
+      // flip-in
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          flipEl.classList.add("flip-in");
+          const onFlipInEnd = () => {
+            flipEl.removeEventListener("animationend", onFlipInEnd);
+            flipEl.classList.remove("flip-in");
+            if (isFlipped) {
+              flipEl.classList.add("selected");
+            }
+          };
+          flipEl.addEventListener("animationend", onFlipInEnd);
+        });
+      });
+    };
+    flipEl.addEventListener("animationend", onFlipOutEnd);
+  }, [isFlipped]);
+
+  const borderStyle = card.colorKor === "화이트"
+    ? { borderWidth: isSelected ? 2.5 : 1.5, borderColor: isSelected ? "#A08050" : "#D8C7A5", borderStyle: "solid" as const }
+    : card.colorKor === "블랙"
+    ? { borderWidth: isSelected ? 2.5 : 1.5, borderColor: "#D4AF37", borderStyle: "solid" as const }
+    : isSelected
+    ? { borderWidth: 2.5, borderColor: "#FFFFFF", borderStyle: "solid" as const }
+    : {};
+
+  return (
+    <div
+      ref={wrapperRef}
+      className="premium-card-wrapper"
+      style={{
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
+        cursor: "pointer",
+        flexShrink: 0,
+      }}
+      onClick={onPress}
+    >
+      <div
+        ref={flipRef}
+        className="premium-flip-inner"
+        style={{
+          borderRadius: 8,
+          overflow: "hidden",
+          backgroundColor: showFront ? card.colorHex : CARD_BACK_COLOR,
+          ...borderStyle,
+          boxShadow: isSelected
+            ? `0 4px 14px ${card.colorHex}88`
+            : "0 2px 6px rgba(0,0,0,0.18)",
+        }}
+      >
+        {showFront ? (
+          // 앞면: 컬러 + 도형
+          <div style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 2,
+          }}>
+            <span style={{
+              fontSize: 22,
+              color: card.colorKor === "화이트" ? "#D4AF37" : "rgba(255,255,255,0.92)",
+              lineHeight: 1.2,
+            }}>{card.shapeSymbol}</span>
+            <span style={{
+              fontSize: 8,
+              color: card.colorKor === "화이트" ? "#D4AF37" : "rgba(255,255,255,0.95)",
+              fontWeight: "700",
+              letterSpacing: 0.2,
+            }}>{card.colorKor}</span>
+          </div>
+        ) : (
+          // 뒷면: 베이지 + 물결 패턴
+          <div style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+          }}>
+            {/* SVG 물결 패턴 */}
+            <svg
+              width={CARD_WIDTH}
+              height={CARD_HEIGHT}
+              viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`}
+              style={{ position: "absolute", top: 0, left: 0 }}
+            >
+              <path
+                d={`M -10 ${CARD_HEIGHT * 0.25} Q ${CARD_WIDTH * 0.25} ${CARD_HEIGHT * 0.18} ${CARD_WIDTH * 0.5} ${CARD_HEIGHT * 0.25} Q ${CARD_WIDTH * 0.75} ${CARD_HEIGHT * 0.32} ${CARD_WIDTH + 10} ${CARD_HEIGHT * 0.25}`}
+                stroke="rgba(120, 105, 88, 0.18)" strokeWidth="1" fill="none"
+              />
+              <path
+                d={`M -10 ${CARD_HEIGHT * 0.5} Q ${CARD_WIDTH * 0.25} ${CARD_HEIGHT * 0.43} ${CARD_WIDTH * 0.5} ${CARD_HEIGHT * 0.5} Q ${CARD_WIDTH * 0.75} ${CARD_HEIGHT * 0.57} ${CARD_WIDTH + 10} ${CARD_HEIGHT * 0.5}`}
+                stroke="rgba(120, 105, 88, 0.14)" strokeWidth="1" fill="none"
+              />
+              <path
+                d={`M -10 ${CARD_HEIGHT * 0.75} Q ${CARD_WIDTH * 0.25} ${CARD_HEIGHT * 0.68} ${CARD_WIDTH * 0.5} ${CARD_HEIGHT * 0.75} Q ${CARD_WIDTH * 0.75} ${CARD_HEIGHT * 0.82} ${CARD_WIDTH + 10} ${CARD_HEIGHT * 0.75}`}
+                stroke="rgba(120, 105, 88, 0.12)" strokeWidth="1" fill="none"
+              />
+              <circle cx={CARD_WIDTH * 0.5} cy={CARD_HEIGHT * 0.5} r="2.5" fill="rgba(120, 105, 88, 0.25)" />
+              <circle cx={CARD_WIDTH * 0.5} cy={CARD_HEIGHT * 0.5} r="5" stroke="rgba(120, 105, 88, 0.15)" strokeWidth="0.8" fill="none" />
+              <circle cx={CARD_WIDTH * 0.5} cy={CARD_HEIGHT * 0.5} r="8.5" stroke="rgba(120, 105, 88, 0.10)" strokeWidth="0.6" fill="none" />
+            </svg>
+            <span style={{ fontSize: 10, color: CARD_BACK_SYMBOL_COLOR, position: "relative", zIndex: 1 }}>✦</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── 네이티브 카드 컴포넌트 ──────────────────────────────────────────────────
+function NativeCard({
   card,
-  index,
   isFlipped,
   isSelected,
   flipAnim,
@@ -49,7 +272,6 @@ function AnimatedCard({
   onPress,
 }: {
   card: CardData;
-  index: number;
   isFlipped: boolean;
   isSelected: boolean;
   flipAnim: Animated.Value;
@@ -78,49 +300,6 @@ function AnimatedCard({
     outputRange: ["180deg", "360deg"],
   });
 
-  // 웹 환경(인앱 브라우저 포함)에서는 3D 플립 미지원 → 단순 2D 렌더링
-  if (Platform.OS === "web") {
-    return (
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={0.85}
-        style={[
-          styles.cardWrapper,
-          {
-            width: CARD_WIDTH,
-            height: CARD_HEIGHT,
-            borderRadius: 8,
-            overflow: "hidden",
-            borderWidth: card.colorKor === "화이트" ? (isSelected ? 2.5 : 1.5) : (isSelected ? 2.5 : 0),
-            borderColor: card.colorKor === "블랙"
-              ? "#D4AF37"
-              : card.colorKor === "화이트"
-              ? (isSelected ? "#A08050" : "#D8C7A5")
-              : "#FFFFFF",
-            backgroundColor: isFlipped ? card.colorHex : CARD_BACK_COLOR,
-          },
-        ]}
-      >
-        {isFlipped ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <Text style={[
-              styles.shapeSymbol,
-              card.colorKor === "화이트" && { color: "#D4AF37" },
-            ]}>{card.shapeSymbol}</Text>
-            <Text style={[
-              styles.cardFrontColorName,
-              card.colorKor === "화이트" && { color: "#D4AF37" },
-            ]} numberOfLines={1}>{card.colorKor}</Text>
-          </View>
-        ) : (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontSize: 10, color: CARD_BACK_SYMBOL_COLOR }}>✦</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  }
-
   return (
     <Animated.View
       style={{
@@ -140,7 +319,7 @@ function AnimatedCard({
         activeOpacity={0.85}
         style={[styles.cardWrapper, { width: CARD_WIDTH, height: CARD_HEIGHT }]}
       >
-        {/* 카드 뒷면 - 연베이지 */}
+        {/* 카드 뒷면 */}
         <Animated.View
           style={[
             styles.cardFace,
@@ -154,35 +333,24 @@ function AnimatedCard({
             },
           ]}
         >
-          {/* 은은한 물결 + 점 패턴 */}
           <Svg
             width={CARD_WIDTH}
             height={CARD_HEIGHT}
             viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`}
             style={{ position: "absolute", top: 0, left: 0 }}
           >
-            {/* 물결 라인 1 */}
             <Path
               d={`M -10 ${CARD_HEIGHT * 0.25} Q ${CARD_WIDTH * 0.25} ${CARD_HEIGHT * 0.18} ${CARD_WIDTH * 0.5} ${CARD_HEIGHT * 0.25} Q ${CARD_WIDTH * 0.75} ${CARD_HEIGHT * 0.32} ${CARD_WIDTH + 10} ${CARD_HEIGHT * 0.25}`}
-              stroke="rgba(120, 105, 88, 0.18)"
-              strokeWidth="1"
-              fill="none"
+              stroke="rgba(120, 105, 88, 0.18)" strokeWidth="1" fill="none"
             />
-            {/* 물결 라인 2 */}
             <Path
               d={`M -10 ${CARD_HEIGHT * 0.5} Q ${CARD_WIDTH * 0.25} ${CARD_HEIGHT * 0.43} ${CARD_WIDTH * 0.5} ${CARD_HEIGHT * 0.5} Q ${CARD_WIDTH * 0.75} ${CARD_HEIGHT * 0.57} ${CARD_WIDTH + 10} ${CARD_HEIGHT * 0.5}`}
-              stroke="rgba(120, 105, 88, 0.14)"
-              strokeWidth="1"
-              fill="none"
+              stroke="rgba(120, 105, 88, 0.14)" strokeWidth="1" fill="none"
             />
-            {/* 물결 라인 3 */}
             <Path
               d={`M -10 ${CARD_HEIGHT * 0.75} Q ${CARD_WIDTH * 0.25} ${CARD_HEIGHT * 0.68} ${CARD_WIDTH * 0.5} ${CARD_HEIGHT * 0.75} Q ${CARD_WIDTH * 0.75} ${CARD_HEIGHT * 0.82} ${CARD_WIDTH + 10} ${CARD_HEIGHT * 0.75}`}
-              stroke="rgba(120, 105, 88, 0.12)"
-              strokeWidth="1"
-              fill="none"
+              stroke="rgba(120, 105, 88, 0.12)" strokeWidth="1" fill="none"
             />
-            {/* 중앙 작은 점 장식 */}
             <Circle cx={CARD_WIDTH * 0.5} cy={CARD_HEIGHT * 0.5} r="2.5" fill="rgba(120, 105, 88, 0.25)" />
             <Circle cx={CARD_WIDTH * 0.5} cy={CARD_HEIGHT * 0.5} r="5" stroke="rgba(120, 105, 88, 0.15)" strokeWidth="0.8" fill="none" />
             <Circle cx={CARD_WIDTH * 0.5} cy={CARD_HEIGHT * 0.5} r="8.5" stroke="rgba(120, 105, 88, 0.10)" strokeWidth="0.6" fill="none" />
@@ -200,7 +368,6 @@ function AnimatedCard({
               transform: [{ rotateY: backRotate }],
               backfaceVisibility: "hidden",
               position: "absolute",
-              // 블랙 카드: 골드 테두리, 화이트 카드: 연한 골드 테두리(항상 표시), 나머지: 흰색 테두리
               borderWidth: card.colorKor === "화이트" ? (isSelected ? 2.5 : 1.5) : (isSelected ? 2.5 : 0),
               borderColor: card.colorKor === "블랙"
                 ? "#D4AF37"
@@ -210,20 +377,11 @@ function AnimatedCard({
             },
           ]}
         >
-          {/* 화이트 카드: 도형·텍스트 골드 / 블랙 카드: 흰색 유지 */}
-          <Text
-            style={[
-              styles.shapeSymbol,
-              card.colorKor === "화이트" && { color: "#D4AF37" },
-            ]}
-          >
+          <Text style={[styles.shapeSymbol, card.colorKor === "화이트" && { color: "#D4AF37" }]}>
             {card.shapeSymbol}
           </Text>
           <Text
-            style={[
-              styles.cardFrontColorName,
-              card.colorKor === "화이트" && { color: "#D4AF37" },
-            ]}
+            style={[styles.cardFrontColorName, card.colorKor === "화이트" && { color: "#D4AF37" }]}
             numberOfLines={1}
           >
             {card.colorKor}
@@ -234,11 +392,11 @@ function AnimatedCard({
   );
 }
 
+// ─── 메인 화면 ──────────────────────────────────────────────────────────────
 export default function PremiumSelectScreen() {
-  const colors = useColors();
   const router = useRouter();
 
-  // 진입 시 체험/결제 상태 확인 - 미활성화면 결제 화면으로 이동
+  // 진입 시 체험/결제 상태 확인
   useEffect(() => {
     isPremiumActive().then((active) => {
       if (!active) {
@@ -247,12 +405,17 @@ export default function PremiumSelectScreen() {
     });
   }, []);
 
+  // CSS 주입 (웹 전용, 최초 1회)
+  useEffect(() => {
+    injectPremiumCSS();
+  }, []);
+
   const [shuffledCards] = useState<CardData[]>(() => shuffleArray(CARD_DATA));
   const [selectedCards, setSelectedCards] = useState<(CardData | null)[]>([null, null, null]);
   const [flippedIndices, setFlippedIndices] = useState<Set<number>>(new Set());
   const [isShuffling, setIsShuffling] = useState(true);
   const [prevSelectedColors, setPrevSelectedColors] = useState<ColorData[]>([]);
-  // 이전 단계에서 선택한 컬러 불러오기
+
   useEffect(() => {
     AsyncStorage.getItem("premiumSelectedColors").then(data => {
       if (data) {
@@ -264,19 +427,18 @@ export default function PremiumSelectScreen() {
     });
   }, []);
 
-  // 각 카드의 flip 애니메이션
+  // 네이티브용 flip 애니메이션
   const flipAnims = useRef<Animated.Value[]>(
     Array.from({ length: 63 }, () => new Animated.Value(0))
   ).current;
 
   const selectedCount = selectedCards.filter(Boolean).length;
 
-  // 셔플 완료 타이머 - 마지막 카드가 나타나는 시간 이후 isShuffling = false
+  // 셔플 완료 타이머 (63장 × 18ms + 900ms 애니메이션 = 약 2034ms)
   useEffect(() => {
-    // 63장 카드의 마지막 딜레이: 62 * 18 = 1116ms + 300ms 애니메이션 = 약 1420ms
     const timer = setTimeout(() => {
       setIsShuffling(false);
-    }, 1500);
+    }, 2100);
     return () => clearTimeout(timer);
   }, []);
 
@@ -287,6 +449,7 @@ export default function PremiumSelectScreen() {
 
       const selectedIndex = selectedCards.findIndex((c) => c?.id === card.id);
       if (selectedIndex !== -1) {
+        // 선택 취소
         const newSelected = [...selectedCards];
         newSelected[selectedIndex] = null;
         setSelectedCards(newSelected);
@@ -295,21 +458,25 @@ export default function PremiumSelectScreen() {
           next.delete(index);
           return next;
         });
-        Animated.timing(flipAnims[index], {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }).start();
+        if (Platform.OS !== "web") {
+          Animated.timing(flipAnims[index], {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
+        }
         return;
       }
 
       if (selectedCount >= 3) return;
 
-      Animated.timing(flipAnims[index], {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }).start();
+      if (Platform.OS !== "web") {
+        Animated.timing(flipAnims[index], {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+      }
 
       setFlippedIndices((prev) => new Set([...prev, index]));
 
@@ -342,6 +509,7 @@ export default function PremiumSelectScreen() {
             <Text style={styles.stepBadgeText}>2단계 · 심리카드 흐름</Text>
           </View>
         </View>
+
         {/* 이전 단계 컬러 요약 */}
         {prevSelectedColors.length > 0 && (
           <View style={[styles.colorFlowBanner, { backgroundColor: "#8BAF8B11", borderColor: "#8BAF8B44" }]}>
@@ -361,6 +529,7 @@ export default function PremiumSelectScreen() {
             </Text>
           </View>
         )}
+
         {/* 헤더 */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: '#3D3530' }]}>
@@ -434,18 +603,31 @@ export default function PremiumSelectScreen() {
           {shuffledCards.map((card, index) => {
             const isFlipped = flippedIndices.has(index);
             const isSelected = selectedCards.some((c) => c?.id === card.id);
-            // 카드마다 순차적 딜레이 (0~62번 카드: 0ms ~ 1116ms)
-            const revealDelay = index * 18;
+            // 순차 딜레이: 0~62번 카드 → 0ms ~ 1116ms (18ms 간격)
+            const entryDelay = index * 18;
+
+            if (Platform.OS === "web") {
+              return (
+                <WebCard
+                  key={card.id}
+                  card={card}
+                  index={index}
+                  isFlipped={isFlipped}
+                  isSelected={isSelected}
+                  onPress={() => handleCardPress(index)}
+                  entryDelay={entryDelay}
+                />
+              );
+            }
 
             return (
-              <AnimatedCard
+              <NativeCard
                 key={card.id}
                 card={card}
-                index={index}
                 isFlipped={isFlipped}
                 isSelected={isSelected}
                 flipAnim={flipAnims[index]}
-                revealDelay={revealDelay}
+                revealDelay={entryDelay}
                 onPress={() => handleCardPress(index)}
               />
             );
@@ -579,10 +761,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 5,
     elevation: 4,
-  },
-  cardBackSymbol: {
-    color: CARD_BACK_SYMBOL_COLOR,
-    fontSize: 18,
   },
   shapeSymbol: {
     fontSize: 24,
