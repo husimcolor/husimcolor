@@ -663,23 +663,27 @@ export default function PremiumResultScreen() {
             </Text>
             <View style={styles.tagsRow}>
               {(() => {
-                // 정화·안정·내면 성향 콜러: 레드·오렌지 같은 고에너지 콜러와 충돌
+                // 정화·안정·내면 성향 콜러: 레드·코랄·오렌지 같은 고에너지 콜러와 충돌
                 const CALM_RECOVERY = [
                   '화이트', '아이보리', '비이지', '그린', '세이지그린',
                   '네이비', '블루', '라이트블루', '스카이블루',
-                  '라벤더', '퍼플', '라일랙', '인디고', '실버', '미드나이트',
+                  '라벤더', '퍼플', '라일락', '인디고', '실버', '미드나이트',
                 ];
                 // 강한 확장·추진 에너지 콜러: 정화·안정 회복 방향에는 제외
-                const HIGH_ENERGY = ['레드', '오렌지', '마젠타'];
+                const HIGH_ENERGY = ['레드', '코랄', '오렌지', '마젠타'];
                 // 유사 계열 그룹: 같은 그룹에서 하나만 추천
+                // 코랄·오렌지·레드는 에너지 방향이 격쳐 동시 추천 불가
                 const SIMILAR_GROUPS: string[][] = [
                   ['블루', '네이비', '인디고', '미드나이트'],
-                  ['레드', '코랄', '마젠타'],
+                  ['레드', '코랄', '오렌지', '마젠타'],  // 활성 계열: 전체 그룹에서 1개만 허용
                   ['그린', '세이지그린', '올리브'],
-                  ['라벤더', '라일랙', '퍼플'],
+                  ['라벤더', '라일락', '퍼플'],
                   ['화이트', '아이보리', '크림', '비이지'],
-                  ['민트', '스카이블루', '라이트블루', '틸'],
+                  ['미트', '스카이블루', '라이트블루', '틸'],
                 ];
+                // 레드 허용 조건: 사용자 카드 3장 모두 쿨/안정 계열일 때만 (극심한 무기력 상황)
+                const COOL_STABLE_KORS = ['블루', '네이비', '인디고', '스카이블루', '틸', '미트', '라벤더', '실버', '화이트', '크림', '아이보리', '비이지'];
+                const allCardsAreCoolStable = [card1.colorKor, card2.colorKor, card3.colorKor].every(c => COOL_STABLE_KORS.includes(c));
                 const isCalm = CALM_RECOVERY.includes(card3.colorKor);
                 // 현재 이미 강하게 활성화된 컬러(3장 카드에 사용된 컬러) 목록
                 const activeColors = new Set([card1.colorKor, card2.colorKor, card3.colorKor]);
@@ -696,14 +700,16 @@ export default function PremiumResultScreen() {
                 const filtered = allColors.filter(c => {
                   if (seen.has(c.name)) return false;
                   seen.add(c.name);
-                  // 이미 카드에서 강하게 나타난 컬러 자체는 제외
+                  // 이미 카드에서 강하게 나타난 콜러 자체는 제외
                   if (activeColors.has(c.name)) return false;
+                  // 레드는 특수 조건(전체 쿨/안정 계열)일 때만 허용
+                  if (c.name === '레드' && !allCardsAreCoolStable) return false;
                   // 회복 방향이 안정·정리 성향이면 고에너지 콜러는 제외
                   if (isCalm && HIGH_ENERGY.includes(c.name)) return false;
-                  // 유사 계열 중복 방지: 같은 그룹에서 이미 추천된 컬러가 있으면 제외
+                  // 유사 계열 중복 방지: 같은 그룹에서 이미 추천된 콜러가 있으면 제외
                   const groupIdx = SIMILAR_GROUPS.findIndex(g => g.includes(c.name));
                   if (groupIdx >= 0) {
-                    // 이미 활성화된 컬러와 같은 계열이면 우선순위 낮춤(뒤로 미룸)
+                    // 이미 활성화된 콜러와 같은 계열이면 우선순위 낙춴(뒤로 미릉)
                     if (activeGroups.has(groupIdx)) return false;
                     if (usedGroups.has(groupIdx)) return false;
                     usedGroups.add(groupIdx);
@@ -721,6 +727,7 @@ export default function PremiumResultScreen() {
                   const extra = allColors.filter(c => {
                     if (seen2.has(c.name)) return false;
                     if (activeColors.has(c.name)) return false;
+                    if (c.name === '레드' && !allCardsAreCoolStable) return false;
                     if (isCalm && HIGH_ENERGY.includes(c.name)) return false;
                     const gIdx = SIMILAR_GROUPS.findIndex(g => g.includes(c.name));
                     if (gIdx >= 0) {
