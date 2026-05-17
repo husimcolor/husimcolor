@@ -47,6 +47,7 @@ const POSITION_LABELS = [
 type JobCoaching = {
   routineNote: string;   // 보완 루틴 하단에 추가될 한 문장
   coachingNote: string;  // 종합 코칭 메시지 하단에 추가될 한 문장
+  scriptureVerse?: { text: string; ref: string; label: string }; // 조건부 위로 구절
 };
 
 // 신앙에 따라 루틴 표현을 자연스럽게 치환
@@ -97,7 +98,72 @@ function extractFirstSentence(text: string): string {
   return text.split('\n')[0].trim();
 }
 
-function getJobCoaching(job: string, faith: string, colorId?: string): JobCoaching {
+// 직업+고민 조합 코칭 노트 (핵심 1문장)
+function getJobConcernNote(job: string, concerns: string[]): string {
+  const hasConcern = (keywords: string[]) =>
+    concerns.some(c => keywords.some(k => c.includes(k)));
+
+  if (job === '학생') {
+    if (hasConcern(['진로', '일'])) return '기질에 맞는 방향은 억지로 찾는 것이 아니라, 지금 끌리는 것을 따라가다 보면 자연스럽게 드러납니다.';
+    if (hasConcern(['관계'])) return '친구 관계에서 오는 감정 소모가 생각보다 클 수 있습니다. 나를 편하게 해주는 한 사람과의 시간이 회복의 시작입니다.';
+    if (hasConcern(['번아웃', '스트레스'])) return '학업 스트레스는 몸보다 마음이 먼저 신호를 보냅니다. 오늘은 10분만 완전히 쉬어도 됩니다.';
+    if (hasConcern(['자기이해'])) return '비교는 나를 흐리게 합니다. 지금 내가 느끼는 것이 나의 진짜 흐름입니다.';
+    return '잘해야 한다는 압박이 오히려 흐름을 막고 있을 수 있습니다. 오늘 하루, 결과보다 과정에 머물러 보세요.';
+  }
+  if (job === '자영업') {
+    if (hasConcern(['진로', '일'])) return '사업 방향이 흔들릴 때는 처음 시작한 이유로 돌아가보세요. 그 에너지가 다시 흐름을 잡아줍니다.';
+    if (hasConcern(['번아웃', '스트레스'])) return '재정 스트레스는 판단력을 흐립니다. 오늘은 숫자보다 에너지 회복에 집중해보세요.';
+    if (hasConcern(['관계'])) return '고객과의 에너지 소모가 쌓이면 방향도 흔들립니다. 나의 에너지 원천을 먼저 채워야 합니다.';
+    return '책임감이 많을수록 에너지 소진도 빠릅니다. 하루 한 번, 일에서 완전히 분리되는 시간이 지속 가능한 흐름을 만듭니다.';
+  }
+  if (job === '프리랜서') {
+    if (hasConcern(['번아웃', '스트레스'])) return '자기관리가 곧 사업 관리입니다. 에너지 기복을 인식하는 것이 회복의 첫 단계입니다.';
+    if (hasConcern(['감정 회복'])) return '감정 기복이 심할 때는 창의성보다 안정을 먼저 회복해야 합니다. 오늘은 쉬는 것이 일입니다.';
+    if (hasConcern(['진로', '일'])) return '불안정한 리듬 속에서도 나만의 페이스를 찾는 것이 지속 가능한 창작의 기반입니다.';
+    return '일과 쉼의 경계가 없을수록 창의성이 먼저 고갈됩니다. 오늘 업무 종료 시간을 정해보세요.';
+  }
+  if (job === '사역자') {
+    if (hasConcern(['감정 회복'])) return '감정 소진은 사역의 질을 떨어뜨립니다. 회복 없이 섬김은 지속될 수 없습니다.';
+    if (hasConcern(['관계'])) return '관계적 부담이 클 때는 먼저 나의 내면을 채우는 시간이 필요합니다.';
+    if (hasConcern(['영성', '내면'])) return '영적 돌봄을 받는 사람도 자신의 영적 회복이 필요합니다. 오늘은 받는 사람이 되어보세요.';
+    return '섬기는 역할 속에서 나 자신을 돌보는 경계가 반드시 필요합니다. 돌봄 피로는 조용히 쌓입니다.';
+  }
+  if (job === '서비스직') {
+    if (hasConcern(['번아웃', '스트레스'])) return '타인의 감정을 담아내는 역할이라면, 퇴근 후 10분은 자신만을 위한 시간으로 비워두세요.';
+    if (hasConcern(['관계'])) return '모든 관계에 같은 에너지를 쏟지 않아도 됩니다. 나를 편하게 해주는 관계에 집중해보세요.';
+    return '타인의 필요를 채우다 보면 나의 감정은 뒤로 밀립니다. 오늘 퇴근 후 5분만 나를 위해 써보세요.';
+  }
+  if (job === '주부') {
+    if (hasConcern(['관계'])) return '가족 관계의 에너지 소모는 가장 보이지 않는 피로입니다. 나의 감정도 중요합니다.';
+    if (hasConcern(['감정 회복'])) return '하루 종일 타인의 필요를 채우다 보면 나의 감정은 뒤로 밀립니다. 오늘 5분만 나를 위해 써보세요.';
+    return '가족을 위한 돌봄 속에서 나를 위한 5분이 가장 중요한 회복 루틴입니다.';
+  }
+  if (job === '무직') return '지금의 멈춤은 다음 흐름을 준비하는 시간입니다. 조급함보다 회복의 리듬을 먼저 찾아보세요.';
+  // 생산직, 기타
+  return '';
+}
+
+// 3번 카드 컬러 계열 기준 위로 성경구절 선택
+function getScriptureVerse(colorId: string, faith: string): { text: string; ref: string; label: string } {
+  const label = faith === '기독교' ? '✝️ 오늘의 말씀' : '💛 위로의 한 마디';
+  const family = getColorFamily(colorId);
+  const verseMap: Record<string, { text: string; ref: string }> = {
+    warm_active: { text: '내가 너와 함께 하노라 두려워하지 말라', ref: '이사야 41:10' },
+    warm_social: { text: '사랑은 오래 참고 온유하며', ref: '고린도전서 13:4' },
+    yellow:      { text: '내 멍에는 쉽고 내 짐은 가벼움이라', ref: '마태복음 11:30' },
+    green:       { text: '여호와는 나의 목자시니 내게 부족함이 없으리로다', ref: '시편 23:1' },
+    blue:        { text: '하나님이 우리에게 주신 것은 두려워하는 마음이 아니요', ref: '디모데후서 1:7' },
+    purple:      { text: '네 마음을 다하여 여호와를 신뢰하고', ref: '잠언 3:5' },
+    lavender:    { text: '내 영혼아 잠잠히 하나님만 바라라', ref: '시편 62:5' },
+    cool:        { text: '평강의 하나님이 친히 너희와 함께 하시리라', ref: '빌립보서 4:9' },
+    black:       { text: '사망의 음침한 골짜기로 다닐지라도 해를 두려워하지 않을 것은', ref: '시편 23:4' },
+    neutral:     { text: '수고하고 무거운 짐 진 자들아 다 내게로 오라', ref: '마태복음 11:28' },
+  };
+  const verse = verseMap[family] ?? verseMap['neutral'];
+  return { ...verse, label };
+}
+
+function getJobCoaching(job: string, faith: string, colorId?: string, concerns?: string[]): JobCoaching {
   // 신앙별 추가 문구
   const faithNote =
     faith === "기독교"
@@ -148,9 +214,14 @@ function getJobCoaching(job: string, faith: string, colorId?: string): JobCoachi
   const family = colorId ? getColorFamily(colorId) : 'neutral';
   const colorRoutineNote = colorRoutineMap[family] ?? colorRoutineMap['neutral'];
 
-  // 콜러 루틴 문장만 출력 (직업 맥락/신앙 문장 제거 - 반복 방지)
-  const base = { routineNote: colorRoutineNote, coachingNote: "" };
-  return base;
+  // 직업+고민 조합 코칭 노트 (1문장)
+  const coachingNote = getJobConcernNote(job, concerns ?? []);
+
+  // 조건부 성경구절 (기독교 / 무교 / 학생)
+  const showScripture = faith === '기독교' || faith === '무교' || job === '학생';
+  const scriptureVerse = (showScripture && colorId) ? getScriptureVerse(colorId, faith) : undefined;
+
+  return { routineNote: colorRoutineNote, coachingNote, scriptureVerse };
 }
 
 function SectionCard({
@@ -307,8 +378,8 @@ export default function PremiumResultScreen() {
 
   const [card1, card2, card3] = cards;
 
-  // 직업별 맞춤 문구
-  const jobCoaching = profile ? getJobCoaching(profile.job, profile.faith, card1?.color) : null;
+  // 직업별 맞춤 문구 (3번 카드 콜러 기준 성경구절)
+  const jobCoaching = profile ? getJobCoaching(profile.job, profile.faith, card3?.color, profile.concerns) : null;
 
   // 3카드 조합 종합 코칭 메시지 생성 (감정 공감 중심)
   const combinedCoaching = generateCombinedCoaching(card1, card2, card3, prevColors.length >= 3 ? prevColors : undefined);
@@ -666,8 +737,29 @@ export default function PremiumResultScreen() {
           <Text style={[styles.coachingText, { color: '#3D3530' }]}>
             {combinedCoaching}
           </Text>
-
+          {/* 직업+고민 조합 코칭 노트 */}
+          {jobCoaching?.coachingNote ? (
+            <View style={styles.jobCoachingNote}>
+              <Text style={[styles.jobCoachingNoteText, { color: '#3D6B3D' }]}>
+                💡 {jobCoaching.coachingNote}
+              </Text>
+            </View>
+          ) : null}
         </View>
+        {/* 조건부 위로 성경구절 */}
+        {jobCoaching?.scriptureVerse ? (
+          <View style={styles.scriptureBox}>
+            <Text style={[styles.scriptureLabel, { color: '#7A5C30' }]}>
+              {jobCoaching.scriptureVerse.label}
+            </Text>
+            <Text style={[styles.scriptureText, { color: '#4A3010' }]}>
+              “{jobCoaching.scriptureVerse.text}”
+            </Text>
+            <Text style={[styles.scriptureRef, { color: '#A0845C' }]}>
+              — {jobCoaching.scriptureVerse.ref}
+            </Text>
+          </View>
+        ) : null}
 
         {/* 보완 루틴 섹션 */}
         <View style={[styles.wellnessSection, { backgroundColor: '#FFF8F0', borderColor: '#E8D5B0' }]}>
@@ -1373,11 +1465,44 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#8BAF8B33",
   },
+  jobCoachingNoteText: {
+    fontSize: 13,
+    lineHeight: 22,
+    fontStyle: "normal",
+    fontWeight: "500",
+  },
   jobCoachingText: {
     fontSize: 13,
     lineHeight: 22,
     fontStyle: "normal",
     fontWeight: "500",
+  },
+  scriptureBox: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D4B896',
+    backgroundColor: '#FDF6EC',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    marginBottom: 12,
+    gap: 6,
+    alignItems: 'center',
+  },
+  scriptureLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  scriptureText: {
+    fontSize: 15,
+    lineHeight: 24,
+    fontWeight: '500',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  scriptureRef: {
+    fontSize: 12,
+    fontWeight: '400',
   },
   shareButton: {
     borderRadius: 12,
