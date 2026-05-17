@@ -59,40 +59,53 @@ const CARD_INFO = [
 let cssInjected = false;
 function injectCardCSS() {
   if (Platform.OS !== 'web') return;
+  if (typeof document === 'undefined') return;
   if (cssInjected) return;
   cssInjected = true;
+
+  // 기존 태그 제거
+  const existing = document.getElementById('hyusim-card-anim');
+  if (existing) existing.remove();
 
   const style = document.createElement('style');
   style.id = 'hyusim-card-anim';
   style.textContent = `
+    /* 셔플 등장: 아래에서 페이드인 (0.9초) */
     @keyframes cardEnter {
-      0%   { opacity: 0; transform: translateY(18px); }
+      0%   { opacity: 0; transform: translateY(22px); }
       100% { opacity: 1; transform: translateY(0px); }
     }
+    /* 뒤집기 out: scaleX 1→0 (0.28초) */
     @keyframes cardFlipOut {
       0%   { transform: scaleX(1); }
       100% { transform: scaleX(0); }
     }
+    /* 뒤집기 in: scaleX 0→1 (0.28초) */
     @keyframes cardFlipIn {
       0%   { transform: scaleX(0); }
       100% { transform: scaleX(1); }
     }
-    @keyframes cardSelect {
-      0%   { transform: scaleX(1) scale(1); }
-      50%  { transform: scaleX(1) scale(1.10); }
-      100% { transform: scaleX(1) scale(1.08); }
+
+    /* 셔플 래퍼: 순수 div에 적용 */
+    .hyusim-card-wrapper {
+      display: inline-block;
+      opacity: 0;
     }
-    .card-enter {
-      animation: cardEnter 0.38s ease both;
+    .hyusim-card-wrapper.entering {
+      animation: cardEnter 0.9s ease both;
     }
-    .card-flip-out {
-      animation: cardFlipOut 0.16s ease forwards;
+    /* 뒤집기 래퍼 */
+    .hyusim-flip-wrapper {
+      display: inline-block;
     }
-    .card-flip-in {
-      animation: cardFlipIn 0.16s ease forwards;
+    .hyusim-flip-wrapper.flip-out {
+      animation: cardFlipOut 0.28s ease forwards;
     }
-    .card-selected {
-      animation: cardSelect 0.22s ease forwards;
+    .hyusim-flip-wrapper.flip-in {
+      animation: cardFlipIn 0.28s ease forwards;
+    }
+    .hyusim-flip-wrapper.selected {
+      transform: scale(1.08);
     }
   `;
   document.head.appendChild(style);
@@ -183,7 +196,6 @@ function CardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey }: 
   const borderRadius = circleSize / 2;
   const gl = getGlassLayers(item);
 
-  // ── 웹 전용: CSS 클래스 기반 애니메이션 ──
   if (Platform.OS === 'web') {
     return (
       <WebCardItem
@@ -200,7 +212,6 @@ function CardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey }: 
     );
   }
 
-  // ── 네이티브: Animated API ──
   return (
     <NativeCardItem
       item={item}
@@ -216,7 +227,7 @@ function CardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey }: 
   );
 }
 
-// ─── 웹 카드 컴포넌트 ────────────────────────────────────────────────────────
+// ─── 웹 카드: 순수 div 래퍼로 animation 적용 ────────────────────────────────
 interface InnerCardProps {
   item: ColorData;
   index: number;
@@ -231,68 +242,168 @@ interface InnerCardProps {
 
 function WebCardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey, circleSize, borderRadius, gl }: InnerCardProps) {
   const [showFront, setShowFront] = useState(false);
-  const [flipPhase, setFlipPhase] = useState<'idle' | 'out' | 'in'>('idle');
+  const [flipClass, setFlipClass] = useState('');
+  const [entering, setEntering] = useState(false);
   const prevSelected = useRef(isSelected);
-  // 셔플 애니메이션용 key (shuffleKey 변경 시 재마운트 효과)
-  const [animKey, setAnimKey] = useState(shuffleKey);
+  const wrapperRef = useRef<any>(null);
+  const flipWrapperRef = useRef<any>(null);
 
+  // shuffleKey 변경 시 셔플 애니메이션 재실행
   useEffect(() => {
-    setAnimKey(shuffleKey);
-    // 새 셔플 시 앞면 리셋
     setShowFront(false);
-    setFlipPhase('idle');
+    setFlipClass('');
     prevSelected.current = false;
+    setEntering(false);
+
+    // 다음 프레임에 entering 클래스 추가 (animation 재실행을 위해)
+    const t = setTimeout(() => {
+      setEntering(true);
+    }, 10);
+    return () => clearTimeout(t);
   }, [shuffleKey]);
 
+  // 카드 뒤집기
   useEffect(() => {
     if (prevSelected.current === isSelected) return;
     prevSelected.current = isSelected;
 
-    // 뒤집기: out → 면 교체 → in
-    setFlipPhase('out');
-    const t = setTimeout(() => {
+    setFlipClass('flip-out');
+    const t1 = setTimeout(() => {
       setShowFront(isSelected);
-      setFlipPhase('in');
-      const t2 = setTimeout(() => setFlipPhase('idle'), 180);
+      setFlipClass('flip-in');
+      const t2 = setTimeout(() => {
+        setFlipClass(isSelected ? 'selected' : '');
+      }, 300);
       return () => clearTimeout(t2);
-    }, 170);
-    return () => clearTimeout(t);
+    }, 290);
+    return () => clearTimeout(t1);
   }, [isSelected]);
 
-  // 셔플 등장 애니메이션: animKey 변경 시 재적용
-  const entryStyle: React.CSSProperties = {
-    animationName: 'cardEnter',
-    animationDuration: '0.38s',
+  // 카드 내용 (앞면/뒷면)
+  const cardContent = (
+    <View
+      style={{
+        width: circleSize,
+        height: circleSize,
+        borderRadius,
+        overflow: 'hidden',
+        borderWidth: isSelected ? 2.5 : 1.5,
+        borderColor: getLightBorderColor(item.hex, isSelected, '#3D3530'),
+        shadowColor: item.hex,
+        shadowOpacity: isSelected ? 0.60 : 0.28,
+        shadowOffset: { width: 0, height: isSelected ? 5 : 2 },
+        shadowRadius: isSelected ? 12 : 6,
+        elevation: isSelected ? 10 : 4,
+      }}
+    >
+      {/* 뒷면: 베이지 크림 */}
+      {!showFront && (
+        <>
+          <LinearGradient
+            colors={['#F5EFE4', '#EDE4D6', '#E0D5C4']}
+            start={{ x: 0.2, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={[StyleSheet.absoluteFillObject, { alignItems: 'center', justifyContent: 'center' }]}>
+            <Text style={{ fontSize: circleSize * 0.38, opacity: 0.35 }}>🌿</Text>
+          </View>
+        </>
+      )}
+      {/* 앞면: 실제 컬러 */}
+      {showFront && (
+        <>
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: item.hex }]} />
+          <LinearGradient
+            colors={gl.mainColors}
+            start={{ x: 0.15, y: 0 }}
+            end={{ x: 0.85, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <LinearGradient
+            colors={['transparent', `rgba(255,255,255,${gl.glowOpacity})`, 'transparent']}
+            start={{ x: 0.5, y: 0.5 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: gl.highlight.top as any,
+              left: gl.highlight.left as any,
+              width: gl.highlight.width as any,
+              height: gl.highlight.height as any,
+              backgroundColor: 'rgba(255,255,255,0.55)',
+              borderRadius: circleSize * 0.35,
+              opacity: gl.highlight.opacity,
+              transform: [{ rotate: '-15deg' }],
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: gl.smallHighlight.top as any,
+              left: gl.smallHighlight.left as any,
+              width: gl.smallHighlight.width as any,
+              height: gl.smallHighlight.height as any,
+              backgroundColor: 'rgba(255,255,255,0.85)',
+              borderRadius: circleSize * 0.2,
+              opacity: gl.smallHighlight.opacity,
+            }}
+          />
+          <LinearGradient
+            colors={['transparent', `rgba(255,255,255,${gl.rimOpacity})`]}
+            start={{ x: 0.5, y: 0.6 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius,
+              borderWidth: 1,
+              borderColor: gl.innerShadowColor,
+            }}
+          />
+        </>
+      )}
+    </View>
+  );
+
+  // 웹에서는 순수 div 래퍼를 사용하여 animation 적용
+  // React Native Web의 View는 opacity를 클래스로 관리하여 animation이 덮어씌워지는 문제 우회
+  const wrapperStyle: React.CSSProperties = {
+    width: CIRCLE_SIZE,
+    alignItems: 'center' as const,
+    position: 'relative' as const,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 4,
+    // 셔플 애니메이션: entering 상태일 때 animation 적용
+    animationName: entering ? 'cardEnter' : 'none',
+    animationDuration: '0.9s',
     animationTimingFunction: 'ease',
     animationFillMode: 'both',
-    animationDelay: `${entryDelay}ms`,
+    animationDelay: entering ? `${entryDelay}ms` : '0ms',
+    opacity: entering ? undefined : 0,
   };
 
-  // 뒤집기 애니메이션
-  let flipStyle: React.CSSProperties = {};
-  if (flipPhase === 'out') {
-    flipStyle = {
-      animationName: 'cardFlipOut',
-      animationDuration: '0.16s',
-      animationTimingFunction: 'ease',
-      animationFillMode: 'forwards',
-    };
-  } else if (flipPhase === 'in') {
-    flipStyle = {
-      animationName: 'cardFlipIn',
-      animationDuration: '0.16s',
-      animationTimingFunction: 'ease',
-      animationFillMode: 'forwards',
-    };
-  } else if (isSelected) {
-    flipStyle = { transform: 'scale(1.08)' };
-  }
+  const flipWrapperStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+    // 뒤집기 애니메이션
+    animationName: flipClass === 'flip-out' ? 'cardFlipOut' : flipClass === 'flip-in' ? 'cardFlipIn' : 'none',
+    animationDuration: '0.28s',
+    animationTimingFunction: 'ease',
+    animationFillMode: 'forwards',
+    transform: flipClass === 'selected' ? 'scale(1.08)' : undefined,
+  };
 
   return (
-    <View
-      key={`entry-${animKey}`}
-      style={[styles.colorItem, entryStyle as any]}
-    >
+    <div style={wrapperStyle as any}>
       <Pressable
         style={({ pressed }) => [
           { alignItems: 'center', gap: 4 },
@@ -300,98 +411,9 @@ function WebCardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey,
         ]}
         onPress={onPress}
       >
-        <View
-          style={[
-            {
-              width: circleSize,
-              height: circleSize,
-              borderRadius,
-              overflow: 'hidden',
-              borderWidth: isSelected ? 2.5 : 1.5,
-              borderColor: getLightBorderColor(item.hex, isSelected, '#3D3530'),
-              shadowColor: item.hex,
-              shadowOpacity: isSelected ? 0.60 : 0.28,
-              shadowOffset: { width: 0, height: isSelected ? 5 : 2 },
-              shadowRadius: isSelected ? 12 : 6,
-              elevation: isSelected ? 10 : 4,
-            },
-            flipStyle as any,
-          ]}
-        >
-          {/* 뒷면: 베이지 크림 */}
-          {!showFront && (
-            <>
-              <LinearGradient
-                colors={['#F5EFE4', '#EDE4D6', '#E0D5C4']}
-                start={{ x: 0.2, y: 0 }}
-                end={{ x: 0.8, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-              <View style={[StyleSheet.absoluteFillObject, { alignItems: 'center', justifyContent: 'center' }]}>
-                <Text style={{ fontSize: circleSize * 0.38, opacity: 0.35 }}>🌿</Text>
-              </View>
-            </>
-          )}
-
-          {/* 앞면: 실제 컬러 */}
-          {showFront && (
-            <>
-              <View style={[StyleSheet.absoluteFillObject, { backgroundColor: item.hex }]} />
-              <LinearGradient
-                colors={gl.mainColors}
-                start={{ x: 0.15, y: 0 }}
-                end={{ x: 0.85, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-              <LinearGradient
-                colors={['transparent', `rgba(255,255,255,${gl.glowOpacity})`, 'transparent']}
-                start={{ x: 0.5, y: 0.5 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-              <View
-                style={{
-                  position: 'absolute',
-                  top: gl.highlight.top as any,
-                  left: gl.highlight.left as any,
-                  width: gl.highlight.width as any,
-                  height: gl.highlight.height as any,
-                  backgroundColor: 'rgba(255,255,255,0.55)',
-                  borderRadius: circleSize * 0.35,
-                  opacity: gl.highlight.opacity,
-                  transform: [{ rotate: '-15deg' }],
-                }}
-              />
-              <View
-                style={{
-                  position: 'absolute',
-                  top: gl.smallHighlight.top as any,
-                  left: gl.smallHighlight.left as any,
-                  width: gl.smallHighlight.width as any,
-                  height: gl.smallHighlight.height as any,
-                  backgroundColor: 'rgba(255,255,255,0.85)',
-                  borderRadius: circleSize * 0.2,
-                  opacity: gl.smallHighlight.opacity,
-                }}
-              />
-              <LinearGradient
-                colors={['transparent', `rgba(255,255,255,${gl.rimOpacity})`]}
-                start={{ x: 0.5, y: 0.6 }}
-                end={{ x: 0.5, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-              <View
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  borderRadius,
-                  borderWidth: 1,
-                  borderColor: gl.innerShadowColor,
-                }}
-              />
-            </>
-          )}
-        </View>
+        <div style={flipWrapperStyle as any}>
+          {cardContent}
+        </div>
 
         {/* 선택 체크마크 */}
         {isSelected && (
@@ -413,28 +435,28 @@ function WebCardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey,
           {showFront ? item.korName : '?'}
         </Text>
       </Pressable>
-    </View>
+    </div>
   );
 }
 
 // ─── 네이티브 카드 컴포넌트 ──────────────────────────────────────────────────
 function NativeCardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey, circleSize, borderRadius, gl }: InnerCardProps) {
   const entryOpacity = useRef(new Animated.Value(0)).current;
-  const entryTranslateY = useRef(new Animated.Value(20)).current;
+  const entryTranslateY = useRef(new Animated.Value(22)).current;
 
   useEffect(() => {
     entryOpacity.setValue(0);
-    entryTranslateY.setValue(20);
+    entryTranslateY.setValue(22);
     const timer = setTimeout(() => {
       Animated.parallel([
         Animated.timing(entryOpacity, {
           toValue: 1,
-          duration: 350,
+          duration: 900,
           useNativeDriver: true,
         }),
         Animated.timing(entryTranslateY, {
           toValue: 0,
-          duration: 350,
+          duration: 900,
           useNativeDriver: true,
         }),
       ]).start();
@@ -451,13 +473,13 @@ function NativeCardItem({ item, index, isSelected, onPress, entryDelay, shuffleK
     prevSelected.current = isSelected;
     Animated.timing(flipScale, {
       toValue: 0,
-      duration: 160,
+      duration: 280,
       useNativeDriver: true,
     }).start(() => {
       setShowFront(isSelected);
       Animated.timing(flipScale, {
         toValue: 1,
-        duration: 160,
+        duration: 280,
         useNativeDriver: true,
       }).start();
     });
@@ -621,7 +643,6 @@ export default function SelectScreen() {
     injectCardCSS();
   }, []);
 
-  // shuffleKey: step 변경 시마다 카드 재마운트 → 셔플 애니메이션 재실행
   const [shuffleKey, setShuffleKey] = useState(0);
   const [shuffling, setShuffling] = useState(true);
 
@@ -631,7 +652,7 @@ export default function SelectScreen() {
   useEffect(() => {
     setShuffling(true);
     setShuffleKey((k) => k + 1);
-    const t = setTimeout(() => setShuffling(false), 400);
+    const t = setTimeout(() => setShuffling(false), 1200);
     return () => clearTimeout(t);
   }, [step]);
 
@@ -666,7 +687,7 @@ export default function SelectScreen() {
           index={index}
           isSelected={isSelected}
           onPress={() => handleColorSelect(item)}
-          entryDelay={index * 35}
+          entryDelay={index * 40}
           shuffleKey={shuffleKey}
         />
       );
