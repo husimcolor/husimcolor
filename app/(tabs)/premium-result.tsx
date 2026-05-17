@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from "react";
-import { useFocusEffect } from "expo-router";
+"use no memo";
+import React, { useState, useEffect } from "react";
 import { Linking } from "react-native";
 import {
   View,
@@ -335,8 +335,7 @@ export default function PremiumResultScreen() {
     }
     setReviewSubmitting(false);
   };
-  useFocusEffect(
-    useCallback(() => {
+  useEffect(() => {
       let mounted = true;
       (async () => {
         const raw = await AsyncStorage.getItem("premiumSelectedCards");
@@ -369,8 +368,8 @@ export default function PremiumResultScreen() {
         }
       })();
       return () => { mounted = false; };
-    }, [])
-  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const isLoading = cards.length < 3;
 
