@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Dimensions,
   FlatList,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -129,72 +130,91 @@ interface CardItemProps {
   index: number;
   isSelected: boolean;
   onPress: () => void;
-  visible: boolean; // 셔플 등장 여부
+  entryDelay: number; // 셔플 등장 딜레이 (ms)
+  triggerEntry: boolean; // 셔플 시작 트리거
 }
 
-function CardItem({ item, index, isSelected, onPress, visible }: CardItemProps) {
-  // 뒤집기 상태: 'back'(뒷면), 'flipping'(뒤집는 중), 'front'(앞면)
-  const [flipState, setFlipState] = useState<'back' | 'flipping-out' | 'flipping-in' | 'front'>(
-    isSelected ? 'front' : 'back'
-  );
-
+function CardItem({ item, index, isSelected, onPress, entryDelay, triggerEntry }: CardItemProps) {
   const circleSize = CIRCLE_SIZE - 4;
   const borderRadius = circleSize / 2;
   const gl = getGlassLayers(item);
 
+  // ── 셔플 등장 애니메이션 ──
+  const entryOpacity = useRef(new Animated.Value(0)).current;
+  const entryTranslateY = useRef(new Animated.Value(20)).current;
+
   useEffect(() => {
-    if (isSelected && flipState === 'back') {
-      // 뒤집기 시작: 먼저 scaleX 0으로 (뒷면 사라짐)
-      setFlipState('flipping-out');
-      setTimeout(() => {
-        // 앞면으로 교체 후 scaleX 1로 (앞면 등장)
-        setFlipState('flipping-in');
-        setTimeout(() => {
-          setFlipState('front');
-        }, 200);
-      }, 200);
-    } else if (!isSelected && flipState === 'front') {
-      // 선택 해제: 앞면 → 뒷면
-      setFlipState('flipping-out');
-      setTimeout(() => {
-        setFlipState('flipping-in');
-        setTimeout(() => {
-          setFlipState('back');
-        }, 200);
-      }, 200);
+    if (triggerEntry) {
+      // 초기화
+      entryOpacity.setValue(0);
+      entryTranslateY.setValue(20);
+      // 딜레이 후 등장
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(entryOpacity, {
+            toValue: 1,
+            duration: 350,
+            useNativeDriver: false,
+          }),
+          Animated.timing(entryTranslateY, {
+            toValue: 0,
+            duration: 350,
+            useNativeDriver: false,
+          }),
+        ]).start();
+      }, entryDelay);
+      return () => clearTimeout(timer);
     }
+  }, [triggerEntry]);
+
+  // ── 카드 뒤집기 애니메이션 ──
+  // showFront: 현재 보여줄 면 (앞면=컬러, 뒷면=베이지)
+  const [showFront, setShowFront] = useState(false);
+  const flipScale = useRef(new Animated.Value(1)).current;
+  const prevSelected = useRef(isSelected);
+
+  useEffect(() => {
+    if (prevSelected.current === isSelected) return;
+    prevSelected.current = isSelected;
+
+    // 1단계: scaleX 1 → 0 (접힘)
+    Animated.timing(flipScale, {
+      toValue: 0,
+      duration: 160,
+      useNativeDriver: false,
+    }).start(() => {
+      // 면 교체
+      setShowFront(isSelected);
+      // 2단계: scaleX 0 → 1 (펼쳐짐)
+      Animated.timing(flipScale, {
+        toValue: 1,
+        duration: 160,
+        useNativeDriver: false,
+      }).start();
+    });
   }, [isSelected]);
 
-  // 뒤집기 scaleX 값
-  const isFlippingOut = flipState === 'flipping-out';
-  const isFlippingIn = flipState === 'flipping-in';
-  const showFront = flipState === 'front' || flipState === 'flipping-in';
-
-  // 셔플 등장 애니메이션: visible 상태에 따라 opacity/translateY 전환
-  const entryStyle: any = {
-    opacity: visible ? 1 : 0,
-    transform: [{ translateY: visible ? 0 : 16 }],
-    // CSS transition (웹에서 동작)
-    transition: visible
-      ? `opacity 0.3s ease ${index * 0.025}s, transform 0.3s ease ${index * 0.025}s`
-      : 'none',
-  };
-
-  // 뒤집기 transition
-  const flipStyle: any = {
-    transform: [
-      { scaleX: isFlippingOut ? 0.05 : 1 },
-      { scale: isSelected ? 1.08 : 1 },
-    ],
-    transition: isFlippingOut
-      ? 'transform 0.18s ease-in'
-      : isFlippingIn
-      ? 'transform 0.18s ease-out'
-      : 'transform 0.15s ease',
-  };
+  // 선택 시 scale 강조
+  const selectScale = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.spring(selectScale, {
+      toValue: isSelected ? 1.08 : 1,
+      friction: 6,
+      tension: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [isSelected]);
 
   return (
-    <View style={[styles.colorItem, entryStyle]}>
+    <Animated.View
+      style={[
+        styles.colorItem,
+        {
+          opacity: entryOpacity,
+          transform: [{ translateY: entryTranslateY }],
+        },
+      ]}
+    >
       <Pressable
         style={({ pressed }) => [
           { alignItems: 'center', gap: 4 },
@@ -202,7 +222,7 @@ function CardItem({ item, index, isSelected, onPress, visible }: CardItemProps) 
         ]}
         onPress={onPress}
       >
-        <View
+        <Animated.View
           style={[
             {
               width: circleSize,
@@ -217,7 +237,12 @@ function CardItem({ item, index, isSelected, onPress, visible }: CardItemProps) 
               shadowRadius: isSelected ? 12 : 6,
               elevation: isSelected ? 10 : 4,
             },
-            flipStyle,
+            {
+              transform: [
+                { scaleX: flipScale },
+                { scale: selectScale },
+              ],
+            },
           ]}
         >
           {/* 뒷면: 베이지 크림 */}
@@ -282,17 +307,20 @@ function CardItem({ item, index, isSelected, onPress, visible }: CardItemProps) 
                 end={{ x: 0.5, y: 1 }}
                 style={StyleSheet.absoluteFillObject}
               />
-              <LinearGradient
-                colors={['transparent', gl.innerShadowColor]}
-                start={{ x: 0.5, y: 0.4 }}
-                end={{ x: 0.5, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
+              <View
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius,
+                  borderWidth: 1,
+                  borderColor: gl.innerShadowColor,
+                }}
               />
             </>
           )}
-        </View>
+        </Animated.View>
 
-        {/* 선택 체크 마크 */}
+        {/* 선택 체크마크 */}
         {isSelected && (
           <View style={[styles.checkMark, { backgroundColor: '#3D3530' }]}>
             <Text style={styles.checkMarkText}>✓</Text>
@@ -309,10 +337,10 @@ function CardItem({ item, index, isSelected, onPress, visible }: CardItemProps) 
           ]}
           numberOfLines={1}
         >
-          {isSelected ? item.korName : '?'}
+          {showFront ? item.korName : '?'}
         </Text>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -324,29 +352,26 @@ export default function SelectScreen() {
   const { selectedColors, setSelectedColor } = useColorContext();
   const insets = useSafeAreaInsets();
 
-  // 헤더 페이드인
-  const [headerVisible, setHeaderVisible] = useState(false);
-  // 카드 등장 여부 (셔플 애니메이션)
-  const [cardsVisible, setCardsVisible] = useState(false);
-  // 셔플 중 텍스트 표시
+  // 셔플 트리거 (step 변경 시마다 새 key로 카드 재마운트)
+  const [shuffleKey, setShuffleKey] = useState(0);
+  const [triggerEntry, setTriggerEntry] = useState(false);
   const [shuffling, setShuffling] = useState(true);
 
   const cardInfo = CARD_INFO[step] ?? CARD_INFO[0];
   const currentSelected = selectedColors[step];
 
   useEffect(() => {
-    // 단계 전환 시 초기화
-    setHeaderVisible(false);
-    setCardsVisible(false);
+    // step 변경 시 셔플 초기화
+    setTriggerEntry(false);
     setShuffling(true);
+    setShuffleKey((k) => k + 1);
 
-    // 헤더 먼저 등장
-    const t1 = setTimeout(() => setHeaderVisible(true), 80);
-    // 카드 셔플 등장
+    const t1 = setTimeout(() => {
+      setTriggerEntry(true);
+    }, 100);
     const t2 = setTimeout(() => {
-      setCardsVisible(true);
       setShuffling(false);
-    }, 300);
+    }, 400);
 
     return () => {
       clearTimeout(t1);
@@ -375,26 +400,34 @@ export default function SelectScreen() {
     }
   };
 
-  const renderColorItem = ({ item, index }: { item: ColorData; index: number }) => {
-    const isSelected = currentSelected?.id === item.id;
-    return (
-      <CardItem
-        key={`${step}-${item.id}`}
-        item={item}
-        index={index}
-        isSelected={isSelected}
-        onPress={() => handleColorSelect(item)}
-        visible={cardsVisible}
-      />
-    );
-  };
+  const renderColorItem = useCallback(
+    ({ item, index }: { item: ColorData; index: number }) => {
+      const isSelected = currentSelected?.id === item.id;
+      return (
+        <CardItem
+          key={`${shuffleKey}-${item.id}`}
+          item={item}
+          index={index}
+          isSelected={isSelected}
+          onPress={() => handleColorSelect(item)}
+          entryDelay={index * 30}
+          triggerEntry={triggerEntry}
+        />
+      );
+    },
+    [currentSelected, shuffleKey, triggerEntry]
+  );
 
-  // 헤더 CSS transition 스타일
-  const headerStyle: any = {
-    opacity: headerVisible ? 1 : 0,
-    transform: [{ translateY: headerVisible ? 0 : 12 }],
-    transition: 'opacity 0.35s ease, transform 0.35s ease',
-  };
+  // 헤더 페이드인
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    headerOpacity.setValue(0);
+    Animated.timing(headerOpacity, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: false,
+    }).start();
+  }, [step]);
 
   return (
     <ScreenContainer containerClassName="bg-background" edges={['top', 'left', 'right']}>
@@ -437,7 +470,7 @@ export default function SelectScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* 카드 정보 */}
-        <View style={[styles.cardInfoSection, headerStyle]}>
+        <Animated.View style={[styles.cardInfoSection, { opacity: headerOpacity }]}>
           <View
             style={[
               styles.cardBadge,
@@ -454,7 +487,7 @@ export default function SelectScreen() {
           <Text style={[styles.shuffleHint, { color: '#A09080' }]}>
             {shuffling ? '🌿 카드를 섞는 중...' : '🌿 카드를 눌러 색을 확인하세요'}
           </Text>
-        </View>
+        </Animated.View>
 
         {/* 선택된 컬러 미리보기 */}
         {currentSelected && (
@@ -512,6 +545,7 @@ export default function SelectScreen() {
             scrollEnabled={false}
             contentContainerStyle={styles.flatListContent}
             columnWrapperStyle={styles.colorRow}
+            extraData={`${shuffleKey}-${currentSelected?.id}-${triggerEntry}`}
           />
         </View>
       </ScrollView>
