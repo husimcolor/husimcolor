@@ -242,37 +242,71 @@ interface InnerCardProps {
 
 function WebCardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey, circleSize, borderRadius, gl }: InnerCardProps) {
   const [showFront, setShowFront] = useState(false);
-  const [flipClass, setFlipClass] = useState('');
-  const [entering, setEntering] = useState(false);
   const prevSelected = useRef(isSelected);
-  const wrapperRef = useRef<any>(null);
-  const flipWrapperRef = useRef<any>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const flipWrapperRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
 
-  // shuffleKey 변경 시 셔플 애니메이션 재실행
+  // shuffleKey 변경 시 셔플 애니메이션 재실행 - DOM 직접 조작
   useEffect(() => {
     setShowFront(false);
-    setFlipClass('');
     prevSelected.current = false;
-    setEntering(false);
 
-    // 다음 프레임에 entering 클래스 추가 (animation 재실행을 위해)
-    const t = setTimeout(() => {
-      setEntering(true);
-    }, 10);
-    return () => clearTimeout(t);
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    // 1) animation 제거 + opacity:0 즉시 적용
+    el.style.opacity = '0';
+    el.style.animationName = 'none';
+
+    // 2) 두 번의 rAF로 첫 paint 후에 animation 시작
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = requestAnimationFrame(() => {
+        if (!wrapperRef.current) return;
+        wrapperRef.current.style.opacity = '';
+        wrapperRef.current.style.animationName = 'cardEnter';
+        wrapperRef.current.style.animationDuration = '0.9s';
+        wrapperRef.current.style.animationTimingFunction = 'ease';
+        wrapperRef.current.style.animationFillMode = 'both';
+        wrapperRef.current.style.animationDelay = `${entryDelay}ms`;
+      });
+    });
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, [shuffleKey]);
 
-  // 카드 뒤집기
+  // 카드 뒤집기 - DOM 직접 조작
   useEffect(() => {
     if (prevSelected.current === isSelected) return;
     prevSelected.current = isSelected;
 
-    setFlipClass('flip-out');
+    const el = flipWrapperRef.current;
+    if (!el) return;
+
+    // flip-out
+    el.style.animationName = 'cardFlipOut';
+    el.style.animationDuration = '0.28s';
+    el.style.animationTimingFunction = 'ease';
+    el.style.animationFillMode = 'forwards';
+
     const t1 = setTimeout(() => {
       setShowFront(isSelected);
-      setFlipClass('flip-in');
+      if (!flipWrapperRef.current) return;
+      // flip-in
+      flipWrapperRef.current.style.animationName = 'none';
+      void flipWrapperRef.current.offsetWidth; // reflow
+      flipWrapperRef.current.style.animationName = 'cardFlipIn';
+      flipWrapperRef.current.style.animationDuration = '0.28s';
+      flipWrapperRef.current.style.animationTimingFunction = 'ease';
+      flipWrapperRef.current.style.animationFillMode = 'forwards';
+
       const t2 = setTimeout(() => {
-        setFlipClass(isSelected ? 'selected' : '');
+        if (!flipWrapperRef.current) return;
+        flipWrapperRef.current.style.animationName = 'none';
+        flipWrapperRef.current.style.transform = isSelected ? 'scale(1.08)' : '';
       }, 300);
       return () => clearTimeout(t2);
     }, 290);
@@ -373,6 +407,7 @@ function WebCardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey,
 
   // 웹에서는 순수 div 래퍼를 사용하여 animation 적용
   // React Native Web의 View는 opacity를 클래스로 관리하여 animation이 덮어씌워지는 문제 우회
+  // useRef로 DOM 직접 조작 → React 배치 렌더링으로 인한 첫 paint 누락 문제 해결
   const wrapperStyle: React.CSSProperties = {
     width: CIRCLE_SIZE,
     alignItems: 'center' as const,
@@ -380,13 +415,7 @@ function WebCardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey,
     display: 'flex',
     flexDirection: 'column' as const,
     gap: 4,
-    // 셔플 애니메이션: entering 상태일 때 animation 적용
-    animationName: entering ? 'cardEnter' : 'none',
-    animationDuration: '0.9s',
-    animationTimingFunction: 'ease',
-    animationFillMode: 'both',
-    animationDelay: entering ? `${entryDelay}ms` : '0ms',
-    opacity: entering ? undefined : 0,
+    opacity: 0, // 초기값: 숨김 (useEffect에서 rAF 후 animation 시작)
   };
 
   const flipWrapperStyle: React.CSSProperties = {
@@ -394,16 +423,10 @@ function WebCardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey,
     flexDirection: 'column' as const,
     alignItems: 'center' as const,
     gap: 4,
-    // 뒤집기 애니메이션
-    animationName: flipClass === 'flip-out' ? 'cardFlipOut' : flipClass === 'flip-in' ? 'cardFlipIn' : 'none',
-    animationDuration: '0.28s',
-    animationTimingFunction: 'ease',
-    animationFillMode: 'forwards',
-    transform: flipClass === 'selected' ? 'scale(1.08)' : undefined,
   };
 
   return (
-    <div style={wrapperStyle as any}>
+    <div ref={wrapperRef} style={wrapperStyle as any}>
       <Pressable
         style={({ pressed }) => [
           { alignItems: 'center', gap: 4 },
@@ -411,7 +434,7 @@ function WebCardItem({ item, index, isSelected, onPress, entryDelay, shuffleKey,
         ]}
         onPress={onPress}
       >
-        <div style={flipWrapperStyle as any}>
+        <div ref={flipWrapperRef} style={flipWrapperStyle as any}>
           {cardContent}
         </div>
 
