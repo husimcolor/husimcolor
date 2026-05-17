@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
+import { useFocusEffect } from "expo-router";
 import { Linking } from "react-native";
 import {
   View,
@@ -334,37 +335,46 @@ export default function PremiumResultScreen() {
     }
     setReviewSubmitting(false);
   };
-  useEffect(() => {
-    (async () => {
-      const raw = await AsyncStorage.getItem("premiumSelectedCards");
-      const profileRaw = await AsyncStorage.getItem("userProfile");
-      const colorsRaw = await AsyncStorage.getItem("premiumSelectedColors");
-      const reviewRaw = await AsyncStorage.getItem("premiumReview");
-      if (raw) setCards(JSON.parse(raw));
-      if (profileRaw) setProfile(JSON.parse(profileRaw));
-      if (colorsRaw) {
-        try { setPrevColors(JSON.parse(colorsRaw)); } catch {}
-      }
-      if (reviewRaw) {
-        try {
-          const saved = JSON.parse(reviewRaw);
-          setReviewDone(true);
-          setReviewRating(saved.rating ?? 0);
-          setReviewText(saved.text ?? "");
-          setReviewTags(saved.tags ?? []);
-          if (saved.id) setReviewId(saved.id);
-        } catch {}
-      }
-      const status = await getTrialStatus();
-      setTrialStatus(status);
-      if (status === "active") {
-        const label = await getTrialRemainingLabel();
-        setRemainingLabel(label);
-      }
-    })();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      let mounted = true;
+      (async () => {
+        const raw = await AsyncStorage.getItem("premiumSelectedCards");
+        const profileRaw = await AsyncStorage.getItem("userProfile");
+        const colorsRaw = await AsyncStorage.getItem("premiumSelectedColors");
+        const reviewRaw = await AsyncStorage.getItem("premiumReview");
+        if (!mounted) return;
+        if (raw) setCards([...JSON.parse(raw)]);
+        if (profileRaw) setProfile({ ...JSON.parse(profileRaw) });
+        if (colorsRaw) {
+          try { setPrevColors([...JSON.parse(colorsRaw)]); } catch {}
+        }
+        if (reviewRaw) {
+          try {
+            const saved = JSON.parse(reviewRaw);
+            if (!mounted) return;
+            setReviewDone(true);
+            setReviewRating(saved.rating ?? 0);
+            setReviewText(saved.text ?? "");
+            setReviewTags(saved.tags ?? []);
+            if (saved.id) setReviewId(saved.id);
+          } catch {}
+        }
+        const status = await getTrialStatus();
+        if (!mounted) return;
+        setTrialStatus(status);
+        if (status === "active") {
+          const label = await getTrialRemainingLabel();
+          if (mounted) setRemainingLabel(label);
+        }
+      })();
+      return () => { mounted = false; };
+    }, [])
+  );
 
-  if (cards.length < 3) {
+  const isLoading = cards.length < 3;
+
+  if (isLoading) {
     return (
       <ScreenContainer>
         <View style={styles.loadingContainer}>
