@@ -16,7 +16,7 @@ import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { type CardData } from "@/constants/cardData";
+import { type CardData, CARD_DATA } from "@/constants/cardData";
 import { type ColorData } from "@/constants/colorData";
 import { type UserProfile } from "./profile";
 import { trpc } from "@/lib/trpc";
@@ -145,9 +145,30 @@ function getJobConcernNote(job: string, concerns: string[]): string {
 }
 
 // 3번 카드 컬러 계열 기준 위로 성경구절 선택
+// 무교 사용자용 위로 문구 (성경구절 대신)
+const COMFORT_QUOTES: Record<string, { text: string; ref: string }> = {
+  warm_active: { text: '움직이는 것이 용기입니다. 오늘의 한 걸음이 당신을 앞으로 데려갑니다.', ref: '' },
+  warm_social: { text: '눈을 맞추고 마음을 나누는 것이 지금 가장 좋은 회복입니다.', ref: '' },
+  yellow:      { text: '생각이 많을수록 오늘 할 수 있는 한 가지에 집중해 보세요.', ref: '' },
+  green:       { text: '자연 속에서 마음이 조용히 정리됩니다.', ref: '' },
+  blue:        { text: '스스로를 신뢰하는 것이 지금 가장 필요한 힘입니다.', ref: '' },
+  purple:      { text: '내면을 천천히 들여다보는 시간이 회복의 시작입니다.', ref: '' },
+  lavender:    { text: '조용한 시간 속에서 자신을 다시 만나보세요.', ref: '' },
+  cool:        { text: '휴식도 일의 일부입니다. 오늘은 충분히 쉬어도 됩니다.', ref: '' },
+  black:       { text: '어두운 시간도 당신의 이야기의 일부입니다.', ref: '' },
+  neutral:     { text: '조용히 정리하는 시간이 다음 흐름을 준비합니다.', ref: '' },
+};
+
 function getScriptureVerse(colorId: string, faith: string): { text: string; ref: string; label: string } {
-  const label = faith === '기독교' ? '✝️ 오늘의 말씀' : '💛 위로의 한 마디';
   const family = getColorFamily(colorId);
+
+  // 무교 사용자: 성경구절 대신 위로 문구
+  if (faith !== '기독교') {
+    const quote = COMFORT_QUOTES[family] ?? COMFORT_QUOTES['neutral'];
+    return { ...quote, label: '🌿 오늘의 위로' };
+  }
+
+  const label = '✝️ 오늘의 말씀';
   const verseMap: Record<string, { text: string; ref: string }> = {
     warm_active: { text: '내가 너와 함께 하노라 두려워하지 말라', ref: '이사야 41:10' },
     warm_social: { text: '사랑은 오래 참고 온유하며', ref: '고린도전서 13:4' },
@@ -218,8 +239,8 @@ function getJobCoaching(job: string, faith: string, colorId?: string, concerns?:
   // 직업+고민 조합 코칭 노트 (1문장)
   const coachingNote = getJobConcernNote(job, concerns ?? []);
 
-  // 조건부 성경구절 (기독교 / 무교 / 학생)
-  const showScripture = faith === '기독교' || faith === '무교' || job === '학생';
+  // 조건부 위로 문구/성경구절 (타종교 제외 전체 표시)
+  const showScripture = faith !== '타종교' && colorId !== undefined;
   const scriptureVerse = (showScripture && colorId) ? getScriptureVerse(colorId, faith) : undefined;
 
   return { routineNote: colorRoutineNote, coachingNote, scriptureVerse };
@@ -343,7 +364,27 @@ export default function PremiumResultScreen() {
         const colorsRaw = await AsyncStorage.getItem("premiumSelectedColors");
         const reviewRaw = await AsyncStorage.getItem("premiumReview");
         if (!mounted) return;
-        if (raw) setCards([...JSON.parse(raw)]);
+        if (raw) {
+          try {
+            const parsed: CardData[] = JSON.parse(raw);
+            // 구형 데이터 마이그레이션: strengths 필드가 없는 카드는 CARD_DATA에서 최신 데이터로 교체
+            const migrated = parsed.map((card) => {
+              if (!Array.isArray(card.strengths)) {
+                // id 정규화: 하이픈 → 언더스코어 (구형 포맷 호환)
+                const normalizedId = card.id?.replace(/-/g, '_');
+                const fresh = CARD_DATA.find(
+                  (c) => c.id === normalizedId || c.id === card.id ||
+                  (c.color === card.color && c.shape === card.shape)
+                );
+                return fresh ?? { ...card, strengths: [] };
+              }
+              return card;
+            });
+            setCards([...migrated]);
+          } catch {
+            // 파싱 실패 시 빈 배열 유지
+          }
+        }
         if (profileRaw) setProfile({ ...JSON.parse(profileRaw) });
         if (colorsRaw) {
           try { setPrevColors([...JSON.parse(colorsRaw)]); } catch {}
@@ -583,7 +624,7 @@ export default function PremiumResultScreen() {
                   장점
                 </Text>
                 <View style={styles.tagsRow}>
-                  {card.strengths.map((s) => (
+                  {(card.strengths ?? []).map((s) => (
                     <View
                       key={s}
                       style={[
@@ -1084,64 +1125,64 @@ function josaCoach(word: string, jong: string, noJong: string): string {
   return jong;
 }
 
-// 1번 카드: 무의식/내면 흐름 → 공감 어조 2문장
+// 1번 카드: 무의식/내면 흐름 → 공감 어조 1~2문장 (간결)
 function toFlowPhrase(title: string): string {
   const eun = josaCoach(title, '은', '는');
   if (title.endsWith('마음')) {
-    return `${title}${eun} 지금 당신 안에 조용히 자리하고 있습니다. 그 마음은 억지로 바꾸거나 지워야 할 것이 아니라, 지금 이 순간 당신에게 필요한 신호일 수 있습니다.`;
+    return `${title}${eun} 지금 당신 안에 조용히 자리하고 있습니다. 억지로 바꾸려 하기보다 그 마음을 먼저 알아봐 주세요.`;
   }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
-    return `${base}을 향한 마음이 조용히 이어지고 있습니다. 그 흐름은 당신이 지금 어디에 있는지를 보여주는 자연스러운 신호입니다.`;
+    return `${base}을 향한 마음이 내면에서 조용히 이어지고 있습니다.`;
   }
   if (title.endsWith('균형') || title.endsWith('조화')) {
-    return `${title}을 찾고 싶은 마음이 있습니다. 그 바람 자체가 이미 회복을 향한 첫 걸음입니다.`;
+    return `${title}을 원하는 마음이 있습니다. 그 바람 자체가 이미 회복의 시작입니다.`;
   }
   if (title.endsWith('기질') || title.endsWith('성향')) {
-    return `${title}${eun} 지금 당신 안에 자연스럽게 흐르고 있습니다. 그것은 당신이 세상과 연결되는 고유한 방식입니다.`;
+    return `${title}${eun} 당신 안에 자연스럽게 흐르고 있습니다.`;
   }
-  return `${title}${eun} 지금 당신 안에 자연스럽게 자리하고 있습니다. 이 흐름을 판단하기보다 조용히 바라봐 주는 것이 지금 가장 좋은 시작입니다.`;
+  return `${title}${eun} 지금 당신 안에 조용히 자리하고 있습니다.`;
 }
 
-// 2번 카드: 현재 상태 → 담담하고 공감되는 2문장
+// 2번 카드: 현재 상태 → 담담하고 공감되는 1~2문장 (간결)
 function toCurrentPhrase(title: string): string {
   const eun = josaCoach(title, '은', '는');
   if (title.endsWith('마음')) {
-    return `지금은 ${title}으로 하루를 보내고 있는 것 같습니다. 그 감정이 무겁게 느껴질 수 있지만, 지금 이 시간도 당신의 흐름 안에 있습니다.`;
+    return `지금은 ${title}으로 하루를 보내고 있는 것 같습니다.`;
   }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
-    return `지금은 ${base}을 중심으로 움직이고 있는 시기입니다. 이 흐름이 자연스럽게 이어지도록 스스로를 조금 더 허락해 주세요.`;
+    return `지금은 ${base}을 중심으로 움직이고 있는 시기입니다.`;
   }
   if (title.endsWith('흐름')) {
-    return `지금은 ${title} 안에 있는 시간입니다. 억지로 벗어나려 하기보다 이 흐름을 조용히 따라가는 것이 더 도움이 됩니다.`;
+    return `지금은 ${title} 안에 있는 시간입니다. 억지로 벗어나려 하기보다 조용히 따라가 보세요.`;
   }
   if (title.endsWith('기질') || title.endsWith('성향')) {
-    return `지금${eun} ${title} 안에 있는 시간입니다. 그 성향이 지금의 삶에서 어떻게 나타나고 있는지 조용히 살펴보세요.`;
+    return `지금${eun} ${title} 안에 있는 시간입니다.`;
   }
-  return `지금${eun} ${title} 안에 있는 시간입니다. 이 흐름을 있는 그대로 받아들이는 것이 지금 가장 자연스러운 방향입니다.`;
+  return `지금${eun} ${title} 안에 있는 시간입니다.`;
 }
 
-// 3번 카드: 회복 방향 → 따뜻한 2문장 브랜드 톤
+// 3번 카드: 회복 방향 → 따뜻한 1~2문장 브랜드 톤 (간결)
 function toRecoveryPhrase(title: string): string {
   const eul = josaCoach(title, '을', '를');
   if (title.endsWith('마음')) {
-    return `${title}${eul} 억지로 바꾸려 하기보다 천천히 따라가 보세요. 지금 느끼는 것을 그대로 인정해 주는 것이 회복의 시작입니다.`;
+    return `지금은 ${title}${eul} 천천히 따라가는 것이 가장 자연스러운 회복입니다.`;
   }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
-    return `${base}을 위한 작은 시간을 스스로 허락해 보세요. 억지로 채우려 하기보다 자연스럽게 흘러오도록 기다리는 것도 좋은 방법입니다.`;
+    return `${base}을 위한 작은 시간을 스스로 허락해 보세요.`;
   }
   if (title.endsWith('균형') || title.endsWith('조화')) {
-    return `${title}${eul} 되찾는 것이 지금 가장 중요한 한 걸음입니다. 한 번에 모든 것을 맞추려 하기보다 오늘 하나씩 천천히 조율해 가세요.`;
+    return `${title}${eul} 되찾는 것이 지금 가장 중요한 한 걸음입니다.`;
   }
   if (title.endsWith('기질') || title.endsWith('성향')) {
-    return `${title}${eul} 있는 그대로 받아들이는 것이 지금의 회복입니다. 자신의 고유한 성향을 이해할수록 삶이 더 편안해집니다.`;
+    return `${title}${eul} 있는 그대로 받아들이는 것이 지금의 회복입니다.`;
   }
   if (title.endsWith('흐름')) {
-    return `${title}${eul} 억지로 멈추거나 바꾸려 하기보다 조용히 따라가 보세요. 지금 이 흐름 안에서 자신에게 필요한 것이 무엇인지 느껴보는 시간을 가져보세요.`;
+    return `${title}${eul} 억지로 바꾸려 하기보다 조용히 따라가 보세요.`;
   }
-  return `${title}${eul} 위한 여유를 스스로 허락해 보세요. 지금은 무언가를 더 하기보다 잠시 멈추고 자신을 돌봐주는 것이 더 중요한 시간입니다.`;
+  return `${title}${eul} 위한 여유를 스스로 허락해 보세요.`;
 }
 
 // 컬러 id → 계열 분류
@@ -1238,25 +1279,23 @@ function getColorClosingLine(colorId: string, usedKeywords: string[]): string {
 }
 
 function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardData, colorFlow?: ColorData[]): string {
-  // 문단 1: 1번(내면 흐름) + 2번(현재 상태) 공감 통합
+  // 문단 1: 1번(내면 흐름) + 2번(현재 상태) 공감 통합 - 간결하게
   const flow1 = toFlowPhrase(card1.energyTitle);
   const curr = toCurrentPhrase(card2.energyTitle);
   const para1 = `${flow1} ${curr}`;
 
-  // 문단 2: 3번(회복 방향) - recovery 문장만 사용 (card3.coachingMessage 제거로 반복 방지)
+  // 문단 2: 3번(회복 방향) - 짧고 따뜻하게
   const recovery = toRecoveryPhrase(card3.energyTitle);
-  const para2 = recovery;
 
-  // 컬러 계열별 마지막 공감 문장 (중복 방지 로직 포함)
-  let colorLine = '';
+  // 컬러 성향 흐름이 있을 때만 마지막 공감 문장 추가 (없으면 생략)
   if (colorFlow && colorFlow.length >= 3) {
     const [c1] = colorFlow;
-    // 상단 문단에서 사용된 키워드 수집 (중복 방지용)
-    const usedKeywords = [para1, para2].join(' ').split(/[.,\s]+/);
-    colorLine = `\n\n${getColorClosingLine(c1.id, usedKeywords)}`;
+    const usedKeywords = [para1, recovery].join(' ').split(/[.,\s]+/);
+    const colorLine = getColorClosingLine(c1.id, usedKeywords);
+    return `${para1}\n\n${recovery}\n\n${colorLine}`;
   }
 
-  return `${para1}\n\n${para2}${colorLine}`;
+  return `${para1}\n\n${recovery}`;
 }
 
 const styles = StyleSheet.create({
