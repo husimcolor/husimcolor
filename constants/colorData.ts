@@ -634,7 +634,57 @@ export function generateInterpretation(
 ) {
   const strengths = [...new Set([...card1.strengths, ...card2.strengths])].slice(0, 4);
   const shadows = [...new Set([...card1.shadows, ...card2.shadows])].slice(0, 3);
-  const complementColors = [...new Set([...card3.complementColors, ...card2.complementColors])].slice(0, 3);
+
+  // 보완 콜러 추청 알고리즘 (회복·안정·감정 정돈 중심)
+  const selectedIds = new Set([card1.id, card2.id, card3.id]);
+
+  // 활성 계열 콜러 (코랄·오렌지·레드는 에너지 방향이 격치서 동시 추청 불가)
+  const WARM_ACTIVE = ['레드', '코랄', '오렌지'];
+
+  // 레드 허용 조건: 사용자가 선택한 3장 모두 쿨/안정 계열일 때만 (극심한 무기력 상황)
+  const COOL_STABLE_IDS = ['blue', 'navy', 'indigo', 'skyblue', 'teal', 'mint', 'lavender', 'silver', 'white', 'cream', 'ivory', 'beige'];
+  const allCardsAreCoolStable = [card1.id, card2.id, card3.id].every(id => COOL_STABLE_IDS.includes(id));
+
+  // 후보 콜러 수집: card3 우선, card2 보조
+  const rawCandidates = [...new Set([...card3.complementColors, ...card2.complementColors])];
+
+  // 필터링 로직
+  const filtered: string[] = [];
+  let warmActiveCount = 0;
+
+  for (const color of rawCandidates) {
+    // 사용자가 이미 선택한 콜러의 korName은 제외
+    const colorData = COLOR_DATA.find(d => d.korName === color);
+    if (colorData && selectedIds.has(colorData.id)) continue;
+
+    // 레드는 조건이 충족될 때만 허용
+    if (color === '레드' && !allCardsAreCoolStable) continue;
+
+    // 코랄·오렌지·레드 중 이미 하나 포함된 경우 추가 불가
+    if (WARM_ACTIVE.includes(color)) {
+      if (warmActiveCount >= 1) continue;
+      warmActiveCount++;
+    }
+
+    filtered.push(color);
+    if (filtered.length >= 3) break;
+  }
+
+  // 3개 미만이면 회복·안정 콜러로 자동 보추
+  const RECOVERY_FALLBACKS = ['그린', '세이지그린', '라벤더', '크림', '스카이블루', '민트', '아이보리', '브라운'];
+  if (filtered.length < 3) {
+    for (const fb of RECOVERY_FALLBACKS) {
+      if (filtered.length >= 3) break;
+      if (!filtered.includes(fb)) {
+        const fbData = COLOR_DATA.find(d => d.korName === fb);
+        if (fbData && !selectedIds.has(fbData.id)) {
+          filtered.push(fb);
+        }
+      }
+    }
+  }
+
+  const complementColors = filtered.slice(0, 3);
 
   const psychologyFlow = generatePsychologyFlow(card1, card2, card3);
   const personalityFlow = generatePersonalityFlow(card1, card2, card3);
