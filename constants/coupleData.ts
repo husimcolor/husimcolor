@@ -466,11 +466,23 @@ function buildEmotionDifference(
 ): string {
   const fA = getDominantFamily(familiesA);
   const fB = getDominantFamily(familiesB);
+  const nameA = colorsA[0]?.korName ?? 'A';
+  const nameB = colorsB[0]?.korName ?? 'B';
 
-  const expressionA = getEmotionExpressionShort(fA);
-  const expressionB = getEmotionExpressionShort(fB);
+  // 현실 공감 장면이 담긴 조합별 문장
+  const sceneMap: Partial<Record<string, string>> = {
+    'warm_active-cool_deep': `${nameA}의 에너지를 가진 사람은 감정이 생기면 바로 말하고 싶어 합니다. 반면 ${nameB}의 흐름을 가진 사람은 마음이 충분히 정리될 때까지 조용히 있으려 합니다. "왜 아무 말도 안 해?"와 "왜 지금 당장 얘기해야 해?"가 부딪히는 순간이 생기기 쉽습니다.`,
+    'cool_deep-warm_active': `${nameA}의 흐름을 가진 사람은 마음이 정리될 때까지 조용히 있는 편입니다. 반면 ${nameB}의 에너지를 가진 사람은 감정을 바로 꺼내야 편해집니다. 침묵이 거리두기로 오해받는 순간이 생기기 쉽습니다.`,
+    'warm_soft-cool_clear': `${nameA}의 흐름을 가진 사람은 "내 마음을 알아줬으면" 하는 바람이 먼저입니다. 반면 ${nameB}의 흐름을 가진 사람은 "어떻게 해결할까"를 먼저 생각합니다. 공감을 원하는데 해결책이 돌아올 때 서운함이 쌓일 수 있습니다.`,
+    'cool_clear-warm_soft': `${nameA}의 흐름을 가진 사람은 감정보다 상황 정리를 먼저 합니다. 반면 ${nameB}의 흐름을 가진 사람은 먼저 공감받고 싶어 합니다. 이성적인 말이 차갑게 느껴지는 순간이 생길 수 있습니다.`,
+    'warm_active-nature': `${nameA}의 에너지를 가진 사람은 빠르게 반응하고 즉각 표현합니다. 반면 ${nameB}의 흐름을 가진 사람은 자신의 리듬대로 천천히 처리합니다. "왜 이렇게 느려?"와 "왜 이렇게 서둘러?"가 교차하는 순간이 있습니다.`,
+    'nature-warm_active': `${nameA}의 흐름을 가진 사람은 조용히 자신의 리듬을 지킵니다. 반면 ${nameB}의 에너지를 가진 사람은 빠르게 반응하고 표현합니다. 조용한 존재감이 무관심으로 오해받는 순간이 생길 수 있습니다.`,
+    'cool_deep-cool_clear': `${nameA}의 흐름을 가진 사람은 감정을 깊이 담아두고 천천히 꺼냅니다. ${nameB}의 흐름을 가진 사람은 논리적으로 정리하고 명료하게 표현합니다. 두 사람 모두 감정을 바로 드러내지 않아 서로의 마음을 읽기 어려울 때가 있습니다.`,
+    'warm_grounded-warm_active': `${nameA}의 흐름을 가진 사람은 안정적이고 신중하게 감정을 다룹니다. 반면 ${nameB}의 에너지를 가진 사람은 즉각적으로 표현합니다. "왜 그렇게 흥분해?"와 "왜 그렇게 무덤덤해?"가 부딪히는 순간이 있습니다.`,
+  };
 
-  return `한 사람은 ${expressionA} 방식으로 감정을 다루고, 다른 사람은 ${expressionB} 방식으로 감정을 다룹니다. 이 차이가 때로는 "왜 저렇게 반응하지?"라는 오해를 만들 수 있습니다. 서로의 감정 처리 방식이 다를 뿐, 두 사람 모두 진심으로 관계를 소중히 여기고 있습니다.`;
+  const key = `${fA}-${fB}`;
+  return sceneMap[key] ?? `${nameA}의 흐름을 가진 사람과 ${nameB}의 흐름을 가진 사람은 감정을 다루는 방식이 다릅니다. 같은 상황에서도 서로 다른 반응이 나올 수 있으며, 이것이 때로는 오해의 씨앗이 됩니다. 서로의 방식이 틀린 것이 아니라 다른 것임을 기억하는 것이 중요합니다.`;
 }
 
 function getEmotionExpressionShort(family: EnergyFamily): string {
@@ -487,24 +499,31 @@ function getEmotionExpressionShort(family: EnergyFamily): string {
 }
 
 function buildRhythmDifference(fA: EnergyFamily, fB: EnergyFamily): string {
-  const rhythmMap: Record<EnergyFamily, string> = {
-    warm_active: '빠르고 즉각적인 리듬',
-    warm_soft: '부드럽고 감성적인 리듬',
-    warm_grounded: '안정적이고 일정한 리듬',
-    cool_clear: '명료하고 효율적인 리듬',
-    cool_deep: '느리고 깊이 있는 리듬',
-    nature: '자연스럽고 유연한 리듬',
-    neutral: '균형 잡히고 중심 있는 리듬',
+  const rhythmSceneMap: Partial<Record<string, string>> = {
+    'warm_active-cool_deep': '한 사람은 결정을 빠르게 내리고 바로 행동하고 싶어 합니다. 다른 사람은 충분히 생각하고 나서야 움직이는 편입니다. "왜 이렇게 오래 걸려?"와 "왜 이렇게 서둘러?"가 교차하는 순간이 있습니다. 두 사람이 각자의 속도를 인정하면 오히려 더 안정적인 흐름이 만들어집니다.',
+    'cool_deep-warm_active': '한 사람은 천천히, 깊이 생각하며 움직입니다. 다른 사람은 빠르게 반응하고 즉각 행동합니다. 이 속도 차이가 때로는 답답함으로 느껴질 수 있지만, 서로의 리듬이 합쳐지면 신중함과 추진력이 균형을 이룹니다.',
+    'warm_active-warm_soft': '두 사람 모두 따뜻하게 연결되고 싶은 마음이 있지만, 한 사람은 즉각적으로 표현하고 다른 사람은 부드럽게 천천히 다가갑니다. 속도의 차이가 있지만 방향은 같습니다.',
+    'warm_grounded-cool_deep': '두 사람 모두 천천히, 신중하게 관계를 이어가는 편입니다. 안정적이고 깊이 있는 흐름이 두 사람의 공통된 리듬입니다. 다만 변화나 결정이 필요한 순간에 함께 움직이는 데 시간이 걸릴 수 있습니다.',
+    'nature-cool_clear': '한 사람은 자연스럽게 흘러가는 리듬을 선호하고, 다른 사람은 명료하고 효율적인 흐름을 좋아합니다. "그냥 되는 대로"와 "계획대로"가 부딪히는 순간이 있습니다.',
   };
 
-  const rA = rhythmMap[fA];
-  const rB = rhythmMap[fB];
+  const key = `${fA}-${fB}`;
+  const reverseKey = `${fB}-${fA}`;
 
   if (fA === fB) {
-    return `두 사람은 비슷한 관계 리듬을 가지고 있습니다. ${rA}으로 함께 움직이는 편이라 서로의 페이스를 자연스럽게 맞출 수 있습니다.`;
+    const sameRhythmMap: Record<EnergyFamily, string> = {
+      warm_active: '두 사람 모두 빠르게 반응하고 즉각 행동하는 편입니다. 함께 있으면 에너지가 넘치지만, 둘 다 지쳐있을 때는 서로를 쉬게 해주는 것이 필요합니다.',
+      warm_soft: '두 사람 모두 부드럽고 감성적인 리듬으로 관계를 이어갑니다. 서로의 감정을 자연스럽게 이해하는 편이지만, 때로는 누군가 먼저 현실적인 결정을 내려야 할 때 망설임이 생길 수 있습니다.',
+      warm_grounded: '두 사람 모두 안정적이고 일정한 리듬을 선호합니다. 변화보다 익숙함을 좋아하는 편이라 함께 있으면 편안하지만, 새로운 시도에는 함께 용기가 필요합니다.',
+      cool_clear: '두 사람 모두 명료하고 효율적인 흐름을 선호합니다. 서로의 방식을 잘 이해하지만, 감정적인 연결보다 일 처리가 앞서는 순간이 생길 수 있습니다.',
+      cool_deep: '두 사람 모두 천천히, 깊이 있게 관계를 이어가는 편입니다. 서로의 침묵을 자연스럽게 이해하지만, 감정을 꺼내는 데 둘 다 시간이 걸릴 수 있습니다.',
+      nature: '두 사람 모두 자연스럽고 유연한 리듬을 가지고 있습니다. 서로를 강요하지 않아 편안하지만, 때로는 누군가 먼저 방향을 잡아줄 필요가 있습니다.',
+      neutral: '두 사람 모두 균형 잡힌 리듬으로 관계를 이어갑니다. 서로의 페이스를 자연스럽게 맞출 수 있는 편입니다.',
+    };
+    return sameRhythmMap[fA];
   }
 
-  return `한 사람은 ${rA}을 가지고 있고, 다른 사람은 ${rB}을 가지고 있습니다. 이 리듬의 차이가 때로는 "왜 이렇게 느리지?" 또는 "왜 이렇게 서두르지?"라는 느낌을 만들 수 있습니다. 서로의 리듬을 존중하는 것이 관계의 편안함을 만들어줍니다.`;
+  return rhythmSceneMap[key] ?? rhythmSceneMap[reverseKey] ?? `두 사람의 관계 리듬이 서로 다릅니다. 한 사람의 속도가 다른 사람에게 빠르거나 느리게 느껴질 수 있습니다. 서로의 리듬을 강요하지 않고 중간 지점을 찾아가는 것이 두 사람 관계의 편안함을 만들어줍니다.`;
 }
 
 function buildMisunderstandingPattern(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
@@ -560,12 +579,32 @@ function getRecoveryStyle(family: EnergyFamily): string {
 function buildIntimacyStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
   const styleA = getIntimacyStyleShort(fA);
   const styleB = getIntimacyStyleShort(fB);
+  const isCouple = rel === '연인' || rel === '부부';
+
+  // 연결 방식 차이를 구체적인 장면으로 표현
+  const connectionSceneMap: Partial<Record<string, string>> = {
+    'warm_active-cool_deep': isCouple
+      ? '한 사람은 함께 무언가를 하고 표현을 나눌 때 가장 연결된 느낌을 받습니다. 다른 사람은 깊은 대화 한 번이 수십 번의 가벼운 표현보다 더 크게 닿습니다. 두 사람이 서로의 연결 방식을 알고 있다면, 각자의 방식으로 먼저 다가가는 것이 가장 좋은 시작입니다.'
+      : '한 사람은 함께 활동하며 연결감을 느끼고, 다른 사람은 깊은 대화를 통해 연결됩니다. 서로의 연결 방식이 다르지만, 그 차이를 알면 더 자연스럽게 가까워질 수 있습니다.',
+    'warm_soft-cool_clear': isCouple
+      ? '한 사람은 따뜻한 말 한 마디와 스킨십에서 연결감을 느낍니다. 다른 사람은 약속을 지키고 신뢰를 쌓는 것이 사랑의 언어입니다. "왜 말로 표현 안 해?"와 "내가 이렇게 행동으로 보여주고 있잖아"가 교차하는 순간이 있습니다.'
+      : '한 사람은 따뜻한 감정 표현으로, 다른 사람은 신뢰와 일관성으로 연결됩니다. 서로의 연결 언어를 이해하면 오해가 줄어듭니다.',
+    'cool_deep-warm_soft': isCouple
+      ? '한 사람은 진심 어린 깊은 대화에서 연결감을 느낍니다. 다른 사람은 따뜻한 말과 스킨십이 먼저입니다. 깊이 있는 연결을 원하는 사람과 따뜻한 온기를 원하는 사람이 만나면, 서로의 방식으로 먼저 다가가는 것이 가장 좋은 선물이 됩니다.'
+      : '한 사람은 깊은 대화로, 다른 사람은 따뜻한 감정 표현으로 연결됩니다.',
+    'nature-warm_active': isCouple
+      ? '한 사람은 말 없이 조용히 함께 있는 것만으로도 충분히 연결된 느낌을 받습니다. 다른 사람은 함께 무언가를 하고 표현을 나눌 때 살아있는 느낌이 납니다. "그냥 옆에 있어줘"와 "뭔가 같이 하자"가 교차하는 순간이 있습니다.'
+      : '한 사람은 조용한 동행으로, 다른 사람은 함께하는 활동으로 연결됩니다.',
+  };
+
+  const key = `${fA}-${fB}`;
+  const reverseKey = `${fB}-${fA}`;
 
   if (fA === fB) {
-    return `두 사람 모두 ${styleA} 방식으로 친밀감을 느낍니다. 같은 방식으로 연결되기 때문에 서로의 필요를 자연스럽게 이해하는 편입니다.`;
+    return `두 사람 모두 ${styleA} 방식으로 연결감을 느낍니다. 같은 언어로 연결되기 때문에 서로의 필요를 자연스럽게 알아채는 편입니다. 다만 같은 방식이 오래 반복되면 새로운 연결 시도가 줄어들 수 있으니, 가끔 다른 방식으로 다가가는 것도 관계에 활기를 줍니다.`;
   }
 
-  return `한 사람은 ${styleA} 방식으로 친밀감을 느끼고, 다른 사람은 ${styleB} 방식으로 친밀감을 느낍니다. 서로가 친밀감을 느끼는 방식이 다를 수 있으므로, 상대방이 어떤 방식으로 연결감을 느끼는지 물어보고 그 방식으로 다가가는 것이 중요합니다.`;
+  return connectionSceneMap[key] ?? connectionSceneMap[reverseKey] ?? `한 사람은 ${styleA} 방식으로 연결감을 느끼고, 다른 사람은 ${styleB} 방식으로 연결감을 느낍니다. 상대방이 어떤 방식으로 마음이 열리는지 알고 그 방식으로 먼저 다가가는 것이, 두 사람 사이의 거리를 좁히는 가장 빠른 길입니다.`;
 }
 
 function getIntimacyStyleShort(family: EnergyFamily): string {
@@ -586,11 +625,31 @@ function buildAffectionStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationTy
   const styleA = getAffectionStyleShort(fA, isCouple);
   const styleB = getAffectionStyleShort(fB, isCouple);
 
-  if (fA === fB) {
-    return `두 사람 모두 ${styleA} 방식으로 애정을 표현하는 편입니다. 같은 언어로 사랑을 나누기 때문에 서로의 마음이 자연스럽게 전달됩니다.`;
+  if (!isCouple) {
+    // 연인/부부가 아닌 경우 — 짧고 간결하게
+    if (fA === fB) {
+      return `두 사람 모두 ${styleA} 방식으로 마음을 전달하는 편입니다. 같은 방식으로 표현하기 때문에 서로의 진심이 자연스럽게 닿습니다.`;
+    }
+    return `한 사람은 ${styleA} 방식으로 마음을 전달하고, 다른 사람은 ${styleB} 방식으로 표현합니다. 표현 방식이 달라도 두 사람 모두 진심으로 관계를 소중히 여기고 있습니다.`;
   }
 
-  return `한 사람은 ${styleA} 방식으로 애정을 표현하고, 다른 사람은 ${styleB} 방식으로 애정을 표현합니다. 서로의 사랑 언어가 다를 수 있으므로, 상대방이 어떤 방식으로 마음을 전달하는지 이해하는 것이 중요합니다.`;
+  // 연인/부부 — 구체적인 사랑의 언어 장면
+  const loveLanguageMap: Partial<Record<string, string>> = {
+    'warm_active-cool_deep': '한 사람은 "사랑해", "보고 싶어"를 자주 말하고 표현하는 것이 자연스럽습니다. 다른 사람은 말보다 행동으로, 오래 기억하고 깊이 생각하는 방식으로 마음을 전합니다. 표현의 빈도가 다를 뿐, 두 사람 모두 진심입니다.',
+    'cool_deep-warm_active': '한 사람은 말보다 행동으로, 깊이 기억하고 오래 생각하는 방식으로 마음을 전합니다. 다른 사람은 자주 표현하고 즉각적으로 감정을 나누는 것이 자연스럽습니다. 표현의 방식이 다를 뿐, 두 사람 모두 진심입니다.',
+    'warm_soft-cool_clear': '한 사람은 따뜻한 말과 스킨십으로 사랑을 전합니다. 다른 사람은 약속을 지키고, 필요한 것을 먼저 챙기는 것이 사랑의 언어입니다. "말로 해줘"와 "내가 이렇게 하고 있잖아"가 교차하는 순간, 서로의 언어를 번역해주는 것이 필요합니다.',
+    'cool_clear-warm_soft': '한 사람은 신뢰와 일관성으로 사랑을 표현합니다. 다른 사람은 따뜻한 말과 스킨십이 먼저입니다. 행동으로 보여주는 사랑과 말로 전하는 사랑, 두 가지 모두 진심입니다.',
+    'warm_grounded-warm_soft': '두 사람 모두 따뜻하고 안정적인 방식으로 사랑을 전합니다. 한 사람은 꾸준한 행동으로, 다른 사람은 감성적인 말과 표현으로 마음을 전합니다. 서로의 방식이 자연스럽게 어우러지는 관계입니다.',
+  };
+
+  const key = `${fA}-${fB}`;
+  const reverseKey = `${fB}-${fA}`;
+
+  if (fA === fB) {
+    return `두 사람 모두 ${styleA} 방식으로 사랑을 표현합니다. 같은 언어로 마음을 전하기 때문에 서로의 진심이 자연스럽게 닿는 편입니다. 다만 같은 방식이 익숙해지면 표현이 줄어들 수 있으니, 가끔 새로운 방식으로 마음을 전해보는 것도 좋습니다.`;
+  }
+
+  return loveLanguageMap[key] ?? loveLanguageMap[reverseKey] ?? `한 사람은 ${styleA} 방식으로 사랑을 전하고, 다른 사람은 ${styleB} 방식으로 마음을 표현합니다. 서로의 사랑 언어가 다를 때, 상대방의 방식으로 한 번 표현해보는 것이 두 사람 사이를 더 가깝게 만들어줍니다.`;
 }
 
 function getAffectionStyleShort(family: EnergyFamily, isCouple: boolean): string {
