@@ -217,8 +217,7 @@ export default function CoupleResultScreen() {
             </Text>
           </SectionCard>
 
-          <SectionCard accentColor={accentA} title="회복 방향" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{analysisA.recoveryDirection}</Text>
+          <SectionCard accentColor={accentA} title="보완 컬러" colors={colors}>
             {/* 보완 컬러 */}
             <View style={[styles.complementRow, { backgroundColor: analysisA.complementColor.hex + '18', borderColor: analysisA.complementColor.hex + '40' }]}>
               <View style={[styles.complementDot, { backgroundColor: analysisA.complementColor.hex }]} />
@@ -245,8 +244,7 @@ export default function CoupleResultScreen() {
             </Text>
           </SectionCard>
 
-          <SectionCard accentColor={accentB} title="회복 방향" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{analysisB.recoveryDirection}</Text>
+          <SectionCard accentColor={accentB} title="보완 컬러" colors={colors}>
             <View style={[styles.complementRow, { backgroundColor: analysisB.complementColor.hex + '18', borderColor: analysisB.complementColor.hex + '40' }]}>
               <View style={[styles.complementDot, { backgroundColor: analysisB.complementColor.hex }]} />
               <View style={styles.complementText}>
