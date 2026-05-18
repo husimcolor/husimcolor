@@ -144,6 +144,14 @@ export default function AdminScreen() {
   if (!authenticated) {
     return (
       <ScreenContainer>
+        {/* 로그인 전에도 보이는 커플 테스트 버튼 - 오른쪽 상단 고정 */}
+        <TouchableOpacity
+          style={styles.floatingCoupleBtn}
+          onPress={() => router.push('/(tabs)/couple-start' as any)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.floatingCoupleBtnText}>💑 커플 테스트</Text>
+        </TouchableOpacity>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
           <View style={styles.loginContainer}>
             <Text style={[styles.loginTitle, { color: colors.foreground }]}>🌿 관리자 로그인</Text>
@@ -190,13 +198,22 @@ export default function AdminScreen() {
         {/* 헤더 */}
         <View style={styles.headerRow}>
           <Text style={[styles.pageTitle, { color: colors.foreground }]}>🌿 관리자 대시보드</Text>
-          <TouchableOpacity
-            style={[styles.smallBtn, { borderColor: "#EF4444" }]}
-            onPress={() => { setAuthenticated(false); globalLogout(); setPwInput(""); }}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.smallBtnText, { color: "#EF4444" }]}>로그아웃</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 6 }}>
+            <TouchableOpacity
+              style={[styles.smallBtn, { borderColor: "#4A7A4A", backgroundColor: "rgba(74,122,74,0.12)" }]}
+              onPress={() => router.push('/(tabs)/couple-start' as any)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.smallBtnText, { color: "#4A7A4A" }]}>💑 커플 테스트</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.smallBtn, { borderColor: "#EF4444" }]}
+              onPress={() => { setAuthenticated(false); globalLogout(); setPwInput(""); }}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.smallBtnText, { color: "#EF4444" }]}>로그아웃</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <Text style={[styles.refreshHint, { color: colors.muted }]}>↓ 아래로 당겨 새로고침</Text>
 
@@ -422,6 +439,8 @@ const styles = StyleSheet.create({
   coupleTestBtn: { backgroundColor: "#4A7A4A", borderRadius: 16, paddingVertical: 18, paddingHorizontal: 20, alignItems: "center", gap: 4, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 3 },
   coupleTestBtnTitle: { color: "#fff", fontSize: 18, fontWeight: "800", letterSpacing: -0.3 },
   coupleTestBtnSub: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
+  floatingCoupleBtn: { position: "absolute", top: 16, right: 16, zIndex: 100, backgroundColor: "rgba(74,122,74,0.85)", borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14 },
+  floatingCoupleBtnText: { color: "#fff", fontSize: 13, fontWeight: "700" },
   refreshHint: { fontSize: 12, textAlign: "center", marginTop: -4 },
   // 통계
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
