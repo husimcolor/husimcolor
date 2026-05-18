@@ -350,9 +350,9 @@ export default function CoupleCardSelectScreen() {
       if (isShuffling) return;
       const card = shuffledCards[index];
 
+      // 이미 선택된 카드 다시 탭 → 선택 취소
       const selectedIndex = selectedCards.findIndex(c => c?.id === card.id);
       if (selectedIndex !== -1) {
-        // 선택 취소
         const newSelected = [...selectedCards];
         newSelected[selectedIndex] = null;
         setSelectedCards(newSelected);
@@ -367,17 +367,14 @@ export default function CoupleCardSelectScreen() {
         return;
       }
 
-      // 뒷면 → 앞면 공개
-      if (!flippedIndices.has(index)) {
-        setFlippedIndices(prev => new Set([...prev, index]));
-        if (Platform.OS !== 'web') {
-          Animated.timing(flipAnims[index], { toValue: 1, duration: 400, useNativeDriver: true }).start();
-        }
-        return;
-      }
-
-      // 앞면 상태에서 탭 → 선택 확정
+      // 이미 3장 선택된 상태에서 다른 카드 탭 → 무시
       if (selectedCount >= 3) return;
+
+      // 1회 탭 = 오픈 + 즉시 선택 확정 (2단계 없음)
+      setFlippedIndices(prev => new Set([...prev, index]));
+      if (Platform.OS !== 'web') {
+        Animated.timing(flipAnims[index], { toValue: 1, duration: 400, useNativeDriver: true }).start();
+      }
       const newSelected = [...selectedCards];
       const emptyIndex = newSelected.findIndex(c => c === null);
       if (emptyIndex !== -1) {
@@ -401,11 +398,8 @@ export default function CoupleCardSelectScreen() {
     }
     await AsyncStorage.setItem('@couple_session', JSON.stringify(updated));
 
-    if (person === 'A') {
-      router.push({ pathname: '/(tabs)/couple-select', params: { person: 'B' } } as any);
-    } else {
-      router.push('/(tabs)/couple-result' as any);
-    }
+    // 카드 선택 완료 → 카드 해석 중간 결과 화면으로 이동
+    router.push({ pathname: '/(tabs)/couple-card-result', params: { person } } as any);
   };
 
   return (
