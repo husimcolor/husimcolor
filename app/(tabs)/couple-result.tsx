@@ -13,6 +13,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLOR_DATA } from '@/constants/colorData';
+import { CARD_DATA } from '@/constants/cardData';
 import {
   generatePersonAnalysis, generateCoupleAnalysis,
   type CoupleSessionData, type PersonAnalysis, type CoupleAnalysis,
@@ -144,6 +145,9 @@ export default function CoupleResultScreen() {
   const { relationType, personA, personB } = sessionData;
   const colorsA = personA.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean);
   const colorsB = personB.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean);
+  const cardsA = personA.cards.map(id => CARD_DATA.find(c => c.id === id)).filter(Boolean);
+  const cardsB = personB.cards.map(id => CARD_DATA.find(c => c.id === id)).filter(Boolean);
+  const cardLabels = ['무의식', '현재', '미래'];
 
   const accentA = colorsA[0]?.hex ?? colors.primary;
   const accentB = colorsB[0]?.hex ?? colors.sage;
@@ -172,12 +176,14 @@ export default function CoupleResultScreen() {
             </View>
           </View>
 
-          {/* 두 사람 컬러 요약 */}
+          {/* 두 사람 컬러 + 심리카드 요약 */}
           <View style={[styles.colorSummary, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {/* 첫 번째 사람 */}
             <View style={styles.colorSummaryPerson}>
               <View style={[styles.personBadge, { backgroundColor: accentA + '25' }]}>
                 <Text style={[styles.personBadgeText, { color: accentA }]}>첫 번째 사람</Text>
               </View>
+              {/* 컬러 구슬 */}
               <View style={styles.colorDots}>
                 {colorsA.map(c => c && (
                   <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }]} />
@@ -186,12 +192,28 @@ export default function CoupleResultScreen() {
               <Text style={[styles.colorNames, { color: colors.muted }]}>
                 {colorsA.map(c => c?.korName).join(' · ')}
               </Text>
+              {/* 심리카드 3장 흐름 */}
+              {cardsA.length > 0 && (
+                <View style={styles.cardFlowRow}>
+                  {cardsA.map((card, i) => card && (
+                    <View key={card.id} style={styles.cardFlowItem}>
+                      <View style={[styles.cardFlowChip, { backgroundColor: card.colorHex + '22', borderColor: card.colorHex + '55' }]}>
+                        <Text style={[styles.cardFlowSymbol, { color: card.colorHex }]}>{card.shapeSymbol}</Text>
+                        <Text style={[styles.cardFlowColorName, { color: card.colorHex }]}>{card.colorKor}</Text>
+                      </View>
+                      <Text style={[styles.cardFlowLabel, { color: colors.muted }]}>{cardLabels[i]}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
             <View style={[styles.colorSummaryDivider, { backgroundColor: colors.border }]} />
+            {/* 두 번째 사람 */}
             <View style={styles.colorSummaryPerson}>
               <View style={[styles.personBadge, { backgroundColor: accentB + '25' }]}>
                 <Text style={[styles.personBadgeText, { color: accentB }]}>두 번째 사람</Text>
               </View>
+              {/* 컬러 구슬 */}
               <View style={styles.colorDots}>
                 {colorsB.map(c => c && (
                   <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }]} />
@@ -200,6 +222,20 @@ export default function CoupleResultScreen() {
               <Text style={[styles.colorNames, { color: colors.muted }]}>
                 {colorsB.map(c => c?.korName).join(' · ')}
               </Text>
+              {/* 심리카드 3장 흐름 */}
+              {cardsB.length > 0 && (
+                <View style={styles.cardFlowRow}>
+                  {cardsB.map((card, i) => card && (
+                    <View key={card.id} style={styles.cardFlowItem}>
+                      <View style={[styles.cardFlowChip, { backgroundColor: card.colorHex + '22', borderColor: card.colorHex + '55' }]}>
+                        <Text style={[styles.cardFlowSymbol, { color: card.colorHex }]}>{card.shapeSymbol}</Text>
+                        <Text style={[styles.cardFlowColorName, { color: card.colorHex }]}>{card.colorKor}</Text>
+                      </View>
+                      <Text style={[styles.cardFlowLabel, { color: colors.muted }]}>{cardLabels[i]}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           </View>
 
@@ -455,7 +491,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   colorSummaryPerson: { flex: 1, alignItems: 'center', gap: 8 },
-  colorSummaryDivider: { width: 1, height: 60, marginHorizontal: 12 },
+  colorSummaryDivider: { width: 1, height: '100%' as any, minHeight: 80, marginHorizontal: 8 },
+  cardFlowRow: { flexDirection: 'row', gap: 4, marginTop: 8, justifyContent: 'center' },
+  cardFlowItem: { alignItems: 'center', gap: 3 },
+  cardFlowChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    borderRadius: 8, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 3,
+  },
+  cardFlowSymbol: { fontSize: 11, fontWeight: '700' },
+  cardFlowColorName: { fontSize: 10, fontWeight: '600' },
+  cardFlowLabel: { fontSize: 9, letterSpacing: 0.3 },
   personBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
   personBadgeText: { fontSize: 11, fontWeight: '600' },
   colorDots: { flexDirection: 'row', gap: 6 },
