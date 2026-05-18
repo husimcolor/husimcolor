@@ -174,6 +174,68 @@ function pickComplementColor(
   };
 }
 
+// 컬러별 고유 회복 키워드 맵 (3번 카드 기반)
+const RECOVERY_KEYWORD: Record<string, string> = {
+  red: '잠시 속도를 늦추고 자신을 쉬게 해주는',
+  orange: '따뜻한 관계 속에서 생기를 되찾는',
+  coral: '자신을 먼저 돌봐주는',
+  magenta: '억눌린 감정을 부드럽게 꺼내는',
+  pink: '자신에게 따뜻하게 대해주는',
+  peach: '자신을 사랑하는 연습을 시작하는',
+  beige: '포근하고 부드러운 안정을 찾는',
+  cream: '자신만의 고요한 리듬으로 돌아가는',
+  gold: '자신의 고유한 가치를 편안하게 인정하는',
+  brown: '익숙한 것에서 조금씩 유연해지는',
+  terracotta: '내면의 고요한 평화를 찾는',
+  blue: '믿을 수 있는 사람에게 솔직하게 표현하는',
+  skyblue: '현실에 발을 딛고 꿈을 향해 나아가는',
+  teal: '감정을 정화하고 균형을 되찾는',
+  mint: '몸과 마음을 충분히 쉬게 해주는',
+  indigo: '자신의 직관을 신뢰하며 깊이 성찰하는',
+  violet: '지금 있는 그대로의 자신을 조용히 바라보는',
+  black: '경계를 지키며 자신을 보호하는',
+  silver: '감정을 천천히 정리하고 명료함을 찾는',
+  green: '자연스럽게 회복되도록 두는',
+  olive: '뿌리를 내리고 안정을 찾는',
+  sage: '치유의 마음을 자신에게도 돌려주는',
+  lavender: '자신을 위한 조용하고 따뜻한 시간을 갖는',
+  white: '복잡함을 내려놓고 단순하게 정리하는',
+  yellow: '밝고 가벼운 마음으로 다시 시작하는',
+};
+
+// 1번 카드(현재 심리) 기반 도입 문장
+function buildCard1Intro(card1: ColorData): string {
+  const id = card1.id;
+  const intros: Record<string, string> = {
+    red: '지금 많은 힘을 쏟으며 달려오고 있습니다.',
+    orange: '관계 속에서 많은 것을 주고 있는 시기입니다.',
+    coral: '주변을 돌보느라 자신을 뒤로 미뤄온 것 같습니다.',
+    magenta: '강렬한 감정이 마음속에 쌓여 있는 시기입니다.',
+    pink: '타인을 위해 많은 감정을 쏟아온 시간이었습니다.',
+    peach: '따뜻하게 주변을 챙겨왔지만 정작 자신은 지쳐 있습니다.',
+    beige: '조용히 안정을 유지하려 애써온 시기입니다.',
+    cream: '복잡한 것들을 정리하고 고요히 머물고 싶은 마음이 있습니다.',
+    gold: '자신의 가치를 충분히 인정받지 못한 느낌이 있을 수 있습니다.',
+    brown: '안정을 원하면서도 변화 앞에서 마음이 경직되는 시기입니다.',
+    terracotta: '안정과 열정 사이에서 내면의 갈등이 있는 시기입니다.',
+    blue: '책임감 있게 살아왔지만 감정을 표현하지 못해 답답함이 쌓여 있습니다.',
+    skyblue: '자유롭고 싶은 마음이 강하지만 현실의 무게가 느껴지는 시기입니다.',
+    teal: '이성적으로는 잘 정리되어 있지만 감정과의 연결이 조금 부족한 시기입니다.',
+    mint: '새롭게 시작하고 싶지만 먼저 깊은 휴식이 필요한 상태입니다.',
+    indigo: '혼자 오래 생각하며 많은 것을 마음속에 담아온 시기입니다.',
+    violet: '내면을 깊이 들여다보고 싶은 마음이 강한 시기입니다.',
+    black: '많은 것을 혼자 감당하며 경계를 지켜온 시기입니다.',
+    silver: '감정을 조용히 정리하며 명료함을 찾고 있는 시기입니다.',
+    green: '균형을 유지하려 노력해왔지만 내면의 회복이 필요한 시기입니다.',
+    olive: '묵묵히 자리를 지켜왔지만 자신을 위한 시간이 부족했습니다.',
+    sage: '주변을 치유하느라 자신의 감정은 조용히 쌓아온 시기입니다.',
+    lavender: '감정을 섬세하게 느끼며 천천히 정리하고 싶은 시기입니다.',
+    white: '복잡한 것들을 내려놓고 단순하게 정리하고 싶은 마음이 있습니다.',
+    yellow: '밝게 지내려 했지만 내면에는 정리되지 않은 감정이 있습니다.',
+  };
+  return intros[id] ?? `지금 마음속에 많은 것들이 쌓여 있는 시기입니다.`;
+}
+
 function buildPersonCoachingMessage(
   card1: ColorData,
   card3: ColorData,
@@ -186,19 +248,10 @@ function buildPersonCoachingMessage(
       ? ' 조용한 산책이나 혼자만의 시간이 그 흐름을 도와줄 것입니다.'
       : '';
 
-  const f1 = getFamily(card1.id);
-  const f3 = getFamily(card3.id);
+  const intro = buildCard1Intro(card1);
+  const recoveryKeyword = RECOVERY_KEYWORD[card3.id] ?? `한 걸음씩 자신에게 돌아오는`;
 
-  if (f1 === 'cool_deep' || f1 === 'cool_clear') {
-    return `지금 마음 깊은 곳에는 많은 것들이 조용히 쌓여 있습니다. ${card3.korName}의 흐름처럼 천천히 내면을 열어가는 시간이 필요합니다.${faithNote}`;
-  }
-  if (f1 === 'warm_active') {
-    return `지금 많은 힘을 쏟고 있는 시기입니다. ${card3.korName}의 방향처럼 잠시 멈추고 자신을 돌봐주는 시간이 회복의 시작입니다.${faithNote}`;
-  }
-  if (f3 === 'nature') {
-    return `지금 필요한 것은 억지로 무언가를 해결하려는 것보다, 자연스럽게 흘러가도록 두는 것입니다. ${card3.korName}처럼 조용히 회복되는 시간을 허락해 주세요.${faithNote}`;
-  }
-  return `지금의 마음 흐름은 충분히 이해될 수 있는 것입니다. ${card3.korName}의 방향처럼 한 걸음씩 자신에게 돌아오는 시간이 필요합니다.${faithNote}`;
+  return `${intro} ${recoveryKeyword} 시간이 지금 가장 필요합니다.${faithNote}`;
 }
 
 // ── 통합 관계 해석 ────────────────────────────────────────────────
