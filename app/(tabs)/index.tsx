@@ -206,10 +206,17 @@ export default function HomeScreen() {
               <Text style={[styles.coupleButtonSub, { color: colors.muted }]}>서로를 이해하는 감성 심리코칭 · 곧 오픈 예정</Text>
             </View>
           </View>
-        </Animated.View>
-
+         </Animated.View>
       </View>
 
+      {/* 관리자 링크 - 하단 */}
+      <TouchableOpacity
+        onPress={() => router.push('/(tabs)/admin' as any)}
+        activeOpacity={0.5}
+        style={styles.adminLink}
+      >
+        <Text style={[styles.adminLinkText, { color: colors.muted }]}>관리자</Text>
+      </TouchableOpacity>
     </ScreenContainer>
   );
 }
@@ -409,5 +416,16 @@ const styles = StyleSheet.create({
   },
   coupleButtonSub: {
     fontSize: 11,
+  },
+  adminLink: {
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginBottom: 4,
+  },
+  adminLinkText: {
+    fontSize: 11,
+    opacity: 0.45,
+    letterSpacing: 0.3,
   },
 });
