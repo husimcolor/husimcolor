@@ -306,13 +306,30 @@ export default function CoupleCardSelectScreen() {
   const accentBorder = person === 'A' ? '#8BAF8B55' : '#7B5EA755';
 
   const [sessionData, setSessionData] = useState<CoupleSessionData | null>(null);
-  const [shuffledCards] = useState<CardData[]>(() => shuffleArray(CARD_DATA));
+  // person이 바뀔 때마다 카드를 새로 셔플하기 위해 person을 의존성으로 사용
+  const [shuffledCards, setShuffledCards] = useState<CardData[]>(() => shuffleArray(CARD_DATA));
   const [selectedCards, setSelectedCards] = useState<(CardData | null)[]>([null, null, null]);
   const [flippedIndices, setFlippedIndices] = useState<Set<number>>(new Set());
   const [isShuffling, setIsShuffling] = useState(true);
 
   // 이전 단계 컬러 정보
   const [prevColors, setPrevColors] = useState<{ id: string; korName: string; hex: string }[]>([]);
+
+  const flipAnims = useRef<Animated.Value[]>(
+    Array.from({ length: 63 }, () => new Animated.Value(0))
+  ).current;
+
+  // person이 변경될 때 모든 선택 상태 완전 초기화
+  useEffect(() => {
+    setSelectedCards([null, null, null]);
+    setFlippedIndices(new Set());
+    setIsShuffling(true);
+    setShuffledCards(shuffleArray(CARD_DATA));
+    // flipAnims 전체 리셋
+    flipAnims.forEach(anim => anim.setValue(0));
+    const timer = setTimeout(() => setIsShuffling(false), 2100);
+    return () => clearTimeout(timer);
+  }, [person]);
 
   useEffect(() => {
     AsyncStorage.getItem('@couple_session').then(raw => {
@@ -328,22 +345,13 @@ export default function CoupleCardSelectScreen() {
         }
       }
     });
-  }, []);
+  }, [person]);
 
   useEffect(() => {
     injectCoupleCSS();
   }, []);
 
-  const flipAnims = useRef<Animated.Value[]>(
-    Array.from({ length: 63 }, () => new Animated.Value(0))
-  ).current;
-
   const selectedCount = selectedCards.filter(Boolean).length;
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsShuffling(false), 2100);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleCardPress = useCallback(
     (index: number) => {
