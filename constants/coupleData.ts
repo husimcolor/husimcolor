@@ -1,0 +1,708 @@
+/**
+ * 커플 세션 데이터 로직
+ * 단순 궁합이 아닌 "서로를 이해하고 관계를 회복하는 감성 심리코칭" 흐름
+ */
+
+import { COLOR_DATA, ColorData } from './colorData';
+
+// ── 관계 유형 ────────────────────────────────────────────────────
+export type RelationType =
+  | '연인'
+  | '부부'
+  | '친구'
+  | '부모-자녀'
+  | '형제자매'
+  | '동료';
+
+export type GenderType = '남성' | '여성' | '기타';
+export type FaithType = '기독교' | '무교' | '기타';
+
+export interface PersonInfo {
+  gender: GenderType;
+  faith: FaithType;
+}
+
+export interface PersonSession {
+  info: PersonInfo;
+  /** 선택한 컬러 3개 id */
+  colors: string[];
+  /** 선택한 카드 3장 id */
+  cards: string[];
+}
+
+export interface CoupleSessionData {
+  relationType: RelationType;
+  personA: PersonSession;
+  personB: PersonSession;
+}
+
+// ── 컬러 에너지 계열 분류 ─────────────────────────────────────────
+type EnergyFamily =
+  | 'warm_active'    // 레드, 오렌지, 코랄, 마젠타 — 표현·추진·열정
+  | 'warm_soft'      // 핑크, 피치, 베이지, 크림 — 배려·온기·부드러움
+  | 'warm_grounded'  // 골드, 브라운, 테라코타 — 안정·현실·신뢰
+  | 'cool_clear'     // 블루, 스카이블루, 틸, 민트 — 신뢰·명료·자유
+  | 'cool_deep'      // 인디고, 바이올렛, 블랙, 실버 — 내면·깊이·경계
+  | 'nature'         // 그린, 올리브, 세이지, 라벤더 — 회복·균형·치유
+  | 'neutral'        // 화이트, 옐로우 — 정화·균형·명료
+
+const ENERGY_FAMILY: Record<string, EnergyFamily> = {
+  red: 'warm_active', orange: 'warm_active', coral: 'warm_active', magenta: 'warm_active',
+  pink: 'warm_soft', peach: 'warm_soft', beige: 'warm_soft', cream: 'warm_soft',
+  gold: 'warm_grounded', brown: 'warm_grounded', terracotta: 'warm_grounded',
+  blue: 'cool_clear', skyblue: 'cool_clear', teal: 'cool_clear', mint: 'cool_clear',
+  indigo: 'cool_deep', violet: 'cool_deep', black: 'cool_deep', silver: 'cool_deep',
+  green: 'nature', olive: 'nature', sage: 'nature', lavender: 'nature',
+  white: 'neutral', yellow: 'neutral',
+};
+
+function getFamily(colorId: string): EnergyFamily {
+  return ENERGY_FAMILY[colorId] ?? 'neutral';
+}
+
+function getFamilyLabel(family: EnergyFamily): string {
+  const map: Record<EnergyFamily, string> = {
+    warm_active: '표현·추진 에너지',
+    warm_soft: '배려·온기 에너지',
+    warm_grounded: '안정·현실 에너지',
+    cool_clear: '신뢰·명료 에너지',
+    cool_deep: '내면·깊이 에너지',
+    nature: '회복·균형 에너지',
+    neutral: '정화·균형 에너지',
+  };
+  return map[family];
+}
+
+// ── 개인 분석 결과 생성 ──────────────────────────────────────────
+export interface PersonAnalysis {
+  /** 심리 흐름 (1번 카드 기반) */
+  psychologyFlow: string;
+  /** 현재 감정 흐름 (2번 카드 기반) */
+  currentFlow: string;
+  /** 회복 방향 (3번 카드 기반) */
+  recoveryDirection: string;
+  /** 관계 성향 */
+  relationshipStyle: string;
+  /** 감정 표현 방식 */
+  emotionExpression: string;
+  /** 보완 컬러 1개 */
+  complementColor: { id: string; korName: string; hex: string; meaning: string };
+  /** 개인 코칭 메시지 */
+  coachingMessage: string;
+}
+
+export function generatePersonAnalysis(
+  session: PersonSession,
+  label: 'A' | 'B'
+): PersonAnalysis {
+  const [c1, c2, c3] = session.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean) as ColorData[];
+  const card1 = c1 ?? COLOR_DATA[0];
+  const card2 = c2 ?? COLOR_DATA[1];
+  const card3 = c3 ?? COLOR_DATA[2];
+
+  // 관계 성향
+  const relStyle = card2.relStyle ?? ['따뜻하게 연결되는', '감성적인'];
+  const relationshipStyle = `${relStyle[0]} 성향이 있으며, ${relStyle[1]} 방식으로 관계를 이어갑니다.`;
+
+  // 감정 표현 방식 — 1번 카드 기반
+  const f1 = getFamily(card1.id);
+  const emotionExpression = getEmotionExpression(f1, card1);
+
+  // 보완 컬러 — 3번 카드와 반대 계열에서 선택
+  const complement = pickComplementColor(session.colors, card3.id);
+
+  // 코칭 메시지
+  const coachingMessage = buildPersonCoachingMessage(card1, card3, session.info.faith);
+
+  return {
+    psychologyFlow: card1.reading1,
+    currentFlow: card2.reading2,
+    recoveryDirection: card3.reading3,
+    relationshipStyle,
+    emotionExpression,
+    complementColor: complement,
+    coachingMessage,
+  };
+}
+
+function getEmotionExpression(family: EnergyFamily, card: ColorData): string {
+  const map: Record<EnergyFamily, string> = {
+    warm_active: `감정을 직접적으로 표현하는 편이며, 느끼는 것을 바로 드러내는 경향이 있습니다. ${card.korName}의 에너지처럼 솔직하고 즉각적인 표현 방식을 가지고 있습니다.`,
+    warm_soft: `감정을 부드럽게 전달하는 편이며, 상대방을 배려하며 표현하는 성향이 있습니다. ${card.korName}의 온기처럼 따뜻하고 섬세하게 감정을 나눕니다.`,
+    warm_grounded: `감정을 안정적으로 담아두는 편이며, 신중하게 표현하는 성향이 있습니다. ${card.korName}처럼 현실적이고 차분하게 감정을 전달합니다.`,
+    cool_clear: `감정보다 이성을 앞세우는 편이며, 명확하게 표현하는 성향이 있습니다. ${card.korName}처럼 논리적이고 신뢰 있는 방식으로 소통합니다.`,
+    cool_deep: `감정을 내면에 담아두는 편이며, 쉽게 드러내지 않는 성향이 있습니다. ${card.korName}처럼 깊이 있게 느끼지만 표현까지 시간이 걸립니다.`,
+    nature: `감정을 자연스럽게 흘려보내는 편이며, 억지로 표현하기보다 분위기 속에서 전달하는 성향이 있습니다. ${card.korName}처럼 조용하고 균형 있게 감정을 나눕니다.`,
+    neutral: `감정을 정리한 후 표현하는 편이며, 명료하고 균형 잡힌 방식으로 소통하는 성향이 있습니다. ${card.korName}처럼 차분하고 중심 잡힌 표현 방식을 가지고 있습니다.`,
+  };
+  return map[family];
+}
+
+function pickComplementColor(
+  selectedIds: string[],
+  recoveryColorId: string
+): { id: string; korName: string; hex: string; meaning: string } {
+  const recoveryFamily = getFamily(recoveryColorId);
+  // 회복 방향과 다른 계열에서 보완 컬러 선택
+  const candidates = COLOR_DATA.filter(c =>
+    !selectedIds.includes(c.id) &&
+    getFamily(c.id) !== recoveryFamily &&
+    c.id !== 'red' // 레드는 기본 제외
+  );
+  // 회복·안정 계열 우선
+  const preferred = candidates.filter(c =>
+    ['nature', 'warm_soft', 'cool_clear'].includes(getFamily(c.id))
+  );
+  const pool = preferred.length > 0 ? preferred : candidates;
+  const picked = pool[Math.floor(Math.random() * pool.length)] ?? COLOR_DATA[5];
+
+  const meaningMap: Record<string, string> = {
+    warm_active: '활력과 표현을 깨우는 컬러',
+    warm_soft: '따뜻한 관계와 온기를 채우는 컬러',
+    warm_grounded: '안정과 현실감을 더해주는 컬러',
+    cool_clear: '명료함과 신뢰를 회복하는 컬러',
+    cool_deep: '내면의 깊이와 성찰을 돕는 컬러',
+    nature: '자연스러운 회복과 균형을 돕는 컬러',
+    neutral: '감정을 정리하고 새롭게 시작하는 컬러',
+  };
+
+  return {
+    id: picked.id,
+    korName: picked.korName,
+    hex: picked.hex,
+    meaning: meaningMap[getFamily(picked.id)],
+  };
+}
+
+function buildPersonCoachingMessage(
+  card1: ColorData,
+  card3: ColorData,
+  faith: FaithType
+): string {
+  const faithNote =
+    faith === '기독교'
+      ? ' 기도와 말씀 안에서 그 흐름을 찾아가실 수 있습니다.'
+      : faith === '무교'
+      ? ' 조용한 산책이나 혼자만의 시간이 그 흐름을 도와줄 것입니다.'
+      : '';
+
+  const f1 = getFamily(card1.id);
+  const f3 = getFamily(card3.id);
+
+  if (f1 === 'cool_deep' || f1 === 'cool_clear') {
+    return `지금 마음 깊은 곳에는 많은 것들이 조용히 쌓여 있습니다. ${card3.korName}의 흐름처럼 천천히 내면을 열어가는 시간이 필요합니다.${faithNote}`;
+  }
+  if (f1 === 'warm_active') {
+    return `지금 많은 힘을 쏟고 있는 시기입니다. ${card3.korName}의 방향처럼 잠시 멈추고 자신을 돌봐주는 시간이 회복의 시작입니다.${faithNote}`;
+  }
+  if (f3 === 'nature') {
+    return `지금 필요한 것은 억지로 무언가를 해결하려는 것보다, 자연스럽게 흘러가도록 두는 것입니다. ${card3.korName}처럼 조용히 회복되는 시간을 허락해 주세요.${faithNote}`;
+  }
+  return `지금의 마음 흐름은 충분히 이해될 수 있는 것입니다. ${card3.korName}의 방향처럼 한 걸음씩 자신에게 돌아오는 시간이 필요합니다.${faithNote}`;
+}
+
+// ── 통합 관계 해석 ────────────────────────────────────────────────
+export interface CoupleAnalysis {
+  /** 관계 흐름 요약 */
+  relationFlow: string;
+  /** 두 사람의 공통점 */
+  commonGround: string;
+  /** 서로 다른 기질 */
+  differentTemperament: string;
+  /** 감정 표현 차이 */
+  emotionDifference: string;
+  /** 관계 리듬 차이 */
+  rhythmDifference: string;
+  /** 오해가 생기기 쉬운 패턴 */
+  misunderstandingPattern: string;
+  /** 관계 회복 방향 */
+  recoveryDirection: string;
+  /** 정서적 친밀감 스타일 */
+  intimacyStyle: string;
+  /** 애정 표현 방식 */
+  affectionStyle: string;
+  /** 서로에게 필요한 표현 */
+  neededExpression: { forA: string; forB: string };
+  /** 커플 보완 루틴 */
+  coupleRoutine: CoupleRoutine;
+  /** 마무리 코칭 메시지 */
+  closingMessage: string;
+}
+
+export interface CoupleRoutine {
+  /** 함께하기 좋은 활동 */
+  activities: string[];
+  /** 추천 컬러 */
+  recommendedColors: { id: string; korName: string; hex: string; reason: string }[];
+  /** 감정 회복 루틴 */
+  emotionRecovery: string;
+  /** 대화 루틴 */
+  conversationRoutine: string;
+  /** 함께 쉬는 방식 */
+  restTogether: string;
+  /** 정서적 연결 루틴 */
+  connectionRoutine: string;
+  /** 애정 표현 루틴 (연인/부부) */
+  affectionRoutine?: string;
+}
+
+export function generateCoupleAnalysis(
+  data: CoupleSessionData,
+  analysisA: PersonAnalysis,
+  analysisB: PersonAnalysis
+): CoupleAnalysis {
+  const { relationType, personA, personB } = data;
+
+  const colorsA = personA.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean) as ColorData[];
+  const colorsB = personB.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean) as ColorData[];
+
+  const familiesA = colorsA.map(c => getFamily(c.id));
+  const familiesB = colorsB.map(c => getFamily(c.id));
+
+  // 공통 계열
+  const commonFamilies = familiesA.filter(f => familiesB.includes(f));
+  const hasCommon = commonFamilies.length > 0;
+
+  // 주요 에너지 계열
+  const dominantA = getDominantFamily(familiesA);
+  const dominantB = getDominantFamily(familiesB);
+
+  // 관계 흐름
+  const relationFlow = buildRelationFlow(dominantA, dominantB, relationType, colorsA, colorsB);
+
+  // 공통점
+  const commonGround = buildCommonGround(hasCommon, commonFamilies, colorsA, colorsB);
+
+  // 다른 기질
+  const differentTemperament = buildDifferentTemperament(dominantA, dominantB, colorsA, colorsB);
+
+  // 감정 표현 차이
+  const emotionDifference = buildEmotionDifference(familiesA, familiesB, colorsA, colorsB);
+
+  // 관계 리듬 차이
+  const rhythmDifference = buildRhythmDifference(dominantA, dominantB);
+
+  // 오해 패턴
+  const misunderstandingPattern = buildMisunderstandingPattern(dominantA, dominantB, relationType);
+
+  // 관계 회복 방향
+  const recoveryDirection = buildCoupleRecoveryDirection(dominantA, dominantB, relationType);
+
+  // 정서적 친밀감 스타일
+  const intimacyStyle = buildIntimacyStyle(dominantA, dominantB, relationType);
+
+  // 애정 표현 방식
+  const affectionStyle = buildAffectionStyle(dominantA, dominantB, relationType);
+
+  // 서로에게 필요한 표현
+  const neededExpression = buildNeededExpression(dominantA, dominantB, colorsA, colorsB);
+
+  // 커플 보완 루틴
+  const coupleRoutine = buildCoupleRoutine(dominantA, dominantB, relationType, personA.info.faith, personB.info.faith);
+
+  // 마무리 코칭 메시지
+  const closingMessage = buildClosingMessage(dominantA, dominantB, relationType, personA.info.faith, personB.info.faith);
+
+  return {
+    relationFlow,
+    commonGround,
+    differentTemperament,
+    emotionDifference,
+    rhythmDifference,
+    misunderstandingPattern,
+    recoveryDirection,
+    intimacyStyle,
+    affectionStyle,
+    neededExpression,
+    coupleRoutine,
+    closingMessage,
+  };
+}
+
+// ── 통합 해석 빌더 함수들 ─────────────────────────────────────────
+
+function getDominantFamily(families: EnergyFamily[]): EnergyFamily {
+  const count: Partial<Record<EnergyFamily, number>> = {};
+  for (const f of families) count[f] = (count[f] ?? 0) + 1;
+  return (Object.entries(count).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'neutral') as EnergyFamily;
+}
+
+function buildRelationFlow(
+  fA: EnergyFamily, fB: EnergyFamily,
+  rel: RelationType,
+  colorsA: ColorData[], colorsB: ColorData[]
+): string {
+  const nameA = colorsA[0]?.korName ?? '';
+  const nameB = colorsB[0]?.korName ?? '';
+  const relLabel = rel === '연인' || rel === '부부' ? '두 분' : '두 사람';
+
+  if (fA === fB) {
+    return `${relLabel}은 비슷한 에너지 결을 가지고 있습니다. ${nameA}와 ${nameB}처럼 서로 닮은 흐름이 있어 공감대가 깊고, 같은 방향을 바라볼 때 자연스럽게 연결됩니다. 다만 비슷한 성향이 만날 때는 서로의 약한 부분도 함께 드러날 수 있어, 이해와 여유가 더욱 중요합니다.`;
+  }
+
+  const combos: Partial<Record<string, string>> = {
+    'warm_active-cool_deep': `${nameA}의 표현하는 흐름과 ${nameB}의 내면으로 담아두는 흐름이 만나고 있습니다. 한 사람은 감정을 밖으로 드러내고, 다른 사람은 안으로 정리하는 방식이라 처음에는 서로 다르다고 느낄 수 있습니다. 하지만 이 차이는 서로를 보완하는 힘이 될 수 있습니다.`,
+    'cool_deep-warm_active': `${nameA}의 내면으로 담아두는 흐름과 ${nameB}의 표현하는 흐름이 만나고 있습니다. 서로 다른 방식으로 감정을 다루지만, 그 차이 안에 서로를 채워주는 힘이 있습니다.`,
+    'warm_soft-cool_clear': `${nameA}의 따뜻하고 배려하는 흐름과 ${nameB}의 명료하고 신뢰 중심의 흐름이 만나고 있습니다. 감성과 이성이 균형을 이루는 관계로, 서로의 다름이 안정적인 연결을 만들어줄 수 있습니다.`,
+    'cool_clear-warm_soft': `${nameA}의 명료하고 신뢰 중심의 흐름과 ${nameB}의 따뜻하고 배려하는 흐름이 만나고 있습니다. 이성과 감성이 자연스럽게 균형을 이루는 관계입니다.`,
+    'nature-warm_active': `${nameA}의 조용하고 균형 잡힌 흐름과 ${nameB}의 활기차고 표현하는 흐름이 만나고 있습니다. 한 사람이 안정을 잡아주고 다른 사람이 활력을 불어넣는 보완적인 관계입니다.`,
+    'warm_active-nature': `${nameA}의 활기차고 표현하는 흐름과 ${nameB}의 조용하고 균형 잡힌 흐름이 만나고 있습니다. 서로 다른 리듬이 만나 자연스럽게 균형을 이루는 관계입니다.`,
+  };
+
+  const key = `${fA}-${fB}`;
+  return combos[key] ?? `${nameA}와 ${nameB}처럼 서로 다른 에너지 결이 만나고 있습니다. 이 차이는 갈등의 원인이 되기도 하지만, 서로에게 없는 것을 채워주는 관계의 힘이 되기도 합니다. ${relLabel}의 다름을 이해하는 것이 관계 회복의 첫 걸음입니다.`;
+}
+
+function buildCommonGround(
+  hasCommon: boolean,
+  commonFamilies: EnergyFamily[],
+  colorsA: ColorData[], colorsB: ColorData[]
+): string {
+  if (!hasCommon) {
+    return `두 사람은 서로 다른 에너지 계열을 가지고 있지만, 그 안에서도 공통된 마음이 있습니다. 관계를 소중히 여기고, 서로에게 진심으로 연결되고 싶은 마음은 두 사람 모두에게 있습니다.`;
+  }
+  const familyLabel = getFamilyLabel(commonFamilies[0]);
+  return `두 사람 모두 ${familyLabel} 안에 있는 흐름을 공유하고 있습니다. 이 공통된 결이 서로를 자연스럽게 끌어당기고, 깊은 공감대를 만들어줍니다. 같은 방향을 바라볼 때 두 사람은 가장 편안하게 연결됩니다.`;
+}
+
+function buildDifferentTemperament(
+  fA: EnergyFamily, fB: EnergyFamily,
+  colorsA: ColorData[], colorsB: ColorData[]
+): string {
+  const labelA = getFamilyLabel(fA);
+  const labelB = getFamilyLabel(fB);
+  const nameA = colorsA[0]?.korName ?? 'A';
+  const nameB = colorsB[0]?.korName ?? 'B';
+
+  if (fA === fB) {
+    return `두 사람은 비슷한 기질을 가지고 있습니다. ${labelA} 흐름이 공통적으로 나타나며, 서로를 쉽게 이해하는 편입니다. 다만 같은 성향끼리 만날 때는 서로의 한계도 함께 공명될 수 있으니, 의식적으로 다른 시각을 나눠보는 것이 도움이 됩니다.`;
+  }
+
+  return `한 사람은 ${labelA} 흐름(${nameA} 계열)을, 다른 사람은 ${labelB} 흐름(${nameB} 계열)을 가지고 있습니다. 이 기질의 차이는 서로가 세상을 다르게 경험하고 있다는 것을 의미합니다. 옳고 그름의 문제가 아니라, 서로 다른 방식으로 살아가고 있는 것입니다.`;
+}
+
+function buildEmotionDifference(
+  familiesA: EnergyFamily[], familiesB: EnergyFamily[],
+  colorsA: ColorData[], colorsB: ColorData[]
+): string {
+  const fA = getDominantFamily(familiesA);
+  const fB = getDominantFamily(familiesB);
+
+  const expressionA = getEmotionExpressionShort(fA);
+  const expressionB = getEmotionExpressionShort(fB);
+
+  return `한 사람은 ${expressionA} 방식으로 감정을 다루고, 다른 사람은 ${expressionB} 방식으로 감정을 다룹니다. 이 차이가 때로는 "왜 저렇게 반응하지?"라는 오해를 만들 수 있습니다. 서로의 감정 처리 방식이 다를 뿐, 두 사람 모두 진심으로 관계를 소중히 여기고 있습니다.`;
+}
+
+function getEmotionExpressionShort(family: EnergyFamily): string {
+  const map: Record<EnergyFamily, string> = {
+    warm_active: '감정을 바로 표현하는',
+    warm_soft: '부드럽게 배려하며 표현하는',
+    warm_grounded: '안정적으로 담아두는',
+    cool_clear: '이성적으로 정리하는',
+    cool_deep: '내면에 깊이 담아두는',
+    nature: '자연스럽게 흘려보내는',
+    neutral: '정리한 후 표현하는',
+  };
+  return map[family];
+}
+
+function buildRhythmDifference(fA: EnergyFamily, fB: EnergyFamily): string {
+  const rhythmMap: Record<EnergyFamily, string> = {
+    warm_active: '빠르고 즉각적인 리듬',
+    warm_soft: '부드럽고 감성적인 리듬',
+    warm_grounded: '안정적이고 일정한 리듬',
+    cool_clear: '명료하고 효율적인 리듬',
+    cool_deep: '느리고 깊이 있는 리듬',
+    nature: '자연스럽고 유연한 리듬',
+    neutral: '균형 잡히고 중심 있는 리듬',
+  };
+
+  const rA = rhythmMap[fA];
+  const rB = rhythmMap[fB];
+
+  if (fA === fB) {
+    return `두 사람은 비슷한 관계 리듬을 가지고 있습니다. ${rA}으로 함께 움직이는 편이라 서로의 페이스를 자연스럽게 맞출 수 있습니다.`;
+  }
+
+  return `한 사람은 ${rA}을 가지고 있고, 다른 사람은 ${rB}을 가지고 있습니다. 이 리듬의 차이가 때로는 "왜 이렇게 느리지?" 또는 "왜 이렇게 서두르지?"라는 느낌을 만들 수 있습니다. 서로의 리듬을 존중하는 것이 관계의 편안함을 만들어줍니다.`;
+}
+
+function buildMisunderstandingPattern(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
+  const patterns: Partial<Record<string, string>> = {
+    'warm_active-cool_deep': '한 사람이 감정을 바로 표현할 때, 다른 사람은 그 강도에 압도되어 더 안으로 들어갈 수 있습니다. 표현이 없다고 관심이 없는 것이 아니라, 내면에서 조용히 정리하는 중일 수 있습니다.',
+    'cool_deep-warm_active': '한 사람이 조용히 있을 때, 다른 사람은 "나를 싫어하는 건가?"라고 오해할 수 있습니다. 침묵은 거리두기가 아니라, 깊이 생각하는 방식입니다.',
+    'warm_soft-cool_clear': '한 사람이 감정적으로 표현할 때, 다른 사람은 논리적으로 해결하려 할 수 있습니다. "공감받고 싶은 것"과 "해결책을 주려는 것"의 차이가 오해를 만들 수 있습니다.',
+    'cool_clear-warm_soft': '한 사람이 이성적으로 정리하려 할 때, 다른 사람은 "차갑게 느껴진다"고 받아들일 수 있습니다. 이성적 표현 뒤에도 진심이 있습니다.',
+    'warm_active-nature': '한 사람이 빠르게 반응하고 표현할 때, 다른 사람은 그 속도에 지칠 수 있습니다. 천천히 가는 것이 무관심이 아니라, 자신의 방식으로 함께하는 것입니다.',
+    'nature-warm_active': '한 사람이 조용히 자신의 리듬을 지킬 때, 다른 사람은 "왜 반응이 없지?"라고 느낄 수 있습니다. 조용한 존재감도 함께하는 방식입니다.',
+  };
+
+  const key = `${fA}-${fB}`;
+  return patterns[key] ?? `두 사람은 서로 다른 방식으로 관계에 반응합니다. 한 사람의 행동이 다른 사람에게 다르게 해석될 수 있으며, 이것이 오해의 씨앗이 되기도 합니다. 서로의 의도를 직접 물어보는 것이 오해를 줄이는 가장 좋은 방법입니다.`;
+}
+
+function buildCoupleRecoveryDirection(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
+  const relLabel = rel === '연인' || rel === '부부' ? '두 분' : '두 사람';
+
+  if (fA === fB) {
+    return `${relLabel}은 비슷한 회복 방식을 가지고 있습니다. 함께 조용히 쉬거나, 같은 공간에서 각자의 시간을 갖는 것이 자연스러운 회복이 됩니다. 억지로 대화하기보다 편안한 침묵도 회복의 한 방식입니다.`;
+  }
+
+  const recoveryA = getRecoveryStyle(fA);
+  const recoveryB = getRecoveryStyle(fB);
+
+  return `한 사람은 ${recoveryA} 방식으로 회복되고, 다른 사람은 ${recoveryB} 방식으로 회복됩니다. ${relLabel}의 회복 방향은 서로의 방식을 강요하지 않고, 각자가 필요한 방식으로 쉴 수 있도록 공간을 주는 것입니다. 그 공간 안에서 자연스럽게 다시 연결될 수 있습니다.`;
+}
+
+function getRecoveryStyle(family: EnergyFamily): string {
+  const map: Record<EnergyFamily, string> = {
+    warm_active: '움직이고 표현하며',
+    warm_soft: '따뜻한 연결과 대화로',
+    warm_grounded: '일상의 안정 속에서',
+    cool_clear: '혼자 정리하고 명료화하며',
+    cool_deep: '조용히 내면으로 들어가',
+    nature: '자연 속에서 천천히',
+    neutral: '정리하고 비워내며',
+  };
+  return map[family];
+}
+
+function buildIntimacyStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
+  const styleA = getIntimacyStyleShort(fA);
+  const styleB = getIntimacyStyleShort(fB);
+
+  if (fA === fB) {
+    return `두 사람 모두 ${styleA} 방식으로 친밀감을 느낍니다. 같은 방식으로 연결되기 때문에 서로의 필요를 자연스럽게 이해하는 편입니다.`;
+  }
+
+  return `한 사람은 ${styleA} 방식으로 친밀감을 느끼고, 다른 사람은 ${styleB} 방식으로 친밀감을 느낍니다. 서로가 친밀감을 느끼는 방식이 다를 수 있으므로, 상대방이 어떤 방식으로 연결감을 느끼는지 물어보고 그 방식으로 다가가는 것이 중요합니다.`;
+}
+
+function getIntimacyStyleShort(family: EnergyFamily): string {
+  const map: Record<EnergyFamily, string> = {
+    warm_active: '함께 활동하고 표현을 나누는',
+    warm_soft: '따뜻한 말과 스킨십으로',
+    warm_grounded: '안정적인 일상을 함께하는',
+    cool_clear: '신뢰와 약속을 지키는',
+    cool_deep: '깊은 대화와 이해를 나누는',
+    nature: '조용히 함께 있는',
+    neutral: '편안하고 부담 없이 함께하는',
+  };
+  return map[family];
+}
+
+function buildAffectionStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
+  const isCouple = rel === '연인' || rel === '부부';
+  const styleA = getAffectionStyleShort(fA, isCouple);
+  const styleB = getAffectionStyleShort(fB, isCouple);
+
+  if (fA === fB) {
+    return `두 사람 모두 ${styleA} 방식으로 애정을 표현하는 편입니다. 같은 언어로 사랑을 나누기 때문에 서로의 마음이 자연스럽게 전달됩니다.`;
+  }
+
+  return `한 사람은 ${styleA} 방식으로 애정을 표현하고, 다른 사람은 ${styleB} 방식으로 애정을 표현합니다. 서로의 사랑 언어가 다를 수 있으므로, 상대방이 어떤 방식으로 마음을 전달하는지 이해하는 것이 중요합니다.`;
+}
+
+function getAffectionStyleShort(family: EnergyFamily, isCouple: boolean): string {
+  const map: Record<EnergyFamily, string> = {
+    warm_active: isCouple ? '직접적인 말과 스킨십으로' : '직접적이고 활기차게',
+    warm_soft: isCouple ? '부드러운 말과 따뜻한 스킨십으로' : '따뜻한 말과 배려로',
+    warm_grounded: isCouple ? '안정적인 행동과 함께하는 시간으로' : '꾸준한 행동으로',
+    cool_clear: isCouple ? '신뢰와 약속을 지키는 것으로' : '신뢰와 일관성으로',
+    cool_deep: isCouple ? '깊은 대화와 진심 어린 표현으로' : '진심 어린 말로',
+    nature: isCouple ? '조용히 함께 있는 것으로' : '편안한 존재감으로',
+    neutral: isCouple ? '정리된 말과 편안한 분위기로' : '균형 잡힌 방식으로',
+  };
+  return map[family];
+}
+
+function buildNeededExpression(
+  fA: EnergyFamily, fB: EnergyFamily,
+  colorsA: ColorData[], colorsB: ColorData[]
+): { forA: string; forB: string } {
+  const needed: Record<EnergyFamily, string> = {
+    warm_active: '"지금 많이 힘들지? 잠깐 쉬어도 괜찮아."',
+    warm_soft: '"네가 있어서 정말 다행이야. 고마워."',
+    warm_grounded: '"네 방식이 맞아. 천천히 해도 돼."',
+    cool_clear: '"네 판단을 믿어. 잘 하고 있어."',
+    cool_deep: '"말 안 해도 괜찮아. 네 마음 알아."',
+    nature: '"그냥 옆에 있어줄게. 아무것도 안 해도 돼."',
+    neutral: '"네가 정리한 방식이 맞아. 잘 됐어."',
+  };
+
+  return {
+    forA: `A에게 필요한 표현: ${needed[fA]}`,
+    forB: `B에게 필요한 표현: ${needed[fB]}`,
+  };
+}
+
+function buildCoupleRoutine(
+  fA: EnergyFamily, fB: EnergyFamily,
+  rel: RelationType,
+  faithA: FaithType, faithB: FaithType
+): CoupleRoutine {
+  const isCouple = rel === '연인' || rel === '부부';
+  const isFamilyOrClose = rel === '부모-자녀' || rel === '형제자매';
+
+  // 함께하기 좋은 활동
+  const activities = buildActivities(fA, fB, rel);
+
+  // 추천 컬러
+  const recommendedColors = buildRecommendedColors(fA, fB);
+
+  // 감정 회복 루틴
+  const emotionRecovery = buildEmotionRecovery(fA, fB);
+
+  // 대화 루틴
+  const conversationRoutine = buildConversationRoutine(fA, fB, rel);
+
+  // 함께 쉬는 방식
+  const restTogether = buildRestTogether(fA, fB);
+
+  // 정서적 연결 루틴
+  const connectionRoutine = buildConnectionRoutine(fA, fB, faithA, faithB);
+
+  // 애정 표현 루틴 (연인/부부)
+  const affectionRoutine = isCouple
+    ? buildAffectionRoutine(fA, fB)
+    : undefined;
+
+  return {
+    activities,
+    recommendedColors,
+    emotionRecovery,
+    conversationRoutine,
+    restTogether,
+    connectionRoutine,
+    affectionRoutine,
+  };
+}
+
+function buildActivities(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string[] {
+  const base = [
+    '조용한 카페에서 차 한 잔 나누기',
+    '자연 속 산책 (공원, 숲길, 강변)',
+    '함께 요리하거나 식사 준비하기',
+  ];
+
+  if (fA === 'warm_active' || fB === 'warm_active') {
+    base.push('가벼운 운동이나 스트레칭 함께하기');
+  }
+  if (fA === 'cool_deep' || fB === 'cool_deep') {
+    base.push('조용한 음악 감상이나 독서 함께하기');
+  }
+  if (fA === 'nature' || fB === 'nature') {
+    base.push('식물 가꾸기나 정원 산책');
+  }
+  if (rel === '연인' || rel === '부부') {
+    base.push('저녁 산책 후 따뜻한 음료 나누기');
+  }
+
+  return base.slice(0, 4);
+}
+
+function buildRecommendedColors(fA: EnergyFamily, fB: EnergyFamily): { id: string; korName: string; hex: string; reason: string }[] {
+  const result: { id: string; korName: string; hex: string; reason: string }[] = [];
+
+  // 항상 그린 포함 (회복·균형)
+  result.push({ id: 'green', korName: '그린', hex: '#8FA68E', reason: '두 사람 사이에 자연스러운 회복과 균형을 가져다줍니다.' });
+
+  // 따뜻한 연결이 필요한 경우
+  if (fA === 'cool_deep' || fB === 'cool_deep' || fA === 'cool_clear' || fB === 'cool_clear') {
+    result.push({ id: 'peach', korName: '피치', hex: '#F4A882', reason: '따뜻한 감정 연결과 부드러운 소통을 도와줍니다.' });
+  }
+
+  // 안정이 필요한 경우
+  if (fA === 'warm_active' || fB === 'warm_active') {
+    result.push({ id: 'lavender', korName: '라벤더', hex: '#B8A9C9', reason: '빠른 흐름 속에서 조용한 안정을 찾아줍니다.' });
+  } else {
+    result.push({ id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '감정을 자연스럽게 정리하고 균형을 회복합니다.' });
+  }
+
+  return result.slice(0, 2);
+}
+
+function buildEmotionRecovery(fA: EnergyFamily, fB: EnergyFamily): string {
+  if (fA === 'warm_active' && fB === 'cool_deep') {
+    return '한 사람이 감정을 표현하고 싶을 때, 다른 사람은 "지금 들을 준비가 됐어"라고 먼저 말해주세요. 준비된 공간에서 나누는 감정이 더 깊이 닿습니다.';
+  }
+  if (fA === 'cool_deep' && fB === 'warm_active') {
+    return '한 사람이 조용히 있을 때, 다른 사람은 그 침묵을 존중해 주세요. 충분히 정리된 후 자연스럽게 나눌 수 있습니다.';
+  }
+  return '감정이 쌓였을 때 바로 해결하려 하기보다, 먼저 "지금 어떤 마음이야?"라고 물어보는 것이 회복의 시작입니다. 판단 없이 듣는 것이 가장 큰 위로가 됩니다.';
+}
+
+function buildConversationRoutine(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
+  const isCouple = rel === '연인' || rel === '부부';
+  if (isCouple) {
+    return '하루 중 5~10분, 오늘 있었던 일 중 "좋았던 것 하나"를 나눠보세요. 문제보다 좋은 것을 먼저 나누는 습관이 관계의 온도를 유지해줍니다.';
+  }
+  if (rel === '부모-자녀') {
+    return '판단이나 조언 없이 "오늘 어땠어?"라고 물어보는 것으로 시작해 보세요. 답을 기다리는 것이 아니라, 함께 있는 시간 자체가 대화입니다.';
+  }
+  return '서로에게 "요즘 어때?"라고 먼저 물어보는 것이 관계를 유지하는 가장 간단한 방법입니다. 깊은 대화보다 자주 연결되는 것이 더 중요합니다.';
+}
+
+function buildRestTogether(fA: EnergyFamily, fB: EnergyFamily): string {
+  if (fA === 'cool_deep' || fB === 'cool_deep') {
+    return '같은 공간에서 각자 하고 싶은 것을 하는 "함께하는 혼자 시간"이 두 사람 모두에게 회복이 됩니다. 말 없이 함께 있는 것도 충분한 연결입니다.';
+  }
+  if (fA === 'warm_active' || fB === 'warm_active') {
+    return '가벼운 산책이나 함께하는 움직임이 두 사람의 에너지를 자연스럽게 맞춰줍니다. 움직이면서 나누는 대화가 더 편안하게 느껴질 수 있습니다.';
+  }
+  return '조용한 음악과 함께 차를 마시며 아무 말 없이 쉬는 시간을 가져보세요. 서로에게 아무것도 요구하지 않는 시간이 가장 깊은 회복이 됩니다.';
+}
+
+function buildConnectionRoutine(
+  fA: EnergyFamily, fB: EnergyFamily,
+  faithA: FaithType, faithB: FaithType
+): string {
+  const hasFaith = faithA === '기독교' || faithB === '기독교';
+  if (hasFaith) {
+    return '함께 짧은 감사 기도를 나누거나, 오늘 하루 감사한 것 하나씩 말해보세요. 같은 방향을 바라보는 시간이 정서적 연결을 깊게 만들어줍니다.';
+  }
+  return '하루를 마치며 "오늘 고마웠던 것" 하나씩 나눠보세요. 작은 감사 표현이 관계의 온기를 유지하는 가장 간단한 루틴입니다.';
+}
+
+function buildAffectionRoutine(fA: EnergyFamily, fB: EnergyFamily): string {
+  const needsPhysical = fA === 'warm_soft' || fB === 'warm_soft' || fA === 'warm_active' || fB === 'warm_active';
+  const needsWords = fA === 'cool_deep' || fB === 'cool_deep';
+
+  if (needsPhysical && needsWords) {
+    return '아침이나 저녁에 짧은 포옹과 함께 "오늘도 고마워"라는 말을 나눠보세요. 스킨십과 말이 함께할 때 두 사람 모두에게 닿습니다.';
+  }
+  if (needsPhysical) {
+    return '손잡기, 짧은 포옹, 눈 맞추기 같은 작은 스킨십이 두 사람의 정서적 연결을 유지해줍니다. 말보다 먼저 몸으로 전달되는 따뜻함이 있습니다.';
+  }
+  if (needsWords) {
+    return '"네가 있어서 좋아", "오늘도 수고했어" 같은 짧은 말이 깊이 닿습니다. 거창한 표현보다 진심 어린 한 마디가 더 큰 연결을 만들어줍니다.';
+  }
+  return '함께하는 일상 속에서 "오늘 뭐 먹고 싶어?", "오늘 어땠어?" 같은 작은 관심이 관계를 따뜻하게 유지해줍니다. 특별한 것보다 꾸준한 것이 더 중요합니다.';
+}
+
+function buildClosingMessage(
+  fA: EnergyFamily, fB: EnergyFamily,
+  rel: RelationType,
+  faithA: FaithType, faithB: FaithType
+): string {
+  const relLabel = rel === '연인' || rel === '부부' ? '두 분' : '두 사람';
+  const hasFaith = faithA === '기독교' || faithB === '기독교';
+
+  const messages: Record<string, string> = {
+    '연인': `지금 ${relLabel}에게 필요한 것은 완벽한 관계가 아니라, 서로의 다름을 이해하는 시간입니다. 오늘 이 흐름을 함께 나눈 것만으로도 이미 한 걸음 가까워졌습니다.`,
+    '부부': `${relLabel}의 관계는 오래 함께한 만큼 서로의 패턴이 깊이 새겨져 있습니다. 지금 필요한 것은 새로운 시작이 아니라, 서로를 다시 바라보는 따뜻한 시선입니다.`,
+    '친구': `좋은 친구 사이에도 서로 다른 감정 흐름이 있습니다. 오늘 이 흐름을 이해한 것이 두 사람의 우정을 더 깊게 만들어줄 것입니다.`,
+    '부모-자녀': `세대가 다르고 경험이 달라도, 서로를 향한 마음은 같습니다. 이해의 언어가 다를 뿐, 두 사람 모두 연결되고 싶은 마음이 있습니다.`,
+    '형제자매': `가장 가까운 사이일수록 서로의 다름이 더 크게 느껴질 수 있습니다. 오늘 이 흐름을 통해 서로를 조금 더 이해하는 시간이 되었으면 합니다.`,
+    '동료': `함께 일하는 사이에서도 서로의 에너지 결을 이해하면 더 자연스럽게 협력할 수 있습니다. 오늘의 흐름이 더 편안한 관계의 시작이 되길 바랍니다.`,
+  };
+
+  const base = messages[rel] ?? `${relLabel}의 관계 흐름을 함께 살펴보았습니다. 서로를 이해하는 것이 관계 회복의 시작입니다.`;
+
+  if (hasFaith) {
+    return base + ' 두 분의 관계 위에 하나님의 은혜와 평안이 함께하기를 바랍니다.';
+  }
+
+  return base;
+}

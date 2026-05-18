@@ -193,6 +193,19 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.premiumButtonSub}>63장 카드 · 초기 오픈 무료체험중 · 정식 오픈 후 유료 전환 예정</Text>
           </Pressable>
+
+          {/* 커플 세션 버튼 - 준비중 */}
+          <View style={styles.coupleButtonWrapper}>
+            <View style={styles.coupleButton}>
+              <View style={styles.coupleButtonInner}>
+                <View style={[styles.comingBadge, { backgroundColor: colors.muted + '30' }]}>
+                  <Text style={[styles.comingBadgeText, { color: colors.muted }]}>준비중</Text>
+                </View>
+                <Text style={[styles.coupleButtonText, { color: colors.muted }]}>💑 커플 세션</Text>
+              </View>
+              <Text style={[styles.coupleButtonSub, { color: colors.muted }]}>서로를 이해하는 감성 심리코칭 · 곧 오픈 예정</Text>
+            </View>
+          </View>
         </Animated.View>
 
       </View>
@@ -361,5 +374,40 @@ const styles = StyleSheet.create({
   premiumButtonSub: {
     color: '#A08060',
     fontSize: 12,
+  },
+  coupleButtonWrapper: {
+    width: '100%',
+    marginTop: 4,
+  },
+  coupleButton: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    gap: 4,
+    opacity: 0.7,
+  },
+  coupleButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  comingBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  comingBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  coupleButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  coupleButtonSub: {
+    fontSize: 11,
   },
 });
