@@ -190,24 +190,25 @@ export default function AdminScreen() {
         {/* 헤더 */}
         <View style={styles.headerRow}>
           <Text style={[styles.pageTitle, { color: colors.foreground }]}>🌿 관리자 대시보드</Text>
-          <View style={styles.headerBtns}>
-            <TouchableOpacity
-              style={[styles.smallBtn, { borderColor: "#8FA68E" }]}
-              onPress={() => router.push('/(tabs)/couple-start' as any)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.smallBtnText, { color: "#8FA68E" }]}>💑 커플 테스트</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.smallBtn, { borderColor: "#EF4444" }]}
-              onPress={() => { setAuthenticated(false); globalLogout(); setPwInput(""); }}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.smallBtnText, { color: "#EF4444" }]}>로그아웃</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.smallBtn, { borderColor: "#EF4444" }]}
+            onPress={() => { setAuthenticated(false); globalLogout(); setPwInput(""); }}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.smallBtnText, { color: "#EF4444" }]}>로그아웃</Text>
+          </TouchableOpacity>
         </View>
         <Text style={[styles.refreshHint, { color: colors.muted }]}>↓ 아래로 당겨 새로고침</Text>
+
+        {/* 커플 코칭 테스트 버튼 - 눈에 잘 띄게 상단에 배치 */}
+        <TouchableOpacity
+          style={styles.coupleTestBtn}
+          onPress={() => router.push('/(tabs)/couple-start' as any)}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.coupleTestBtnTitle}>💑 커플 코칭 테스트 시작</Text>
+          <Text style={styles.coupleTestBtnSub}>커플 세션 전체 흐름을 처음부터 체험합니다</Text>
+        </TouchableOpacity>
 
         {/* 통계 대시보드 */}
         <View style={styles.statsGrid}>
@@ -418,6 +419,9 @@ const styles = StyleSheet.create({
   headerBtns: { flexDirection: "row", gap: 6 },
   smallBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1 },
   smallBtnText: { fontSize: 12, fontWeight: "600" },
+  coupleTestBtn: { backgroundColor: "#4A7A4A", borderRadius: 16, paddingVertical: 18, paddingHorizontal: 20, alignItems: "center", gap: 4, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 3 },
+  coupleTestBtnTitle: { color: "#fff", fontSize: 18, fontWeight: "800", letterSpacing: -0.3 },
+  coupleTestBtnSub: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
   refreshHint: { fontSize: 12, textAlign: "center", marginTop: -4 },
   // 통계
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
