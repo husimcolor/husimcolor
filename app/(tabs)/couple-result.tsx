@@ -192,16 +192,26 @@ export default function CoupleResultScreen() {
               <Text style={[styles.colorNames, { color: colors.muted }]}>
                 {colorsA.map(c => c?.korName).join(' · ')}
               </Text>
-              {/* 심리카드 3장 흐름 */}
+              {/* 심리카드 3장 미니 카드 */}
               {cardsA.length > 0 && (
-                <View style={styles.cardFlowRow}>
+                <View style={styles.miniCardRow}>
                   {cardsA.map((card, i) => card && (
-                    <View key={card.id} style={styles.cardFlowItem}>
-                      <View style={[styles.cardFlowChip, { backgroundColor: card.colorHex + '22', borderColor: card.colorHex + '55' }]}>
-                        <Text style={[styles.cardFlowSymbol, { color: card.colorHex }]}>{card.shapeSymbol}</Text>
-                        <Text style={[styles.cardFlowColorName, { color: card.colorHex }]}>{card.colorKor}</Text>
+                    <View key={card.id} style={styles.miniCardItem}>
+                      <View style={[
+                        styles.miniCardFace,
+                        { backgroundColor: card.colorHex },
+                        card.colorKor === '화이트' && styles.miniCardWhiteBorder,
+                      ]}>
+                        <Text style={[
+                          styles.miniCardShape,
+                          { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.92)' },
+                        ]}>{card.shapeSymbol}</Text>
+                        <Text style={[
+                          styles.miniCardColorText,
+                          { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.9)' },
+                        ]}>{card.colorKor}</Text>
                       </View>
-                      <Text style={[styles.cardFlowLabel, { color: colors.muted }]}>{cardLabels[i]}</Text>
+                      <Text style={[styles.miniCardLabel, { color: colors.muted }]}>{cardLabels[i]}</Text>
                     </View>
                   ))}
                 </View>
@@ -222,16 +232,26 @@ export default function CoupleResultScreen() {
               <Text style={[styles.colorNames, { color: colors.muted }]}>
                 {colorsB.map(c => c?.korName).join(' · ')}
               </Text>
-              {/* 심리카드 3장 흐름 */}
+              {/* 심리카드 3장 미니 카드 */}
               {cardsB.length > 0 && (
-                <View style={styles.cardFlowRow}>
+                <View style={styles.miniCardRow}>
                   {cardsB.map((card, i) => card && (
-                    <View key={card.id} style={styles.cardFlowItem}>
-                      <View style={[styles.cardFlowChip, { backgroundColor: card.colorHex + '22', borderColor: card.colorHex + '55' }]}>
-                        <Text style={[styles.cardFlowSymbol, { color: card.colorHex }]}>{card.shapeSymbol}</Text>
-                        <Text style={[styles.cardFlowColorName, { color: card.colorHex }]}>{card.colorKor}</Text>
+                    <View key={card.id} style={styles.miniCardItem}>
+                      <View style={[
+                        styles.miniCardFace,
+                        { backgroundColor: card.colorHex },
+                        card.colorKor === '화이트' && styles.miniCardWhiteBorder,
+                      ]}>
+                        <Text style={[
+                          styles.miniCardShape,
+                          { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.92)' },
+                        ]}>{card.shapeSymbol}</Text>
+                        <Text style={[
+                          styles.miniCardColorText,
+                          { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.9)' },
+                        ]}>{card.colorKor}</Text>
                       </View>
-                      <Text style={[styles.cardFlowLabel, { color: colors.muted }]}>{cardLabels[i]}</Text>
+                      <Text style={[styles.miniCardLabel, { color: colors.muted }]}>{cardLabels[i]}</Text>
                     </View>
                   ))}
                 </View>
@@ -492,15 +512,20 @@ const styles = StyleSheet.create({
   },
   colorSummaryPerson: { flex: 1, alignItems: 'center', gap: 8 },
   colorSummaryDivider: { width: 1, height: '100%' as any, minHeight: 80, marginHorizontal: 8 },
-  cardFlowRow: { flexDirection: 'row', gap: 4, marginTop: 8, justifyContent: 'center' },
-  cardFlowItem: { alignItems: 'center', gap: 3 },
-  cardFlowChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    borderRadius: 8, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 3,
+  miniCardRow: { flexDirection: 'row', gap: 6, marginTop: 10, justifyContent: 'center' },
+  miniCardItem: { alignItems: 'center', gap: 4 },
+  miniCardFace: {
+    width: 44, height: 58,
+    borderRadius: 6,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18, shadowRadius: 4, elevation: 3,
+    gap: 2,
   },
-  cardFlowSymbol: { fontSize: 11, fontWeight: '700' },
-  cardFlowColorName: { fontSize: 10, fontWeight: '600' },
-  cardFlowLabel: { fontSize: 9, letterSpacing: 0.3 },
+  miniCardWhiteBorder: { borderWidth: 1, borderColor: '#D4AF3755' },
+  miniCardShape: { fontSize: 18, lineHeight: 22 },
+  miniCardColorText: { fontSize: 7, fontWeight: '700', letterSpacing: 0.2 },
+  miniCardLabel: { fontSize: 9, letterSpacing: 0.3 },
   personBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
   personBadgeText: { fontSize: 11, fontWeight: '600' },
   colorDots: { flexDirection: 'row', gap: 6 },
