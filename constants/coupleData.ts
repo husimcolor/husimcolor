@@ -728,60 +728,207 @@ function buildCoupleRoutine(
 }
 
 function buildActivities(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string[] {
+  const isCouple = rel === '연인' || rel === '부부';
+
+  // 에너지 조합별 특화 활동
+  const key = `${fA}-${fB}`;
+  const comboActivities: Partial<Record<string, string[]>> = {
+    'warm_active-warm_active': [
+      '함께 달리기나 자전거 타기',
+      '새로운 음식점 탐방하기',
+      '함께 운동하거나 스트레칭 루틴 만들기',
+      '주말 당일치기 여행 계획하기',
+    ],
+    'warm_active-cool_deep': [
+      '가벼운 산책 후 조용한 카페에서 대화 나누기',
+      '함께 영화 보고 각자 느낀 점 나누기',
+      '한 사람이 활동을 제안하고 다른 사람이 장소를 고르기',
+      '저녁 산책 후 따뜻한 음료 나누기',
+    ],
+    'cool_deep-warm_active': [
+      '가벼운 산책 후 조용한 카페에서 대화 나누기',
+      '함께 영화 보고 각자 느낀 점 나누기',
+      '한 사람이 활동을 제안하고 다른 사람이 장소를 고르기',
+      '저녁 산책 후 따뜻한 음료 나누기',
+    ],
+    'warm_soft-cool_clear': [
+      '함께 요리하거나 식사 준비하기',
+      '조용한 카페에서 차 한 잔 나누기',
+      '서로의 플레이리스트 공유하고 음악 감상하기',
+      '집에서 보드게임이나 퍼즐 함께하기',
+    ],
+    'cool_clear-warm_soft': [
+      '함께 요리하거나 식사 준비하기',
+      '조용한 카페에서 차 한 잔 나누기',
+      '서로의 플레이리스트 공유하고 음악 감상하기',
+      '집에서 보드게임이나 퍼즐 함께하기',
+    ],
+    'cool_deep-cool_deep': [
+      '조용한 카페에서 책 읽거나 각자 작업하기',
+      '전시회나 미술관 함께 방문하기',
+      '조용한 음악 틀어놓고 각자 하고 싶은 것 하기',
+      '깊은 주제로 대화하는 시간 갖기',
+    ],
+    'nature-nature': [
+      '자연 속 산책 (공원, 숲길, 강변)',
+      '식물 가꾸기나 정원 산책',
+      '함께 텃밭 가꾸거나 꽃 심기',
+      '조용한 카페에서 차 한 잔 나누기',
+    ],
+    'nature-warm_active': [
+      '자연 속 가벼운 하이킹이나 산책',
+      '공원에서 피크닉 즐기기',
+      '함께 요리하거나 식사 준비하기',
+      '저녁 산책 후 따뜻한 음료 나누기',
+    ],
+    'warm_active-nature': [
+      '자연 속 가벼운 하이킹이나 산책',
+      '공원에서 피크닉 즐기기',
+      '함께 요리하거나 식사 준비하기',
+      '저녁 산책 후 따뜻한 음료 나누기',
+    ],
+    'warm_grounded-warm_grounded': [
+      '함께 요리하거나 식사 준비하기',
+      '집 근처 단골 카페에서 차 나누기',
+      '함께 영화 보거나 드라마 정주행하기',
+      '주말 아침 함께 시장 보러 가기',
+    ],
+    'warm_soft-warm_soft': [
+      '따뜻한 음료 마시며 서로의 이야기 나누기',
+      '함께 요리하거나 베이킹하기',
+      '꽃 시장이나 소품 가게 함께 구경하기',
+      '감성적인 영화 보고 감상 나누기',
+    ],
+  };
+
+  const activities = comboActivities[key] ?? comboActivities[`${fB}-${fA}`];
+  if (activities) return activities.slice(0, 4);
+
+  // 기본 활동 (조합 미매핑 시)
   const base = [
     '조용한 카페에서 차 한 잔 나누기',
     '자연 속 산책 (공원, 숲길, 강변)',
     '함께 요리하거나 식사 준비하기',
   ];
-
   if (fA === 'warm_active' || fB === 'warm_active') {
     base.push('가벼운 운동이나 스트레칭 함께하기');
-  }
-  if (fA === 'cool_deep' || fB === 'cool_deep') {
-    base.push('조용한 음악 감상이나 독서 함께하기');
-  }
-  if (fA === 'nature' || fB === 'nature') {
-    base.push('식물 가꾸기나 정원 산책');
-  }
-  if (rel === '연인' || rel === '부부') {
+  } else if (fA === 'cool_deep' || fB === 'cool_deep') {
+    base.push('전시회나 미술관 함께 방문하기');
+  } else if (isCouple) {
     base.push('저녁 산책 후 따뜻한 음료 나누기');
+  } else {
+    base.push('서로의 플레이리스트 공유하고 음악 감상하기');
   }
-
   return base.slice(0, 4);
 }
 
 function buildRecommendedColors(fA: EnergyFamily, fB: EnergyFamily): { id: string; korName: string; hex: string; reason: string }[] {
+  // 에너지 조합별 콜러 추천 맵
+  const key = `${fA}-${fB}`;
+  const comboColors: Partial<Record<string, { id: string; korName: string; hex: string; reason: string }[]>> = {
+    'warm_active-warm_active': [
+      { id: 'lavender', korName: '라벤더', hex: '#B8A9C9', reason: '빠른 에너지 속에서 조용한 안정과 휴식을 가져다줍니다.' },
+      { id: 'teal', korName: '틸', hex: '#4AADA8', reason: '감정을 정화하고 두 사람 사이의 균형을 돌려줍니다.' },
+    ],
+    'warm_active-cool_deep': [
+      { id: 'blue', korName: '블루', hex: '#5B8DB8', reason: '신뢰와 소통의 다리가 되어줍니다. 서로의 말을 진지하게 듣는 흙을 줍니다.' },
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '서로 다른 리듬을 자연스럽게 조율하는 데 도움을 줍니다.' },
+    ],
+    'cool_deep-warm_active': [
+      { id: 'blue', korName: '블루', hex: '#5B8DB8', reason: '신뢰와 소통의 다리가 되어줍니다. 서로의 말을 진지하게 듣는 흙을 줍니다.' },
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '서로 다른 리듬을 자연스럽게 조율하는 데 도움을 줍니다.' },
+    ],
+    'warm_soft-cool_clear': [
+      { id: 'mint', korName: '민트', hex: '#A8D8C8', reason: '감성과 이성이 자연스럽게 만나는 지점을 만들어줍니다.' },
+      { id: 'cream', korName: '크림', hex: '#F5EDD6', reason: '두 사람 모두에게 편안하고 안정적인 공간을 만들어줍니다.' },
+    ],
+    'cool_clear-warm_soft': [
+      { id: 'mint', korName: '민트', hex: '#A8D8C8', reason: '감성과 이성이 자연스럽게 만나는 지점을 만들어줍니다.' },
+      { id: 'cream', korName: '크림', hex: '#F5EDD6', reason: '두 사람 모두에게 편안하고 안정적인 공간을 만들어줍니다.' },
+    ],
+    'cool_deep-cool_deep': [
+      { id: 'white', korName: '화이트', hex: '#F8F8F8', reason: '복잡한 내면을 정리하고 새롭게 시작하는 힙을 줍니다.' },
+      { id: 'lavender', korName: '라벤더', hex: '#B8A9C9', reason: '깊은 내면에 조용한 안정과 따뜻한 연결을 가져다줍니다.' },
+    ],
+    'nature-nature': [
+      { id: 'green', korName: '그린', hex: '#8FA68E', reason: '두 사람 사이에 자연스럽습고 평온한 회복의 에너지를 채워줍니다.' },
+      { id: 'cream', korName: '크림', hex: '#F5EDD6', reason: '조용하고 따뜻한 휴식의 에너지를 더해줍니다.' },
+    ],
+    'nature-warm_active': [
+      { id: 'green', korName: '그린', hex: '#8FA68E', reason: '활동적인 에너지에 자연스럽습고 평온한 균형을 더해줍니다.' },
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '서로 다른 리듬이 자연스럽게 어우러지도록 동로의 에너지를 줍니다.' },
+    ],
+    'warm_active-nature': [
+      { id: 'green', korName: '그린', hex: '#8FA68E', reason: '활동적인 에너지에 자연스럽고 평온한 균형을 더해줍니다.' },
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '서로 다른 리듬이 자연스럽게 어우러지도록 동로의 에너지를 줍니다.' },
+    ],
+    'warm_grounded-warm_grounded': [
+      { id: 'gold', korName: '골드', hex: '#D4A843', reason: '안정된 에너지에 따뜻한 자신감과 품격을 더해줍니다.' },
+      { id: 'beige', korName: '베이지', hex: '#D4B896', reason: '일상의 편안함과 따뜻한 연결을 유지하는 데 도움을 줍니다.' },
+    ],
+  };
+
+  const colors = comboColors[key] ?? comboColors[`${fB}-${fA}`];
+  if (colors) return colors.slice(0, 2);
+
+  // 기본 추천 (조합 미매핑 시)
   const result: { id: string; korName: string; hex: string; reason: string }[] = [];
-
-  // 항상 그린 포함 (회복·균형)
-  result.push({ id: 'green', korName: '그린', hex: '#8FA68E', reason: '두 사람 사이에 자연스러운 회복과 균형을 가져다줍니다.' });
-
-  // 따뜻한 연결이 필요한 경우
+  result.push({ id: 'green', korName: '그린', hex: '#8FA68E', reason: '두 사람 사이에 자연스럽습고 평온한 회복의 에너지를 채워줍니다.' });
   if (fA === 'cool_deep' || fB === 'cool_deep' || fA === 'cool_clear' || fB === 'cool_clear') {
     result.push({ id: 'peach', korName: '피치', hex: '#F4A882', reason: '따뜻한 감정 연결과 부드러운 소통을 도와줍니다.' });
-  }
-
-  // 안정이 필요한 경우
-  if (fA === 'warm_active' || fB === 'warm_active') {
+  } else if (fA === 'warm_active' || fB === 'warm_active') {
     result.push({ id: 'lavender', korName: '라벤더', hex: '#B8A9C9', reason: '빠른 흐름 속에서 조용한 안정을 찾아줍니다.' });
   } else {
     result.push({ id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '감정을 자연스럽게 정리하고 균형을 회복합니다.' });
   }
-
   return result.slice(0, 2);
 }
 
 function buildEmotionRecovery(fA: EnergyFamily, fB: EnergyFamily): string {
-  if (fA === 'warm_active' && fB === 'cool_deep') {
-    return '한 사람이 감정을 표현하고 싶을 때, 다른 사람은 "지금 들을 준비가 됐어"라고 먼저 말해주세요. 준비된 공간에서 나누는 감정이 더 깊이 닿습니다.';
-  }
-  if (fA === 'cool_deep' && fB === 'warm_active') {
-    return '한 사람이 조용히 있을 때, 다른 사람은 그 침묵을 존중해 주세요. 충분히 정리된 후 자연스럽게 나눌 수 있습니다.';
-  }
-  return '감정이 쌓였을 때 바로 해결하려 하기보다, 먼저 "지금 어떤 마음이야?"라고 물어보는 것이 회복의 시작입니다. 판단 없이 듣는 것이 가장 큰 위로가 됩니다.';
+  const key = `${fA}-${fB}`;
+  const recoveryMap: Partial<Record<string, string>> = {
+    'warm_active-cool_deep': '감정이 올라왔을 때 바로 해결하려 하지 마세요. 한 사람이 "지금 들어줄 수 있어?"라고 먼저 물어보세요. 준비된 공간에서 나누는 감정이 더 깊이 닳습니다. "왜 그래?"보다 "지금 어떤 마음이야?"가 더 좋습니다.',
+    'cool_deep-warm_active': '한 사람이 조용히 있을 때, 다른 사람은 그 침묵을 거리두기로 오해하지 마세요. 침묵은 정리하는 시간입니다. 충분히 정리된 후 자연스럽게 나눠 수 있습니다. "왜 아무 말도 안 해?"보다 "말하고 싶을 때 들어줄게"가 더 좋습니다.',
+    'warm_soft-cool_clear': '한 사람이 감정적으로 표현할 때, 다른 사람은 해결책을 제시하기 전에 먼저 공감해주세요. "어떻게 해"보다 "정말 힙들었겠다"가 먼저입니다. 공감을 맛보고 나서 해결책을 듣는 것이 두 사람 모두에게 더 자연스러운 흐름입니다.',
+    'cool_clear-warm_soft': '한 사람이 논리적으로 정리할 때, 다른 사람은 그 말이 차갑게 느껴질 수 있습니다. "차갑게 들린다"고 말하기 전에, 상대의 의도를 먼저 확인해보세요. 이성적인 표현 뒤에도 진심이 있습니다.',
+    'warm_active-warm_active': '두 사람 모두 감정이 빠르게 올라오는 편입니다. 감정이 올라왔을 때 바로 해결하려 하지 말고, 잠긐 쉽어가는 시간을 먼저 가지세요. "지금 좋지 않아, 나중에 다시 에기자"라고 말하는 것이 두 사람 모두에게 회복의 시간을 줍니다.',
+    'cool_deep-cool_deep': '두 사람 모두 감정을 안으로 담아두는 편입니다. 가끔 "지금 마음 어때?"라고 먼저 물어봐주세요. 답을 강요하지 말고, 말하고 싶을 때 들어줄 수 있다는 신호를 주는 것이 두 사람에게 가장 큰 위로가 됩니다.',
+    'nature-nature': '두 사람 모두 감정을 자연스럽게 흐려보내는 편입니다. 감정이 올라왔을 때 바로 해결하려 하지 말고, 자연 속에서 함께 조용히 쉽는 시간을 가져보세요. 스스로 회복되는 시간이 두 사람 모두에게 필요합니다.',
+    'nature-warm_active': '한 사람이 조용히 있고 싶을 때, 다른 사람은 그 조용함을 존중해주세요. "왕 있어?"보다 "편하게 있어, 시간 되면 말해"가 더 좋습니다.',
+    'warm_active-nature': '한 사람이 빠르게 반응할 때, 다른 사람은 그 속도에 지칠 수 있습니다. "지금 어떤 마음이야?"라고 먼저 물어보세요. 상대의 반응을 해석하기 전에 의도를 먼저 확인하는 것이 오해를 줄여줍니다.',
+    'warm_grounded-warm_grounded': '두 사람 모두 안정적으로 감정을 다룹니다. 감정이 올라왔을 때 일상의 작은 인정 한 마디가 회복의 시작입니다. "네가 한 거 덕봄에 좋았어", "오늘 네가 있어서 다행이었어" 같은 말이 두 사람의 정서를 따뜻하게 유지해줍니다.',
+    'warm_soft-warm_soft': '두 사람 모두 따뜻하고 배려 깊지만, 감정을 표현하는 데 맑설일 수 있습니다. "나 지금 조금 힙들어"라고 먼저 말하는 연습이 두 사람 모두에게 회복의 시작입니다.',
+  };
+
+  const recovery = recoveryMap[key] ?? recoveryMap[`${fB}-${fA}`];
+  if (recovery) return recovery;
+
+  return '감정이 올라왔을 때 바로 해결하려 하기보다, 먼저 "지금 어떤 마음이야?"라고 물어보는 것이 회복의 시작입니다. 판단 없이 듣는 것이 가장 큰 위로가 됩니다.';
 }
 
 function buildConversationRoutine(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
+  const key = `${fA}-${fB}`;
+  // 에너지 조합별 대화 루틴 (연인/부부 전용)
+  const comboConversation: Partial<Record<string, string>> = {
+    'warm_active-cool_deep': '한 분이 먼저 "오늘 어떤 하루였어?"라고 물어보세요. 답을 강요하지 말고, 말하고 싶을 때 들어줄 수 있다는 신호를 주는 것이 두 분 사이의 가장 자연스러운 대화입니다.',
+    'cool_deep-warm_active': '한 분이 먼저 "오늘 어떤 하루였어?"라고 물어보세요. 답을 강요하지 말고, 말하고 싶을 때 들어줄 수 있다는 신호를 주는 것이 두 분 사이의 가장 자연스러운 대화입니다.',
+    'warm_active-warm_active': '하루 중 5분, 오늘 있었던 일 중 "좋았던 것 하나"를 나눠보세요. 두 분 모두 에너지가 높을 때는 서로를 쉽게 해주는 작은 대화가 관계의 온도를 유지해줍니다.',
+    'cool_deep-cool_deep': '조용한 시간에 짧게 "오늘 어떤 순간이 좋았어?"라고 물어보세요. 깊은 대화가 아니라도, 작은 질문 하나가 두 분의 거리를 좁혀줍니다.',
+    'warm_soft-cool_clear': '한 분이 "오늘 나한테 어떤 순간이 좋았어?"라고 물어보세요. 감성과 이성이 자연스럽게 만나는 대화가 두 분 사이를 더 가까운 곳으로 데려다줍니다.',
+    'cool_clear-warm_soft': '한 분이 "오늘 나한테 어떤 순간이 좋았어?"라고 물어보세요. 감성과 이성이 자연스럽게 만나는 대화가 두 분 사이를 더 가까운 곳으로 데려다줍니다.',
+    'nature-nature': '말 없이 함께 있는 시간이 두 분에게 가장 자연스러운 대화입니다. 가끔 "오늘 어떤 순간이 좋았어?"라는 짧은 질문이 두 분의 연결을 더 따뜻하게 만들어줍니다.',
+    'nature-warm_active': '한 분이 먼저 "오늘 어떤 하루였어?"라고 물어보세요. 답을 기다리지 말고, 함께 있는 것이 이미 충분한 연결임을 기억해주세요.',
+    'warm_active-nature': '한 분이 먼저 "오늘 어떤 하루였어?"라고 물어보세요. 답을 기다리지 말고, 함께 있는 것이 이미 충분한 연결임을 기억해주세요.',
+    'warm_grounded-warm_grounded': '저녁 식사 후 짧게 "오늘 어떤 순간이 좋았어?"라고 물어보세요. 일상 속 작은 대화가 두 분의 정서적 연결을 유지해줍니다.',
+    'warm_soft-warm_soft': '하루 중 잠깐, "오늘 나한테 어떤 순간이 좋았어?"라고 물어보세요. 서로를 위하는 마음이 많으니, 그 마음을 조금 더 자주 표현해보세요.',
+  };
+
+  // 연인/부부인 경우 에너지 조합별 대화 루틴 우선
+  if (rel === '연인' || rel === '부부') {
+    const combo = comboConversation[key] ?? comboConversation[`${fB}-${fA}`];
+    if (combo) return combo;
+  }
+
   const routineMap: Partial<Record<RelationType, string>> = {
     '연인': '하루 중 5~10분, 오늘 있었던 일 중 "좋았던 것 하나"를 나눠보세요. 문제보다 좋은 것을 먼저 나누는 습관이 관계의 온도를 유지해줍니다.',
     '부부': '저녁 식사 후 짧게 "오늘 어떤 순간이 좋았어?"라고 물어보세요. 오래된 관계일수록 일상 속 작은 대화가 정서적 연결을 유지해줍니다.',
@@ -804,30 +951,73 @@ function buildRestTogether(fA: EnergyFamily, fB: EnergyFamily): string {
 }
 
 function buildConnectionRoutine(
-  fA: EnergyFamily, fB: EnergyFamily,
-  faithA: FaithType, faithB: FaithType
+  fA: EnergyFamily,
+  fB: EnergyFamily,
+  faithA: FaithType,
+  faithB: FaithType
 ): string {
   const hasFaith = faithA === '기독교' || faithB === '기독교';
+
+  // 에너지 조합별 연결 루틴
+  const key = `${fA}-${fB}`;
+  const connectionMap: Partial<Record<string, string>> = {
+    'warm_active-warm_active': '하루 중 가장 에너지가 높았던 순간과 가장 지쳐있던 순간을 하나씩 나눠보세요. 서로의 에너지를 인정하고 우리만의 휴식 리듬을 함께 만들어가는 것이 연결의 시작입니다.',
+    'warm_active-cool_deep': '한 사람이 먼저 "오늘 어떤 마음이야?"라고 물어보세요. 답을 강요하지 말고, 말하고 싶을 때 들어줄 수 있다는 신호를 주는 것이 가장 큰 연결입니다.',
+    'cool_deep-warm_active': '한 사람이 먼저 "오늘 어떤 마음이야?"라고 물어보세요. 답을 강요하지 말고, 말하고 싶을 때 들어줄 수 있다는 신호를 주는 것이 가장 큰 연결입니다.',
+    'warm_soft-cool_clear': '한 사람이 "오늘 나한테 어떤 순간이 좋았어?"라고 물어보세요. 작은 관심이 두 사람 사이를 따뜻게 유지해줍니다.',
+    'cool_clear-warm_soft': '한 사람이 "오늘 나한테 어떤 순간이 좋았어?"라고 물어보세요. 작은 관심이 두 사람 사이를 따뜻게 유지해줍니다.',
+    'cool_deep-cool_deep': '말이 없어도 괜찮습니다. 같은 공간에서 조용히 있는 것만으로도 충분한 연결입니다. 다만 가끔 "지금 마음 어때?"라는 짧은 질문이 두 사람의 거리를 좌혀줍니다.',
+    'nature-nature': '자연 속에서 함께 조용히 있는 시간이 두 사람에게 가장 자연스러운 연결입니다. 말 없이 함께 승리는 시간, 승리는 공간이 두 사람을 이어줍니다.',
+    'nature-warm_active': '한 사람이 조용히 있고 싶을 때, 다른 사람이 그 조용함을 존중해주세요. 함께 있는 것이 항상 같은 속도일 필요는 없습니다.',
+    'warm_active-nature': '한 사람이 조용히 있고 싶을 때, 다른 사람이 그 조용함을 존중해주세요. 함께 있는 것이 항상 같은 속도일 필요는 없습니다.',
+    'warm_grounded-warm_grounded': '일상의 작은 순간에 집중해보세요. "오늘 저녁 뛰어서 좋았어", "오늘 네가 해준 거 덕봄에 맛있었어" 같은 작은 인정이 두 사람 사이를 따뜻게 유지해줍니다.',
+  };
+
+  const routine = connectionMap[key] ?? connectionMap[`${fB}-${fA}`];
+  if (routine) {
+    if (hasFaith) return routine + ' 함께 짧은 감사를 나누는 시간이 정서적 연결을 더 깊게 만들어줍니다.';
+    return routine;
+  }
+
   if (hasFaith) {
-    return '함께 짧은 감사 기도를 나누거나, 오늘 하루 감사한 것 하나씩 말해보세요. 같은 방향을 바라보는 시간이 정서적 연결을 깊게 만들어줍니다.';
+    return '함께 짧은 감사 기돈을 나누거나, 오늘 하루 감사한 것 하나씩 말해보세요. 같은 방향을 바라보는 시간이 정서적 연결을 깊게 만들어줍니다.';
   }
   return '하루를 마치며 "오늘 고마웠던 것" 하나씩 나눠보세요. 작은 감사 표현이 관계의 온기를 유지하는 가장 간단한 루틴입니다.';
 }
 
 function buildAffectionRoutine(fA: EnergyFamily, fB: EnergyFamily): string {
+  const key = `${fA}-${fB}`;
+  const comboAffection: Partial<Record<string, string>> = {
+    'warm_active-warm_active': '아침에 짧게 안아주거나 "오늘도 파이팅" 한마디로 하루를 열어보세요. 두 분 모두 에너지가 높을 때는 서로를 쉽게 해주는 작은 표현이 가장 큰 연결이 됩니다.',
+    'warm_active-cool_deep': '한 분이 먼저 "오늘 어떤 하루였어?"라고 물어보세요. 답을 기다리지 말고, 말하고 싶을 때 들어줄 수 있다는 신호를 주는 것이 두 분 사이의 가장 자연스러운 연결입니다.',
+    'cool_deep-warm_active': '한 분이 먼저 "오늘 어떤 하루였어?"라고 물어보세요. 답을 기다리지 말고, 말하고 싶을 때 들어줄 수 있다는 신호를 주는 것이 두 분 사이의 가장 자연스러운 연결입니다.',
+    'warm_soft-cool_clear': '한 분은 "네가 있어서 좋아"라는 말이 더 큰 선물입니다. 다른 분은 약속을 지키고 필요한 것을 먼저 챙기는 것이 사랑의 언어입니다. 서로의 언어로 한 번씩 마음을 전해보세요.',
+    'cool_clear-warm_soft': '한 분은 약속을 지키고 필요한 것을 먼저 챙기는 것이 사랑의 언어입니다. 다른 분은 "네가 있어서 좋아"라는 말이 더 큰 선물입니다. 서로의 언어로 한 번씩 마음을 전해보세요.',
+    'cool_deep-cool_deep': '"말 안 해도 네 마음 알아"라는 짧은 한 마디가 두 분 모두에게 깊이 닳습니다. 거창한 표현보다 진심 어린 한 마디가 두 분의 연결을 더 깊게 만들어줍니다.',
+    'nature-nature': '말 없이 조용히 옷에 있어주는 것이 두 분에게 가장 큰 사랑의 표현입니다. 가끔 "네가 연에 있어서 좋아"라는 한 마디를 더해보세요.',
+    'nature-warm_active': '한 분은 조용히 옷에 있어주는 것으로, 다른 분은 짧은 표현과 활동으로 마음을 전합니다. 서로의 언어로 한 번씩 먼저 다가가는 것이 두 분의 거리를 좌혀줍니다.',
+    'warm_active-nature': '한 분은 짧은 표현과 활동으로, 다른 분은 조용히 옷에 있어주는 것으로 마음을 전합니다. 서로의 언어로 한 번씩 먼저 다가가는 것이 두 분의 거리를 좌혀줍니다.',
+    'warm_grounded-warm_grounded': '"오늘도 수고했어", "네가 해준 거 덕봄에 맛있었어" 같은 일상적인 인정이 두 분 모두에게 가장 큰 사랑의 언어입니다. 특별한 것보다 일상 속의 꼸준한 관심이 관계를 따뜻하게 유지해줍니다.',
+    'warm_soft-warm_soft': '"네가 있어서 정말 다행이야", "오늘도 고마워" 같은 말이 두 분 모두에게 깊이 닳습니다. 서로를 위하는 마음이 많으니, 이제는 그 말을 조금 더 자주 전해보세요.',
+  };
+
+  const affection = comboAffection[key] ?? comboAffection[`${fB}-${fA}`];
+  if (affection) return affection;
+
+  // 기본 폴백
   const needsPhysical = fA === 'warm_soft' || fB === 'warm_soft' || fA === 'warm_active' || fB === 'warm_active';
   const needsWords = fA === 'cool_deep' || fB === 'cool_deep';
 
   if (needsPhysical && needsWords) {
-    return '아침이나 저녁에 짧은 포옹과 함께 "오늘도 고마워"라는 말을 나눠보세요. 스킨십과 말이 함께할 때 두 사람 모두에게 닿습니다.';
+    return '아침이나 저녁에 짧은 포옹과 함께 "오늘도 고마워"라는 말을 나눠보세요. 스킨십과 말이 함께할 때 두 사람 모두에게 닳습니다.';
   }
   if (needsPhysical) {
     return '손잡기, 짧은 포옹, 눈 맞추기 같은 작은 스킨십이 두 사람의 정서적 연결을 유지해줍니다. 말보다 먼저 몸으로 전달되는 따뜻함이 있습니다.';
   }
   if (needsWords) {
-    return '"네가 있어서 좋아", "오늘도 수고했어" 같은 짧은 말이 깊이 닿습니다. 거창한 표현보다 진심 어린 한 마디가 더 큰 연결을 만들어줍니다.';
+    return '"네가 있어서 좋아", "오늘도 수고했어" 같은 짧은 말이 깊이 닳습니다. 거창한 표현보다 진심 어린 한 마디가 더 큰 연결을 만들어줍니다.';
   }
-  return '함께하는 일상 속에서 "오늘 뭐 먹고 싶어?", "오늘 어땠어?" 같은 작은 관심이 관계를 따뜻하게 유지해줍니다. 특별한 것보다 꾸준한 것이 더 중요합니다.';
+  return '"오늘 어떤 하루였어?", "네가 있어서 다행이야" 같은 작은 말 한 마디가 두 분 사이를 따뜻하게 유지해줍니다. 특별한 것보다 꼸준한 관심이 더 중요합니다.';
 }
 
 function buildClosingMessage(
@@ -837,21 +1027,44 @@ function buildClosingMessage(
 ): string {
   const relLabel = rel === '연인' || rel === '부부' ? '두 분' : '두 사람';
   const hasFaith = faithA === '기독교' || faithB === '기독교';
+  const faithSuffix = hasFaith ? ' 두 분의 관계 위에 하나님의 은혜와 평안이 함께하기를 바랍니다.' : '';
 
-  const messages: Record<string, string> = {
-    '연인': `지금 ${relLabel}에게 필요한 것은 완벽한 관계가 아니라, 서로의 다름을 이해하는 시간입니다. 오늘 이 흐름을 함께 나눈 것만으로도 이미 한 걸음 더 가까워졌습니다.`,
+  // 에너지 조합별 감정 온도 차별화
+  const key = `${fA}-${fB}`;
+
+  // 연인/부부 조합별 메시지
+  const coupleComboMessages: Partial<Record<string, string>> = {
+    'warm_active-warm_active': `두 분 모두 많은 것을 주고 달려온 시간이었습니다. 이제는 서로를 쉽게 해주는 시간을 연습하세요. 두 분이 함께 쉽는 방법을 찾아가는 것이 지금 가장 아름다운 연습입니다.`,
+    'warm_active-cool_deep': `한 분은 말하고 싶고, 다른 분은 조용히 정리하고 싶었을 겁니다. 두 방식 모두 상대를 향한 진심에서 비롯됩니다. 서로의 속도를 존중하는 것이 두 분 사이의 신뢰를 더 깊게 만들어줍니다.`,
+    'cool_deep-warm_active': `한 분은 조용히 정리하고 싶고, 다른 분은 말하고 싶었을 겁니다. 두 방식 모두 상대를 향한 진심에서 비롯됩니다. 서로의 속도를 존중하는 것이 두 분 사이의 신뢰를 더 깊게 만들어줍니다.`,
+    'warm_soft-cool_clear': `한 분은 마음으로, 다른 분은 행동으로 사랑을 전합니다. 두 방식 모두 진심입니다. 서로의 언어를 조금씩 번역해주는 노력이 두 분 사이를 더 가까운 곳으로 데려다줍니다.`,
+    'cool_clear-warm_soft': `한 분은 행동으로, 다른 분은 마음으로 사랑을 전합니다. 두 방식 모두 진심입니다. 서로의 언어를 조금씩 번역해주는 노력이 두 분 사이를 더 가까운 곳으로 데려다줍니다.`,
+    'cool_deep-cool_deep': `두 분 모두 말보다 마음으로 더 많이 느끼는 사람들입니다. 지금 두 분에게 필요한 것은 더 많은 대화가 아니라, 서로의 침묵을 이해하는 시간입니다. 오늘 이 자리가 그 시작이 되길 바랍니다.`,
+    'nature-nature': `두 분 모두 조용히, 천천히 함께하는 것을 좋아하는 사람들입니다. 서로를 서두르지 않는 것이 두 분의 가장 큰 선물입니다. 오늘 이 시간이 두 분의 연결을 더 편안하게 만들어줍니다.`,
+    'nature-warm_active': `한 분은 조용히 있고 싶고, 다른 분은 함께 무언가를 하고 싶었을 겁니다. 두 방식이 자연스럽게 어우러지는 순간이 두 분의 관계를 가장 편안하게 만들어줍니다.`,
+    'warm_active-nature': `한 분은 함께 무언가를 하고 싶고, 다른 분은 조용히 있고 싶었을 겁니다. 두 방식이 자연스럽게 어우러지는 순간이 두 분의 관계를 가장 편안하게 만들어줍니다.`,
+    'warm_grounded-warm_grounded': `두 분 모두 안정적이고 일상적인 것에서 사랑을 느끽니다. 지금 두 분에게 필요한 것은 새로운 것이 아니라, 일상 속 작은 순간에 다시 집중하는 것입니다. 오늘 이 시간이 그 연습의 시작이 되길 바랍니다.`,
+    'warm_soft-warm_soft': `두 분 모두 따뜻하고 배려 깊은 사람들입니다. 서로를 위하는 마음이 다른 누구보다 많으니, 이제는 자신에게도 그 따뜻함을 돌려주세요. 서로를 쉽게 해주는 것이 두 분의 관계를 더 풍성하게 만들어줍니다.`,
+  };
+
+  // 연인/부부인 경우 조합별 메시지 우선
+  if ((rel === '연인' || rel === '부부') && (coupleComboMessages[key] || coupleComboMessages[`${fB}-${fA}`])) {
+    const msg = coupleComboMessages[key] ?? coupleComboMessages[`${fB}-${fA}`] ?? '';
+    // 부부는 추가 문장
+    const marriageSuffix = rel === '부부' ? ' 오랜 시간이 쌓인 관계일수록, 서로를 다시 바라보는 시선이 새로운 시작이 됩니다.' : '';
+    return msg + marriageSuffix + faithSuffix;
+  }
+
+  // 관계 유형별 기본 메시지
+  const relMessages: Record<RelationType, string> = {
+    '연인': `지금 ${relLabel}에게 필요한 것은 완벽한 관계가 아니라, 서로의 다름을 이해하는 시간입니다. 오늘 이 흐름을 함께 나눠 것만으로도 이미 한 걸음 더 가까워졌습니다.`,
     '부부': `오랜 시간을 함께해온 ${relLabel}의 관계 안에는 이미 많은 이해가 쌓여 있습니다. 지금 필요한 것은 새로운 시작이 아니라, 서로를 다시 바라보는 따뜻한 시선입니다. 오늘 이 시간이 그 시작이 되길 바랍니다.`,
-    '친구': `좋은 친구 사이에도 서로 다른 감정 흐름이 있습니다. 오늘 서로의 흐름을 이해한 것이 두 사람의 우정을 더 깊고 편안하게 만들어줄 것입니다.`,
+    '친구': `좋은 친구 사이에도 서로 다른 감정 흐름이 있습니다. 오늘 서로의 흐름을 이해한 것이 두 사람의 우정을 더 깊고 편안하게 만들어줌 것입니다. 서로의 다름을 아는 우정이 가장 오래 지속됩니다.`,
     '부모-자녀': `세대가 다르고 경험이 달라도, 서로를 향한 마음은 같습니다. 이해의 언어가 다를 뿐, 두 사람 모두 더 가까이 연결되고 싶은 마음이 있습니다. 오늘 이 흐름이 그 연결의 시작이 되길 바랍니다.`,
-    '형제자매': `가장 가까운 사이이기에 더 솔직하고, 때로는 더 상처받기도 합니다. 오늘 서로의 흐름을 이해한 것이 두 사람 사이에 더 따뜻한 공간을 만들어줄 것입니다.`,
+    '형제자매': `가장 가까운 사이이기에 더 솔직하고, 때로는 더 상처받기도 합니다. 오늘 서로의 흐름을 이해한 것이 두 사람 사이에 더 따뜻한 공간을 만들어줌 것입니다. 서로를 이해하는 형제자매가 가장 큰 자산입니다.`,
     '동료': `함께 일하는 사이에서도 서로의 결을 이해하면 더 자연스럽게 협력하고 편안하게 함께할 수 있습니다. 오늘의 흐름이 더 좋은 관계의 시작이 되길 바랍니다.`,
   };
 
-  const base = messages[rel] ?? `${relLabel}의 관계 흐름을 함께 살펴보았습니다. 서로를 이해하는 것이 관계 회복의 시작입니다.`;
-
-  if (hasFaith) {
-    return base + ' 두 분의 관계 위에 하나님의 은혜와 평안이 함께하기를 바랍니다.';
-  }
-
-  return base;
+  const base = relMessages[rel] ?? `${relLabel}의 관계 흐름을 함께 살펴보았습니다. 서로를 이해하는 것이 관계 회복의 시작입니다.`;
+  return base + faithSuffix;
 }
