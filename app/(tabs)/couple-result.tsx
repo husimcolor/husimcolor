@@ -296,12 +296,14 @@ export default function CoupleResultScreen() {
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.recoveryDirection}</Text>
           </SectionCard>
 
-          <SectionCard accentColor={accentCouple} label="정서적 친밀감" title="두 사람이 연결되는 방식" colors={colors}>
+          <SectionCard accentColor={accentCouple} label="연결 방식" title="두 사람이 가까워지는 방법" colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.intimacyStyle}</Text>
-          </SectionCard>
-
-          <SectionCard accentColor={accentCouple} label="애정 표현" title="사랑의 언어" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.affectionStyle}</Text>
+            {coupleAnalysis.affectionStyle !== coupleAnalysis.intimacyStyle && (
+              <>
+                <View style={[sectionStyles.divider, { backgroundColor: accentCouple + '25', marginTop: 8 }]} />
+                <Text style={[styles.bodyText, { color: colors.foreground, marginTop: 4 }]}>{coupleAnalysis.affectionStyle}</Text>
+              </>
+            )}
           </SectionCard>
 
           {/* 서로에게 필요한 표현 */}
