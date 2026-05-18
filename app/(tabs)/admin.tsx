@@ -16,6 +16,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
+import { useAdmin } from "@/lib/adminContext";
 
 // ── 관리자 비밀번호 설정 ──────────────────────────────────────────
 // 비밀번호를 변경하려면 아래 ADMIN_PASSWORD 값을 수정하고 재배포하세요.
@@ -49,9 +50,12 @@ export default function AdminScreen() {
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState(false);
 
+  const { login: globalLogin, logout: globalLogout } = useAdmin();
+
   const handleLogin = () => {
     if (pwInput === ADMIN_PASSWORD) {
       setAuthenticated(true);
+      globalLogin(pwInput); // 전역 관리자 상태 업데이트
       setPwError(false);
     } else {
       setPwError(true);
@@ -196,7 +200,7 @@ export default function AdminScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.smallBtn, { borderColor: "#EF4444" }]}
-              onPress={() => { setAuthenticated(false); setPwInput(""); }}
+              onPress={() => { setAuthenticated(false); globalLogout(); setPwInput(""); }}
               activeOpacity={0.7}
             >
               <Text style={[styles.smallBtnText, { color: "#EF4444" }]}>로그아웃</Text>
