@@ -73,6 +73,103 @@ function getFamilyLabel(family: EnergyFamily): string {
   return map[family];
 }
 
+// ── 개인 에너지 프로파일 (3개 컬러 조합 기반) ─────────────────────
+type PersonProfile =
+  | 'expressive'      // warm_active 우세 — 표현 중심, 즉각적, 활동 공유
+  | 'warm_connector'  // warm_soft 우세 — 배려 중심, 온기, 스킨십
+  | 'stable_seeker'   // warm_grounded 우세 — 안정·신뢰 중심, 꾸준함
+  | 'free_spirit'     // cool_clear 우세 — 자유·명료 중심, 공간 필요
+  | 'deep_thinker'    // cool_deep 우세 — 내면 정리 중심, 깊이·신뢰
+  | 'balanced_healer' // nature 우세 — 균형·치유 중심, 자연스러운 흐름
+  | 'clear_minded';   // neutral 우세 — 정화·명료 중심, 새로운 시작
+
+function getPersonEnergyProfile(families: EnergyFamily[]): {
+  dominant: EnergyFamily;
+  secondary: EnergyFamily | null;
+  profile: PersonProfile;
+  psychologyFlowText: string;
+  currentFlowText: string;
+  relationshipStyleText: string;
+} {
+  // 빈도 계산
+  const count: Partial<Record<EnergyFamily, number>> = {};
+  for (const f of families) count[f] = (count[f] ?? 0) + 1;
+  const sorted = Object.entries(count).sort((a, b) => (b[1] as number) - (a[1] as number));
+  const dominant = (sorted[0]?.[0] ?? 'neutral') as EnergyFamily;
+  const secondary = sorted.length > 1 && (sorted[1]?.[1] as number) >= 1
+    ? (sorted[1]?.[0] as EnergyFamily)
+    : null;
+
+  // 프로파일 결정
+  const profileMap: Record<EnergyFamily, PersonProfile> = {
+    warm_active: 'expressive',
+    warm_soft: 'warm_connector',
+    warm_grounded: 'stable_seeker',
+    cool_clear: 'free_spirit',
+    cool_deep: 'deep_thinker',
+    nature: 'balanced_healer',
+    neutral: 'clear_minded',
+  };
+  const profile = profileMap[dominant];
+
+  // 심리 흐름 (무의식/내면 흐름) — 조합 기반 차별화
+  const psychologyFlowMap: Record<PersonProfile, string> = {
+    expressive: '감정이 생기면 바로 표현하고 싶어 하는 흐름이 내면에 있습니다.\n열정적으로 움직이고, 관계 속에서 직접 표현하며 연결되는 것을 중요하게 여깁니다.\n때로는 감정이 앞서 나가 자신도 놀랄 때가 있습니다.',
+    warm_connector: '주변 사람들을 따뜻하게 돌보고 싶은 마음이 내면 깊이 자리하고 있습니다.\n감정을 부드럽게 전달하며, 관계에서 온기와 연결을 가장 소중히 여깁니다.\n자신보다 상대를 먼저 챙기는 성향이 강한 편입니다.',
+    stable_seeker: '안정과 신뢰를 바탕으로 관계를 이어가고 싶은 마음이 내면에 있습니다.\n꾸준하고 일관된 방식으로 감정을 전달하며, 약속과 현실적인 행동을 중요하게 여깁니다.\n변화보다 익숙하고 안정적인 것에서 편안함을 찾는 편입니다.',
+    free_spirit: '자유롭고 명료한 소통을 원하는 흐름이 내면에 있습니다.\n논리적으로 정리된 표현을 선호하며, 관계에서 각자의 공간과 독립성을 중요하게 여깁니다.\n감정보다 상황을 먼저 파악하려는 성향이 있습니다.',
+    deep_thinker: '감정을 깊이 느끼지만 바로 드러내지 않는 흐름이 내면에 있습니다.\n충분히 정리된 후에야 표현하며, 관계에서 깊은 신뢰와 진심 어린 연결을 가장 소중히 여깁니다.\n혼자 오래 생각하며 마음속에 많은 것을 담아두는 편입니다.',
+    balanced_healer: '자연스럽고 균형 잡힌 흐름을 원하는 마음이 내면에 있습니다.\n억지로 표현하기보다 분위기 속에서 자연스럽게 전달하며, 관계에서 편안함과 균형을 중요하게 여깁니다.\n조용히 곁에 있어주는 것이 가장 큰 표현 방식입니다.',
+    clear_minded: '복잡한 것을 정리하고 새롭게 시작하고 싶은 흐름이 내면에 있습니다.\n명료하고 균형 잡힌 방식으로 소통하며, 관계에서 솔직하고 담백한 연결을 원합니다.\n감정을 정리한 후 표현하는 편이라 때로는 속마음이 늦게 전달됩니다.',
+  };
+
+  // 현재 감정 흐름 — 조합 기반 차별화 (secondary 반영)
+  const currentFlowMap: Record<PersonProfile, string> = {
+    expressive: '지금은 감정이 활발하게 움직이는 시기입니다.\n표현하고 싶은 것이 많고, 관계 속에서 무언가를 함께 하고 싶은 마음이 강합니다.\n에너지가 넘치는 만큼, 잠깐 속도를 늦추고 상대의 리듬을 확인하는 것이 도움이 됩니다.',
+    warm_connector: '지금은 누군가와 따뜻하게 연결되고 싶은 마음이 강한 시기입니다.\n상대방을 배려하는 마음이 크지만, 정작 자신의 감정은 뒤로 미루고 있을 수 있습니다.\n자신에게도 그 따뜻함을 돌려주는 시간이 필요합니다.',
+    stable_seeker: '지금은 안정적인 관계와 일상을 원하는 마음이 강한 시기입니다.\n변화보다 익숙하고 신뢰할 수 있는 것에서 편안함을 찾고 있습니다.\n꾸준한 일상의 작은 인정이 지금 가장 큰 힘이 됩니다.',
+    free_spirit: '지금은 자유롭고 가벼운 흐름을 원하는 시기입니다.\n감정보다 상황을 명료하게 정리하고 싶은 마음이 있으며, 관계에서도 각자의 공간이 필요합니다.\n부담 없이 솔직하게 소통할 수 있는 환경이 지금 가장 편안합니다.',
+    deep_thinker: '지금은 마음속에 많은 것을 담아두고 있는 시기입니다.\n감정을 충분히 정리한 후에야 표현할 수 있어, 겉으로는 조용해 보일 수 있습니다.\n혼자만의 시간이 충분히 주어질 때 가장 자연스럽게 열립니다.',
+    balanced_healer: '지금은 자연스럽게 회복되고 싶은 마음이 있는 시기입니다.\n억지로 무언가를 하기보다 자신의 리듬대로 천천히 움직이고 싶어 합니다.\n조용히 함께 있어주는 것만으로도 충분히 연결된 느낌을 받습니다.',
+    clear_minded: '지금은 복잡한 것들을 정리하고 새롭게 시작하고 싶은 마음이 있는 시기입니다.\n감정을 담백하게 정리하며, 솔직하고 명료한 소통을 원합니다.\n지금은 자신에게 필요한 것이 무엇인지 조용히 확인하는 시간이 도움이 됩니다.',
+  };
+
+  // 관계 성향 — 조합 기반 차별화 (secondary 반영)
+  const relationshipStyleMap: Record<PersonProfile, string> = {
+    expressive: '감정을 직접 표현하며 관계를 이끌어가는 성향이 있습니다. 함께 활동하고 표현을 나눌 때 가장 연결된 느낌을 받으며, 관계에서 활기와 공유를 중요하게 여깁니다.',
+    warm_connector: '따뜻하게 배려하며 관계를 이어가는 성향이 있습니다. 상대방의 감정을 먼저 살피며, 온기 있는 말과 스킨십으로 연결되는 것을 소중히 여깁니다.',
+    stable_seeker: '안정적이고 꾸준하게 관계를 이어가는 성향이 있습니다. 약속을 지키고 일관된 행동으로 신뢰를 쌓으며, 관계에서 편안함과 지속성을 가장 중요하게 여깁니다.',
+    free_spirit: '자유롭고 명료한 방식으로 관계를 이어가는 성향이 있습니다. 각자의 공간을 존중하며, 부담 없이 솔직하게 소통할 수 있는 관계를 선호합니다.',
+    deep_thinker: '깊이 있는 신뢰를 바탕으로 관계를 이어가는 성향이 있습니다. 말보다 행동으로, 오래 기억하고 진심 어린 방식으로 마음을 전하며, 관계에서 깊이와 진정성을 가장 소중히 여깁니다.',
+    balanced_healer: '자연스럽고 편안한 방식으로 관계를 이어가는 성향이 있습니다. 조용히 곁에 있어주는 것이 가장 큰 표현이며, 관계에서 균형과 편안함을 중요하게 여깁니다.',
+    clear_minded: '담백하고 솔직한 방식으로 관계를 이어가는 성향이 있습니다. 감정을 정리한 후 명료하게 표현하며, 관계에서 솔직함과 균형을 중요하게 여깁니다.',
+  };
+
+  // secondary 계열이 있을 때 관계 성향에 뉘앙스 추가
+  let finalRelStyle = relationshipStyleMap[profile];
+  if (secondary && secondary !== dominant) {
+    const secondaryNuance: Partial<Record<EnergyFamily, string>> = {
+      warm_active: ' 때로는 즉각적으로 표현하고 싶은 마음이 올라오기도 합니다.',
+      warm_soft: ' 상대방을 배려하는 마음이 함께 흐르고 있습니다.',
+      warm_grounded: ' 안정적인 일상 속에서 관계의 신뢰를 쌓아가는 것을 중요하게 여깁니다.',
+      cool_clear: ' 때로는 각자의 공간이 필요하다는 것을 느끼기도 합니다.',
+      cool_deep: ' 내면에서 충분히 정리된 후에야 마음을 열 수 있는 부분도 있습니다.',
+      nature: ' 자연스럽게 흘러가는 관계의 리듬을 소중히 여깁니다.',
+      neutral: ' 감정을 담백하게 정리하고 표현하는 성향도 함께 있습니다.',
+    };
+    finalRelStyle += secondaryNuance[secondary] ?? '';
+  }
+
+  return {
+    dominant,
+    secondary,
+    profile,
+    psychologyFlowText: psychologyFlowMap[profile],
+    currentFlowText: currentFlowMap[profile],
+    relationshipStyleText: finalRelStyle,
+  };
+}
+
 // ── 개인 분석 결과 생성 ──────────────────────────────────────────
 export interface PersonAnalysis {
   /** 심리 흐름 (1번 카드 기반) */
@@ -100,11 +197,11 @@ export function generatePersonAnalysis(
   const card2 = c2 ?? COLOR_DATA[1];
   const card3 = c3 ?? COLOR_DATA[2];
 
-  // 관계 성향
-  const relStyle = card2.relStyle ?? ['따뜻하게 연결되는', '감성적인'];
-  const relationshipStyle = `${relStyle[0]} 성향이 있으며, ${relStyle[1]} 방식으로 관계를 이어갑니다.`;
+  // 3개 컬러의 EnergyFamily 조합으로 개인 에너지 프로파일 도출
+  const allFamilies = [card1, card2, card3].map(c => getFamily(c.id));
+  const energyProfile = getPersonEnergyProfile(allFamilies);
 
-  // 감정 표현 방식 — 1번 카드 기반
+  // 감정 표현 방식 — 1번 카드 기반 (기존 유지)
   const f1 = getFamily(card1.id);
   const emotionExpression = getEmotionExpression(f1, card1);
 
@@ -115,10 +212,11 @@ export function generatePersonAnalysis(
   const coachingMessage = buildPersonCoachingMessage(card1, card3, session.info.faith);
 
   return {
-    psychologyFlow: card1.reading1,
-    currentFlow: card2.reading2,
+    // 컬러 조합 기반 에너지 프로파일로 차별화된 해석 생성
+    psychologyFlow: energyProfile.psychologyFlowText,
+    currentFlow: energyProfile.currentFlowText,
     recoveryDirection: card3.reading3,
-    relationshipStyle,
+    relationshipStyle: energyProfile.relationshipStyleText,
     emotionExpression,
     complementColor: complement,
     coachingMessage,
