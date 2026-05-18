@@ -16,7 +16,7 @@ import {
 // ─── SectionCard ─────────────────────────────────────────────────────────────
 const sectionStyles = StyleSheet.create({
   card: {
-    borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 12, gap: 8,
+    borderRadius: 14, borderWidth: 1, padding: 18, marginBottom: 12, gap: 8, minHeight: 80,
   },
   label: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 },
   title: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
     fontSize: 12, fontWeight: '600', letterSpacing: 0.8,
     textTransform: 'uppercase', marginBottom: 12, marginTop: 4,
   },
-  bodyText: { fontSize: 14, lineHeight: 24 },
+  bodyText: { fontSize: 14, lineHeight: 26, minHeight: 48 },
   complementRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     borderRadius: 12, borderWidth: 1, padding: 12, marginTop: 8,
@@ -506,23 +506,23 @@ const styles = StyleSheet.create({
   complementDot: { width: 32, height: 32, borderRadius: 16 },
   complementText: { flex: 1, gap: 2 },
   complementName: { fontSize: 14, fontWeight: '700' },
-  complementMeaning: { fontSize: 12, lineHeight: 18 },
+  complementMeaning: { fontSize: 12, lineHeight: 20 },
   coachingMessage: {
-    fontSize: 14, lineHeight: 24, fontStyle: 'italic',
+    fontSize: 14, lineHeight: 26, fontStyle: 'italic',
     borderLeftWidth: 3, paddingLeft: 12, marginTop: 8,
   },
   neededRow: { borderRadius: 10, borderWidth: 1, padding: 12 },
-  neededText: { fontSize: 14, lineHeight: 22, fontStyle: 'italic' },
+  neededText: { fontSize: 14, lineHeight: 26, fontStyle: 'italic' },
   bulletRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   bullet: { fontSize: 16, lineHeight: 22, fontWeight: '700' },
-  bulletText: { flex: 1, fontSize: 14, lineHeight: 22 },
+  bulletText: { flex: 1, fontSize: 14, lineHeight: 24 },
   closingCard: {
     borderRadius: 16, borderWidth: 1, padding: 24, marginBottom: 20, gap: 12,
     alignItems: 'center',
   },
   closingLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
   closingMessage: {
-    fontSize: 15, lineHeight: 26, textAlign: 'center', fontStyle: 'italic',
+    fontSize: 15, lineHeight: 28, textAlign: 'center', fontStyle: 'italic',
   },
   restartBtn: {
     paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginBottom: 12,
