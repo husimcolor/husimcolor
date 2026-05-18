@@ -1,7 +1,8 @@
 /**
  * 커플 세션 컬러 해석 중간 결과 화면
  * - 1단계 컬러 3장 선택 후 개인별 컬러 해석 표시
- * - 심리 흐름 / 현재 감정 흐름 / 회복 방향 / 관계 성향 / 감정 표현 방식
+ * - 심리 흐름 / 현재 감정 흐름 / 회복 방향 / 관계 성향 / 감정 표현 방식 (5가지만)
+ * - 코칭 메시지·보완 컬러는 2단계로 이동
  * - 확인 후 2단계 심리카드 선택으로 이동
  */
 import React, { useState, useEffect, useRef } from 'react';
@@ -151,22 +152,11 @@ export default function CoupleColorResultScreen() {
                 <Text style={styles.cardContent}>{analysis.emotionExpression}</Text>
               </View>
 
-              {/* 코칭 메시지 */}
-              <View style={[styles.coachingCard, { borderColor: accentColor + '44', backgroundColor: accentColor + '11' }]}>
-                <Text style={[styles.coachingLabel, { color: accentColor }]}>🌿 코칭 메시지</Text>
-                <Text style={[styles.coachingContent, { color: '#3D3530' }]}>{analysis.coachingMessage}</Text>
-              </View>
-
-              {/* 보완 컬러 */}
-              <View style={[styles.complementCard, { borderColor: accentBorder }]}>
-                <Text style={[styles.complementLabel, { color: accentColor }]}>✨ 보완 컬러 제안</Text>
-                <View style={styles.complementRow}>
-                  <View style={[styles.complementCircle, { backgroundColor: analysis.complementColor.hex }]} />
-                  <View style={styles.complementInfo}>
-                    <Text style={styles.complementName}>{analysis.complementColor.korName}</Text>
-                    <Text style={styles.complementMeaning}>{analysis.complementColor.meaning}</Text>
-                  </View>
-                </View>
+              {/* 2단계 예고 배너 */}
+              <View style={[styles.previewBanner, { backgroundColor: accentColor + '0F', borderColor: accentColor + '33' }]}>
+                <Text style={[styles.previewBannerTitle, { color: accentColor }]}>🃏 2단계에서 더 깊이 읽어드립니다</Text>
+                <Text style={styles.previewBannerText}>
+                  심리카드 3장이 무의식 · 현재 · 미래 에너지를 연결하여{"\n"}코칭 메시지와 회복 루틴을 안내해 드립니다.                </Text>
               </View>
             </>
           )}
@@ -229,25 +219,11 @@ const styles = StyleSheet.create({
   },
   cardLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
   cardContent: { fontSize: 14, color: '#3D3530', lineHeight: 22 },
-  coachingCard: {
-    borderRadius: 14, borderWidth: 1.5, padding: 18, marginBottom: 12, gap: 8,
+  previewBanner: {
+    borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 20, gap: 8,
   },
-  coachingLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
-  coachingContent: { fontSize: 15, lineHeight: 24, fontWeight: '500' },
-  complementCard: {
-    borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 20,
-    backgroundColor: '#FAFAF8', gap: 10,
-  },
-  complementLabel: { fontSize: 12, fontWeight: '700' },
-  complementRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  complementCircle: {
-    width: 44, height: 44, borderRadius: 22,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2, shadowRadius: 4, elevation: 3,
-  },
-  complementInfo: { flex: 1, gap: 3 },
-  complementName: { fontSize: 15, fontWeight: '700', color: '#3D3530' },
-  complementMeaning: { fontSize: 13, color: '#5F4B3B', lineHeight: 19 },
+  previewBannerTitle: { fontSize: 13, fontWeight: '700' },
+  previewBannerText: { fontSize: 13, color: '#5F4B3B', lineHeight: 21 },
   nextHint: {
     borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16, gap: 6,
   },
