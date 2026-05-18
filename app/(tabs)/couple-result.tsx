@@ -306,6 +306,11 @@ export default function CoupleResultScreen() {
           ═══════════════════════════════════════════════════════ */}
           <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 통합 분석</Text>
 
+          {/* 두 사람 프로파일 대비 요약 — 끌림 이유 + 반복 패턴 + 해법 */}
+          <SectionCard accentColor={accentCouple} label="두 사람 이해" title="왜 끌리는데 왜 힘든지" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.profileContrast}</Text>
+          </SectionCard>
+
           <SectionCard accentColor={accentCouple} label="관계 흐름" title="두 사람의 관계 패턴" colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.relationFlow}</Text>
           </SectionCard>

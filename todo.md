@@ -257,3 +257,12 @@
 - [x] buildConversationRoutine 관계 유형별 대화 루틴 세분화
 - [x] buildClosingMessage 관계 유형별 마무리 메시지 세분화 (기독교 신앙 추가 문장 포함)
 - [x] couple-result.tsx 결과 이미지 저장/공유 버튼 추가 (ViewShot + expo-sharing)
+
+## 커플 세션 개선 - 프리미엄 리포트 수준 문장 강화
+- [ ] generateCoupleAnalysis에 profileContrast 필드 추가 (두 사람 프로파일 대비 요약 문장)
+- [ ] 동일 계열 조합 시 고유 갈등 패턴 문장 강화 (warm_soft/cool_deep/warm_active 동일 계열 각각)
+- [ ] buildRelationFlow "왜 끌리는데 힘든지" 실제 상담 문장 강화 (속도 차이·표현 방식 차이 구체화)
+- [ ] 감정 흐름 전환 표현 강화 (무의식→현재→회복 흐름 연결감)
+- [ ] 커플 통합 결과 깊이 개선 (서로에게 주는 영향·갈등 반응·오래가는 연결 방식)
+- [ ] 문장 톤 다양화 ("지금은 ~시기입니다" 반복 제거, 코칭 대화체 혼합)
+- [ ] couple-result.tsx에 profileContrast 섹션 UI 추가
