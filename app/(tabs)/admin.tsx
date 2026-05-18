@@ -188,6 +188,13 @@ export default function AdminScreen() {
           <Text style={[styles.pageTitle, { color: colors.foreground }]}>🌿 관리자 대시보드</Text>
           <View style={styles.headerBtns}>
             <TouchableOpacity
+              style={[styles.smallBtn, { borderColor: "#8FA68E" }]}
+              onPress={() => router.push('/(tabs)/couple-start' as any)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.smallBtnText, { color: "#8FA68E" }]}>💑 커플 테스트</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               style={[styles.smallBtn, { borderColor: "#EF4444" }]}
               onPress={() => { setAuthenticated(false); setPwInput(""); }}
               activeOpacity={0.7}
