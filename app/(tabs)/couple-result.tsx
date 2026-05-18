@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Animated,
-  TouchableOpacity, Pressable,
+  TouchableOpacity, Pressable, Platform, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -17,6 +17,8 @@ import {
   generatePersonAnalysis, generateCoupleAnalysis,
   type CoupleSessionData, type PersonAnalysis, type CoupleAnalysis,
 } from '@/constants/coupleData';
+import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 
 // ── 섹션 카드 컴포넌트 ────────────────────────────────────────────
 function SectionCard({
@@ -50,14 +52,39 @@ const sectionStyles = StyleSheet.create({
 export default function CoupleResultScreen() {
   const router = useRouter();
   const colors = useColors();
-
   const [isLoading, setIsLoading] = useState(true);
   const [sessionData, setSessionData] = useState<CoupleSessionData | null>(null);
   const [analysisA, setAnalysisA] = useState<PersonAnalysis | null>(null);
   const [analysisB, setAnalysisB] = useState<PersonAnalysis | null>(null);
   const [coupleAnalysis, setCoupleAnalysis] = useState<CoupleAnalysis | null>(null);
-
+  const [isSharing, setIsSharing] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const viewShotRef = useRef<ViewShotRef>(null);
+
+  const handleShare = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert('공유', '모바일 앱에서 이미지 저장 및 공유가 가능합니다.');
+      return;
+    }
+    try {
+      setIsSharing(true);
+      const uri = await viewShotRef.current?.capture();
+      if (!uri) throw new Error('캡처 실패');
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: '커플 세션 결과 공유',
+        });
+      } else {
+        Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
+      }
+    } catch (e) {
+      Alert.alert('오류', '이미지 저장 중 문제가 발생했습니다.');
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -125,7 +152,11 @@ export default function CoupleResultScreen() {
   return (
     <ScreenContainer edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Animated.View style={{ opacity: fadeAnim }}>
+        <ViewShot
+          ref={viewShotRef}
+          options={{ format: 'png', quality: 0.95 }}
+        >
+        <Animated.View style={{ opacity: fadeAnim, backgroundColor: colors.background, borderRadius: 12, overflow: 'hidden' }}>
 
           {/* 헤더 */}
           <View style={styles.header}>
@@ -356,6 +387,25 @@ export default function CoupleResultScreen() {
             </Text>
           </View>
 
+        </Animated.View>
+        </ViewShot>
+
+          {/* 공유 버튼 */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.shareBtn,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              pressed && { opacity: 0.7 },
+              isSharing && { opacity: 0.5 },
+            ]}
+            onPress={handleShare}
+            disabled={isSharing}
+          >
+            <Text style={[styles.shareBtnText, { color: colors.foreground }]}>
+              {isSharing ? '저장 중...' : '📤  결과 이미지 저장 · 공유'}
+            </Text>
+          </Pressable>
+
           {/* 다시 시작 버튼 */}
           <Pressable
             style={({ pressed }) => [
@@ -383,7 +433,6 @@ export default function CoupleResultScreen() {
           </Pressable>
 
           <View style={{ height: 60 }} />
-        </Animated.View>
       </ScrollView>
     </ScreenContainer>
   );
@@ -451,4 +500,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   homeBtnText: { fontSize: 14, fontWeight: '500' },
+  shareBtn: {
+    paddingVertical: 14, borderRadius: 16, alignItems: 'center',
+    borderWidth: 1, marginBottom: 12, marginTop: 4,
+  },
+  shareBtnText: { fontSize: 14, fontWeight: '600' },
 });

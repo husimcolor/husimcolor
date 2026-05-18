@@ -250,3 +250,10 @@
 - [x] 마무리 코칭 메시지
 - [x] 메인 화면 커플 세션 버튼 준비중 처리 (비활성화, 대시 선 표시)
 - [x] 관리자 테스트 버튼 추가 (admin 화면에서 커플 세션 진입 가능)
+
+## 커플 세션 개선 (관계 유형별 세분화 + 공유 기능)
+- [x] coupleData.ts 관계 유형별 코칭 메시지 세분화 (연인/부부/친구/부모자녀/형제자매/동료 각각 고유 문장)
+- [x] buildRelationFlow 관계 유형별 분기 강화
+- [x] buildConversationRoutine 관계 유형별 대화 루틴 세분화
+- [x] buildClosingMessage 관계 유형별 마무리 메시지 세분화 (기독교 신앙 추가 문장 포함)
+- [x] couple-result.tsx 결과 이미지 저장/공유 버튼 추가 (ViewShot + expo-sharing)

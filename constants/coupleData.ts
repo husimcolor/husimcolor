@@ -327,6 +327,18 @@ function getDominantFamily(families: EnergyFamily[]): EnergyFamily {
   return (Object.entries(count).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'neutral') as EnergyFamily;
 }
 
+function getRelationFlowPrefix(rel: RelationType): string {
+  const map: Record<RelationType, string> = {
+    '연인': '두 분의 마음 흐름이 만나고 있습니다.',
+    '부부': '오랜 시간을 함께해온 두 분의 흐름이 지금 이 자리에서 다시 만나고 있습니다.',
+    '친구': '두 사람의 서로 다른 결이 우정 안에서 만나고 있습니다.',
+    '부모-자녀': '세대가 다른 두 사람의 마음이 같은 공간에서 만나고 있습니다.',
+    '형제자매': '가장 가까운 사이인 두 사람의 흐름이 지금 이 자리에서 다시 마주하고 있습니다.',
+    '동료': '함께 일하는 두 사람의 에너지 결이 만나고 있습니다.',
+  };
+  return map[rel] ?? '두 사람의 마음 흐름이 만나고 있습니다.';
+}
+
 function buildRelationFlow(
   fA: EnergyFamily, fB: EnergyFamily,
   rel: RelationType,
@@ -335,9 +347,15 @@ function buildRelationFlow(
   const nameA = colorsA[0]?.korName ?? '';
   const nameB = colorsB[0]?.korName ?? '';
   const relLabel = rel === '연인' || rel === '부부' ? '두 분' : '두 사람';
+  const prefix = getRelationFlowPrefix(rel);
 
   if (fA === fB) {
-    return `${relLabel}은 비슷한 에너지 결을 가지고 있습니다. ${nameA}와 ${nameB}처럼 서로 닮은 흐름이 있어 공감대가 깊고, 같은 방향을 바라볼 때 자연스럽게 연결됩니다. 다만 비슷한 성향이 만날 때는 서로의 약한 부분도 함께 드러날 수 있어, 이해와 여유가 더욱 중요합니다.`;
+    const sameMsg: Partial<Record<RelationType, string>> = {
+      '부부': `${prefix} ${nameA}와 ${nameB}처럼 서로 닮은 흐름이 있어 오랫동안 함께할 수 있었던 이유가 있습니다. 다만 같은 성향이 오래 만나면 서로의 약한 부분도 함께 드러날 수 있습니다. 지금 필요한 것은 새로운 자극이 아니라, 서로를 다시 바라보는 따뜻한 시선입니다.`,
+      '부모-자녀': `${prefix} ${nameA}와 ${nameB}처럼 비슷한 기질을 가지고 있어 서로를 이해하는 부분이 많습니다. 하지만 같은 성향끼리는 서로의 기대가 높아지기도 합니다. 이해의 언어를 조금 더 부드럽게 표현하는 것이 관계를 따뜻하게 만들어줍니다.`,
+      '형제자매': `${prefix} ${nameA}와 ${nameB}처럼 비슷한 흐름을 가지고 있어 자연스럽게 통하는 부분이 많습니다. 가장 가까운 사이일수록 서로의 다름보다 닮음이 더 크게 느껴질 때, 관계가 편안해집니다.`,
+    };
+    return sameMsg[rel] ?? `${relLabel}은 비슷한 에너지 결을 가지고 있습니다. ${nameA}와 ${nameB}처럼 서로 닮은 흐름이 있어 공감대가 깊고, 같은 방향을 바라볼 때 자연스럽게 연결됩니다. 다만 비슷한 성향이 만날 때는 서로의 약한 부분도 함께 드러날 수 있어, 이해와 여유가 더욱 중요합니다.`;
   }
 
   const combos: Partial<Record<string, string>> = {
@@ -350,7 +368,15 @@ function buildRelationFlow(
   };
 
   const key = `${fA}-${fB}`;
-  return combos[key] ?? `${nameA}와 ${nameB}처럼 서로 다른 에너지 결이 만나고 있습니다. 이 차이는 갈등의 원인이 되기도 하지만, 서로에게 없는 것을 채워주는 관계의 힘이 되기도 합니다. ${relLabel}의 다름을 이해하는 것이 관계 회복의 첫 걸음입니다.`;
+  const base = combos[key] ?? `${nameA}와 ${nameB}처럼 서로 다른 결이 만나고 있습니다. 이 차이는 때로 갈등의 씨앗이 되기도 하지만, 서로에게 없는 것을 채워주는 힘이기도 합니다.`;
+  // 관계 유형별 마무리 문장 추가
+  const relSuffix: Partial<Record<RelationType, string>> = {
+    '부부': ' 오랜 시간이 쌓인 관계일수록, 서로의 다름을 다시 이해하는 것이 새로운 시작이 됩니다.',
+    '부모-자녀': ' 세대의 차이가 있어도, 서로를 향한 마음은 같습니다. 이해의 방식이 다를 뿐입니다.',
+    '형제자매': ' 가장 가까운 사이이기에 더 솔직하게, 더 깊이 이해할 수 있는 관계입니다.',
+    '동료': ' 함께 일하는 사이에서도 서로의 결을 이해하면 더 자연스럽게 협력할 수 있습니다.',
+  };
+  return base + (relSuffix[rel] ?? ` ${relLabel}의 다름을 이해하는 것이 관계 회복의 첫 걸음입니다.`);
 }
 
 function buildCommonGround(
@@ -445,14 +471,24 @@ function buildMisunderstandingPattern(fA: EnergyFamily, fB: EnergyFamily, rel: R
 function buildCoupleRecoveryDirection(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
   const relLabel = rel === '연인' || rel === '부부' ? '두 분' : '두 사람';
 
+  // 관계 유형별 회복 방향 맥락 추가
+  const relContext: Partial<Record<RelationType, string>> = {
+    '부부': '오랜 관계일수록 회복은 새로운 시작이 아니라, 서로를 다시 바라보는 것에서 시작됩니다.',
+    '부모-자녀': '세대가 다른 두 사람의 회복은 서로의 방식을 강요하지 않는 것에서 시작됩니다.',
+    '형제자매': '가장 가까운 사이의 회복은 작은 인정 한 마디에서 시작될 수 있습니다.',
+    '동료': '함께 일하는 관계의 회복은 업무 밖에서 잠깐 편안하게 연결되는 시간에서 시작됩니다.',
+    '친구': '좋은 우정의 회복은 서로의 다름을 다시 이해하는 것에서 시작됩니다.',
+  };
+  const context = relContext[rel] ?? '';
+
   if (fA === fB) {
-    return `${relLabel}은 비슷한 회복 방식을 가지고 있습니다. 함께 조용히 쉬거나, 같은 공간에서 각자의 시간을 갖는 것이 자연스러운 회복이 됩니다. 억지로 대화하기보다 편안한 침묵도 회복의 한 방식입니다.`;
+    return `${relLabel}은 비슷한 회복 방식을 가지고 있습니다. 함께 조용히 쉬거나, 같은 공간에서 각자의 시간을 갖는 것이 자연스러운 회복이 됩니다.${context ? ' ' + context : ''}`;
   }
 
   const recoveryA = getRecoveryStyle(fA);
   const recoveryB = getRecoveryStyle(fB);
 
-  return `한 사람은 ${recoveryA} 방식으로 회복되고, 다른 사람은 ${recoveryB} 방식으로 회복됩니다. ${relLabel}의 회복 방향은 서로의 방식을 강요하지 않고, 각자가 필요한 방식으로 쉴 수 있도록 공간을 주는 것입니다. 그 공간 안에서 자연스럽게 다시 연결될 수 있습니다.`;
+  return `한 사람은 ${recoveryA} 방식으로 회복되고, 다른 사람은 ${recoveryB} 방식으로 회복됩니다. ${relLabel}의 회복 방향은 서로의 방식을 강요하지 않고, 각자가 필요한 방식으로 쉴 수 있도록 공간을 주는 것입니다.${context ? ' ' + context : ' 그 공간 안에서 자연스럽게 다시 연결될 수 있습니다.'}`;
 }
 
 function getRecoveryStyle(family: EnergyFamily): string {
@@ -634,14 +670,15 @@ function buildEmotionRecovery(fA: EnergyFamily, fB: EnergyFamily): string {
 }
 
 function buildConversationRoutine(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
-  const isCouple = rel === '연인' || rel === '부부';
-  if (isCouple) {
-    return '하루 중 5~10분, 오늘 있었던 일 중 "좋았던 것 하나"를 나눠보세요. 문제보다 좋은 것을 먼저 나누는 습관이 관계의 온도를 유지해줍니다.';
-  }
-  if (rel === '부모-자녀') {
-    return '판단이나 조언 없이 "오늘 어땠어?"라고 물어보는 것으로 시작해 보세요. 답을 기다리는 것이 아니라, 함께 있는 시간 자체가 대화입니다.';
-  }
-  return '서로에게 "요즘 어때?"라고 먼저 물어보는 것이 관계를 유지하는 가장 간단한 방법입니다. 깊은 대화보다 자주 연결되는 것이 더 중요합니다.';
+  const routineMap: Partial<Record<RelationType, string>> = {
+    '연인': '하루 중 5~10분, 오늘 있었던 일 중 "좋았던 것 하나"를 나눠보세요. 문제보다 좋은 것을 먼저 나누는 습관이 관계의 온도를 유지해줍니다.',
+    '부부': '저녁 식사 후 짧게 "오늘 어떤 순간이 좋았어?"라고 물어보세요. 오래된 관계일수록 일상 속 작은 대화가 정서적 연결을 유지해줍니다.',
+    '부모-자녀': '판단이나 조언 없이 "오늘 어땠어?"라고 물어보는 것으로 시작해 보세요. 답을 기다리는 것이 아니라, 함께 있는 시간 자체가 대화입니다.',
+    '형제자매': '"요즘 어떻게 지내?"라는 짧은 연락이 가장 가까운 사이를 더 가깝게 만들어줍니다. 특별한 이유 없이 연락하는 것이 관계를 유지하는 가장 좋은 방법입니다.',
+    '친구': '서로에게 "요즘 어때?"라고 먼저 물어보는 것이 우정을 유지하는 가장 간단한 방법입니다. 깊은 대화보다 자주 연결되는 것이 더 중요합니다.',
+    '동료': '업무 외의 짧은 대화 — "오늘 점심 뭐 먹었어요?" 같은 가벼운 연결이 함께 일하는 관계를 더 편안하게 만들어줍니다.',
+  };
+  return routineMap[rel] ?? '서로에게 "요즘 어때?"라고 먼저 물어보는 것이 관계를 유지하는 가장 간단한 방법입니다.';
 }
 
 function buildRestTogether(fA: EnergyFamily, fB: EnergyFamily): string {
@@ -690,12 +727,12 @@ function buildClosingMessage(
   const hasFaith = faithA === '기독교' || faithB === '기독교';
 
   const messages: Record<string, string> = {
-    '연인': `지금 ${relLabel}에게 필요한 것은 완벽한 관계가 아니라, 서로의 다름을 이해하는 시간입니다. 오늘 이 흐름을 함께 나눈 것만으로도 이미 한 걸음 가까워졌습니다.`,
-    '부부': `${relLabel}의 관계는 오래 함께한 만큼 서로의 패턴이 깊이 새겨져 있습니다. 지금 필요한 것은 새로운 시작이 아니라, 서로를 다시 바라보는 따뜻한 시선입니다.`,
-    '친구': `좋은 친구 사이에도 서로 다른 감정 흐름이 있습니다. 오늘 이 흐름을 이해한 것이 두 사람의 우정을 더 깊게 만들어줄 것입니다.`,
-    '부모-자녀': `세대가 다르고 경험이 달라도, 서로를 향한 마음은 같습니다. 이해의 언어가 다를 뿐, 두 사람 모두 연결되고 싶은 마음이 있습니다.`,
-    '형제자매': `가장 가까운 사이일수록 서로의 다름이 더 크게 느껴질 수 있습니다. 오늘 이 흐름을 통해 서로를 조금 더 이해하는 시간이 되었으면 합니다.`,
-    '동료': `함께 일하는 사이에서도 서로의 에너지 결을 이해하면 더 자연스럽게 협력할 수 있습니다. 오늘의 흐름이 더 편안한 관계의 시작이 되길 바랍니다.`,
+    '연인': `지금 ${relLabel}에게 필요한 것은 완벽한 관계가 아니라, 서로의 다름을 이해하는 시간입니다. 오늘 이 흐름을 함께 나눈 것만으로도 이미 한 걸음 더 가까워졌습니다.`,
+    '부부': `오랜 시간을 함께해온 ${relLabel}의 관계 안에는 이미 많은 이해가 쌓여 있습니다. 지금 필요한 것은 새로운 시작이 아니라, 서로를 다시 바라보는 따뜻한 시선입니다. 오늘 이 시간이 그 시작이 되길 바랍니다.`,
+    '친구': `좋은 친구 사이에도 서로 다른 감정 흐름이 있습니다. 오늘 서로의 흐름을 이해한 것이 두 사람의 우정을 더 깊고 편안하게 만들어줄 것입니다.`,
+    '부모-자녀': `세대가 다르고 경험이 달라도, 서로를 향한 마음은 같습니다. 이해의 언어가 다를 뿐, 두 사람 모두 더 가까이 연결되고 싶은 마음이 있습니다. 오늘 이 흐름이 그 연결의 시작이 되길 바랍니다.`,
+    '형제자매': `가장 가까운 사이이기에 더 솔직하고, 때로는 더 상처받기도 합니다. 오늘 서로의 흐름을 이해한 것이 두 사람 사이에 더 따뜻한 공간을 만들어줄 것입니다.`,
+    '동료': `함께 일하는 사이에서도 서로의 결을 이해하면 더 자연스럽게 협력하고 편안하게 함께할 수 있습니다. 오늘의 흐름이 더 좋은 관계의 시작이 되길 바랍니다.`,
   };
 
   const base = messages[rel] ?? `${relLabel}의 관계 흐름을 함께 살펴보았습니다. 서로를 이해하는 것이 관계 회복의 시작입니다.`;
