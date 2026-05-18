@@ -129,7 +129,7 @@ export default function CoupleStartScreen() {
           </View>
 
           {/* A 정보 */}
-          <View style={[styles.personSection, { borderColor: colors.border }]}>
+          <View style={[styles.personSection, { borderColor: colors.border, backgroundColor: colors.surface }]}>
             <View style={[styles.personBadge, { backgroundColor: colors.primary + '20' }]}>
               <Text style={[styles.personBadgeText, { color: colors.primary }]}>첫 번째 사람</Text>
             </View>
@@ -150,7 +150,7 @@ export default function CoupleStartScreen() {
           </View>
 
           {/* B 정보 */}
-          <View style={[styles.personSection, { borderColor: colors.border }]}>
+          <View style={[styles.personSection, { borderColor: colors.border, backgroundColor: colors.surface }]}>
             <View style={[styles.personBadge, { backgroundColor: colors.sage + '30' }]}>
               <Text style={[styles.personBadgeText, { color: colors.sage }]}>두 번째 사람</Text>
             </View>
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   },
   infoText: { fontSize: 13, lineHeight: 22, textAlign: 'center' },
   section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 15, fontWeight: '600', marginBottom: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10, letterSpacing: 0.2 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
