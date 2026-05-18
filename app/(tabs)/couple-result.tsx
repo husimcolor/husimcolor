@@ -310,22 +310,16 @@ export default function CoupleResultScreen() {
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.relationFlow}</Text>
           </SectionCard>
 
-          <SectionCard accentColor={accentCouple} label="감정 차이" title="감정 반응의 차이" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.emotionDifference}</Text>
+          <SectionCard accentColor={accentCouple} label="표현 방식" title="서로 다른 표현 방식" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.expressionDifference}</Text>
           </SectionCard>
 
-          <SectionCard accentColor={accentCouple} label="리듬 차이" title="속도와 리듬의 차이" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.rhythmDifference}</Text>
+          <SectionCard accentColor={accentCouple} label="오해 지점" title="오해가 생기는 순간" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.conflictPattern}</Text>
           </SectionCard>
 
-          <SectionCard accentColor={accentCouple} label="연결 방식" title="두 사람이 가까워지는 방법" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.intimacyStyle}</Text>
-            {coupleAnalysis.affectionStyle !== coupleAnalysis.intimacyStyle && (
-              <>
-                <View style={[sectionStyles.divider, { backgroundColor: accentCouple + '25', marginTop: 8 }]} />
-                <Text style={[styles.bodyText, { color: colors.foreground, marginTop: 4 }]}>{coupleAnalysis.affectionStyle}</Text>
-              </>
-            )}
+          <SectionCard accentColor={accentCouple} label="가까워지는 방법" title="두 사람이 연결되는 방식" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.connectionStyle}</Text>
           </SectionCard>
 
           {/* 서로에게 필요한 표현 */}
