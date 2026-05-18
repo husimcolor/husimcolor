@@ -53,14 +53,17 @@ export default function CoupleSelectScreen() {
   const accentBg = person === 'A' ? '#8BAF8B11' : '#7B5EA711';
   const accentBorder = person === 'A' ? '#8BAF8B55' : '#7B5EA755';
 
+  // B 진입 시 항상 빈 배열로 초기화 (person 파라미터 변경 시 재초기화)
   const [selectedColors, setSelectedColors] = useState<ColorData[]>([]);
   const [sessionData, setSessionData] = useState<CoupleSessionData | null>(null);
 
   useEffect(() => {
+    // person이 바뀔 때마다 선택 상태 완전 초기화
+    setSelectedColors([]);
     AsyncStorage.getItem('@couple_session').then(raw => {
       if (raw) setSessionData(JSON.parse(raw));
     });
-  }, []);
+  }, [person]);
 
   const handleColorToggle = (color: ColorData) => {
     setSelectedColors(prev => {
@@ -88,7 +91,8 @@ export default function CoupleSelectScreen() {
       updated.personB = { ...updated.personB, colors: colorIds };
     }
     await AsyncStorage.setItem('@couple_session', JSON.stringify(updated));
-    router.push({ pathname: '/(tabs)/couple-card-select', params: { person } } as any);
+    // 컬러 선택 완료 → 컬러 해석 중간 결과 화면으로 이동
+    router.push({ pathname: '/(tabs)/couple-color-result', params: { person } } as any);
   };
 
   return (
