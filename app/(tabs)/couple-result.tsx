@@ -62,7 +62,7 @@ export default function CoupleResultScreen() {
 
   async function loadSession() {
     try {
-      const raw = await AsyncStorage.getItem('coupleSession');
+      const raw = await AsyncStorage.getItem('@couple_session');
       if (!raw) { setError('세션 데이터를 찾을 수 없습니다.'); setLoading(false); return; }
       const data: CoupleSessionData = JSON.parse(raw);
       setSessionData(data);
