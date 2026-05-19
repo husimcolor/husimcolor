@@ -264,15 +264,25 @@ export async function getTestSessionStats() {
 export async function getVisitorStats() {
   const db = await getDb();
   if (!db) return {
-    totalVisitors: 0, freeTrial: 0, premium: 0,
+    totalLogs: 0, totalVisitors: 0, todayVisitors: 0,
+    freeTrial: 0, premium: 0,
     freeStart: 0, freeResult: 0,
     deepStart: 0, deepResult: 0,
     coupleStart: 0, coupleResult: 0,
   };
+  // 전체 방문 로그 수 (재방문 포함)
+  const totalLogsResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs);
   // 고유 기기 수 기준 전체 방문자
   const totalResult = await db
     .select({ cnt: sql<number>`COUNT(DISTINCT ${visitorLogs.deviceId})` })
     .from(visitorLogs);
+  // 오늘 방문자 (고유 기기 기준)
+  const todayResult = await db
+    .select({ cnt: sql<number>`COUNT(DISTINCT ${visitorLogs.deviceId})` })
+    .from(visitorLogs)
+    .where(sql`DATE(${visitorLogs.createdAt}) = CURDATE()`);
   const freeTrialResult = await db
     .select({ cnt: sql<number>`COUNT(DISTINCT ${visitorLogs.deviceId})` })
     .from(visitorLogs)
@@ -307,7 +317,9 @@ export async function getVisitorStats() {
     .from(visitorLogs)
     .where(eq(visitorLogs.visitType, 'couple_result'));
   return {
+    totalLogs: Number(totalLogsResult[0]?.cnt ?? 0),
     totalVisitors: Number(totalResult[0]?.cnt ?? 0),
+    todayVisitors: Number(todayResult[0]?.cnt ?? 0),
     freeTrial: Number(freeTrialResult[0]?.cnt ?? 0),
     premium: Number(premiumResult[0]?.cnt ?? 0),
     freeStart: Number(freeStartResult[0]?.cnt ?? 0),

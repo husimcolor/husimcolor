@@ -57,28 +57,60 @@ export default function HomeScreen() {
   }, []);
 
   // 방문자 수 집계 (기기별 고유 UUID, 하루 1회 기준)
+  // 카카오/네이버 인앱브라우저 대응: sessionStorage + localStorage + AsyncStorage 삼중 저장
   const logVisitor = trpc.visitors.log.useMutation();
   useEffect(() => {
     const trackVisit = async () => {
       try {
-        // 기기별 고유 ID 생성 및 저장 (최초 1회)
         const DEVICE_ID_KEY = 'husim_device_id';
-        let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
-        if (!deviceId) {
-          // UUID v4 생성 (crypto.randomUUID 미지원 환경 대비)
-          const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-            const r = Math.random() * 16 | 0;
-            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-          });
-          deviceId = uuid;
-          await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
-        }
-        // 하루 1회 방문 기록
         const VISIT_DATE_KEY = 'husim_visit_date';
+
+        // UUID v4 생성 헬퍼
+        const genUuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+          const r = Math.random() * 16 | 0;
+          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+
+        // 1단계: 웹 환경에서 sessionStorage → localStorage → AsyncStorage 순서로 deviceId 복원
+        let deviceId: string | null = null;
+        if (typeof window !== 'undefined') {
+          // sessionStorage에서 먼저 확인 (인앱브라우저 세션 내 유지)
+          try { deviceId = window.sessionStorage.getItem(DEVICE_ID_KEY); } catch (_) {}
+          // localStorage에서 확인 (영구 저장)
+          if (!deviceId) {
+            try { deviceId = window.localStorage.getItem(DEVICE_ID_KEY); } catch (_) {}
+          }
+        }
+        // AsyncStorage에서 확인 (네이티브 앱 환경)
+        if (!deviceId) {
+          deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
+        }
+
+        // 2단계: deviceId가 없으면 새로 생성하고 모든 저장소에 저장
+        if (!deviceId) {
+          deviceId = genUuid();
+        }
+        // 모든 저장소에 동기화 (인앱브라우저 재진입 시 복원 가능하도록)
+        try { await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId); } catch (_) {}
+        if (typeof window !== 'undefined') {
+          try { window.localStorage.setItem(DEVICE_ID_KEY, deviceId); } catch (_) {}
+          try { window.sessionStorage.setItem(DEVICE_ID_KEY, deviceId); } catch (_) {}
+        }
+
+        // 3단계: 하루 1회 방문 기록 (날짜 비교)
         const today = new Date().toDateString();
-        const lastVisit = await AsyncStorage.getItem(VISIT_DATE_KEY);
+        let lastVisit: string | null = null;
+        if (typeof window !== 'undefined') {
+          try { lastVisit = window.localStorage.getItem(VISIT_DATE_KEY); } catch (_) {}
+        }
+        if (!lastVisit) {
+          lastVisit = await AsyncStorage.getItem(VISIT_DATE_KEY);
+        }
         if (lastVisit !== today) {
-          await AsyncStorage.setItem(VISIT_DATE_KEY, today);
+          try { await AsyncStorage.setItem(VISIT_DATE_KEY, today); } catch (_) {}
+          if (typeof window !== 'undefined') {
+            try { window.localStorage.setItem(VISIT_DATE_KEY, today); } catch (_) {}
+          }
           logVisitor.mutate({ deviceId, visitType: 'home' });
         }
       } catch (_) {}
