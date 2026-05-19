@@ -64,6 +64,11 @@ export default function AdminScreen() {
   };
 
   // ── 데이터 조회 ────────────────────────────────────────────────
+  const { data: testStats, refetch: refetchTestStats } = trpc.visitors.testStats.useQuery(undefined, {
+    enabled: authenticated,
+    retry: false,
+  });
+
   const { data: stats, refetch: refetchStats } = trpc.visitors.stats.useQuery(undefined, {
     enabled: authenticated,
     retry: false,
@@ -258,6 +263,35 @@ export default function AdminScreen() {
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.statNum, { color: colors.foreground }]}>{payments?.length ?? "-"}</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>총 신청</Text>
+          </View>
+        </View>
+
+        {/* 테스트 세션 통계 */}
+        <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 8 }]}>테스트 세션 통계</Text>
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, { backgroundColor: '#FFF8F0', borderColor: '#E8D5B0', borderWidth: 1 }]}>
+            <Text style={[styles.statNum, { color: "#C4A35A" }]}>{testStats?.freeStart ?? "-"}</Text>
+            <Text style={[styles.statLabel, { color: "#8B6914" }]}>무료 테스트{"\n"}시작</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: '#FFF8F0', borderColor: '#E8D5B0', borderWidth: 1 }]}>
+            <Text style={[styles.statNum, { color: "#C4A35A" }]}>{testStats?.freeResult ?? "-"}</Text>
+            <Text style={[styles.statLabel, { color: "#8B6914" }]}>무료 테스트{"\n"}결과 도달</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: '#F0F4FF', borderColor: '#C0CCEE', borderWidth: 1 }]}>
+            <Text style={[styles.statNum, { color: "#5A7EA8" }]}>{testStats?.deepStart ?? "-"}</Text>
+            <Text style={[styles.statLabel, { color: "#3A5A88" }]}>심화 테스트{"\n"}시작</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: '#F0F4FF', borderColor: '#C0CCEE', borderWidth: 1 }]}>
+            <Text style={[styles.statNum, { color: "#5A7EA8" }]}>{testStats?.deepResult ?? "-"}</Text>
+            <Text style={[styles.statLabel, { color: "#3A5A88" }]}>심화 테스트{"\n"}결과 도달</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: '#F0FFF4', borderColor: '#B0DDB8', borderWidth: 1 }]}>
+            <Text style={[styles.statNum, { color: "#5A8A5A" }]}>{testStats?.coupleStart ?? "-"}</Text>
+            <Text style={[styles.statLabel, { color: "#3A6A3A" }]}>커플 테스트{"\n"}시작</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: '#F0FFF4', borderColor: '#B0DDB8', borderWidth: 1 }]}>
+            <Text style={[styles.statNum, { color: "#5A8A5A" }]}>{testStats?.coupleResult ?? "-"}</Text>
+            <Text style={[styles.statLabel, { color: "#3A6A3A" }]}>커플 테스트{"\n"}결과 도달</Text>
           </View>
         </View>
 

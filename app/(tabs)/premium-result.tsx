@@ -294,6 +294,7 @@ export default function PremiumResultScreen() {
 
   const createReviewMutation = trpc.reviews.create.useMutation();
   const updateReviewMutation = trpc.reviews.update.useMutation();
+  const logVisitor = trpc.visitors.log.useMutation();
 
   const handleReviewSubmit = async () => {
     if (reviewRating === 0) {
@@ -389,6 +390,19 @@ export default function PremiumResultScreen() {
         if (colorsRaw) {
           try { setPrevColors([...JSON.parse(colorsRaw)]); } catch {}
         }
+        // 심화 결과 도달 추적
+        try {
+          const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
+          const cardIds = raw ? JSON.parse(raw).map((c: any) => c.id).join(',') : '';
+          const colorIds = colorsRaw ? JSON.parse(colorsRaw).map((c: any) => c.id).join(',') : '';
+          logVisitor.mutate({
+            deviceId,
+            visitType: 'deep_result',
+            testType: 'deep',
+            selectedCards: cardIds,
+            selectedColors: colorIds,
+          });
+        } catch (_) {}
         if (reviewRaw) {
           try {
             const saved = JSON.parse(reviewRaw);

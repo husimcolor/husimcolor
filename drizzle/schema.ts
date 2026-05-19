@@ -58,7 +58,23 @@ export type InsertPaymentRecord = typeof paymentRecords.$inferInsert;
 export const visitorLogs = mysqlTable("visitor_logs", {
   id: int("id").autoincrement().primaryKey(),
   deviceId: varchar("deviceId", { length: 128 }).notNull(), // 기기별 고유 ID
-  visitType: mysqlEnum("visitType", ["home", "free_trial", "premium"]).default("home").notNull(),
+  visitType: mysqlEnum("visitType", [
+    "home",
+    "free_trial",
+    "premium",
+    // 테스트 세션 추적 이벤트
+    "free_start",       // 무료 컬러 테스트 시작
+    "free_result",      // 무료 컬러 테스트 결과 도달
+    "deep_start",       // 심화 테스트 시작
+    "deep_result",      // 심화 테스트 결과 도달
+    "couple_start",     // 커플 테스트 시작
+    "couple_result",    // 커플 테스트 결과 도달
+  ]).default("home").notNull(),
+  // 익명 세션 추가 정보
+  testType: varchar("testType", { length: 50 }),        // 'free' | 'deep' | 'couple'
+  relationshipType: varchar("relationshipType", { length: 50 }), // 관계 유형
+  selectedColors: varchar("selectedColors", { length: 255 }),    // 선택 컬러 (콤마 구분)
+  selectedCards: varchar("selectedCards", { length: 255 }),      // 선택 심리카드 (콤마 구분)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

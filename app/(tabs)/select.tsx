@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { trpc } from '@/lib/trpc';
 import {
   View,
   Text,
@@ -290,6 +292,19 @@ export default function SelectScreen() {
 
   const cardInfo = CARD_INFO[step] ?? CARD_INFO[0];
   const currentSelected = selectedColors[step];
+
+  // 무료 테스트 시작 추적 (step=0일 때만)
+  const logVisitor = trpc.visitors.log.useMutation();
+  useEffect(() => {
+    if (step !== 0) return;
+    const track = async () => {
+      try {
+        const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
+        logVisitor.mutate({ deviceId, visitType: 'free_start', testType: 'free' });
+      } catch (_) {}
+    };
+    track();
+  }, [step]);
 
   // 헤더 페이드인
   const headerOpacity = useRef(new Animated.Value(0)).current;

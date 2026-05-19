@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { trpc } from '@/lib/trpc';
 import {
   View,
   Text,
@@ -168,12 +170,26 @@ export default function ResultScreen() {
     getTrialStatus().then(setTrialStatus);
   }, []);
 
+  const logVisitor = trpc.visitors.log.useMutation();
   useEffect(() => {
     if (!card1 || !card2 || !card3) {
       router.replace('/(tabs)');
       return;
     }
-    // 애니메이션 완전 제거 - 인앱 브라우저 호환성 우선
+    // 무료 결과 도달 추적
+    const track = async () => {
+      try {
+        const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
+        const colorIds = [card1.id, card2.id, card3.id].join(',');
+        logVisitor.mutate({
+          deviceId,
+          visitType: 'free_result',
+          testType: 'free',
+          selectedColors: colorIds,
+        });
+      } catch (_) {}
+    };
+    track();
   }, []);
 
   if (!card1 || !card2 || !card3) return null;
