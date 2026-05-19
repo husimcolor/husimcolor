@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { trpc } from '@/lib/trpc';
 import {
   View,
   Text,
@@ -408,6 +409,18 @@ export default function PremiumSelectScreen() {
   // CSS 주입 (웹 전용, 최초 1회)
   useEffect(() => {
     injectPremiumCSS();
+  }, []);
+
+  // 심화 테스트 시작 추적
+  const logVisitor = trpc.visitors.log.useMutation();
+  useEffect(() => {
+    const track = async () => {
+      try {
+        const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
+        logVisitor.mutate({ deviceId, visitType: 'deep_start', testType: 'deep' });
+      } catch (_) {}
+    };
+    track();
   }, []);
 
   const [shuffledCards] = useState<CardData[]>(() => shuffleArray(CARD_DATA));

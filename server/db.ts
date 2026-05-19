@@ -220,14 +220,60 @@ export async function logVisitor(data: InsertVisitorLog) {
   }
 }
 
+export async function getTestSessionStats() {
+  const db = await getDb();
+  if (!db) return {
+    freeStart: 0, freeResult: 0,
+    deepStart: 0, deepResult: 0,
+    coupleStart: 0, coupleResult: 0,
+  };
+  const freeStartResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'free_start'));
+  const freeResultResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'free_result'));
+  const deepStartResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'deep_start'));
+  const deepResultResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'deep_result'));
+  const coupleStartResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'couple_start'));
+  const coupleResultResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'couple_result'));
+  return {
+    freeStart: Number(freeStartResult[0]?.cnt ?? 0),
+    freeResult: Number(freeResultResult[0]?.cnt ?? 0),
+    deepStart: Number(deepStartResult[0]?.cnt ?? 0),
+    deepResult: Number(deepResultResult[0]?.cnt ?? 0),
+    coupleStart: Number(coupleStartResult[0]?.cnt ?? 0),
+    coupleResult: Number(coupleResultResult[0]?.cnt ?? 0),
+  };
+}
+
 export async function getVisitorStats() {
   const db = await getDb();
-  if (!db) return { totalVisitors: 0, freeTrial: 0, premium: 0 };
+  if (!db) return {
+    totalVisitors: 0, freeTrial: 0, premium: 0,
+    freeStart: 0, freeResult: 0,
+    deepStart: 0, deepResult: 0,
+    coupleStart: 0, coupleResult: 0,
+  };
   // 고유 기기 수 기준 전체 방문자
   const totalResult = await db
     .select({ cnt: sql<number>`COUNT(DISTINCT ${visitorLogs.deviceId})` })
     .from(visitorLogs);
-  const freeResult = await db
+  const freeTrialResult = await db
     .select({ cnt: sql<number>`COUNT(DISTINCT ${visitorLogs.deviceId})` })
     .from(visitorLogs)
     .where(eq(visitorLogs.visitType, 'free_trial'));
@@ -235,9 +281,40 @@ export async function getVisitorStats() {
     .select({ cnt: sql<number>`COUNT(DISTINCT ${visitorLogs.deviceId})` })
     .from(visitorLogs)
     .where(eq(visitorLogs.visitType, 'premium'));
+  // 테스트 세션 추적 통계 (이벤트 발생 횟수 기준)
+  const freeStartResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'free_start'));
+  const freeResultResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'free_result'));
+  const deepStartResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'deep_start'));
+  const deepResultResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'deep_result'));
+  const coupleStartResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'couple_start'));
+  const coupleResultResult = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(visitorLogs)
+    .where(eq(visitorLogs.visitType, 'couple_result'));
   return {
     totalVisitors: Number(totalResult[0]?.cnt ?? 0),
-    freeTrial: Number(freeResult[0]?.cnt ?? 0),
+    freeTrial: Number(freeTrialResult[0]?.cnt ?? 0),
     premium: Number(premiumResult[0]?.cnt ?? 0),
+    freeStart: Number(freeStartResult[0]?.cnt ?? 0),
+    freeResult: Number(freeResultResult[0]?.cnt ?? 0),
+    deepStart: Number(deepStartResult[0]?.cnt ?? 0),
+    deepResult: Number(deepResultResult[0]?.cnt ?? 0),
+    coupleStart: Number(coupleStartResult[0]?.cnt ?? 0),
+    coupleResult: Number(coupleResultResult[0]?.cnt ?? 0),
   };
 }

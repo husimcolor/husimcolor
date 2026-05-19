@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { trpc } from '@/lib/trpc';
 import {
   View, Text, ScrollView, StyleSheet, Pressable, Animated, Platform,
 } from 'react-native';
@@ -57,6 +58,8 @@ export default function CoupleResultScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const logVisitor = trpc.visitors.log.useMutation();
+
   useEffect(() => {
     loadSession();
   }, []);
@@ -75,6 +78,19 @@ export default function CoupleResultScreen() {
       setCoupleAnalysis(cAnalysis);
       setLoading(false);
       Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+      // 커플 결과 도달 추적
+      try {
+        const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
+        const aColors = data.personA.colors?.map((c: any) => c.id).join(',') ?? '';
+        const bColors = data.personB.colors?.map((c: any) => c.id).join(',') ?? '';
+        logVisitor.mutate({
+          deviceId,
+          visitType: 'couple_result',
+          testType: 'couple',
+          relationshipType: data.relationType,
+          selectedColors: [aColors, bColors].filter(Boolean).join('|'),
+        });
+      } catch (_) {}
     } catch (e) {
       setError('분석 중 오류가 발생했습니다.');
       setLoading(false);

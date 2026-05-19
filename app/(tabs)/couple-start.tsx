@@ -2,7 +2,8 @@
  * 커플 세션 시작 화면
  * 관계 유형, 성별(A/B), 종교(A/B) 선택
  */
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
 import {
   View, Text, Pressable, ScrollView, StyleSheet,
   Animated, TouchableOpacity, Platform,
@@ -59,6 +60,18 @@ export default function CoupleStartScreen() {
   const topPad = Platform.OS === 'web' ? Math.max(insets.top, 20) : 0;
   React.useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+  }, []);
+
+  // 커플 테스트 시작 추적
+  const logVisitor = trpc.visitors.log.useMutation();
+  useEffect(() => {
+    const track = async () => {
+      try {
+        const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
+        logVisitor.mutate({ deviceId, visitType: 'couple_start', testType: 'couple' });
+      } catch (_) {}
+    };
+    track();
   }, []);
 
   // 부모-자녀 선택 시 세부 조합이 필요함

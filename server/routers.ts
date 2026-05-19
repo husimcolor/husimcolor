@@ -78,13 +78,25 @@ export const appRouter = router({
     log: publicProcedure
       .input(z.object({
         deviceId: z.string().min(1).max(128),
-        visitType: z.enum(['home', 'free_trial', 'premium']),
+        visitType: z.enum([
+          'home', 'free_trial', 'premium',
+          'free_start', 'free_result',
+          'deep_start', 'deep_result',
+          'couple_start', 'couple_result',
+        ]),
+        testType: z.string().max(50).optional(),
+        relationshipType: z.string().max(50).optional(),
+        selectedColors: z.string().max(255).optional(),
+        selectedCards: z.string().max(255).optional(),
       }))
       .mutation(({ input }) => {
         return db.logVisitor(input);
       }),
     stats: publicProcedure.query(() => {
       return db.getVisitorStats();
+    }),
+    testStats: publicProcedure.query(() => {
+      return db.getTestSessionStats();
     }),
   }),
 
