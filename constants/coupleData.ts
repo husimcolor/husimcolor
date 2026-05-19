@@ -712,9 +712,9 @@ function getRecoveryStyle(family: EnergyFamily): string {
 }
 
 function buildIntimacyStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
-  const styleA = getIntimacyStyleShort(fA);
-  const styleB = getIntimacyStyleShort(fB);
   const isCouple = rel === '연인' || rel === '부부';
+  const styleA = getIntimacyStyleShort(fA, isCouple);
+  const styleB = getIntimacyStyleShort(fB, isCouple);
 
   // 연결 방식 차이를 구체적인 장면으로 표현
   const connectionSceneMap: Partial<Record<string, string>> = {
@@ -742,10 +742,10 @@ function buildIntimacyStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationTyp
   return connectionSceneMap[key] ?? connectionSceneMap[reverseKey] ?? `한 사람은 ${styleA} 방식으로 연결감을 느끼고, 다른 사람은 ${styleB} 방식으로 연결감을 느낍니다. 상대방이 어떤 방식으로 마음이 열리는지 알고 그 방식으로 먼저 다가가는 것이, 두 사람 사이의 거리를 좁히는 가장 빠른 길입니다.`;
 }
 
-function getIntimacyStyleShort(family: EnergyFamily): string {
+function getIntimacyStyleShort(family: EnergyFamily, isCouple: boolean = false): string {
   const map: Record<EnergyFamily, string> = {
-    warm_active: '함께 활동하고 표현을 나누는',
-    warm_soft: '따뜻한 말과 스킨십으로',
+    warm_active: isCouple ? '함께 활동하고 표현을 나누는' : '함께 활동하며 공감을 나누는',
+    warm_soft: isCouple ? '따뜻한 말과 스킨십으로' : '따뜻한 말과 배려로',
     warm_grounded: '안정적인 일상을 함께하는',
     cool_clear: '신뢰와 약속을 지키는',
     cool_deep: '깊은 대화와 이해를 나누는',
@@ -1078,7 +1078,7 @@ function buildCoupleRoutine(
 
   // 애정 표현 루틴 (연인/부부)
   const affectionRoutine = isCouple
-    ? buildAffectionRoutine(fA, fB)
+    ? buildAffectionRoutine(fA, fB, rel)
     : undefined;
 
   return {
@@ -1445,10 +1445,53 @@ function buildConnectionRoutine(
   return '하루를 마치며 "오늘 고마웠던 것" 하나씩 나눠보세요. 작은 감사 표현이 관계의 온기를 유지하는 가장 간단한 루틴입니다.';
 }
 
-function buildAffectionRoutine(fA: EnergyFamily, fB: EnergyFamily): string {
+/**
+ * 관계 유형별 신체 접촉 표현 → 비연인 관계에서는 공감/대화 표현으로 변환
+ * 향후 확장 가능한 구조: 연인/부부/친구/가족/동료 각각 다른 톤 적용
+ */
+function getConnectionByRelType(rel: RelationType): {
+  physicalTouch: string;    // 스킨십/포옹 대체 표현
+  warmGreeting: string;     // 따뜻한 인사 방식
+  closingGesture: string;   // 마무리 연결 표현
+} {
+  const isCouple = rel === '연인' || rel === '부부';
+  if (isCouple) {
+    return {
+      physicalTouch: '짧은 포옹과 따뜻한 스킨십으로',
+      warmGreeting: '안아주거나 손잡으며',
+      closingGesture: '스킨십과 말이 함께할 때',
+    };
+  }
+  if (rel === '부모-자녀' || rel === '형제자매') {
+    return {
+      physicalTouch: '따뜻한 대화와 공감으로',
+      warmGreeting: '짧게 안부를 묻거나 어깨를 두드리며',
+      closingGesture: '말과 마음이 함께할 때',
+    };
+  }
+  if (rel === '동료') {
+    return {
+      physicalTouch: '편안한 대화와 연결로',
+      warmGreeting: '짧게 안부를 묻거나 짧은 대화로',
+      closingGesture: '말과 신뢰가 함께할 때',
+    };
+  }
+  // 친구 및 기타
+  return {
+    physicalTouch: '따뜻한 말과 함께하는 시간으로',
+    warmGreeting: '짧게 안부를 묻거나 짧은 연락으로',
+    closingGesture: '말과 공감이 함께할 때',
+  };
+}
+
+function buildAffectionRoutine(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType = '연인'): string {
+  const isCouple = rel === '연인' || rel === '부부';
+  const connTone = getConnectionByRelType(rel);
   const key = `${fA}-${fB}`;
   const comboAffection: Partial<Record<string, string>> = {
-    'warm_active-warm_active': '아침에 짧게 안아주거나 "오늘도 파이팅" 한마디로 하루를 열어보세요. 두 분 모두 에너지가 높을 때는 서로를 쉽게 해주는 작은 표현이 가장 큰 연결이 됩니다.',
+    'warm_active-warm_active': isCouple
+      ? '아침에 짧게 안아주거나 "오늘도 파이팅" 한마디로 하루를 열어보세요. 두 분 모두 에너지가 높을 때는 서로를 쉽게 해주는 작은 표현이 가장 큰 연결이 됩니다.'
+      : '"오늘도 파이팅" 한마디로 하루를 열어보세요. 두 분 모두 에너지가 높을 때는 서로를 쉽게 해주는 작은 표현이 가장 큰 연결이 됩니다.',
     'warm_active-cool_deep': '한 분이 먼저 "오늘 어떤 하루였어?"라고 물어보세요. 답을 기다리지 말고, 말하고 싶을 때 들어줄 수 있다는 신호를 주는 것이 두 분 사이의 가장 자연스러운 연결입니다.',
     'cool_deep-warm_active': '한 분이 먼저 "오늘 어떤 하루였어?"라고 물어보세요. 답을 기다리지 말고, 말하고 싶을 때 들어줄 수 있다는 신호를 주는 것이 두 분 사이의 가장 자연스러운 연결입니다.',
     'warm_soft-cool_clear': '한 분은 "네가 있어서 좋아"라는 말이 더 큰 선물입니다. 다른 분은 약속을 지키고 필요한 것을 먼저 챙기는 것이 사랑의 언어입니다. 서로의 언어로 한 번씩 마음을 전해보세요.',
@@ -1469,10 +1512,14 @@ function buildAffectionRoutine(fA: EnergyFamily, fB: EnergyFamily): string {
   const needsWords = fA === 'cool_deep' || fB === 'cool_deep';
 
   if (needsPhysical && needsWords) {
-    return '아침이나 저녁에 짧은 포옹과 함께 "오늘도 고마워"라는 말을 나눠보세요. 스킨십과 말이 함께할 때 두 사람 모두에게 닿습니다.';
+    return isCouple
+      ? `아침이나 저녁에 ${connTone.physicalTouch} "오늘도 고마워"라는 말을 나눠보세요. ${connTone.closingGesture} 두 사람 모두에게 닳습니다.`
+      : `저녁에 짧게 안부를 나누고 "오늘도 고마워"라는 말을 나눠보세요. 말과 공감이 함께할 때 두 사람 모두에게 닳습니다.`;
   }
   if (needsPhysical) {
-    return '손잡기, 짧은 포옹, 눈 맞추기 같은 작은 스킨십이 두 사람의 정서적 연결을 유지해줍니다. 말보다 먼저 몸으로 전달되는 따뜻함이 있습니다.';
+    return isCouple
+      ? `손잡기, 짧은 포옹, 눈 맞추기 같은 작은 스킨십이 두 사람의 정서적 연결을 유지해줍니다. 말보다 먼저 몸으로 전달되는 따뜻함이 있습니다.`
+      : `따뜻한 말과 공감이 두 사람의 연결을 유지해줍니다. 작은 연락이나 짧은 대화가 생각보다 큰 연결이 될 수 있습니다.`;
   }
   if (needsWords) {
     return '"네가 있어서 좋아", "오늘도 수고했어" 같은 짧은 말이 깊이 닿습니다. 거창한 표현보다 진심 어린 한 마디가 더 큰 연결을 만들어줍니다.';
