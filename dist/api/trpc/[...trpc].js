@@ -68704,7 +68704,33 @@ var visitorLogs = mysqlTable("visitor_logs", {
   id: int2("id").autoincrement().primaryKey(),
   deviceId: varchar("deviceId", { length: 128 }).notNull(),
   // 기기별 고유 ID
-  visitType: mysqlEnum("visitType", ["home", "free_trial", "premium"]).default("home").notNull(),
+  visitType: mysqlEnum("visitType", [
+    "home",
+    "free_trial",
+    "premium",
+    // 테스트 세션 추적 이벤트
+    "free_start",
+    // 무료 컬러 테스트 시작
+    "free_result",
+    // 무료 컬러 테스트 결과 도달
+    "deep_start",
+    // 심화 테스트 시작
+    "deep_result",
+    // 심화 테스트 결과 도달
+    "couple_start",
+    // 커플 테스트 시작
+    "couple_result"
+    // 커플 테스트 결과 도달
+  ]).default("home").notNull(),
+  // 익명 세션 추가 정보
+  testType: varchar("testType", { length: 50 }),
+  // 'free' | 'deep' | 'couple'
+  relationshipType: varchar("relationshipType", { length: 50 }),
+  // 관계 유형
+  selectedColors: varchar("selectedColors", { length: 255 }),
+  // 선택 컬러 (콤마 구분)
+  selectedCards: varchar("selectedCards", { length: 255 }),
+  // 선택 심리카드 (콤마 구분)
   createdAt: timestamp("createdAt").defaultNow().notNull()
 });
 var adminSettings = mysqlTable("admin_settings", {
@@ -68874,16 +68900,63 @@ async function logVisitor(data) {
     console.warn("[DB] logVisitor failed", e);
   }
 }
+async function getTestSessionStats() {
+  const db = await getDb();
+  if (!db) return {
+    freeStart: 0,
+    freeResult: 0,
+    deepStart: 0,
+    deepResult: 0,
+    coupleStart: 0,
+    coupleResult: 0
+  };
+  const freeStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_start"));
+  const freeResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_result"));
+  const deepStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_start"));
+  const deepResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_result"));
+  const coupleStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_start"));
+  const coupleResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_result"));
+  return {
+    freeStart: Number(freeStartResult[0]?.cnt ?? 0),
+    freeResult: Number(freeResultResult[0]?.cnt ?? 0),
+    deepStart: Number(deepStartResult[0]?.cnt ?? 0),
+    deepResult: Number(deepResultResult[0]?.cnt ?? 0),
+    coupleStart: Number(coupleStartResult[0]?.cnt ?? 0),
+    coupleResult: Number(coupleResultResult[0]?.cnt ?? 0)
+  };
+}
 async function getVisitorStats() {
   const db = await getDb();
-  if (!db) return { totalVisitors: 0, freeTrial: 0, premium: 0 };
+  if (!db) return {
+    totalVisitors: 0,
+    freeTrial: 0,
+    premium: 0,
+    freeStart: 0,
+    freeResult: 0,
+    deepStart: 0,
+    deepResult: 0,
+    coupleStart: 0,
+    coupleResult: 0
+  };
   const totalResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs);
-  const freeResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_trial"));
+  const freeTrialResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_trial"));
   const premiumResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "premium"));
+  const freeStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_start"));
+  const freeResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_result"));
+  const deepStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_start"));
+  const deepResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_result"));
+  const coupleStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_start"));
+  const coupleResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_result"));
   return {
     totalVisitors: Number(totalResult[0]?.cnt ?? 0),
-    freeTrial: Number(freeResult[0]?.cnt ?? 0),
-    premium: Number(premiumResult[0]?.cnt ?? 0)
+    freeTrial: Number(freeTrialResult[0]?.cnt ?? 0),
+    premium: Number(premiumResult[0]?.cnt ?? 0),
+    freeStart: Number(freeStartResult[0]?.cnt ?? 0),
+    freeResult: Number(freeResultResult[0]?.cnt ?? 0),
+    deepStart: Number(deepStartResult[0]?.cnt ?? 0),
+    deepResult: Number(deepResultResult[0]?.cnt ?? 0),
+    coupleStart: Number(coupleStartResult[0]?.cnt ?? 0),
+    coupleResult: Number(coupleResultResult[0]?.cnt ?? 0)
   };
 }
 
@@ -68949,12 +69022,29 @@ var appRouter = router({
   visitors: router({
     log: publicProcedure.input(external_exports.object({
       deviceId: external_exports.string().min(1).max(128),
-      visitType: external_exports.enum(["home", "free_trial", "premium"])
+      visitType: external_exports.enum([
+        "home",
+        "free_trial",
+        "premium",
+        "free_start",
+        "free_result",
+        "deep_start",
+        "deep_result",
+        "couple_start",
+        "couple_result"
+      ]),
+      testType: external_exports.string().max(50).optional(),
+      relationshipType: external_exports.string().max(50).optional(),
+      selectedColors: external_exports.string().max(255).optional(),
+      selectedCards: external_exports.string().max(255).optional()
     })).mutation(({ input }) => {
       return logVisitor(input);
     }),
     stats: publicProcedure.query(() => {
       return getVisitorStats();
+    }),
+    testStats: publicProcedure.query(() => {
+      return getTestSessionStats();
     })
   }),
   // 후기 API
