@@ -282,3 +282,8 @@
 - [x] buildProfileContrast 동료·친구 특화 조합 추가 (warm_active-cool_clear, warm_soft-cool_deep, warm_grounded-cool_clear 등)
 - [x] buildClosingMessage 에너지 조합 × 관계 유형 세분화 (표현 방식 차이/연결 욕구/혼자만의 시간/산책 반복 패턴 제거)
 - [x] buildClosingMessage 에너지 조합 공통 메시지 레이어 추가 (warm_active-warm_soft, cool_clear-cool_deep 등 조합별 고유 메시지)
+
+## 관계 루틴 표현 자연스러움 개선 (2026-05-19)
+- [x] buildRestTogether 숨을 쉬는 시간 표현 교체
+- [x] buildConnectionStyle 어법 수정
+- [x] buildActivities 관계 유형별 활동 루틴 분리 (연인/부부 vs 친구/형제자매 vs 동료)

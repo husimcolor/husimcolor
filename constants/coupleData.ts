@@ -774,7 +774,7 @@ function buildIntimacyStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationTyp
 function getIntimacyStyleShort(family: EnergyFamily, isCouple: boolean = false): string {
   const map: Record<EnergyFamily, string> = {
     warm_active: isCouple ? '함께 활동하고 표현을 나누는' : '함께 활동하며 공감을 나누는',
-    warm_soft: isCouple ? '따뜻한 말과 스킨십으로' : '따뜻한 말과 배려로',
+    warm_soft: isCouple ? '따뜻한 말과 스킨십으로' : '따뜻한 말과 배려로 마음을 전하는',
     warm_grounded: '안정적인 일상을 함께하는',
     cool_clear: '신뢰와 약속을 지키는',
     cool_deep: '깊은 대화와 이해를 나누는',
@@ -819,7 +819,7 @@ function buildAffectionStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationTy
 function getAffectionStyleShort(family: EnergyFamily, isCouple: boolean): string {
   const map: Record<EnergyFamily, string> = {
     warm_active: isCouple ? '직접적인 말과 스킨십으로' : '직접적이고 활기차게',
-    warm_soft: isCouple ? '부드러운 말과 따뜻한 스킨십으로' : '따뜻한 말과 배려로',
+    warm_soft: isCouple ? '부드러운 말과 따뜻한 스킨십으로' : '따뜻한 표현과 배려로 마음을 전하는',
     warm_grounded: isCouple ? '안정적인 행동과 함께하는 시간으로' : '꾸준한 행동으로',
     cool_clear: isCouple ? '신뢰와 약속을 지키는 것으로' : '신뢰와 일관성으로',
     cool_deep: isCouple ? '깊은 대화와 진심 어린 표현으로' : '진심 어린 말로',
@@ -929,7 +929,7 @@ function buildConnectionStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationT
     return `두 사람 모두 ${styleA} 방식으로 연결감을 느낍니다.\n같은 언어로 연결되기 때문에 서로의 필요를 자연스럽게 알아채는 편입니다.\n다만 같은 방식이 익숙해지면 표현이 줄어들 수 있으니, 가끔 새로운 방식으로 마음을 전해보는 것도 좋습니다.`;
   }
 
-  return map[key] ?? map[reverseKey] ?? `한 사람은 ${styleA} 방식으로 연결감을 느끼고, 다른 사람은 ${styleB} 방식으로 연결감을 느낍니다.\n한 사람은 ${affStyleA} 마음을 전하고, 다른 사람은 ${affStyleB} 표현합니다.\n상대방이 어떤 방식으로 마음이 열리는지 알고 그 방식으로 먼저 다가가는 것이, 두 사람 사이의 거리를 좁히는 가장 빠른 길입니다.`;
+  return map[key] ?? map[reverseKey] ?? `한 사람은 ${styleA} 방식으로 연결감을 느끼고, 다른 사람은 ${styleB} 방식으로 연결감을 느낍니다.\n한 사람은 ${affStyleA} 마음을 전하고, 다른 사람은 ${affStyleB} 표현합니다.\n상대방이 마음이 열리는 방식을 먼저 알고 그 방식으로 다가가는 것이, 두 사람 사이의 거리를 좁히는 가장 빠른 길입니다.`;
 }
 
 function buildNeededExpression(
@@ -1232,39 +1232,186 @@ function buildCoupleRoutine(
 
 function buildActivities(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string[] {
   const isCouple = rel === '연인' || rel === '부부';
+  const isFriend = rel === '친구' || rel === '형제자매';
+  const isColleague = rel === '동료';
 
-  // 에너지 조합별 특화 활동
+  // 에너지 조합별 특화 활동 — 관계 유형별 분기
   const key = `${fA}-${fB}`;
+
+  // ── 동료 관계 전용 활동 ──────────────────────────────────────────────
+  if (isColleague) {
+    const colleagueActivities: Partial<Record<string, string[]>> = {
+      'warm_active-warm_active': [
+        '점심 식사 후 짧은 산책하기',
+        '새로운 카페에서 티타임 갖기',
+        '업무 외 가벼운 대화 나누기',
+        '팀 점심 식사 함께하기',
+      ],
+      'warm_active-cool_deep': [
+        '점심 식사 후 짧은 산책하기',
+        '조용한 카페에서 커피 한 잔 나누기',
+        '업무 관련 아이디어 가볍게 나누기',
+        '팀 점심 식사 함께하기',
+      ],
+      'cool_deep-warm_active': [
+        '점심 식사 후 짧은 산책하기',
+        '조용한 카페에서 커피 한 잔 나누기',
+        '업무 관련 아이디어 가볍게 나누기',
+        '팀 점심 식사 함께하기',
+      ],
+      'warm_soft-cool_clear': [
+        '티타임이나 커피 한 잔 나누기',
+        '가벼운 점심 식사 함께하기',
+        '업무 외 짧은 대화 나누기',
+        '팀 회의 후 간식 나누기',
+      ],
+      'cool_clear-warm_soft': [
+        '티타임이나 커피 한 잔 나누기',
+        '가벼운 점심 식사 함께하기',
+        '업무 외 짧은 대화 나누기',
+        '팀 회의 후 간식 나누기',
+      ],
+      'cool_deep-cool_deep': [
+        '조용한 카페에서 커피 한 잔 나누기',
+        '업무 관련 깊은 대화 나누기',
+        '점심 식사 후 짧은 산책하기',
+        '함께 세미나나 강의 듣기',
+      ],
+      'warm_grounded-warm_grounded': [
+        '점심 식사 함께하기',
+        '티타임이나 커피 한 잔 나누기',
+        '업무 외 짧은 대화 나누기',
+        '팀 회의 후 간식 나누기',
+      ],
+    };
+    const collegeAct = colleagueActivities[key] ?? colleagueActivities[`${fB}-${fA}`];
+    if (collegeAct) return collegeAct.slice(0, 4);
+    // 동료 기본 폴백
+    return [
+      '점심 식사 후 짧은 산책하기',
+      '티타임이나 커피 한 잔 나누기',
+      '업무 외 가벼운 대화 나누기',
+      '팀 점심 식사 함께하기',
+    ];
+  }
+
+  // ── 친구 / 형제자매 관계 전용 활동 ──────────────────────────────────
+  if (isFriend) {
+    const friendActivities: Partial<Record<string, string[]>> = {
+      'warm_active-warm_active': [
+        '새로운 음식점 함께 탐방하기',
+        '함께 운동하거나 스포츠 즐기기',
+        '주말 당일치기 여행 계획하기',
+        '공원에서 피크닉 즐기기',
+      ],
+      'warm_active-cool_deep': [
+        '가벼운 산책 후 카페에서 대화 나누기',
+        '함께 영화 보고 각자 느낀 점 나누기',
+        '새로운 음식점 함께 탐방하기',
+        '저녁 산책 후 따뜻한 음료 나누기',
+      ],
+      'cool_deep-warm_active': [
+        '가벼운 산책 후 카페에서 대화 나누기',
+        '함께 영화 보고 각자 느낀 점 나누기',
+        '새로운 음식점 함께 탐방하기',
+        '저녁 산책 후 따뜻한 음료 나누기',
+      ],
+      'warm_soft-cool_clear': [
+        '카페에서 차 한 잔 나누며 이야기하기',
+        '서로의 플레이리스트 공유하고 음악 감상하기',
+        '함께 보드게임이나 퍼즐 즐기기',
+        '소품 가게나 서점 함께 구경하기',
+      ],
+      'cool_clear-warm_soft': [
+        '카페에서 차 한 잔 나누며 이야기하기',
+        '서로의 플레이리스트 공유하고 음악 감상하기',
+        '함께 보드게임이나 퍼즐 즐기기',
+        '소품 가게나 서점 함께 구경하기',
+      ],
+      'cool_deep-cool_deep': [
+        '조용한 카페에서 각자 독서하거나 작업하기',
+        '전시회나 미술관 함께 방문하기',
+        '깊은 주제로 대화하는 시간 갖기',
+        '서로의 플레이리스트 공유하고 음악 감상하기',
+      ],
+      'nature-nature': [
+        '자연 속 산책 (공원, 숲길, 강변)',
+        '식물 가꾸기나 정원 산책',
+        '공원에서 피크닉 즐기기',
+        '따뜻한 음료 마시며 조용한 시간 보내기',
+      ],
+      'warm_grounded-warm_grounded': [
+        '단골 카페에서 차 나누기',
+        '함께 영화 보거나 드라마 정주행하기',
+        '함께 요리하거나 식사 준비하기',
+        '가벼운 산책 후 식사 즐기기',
+      ],
+      'warm_soft-warm_soft': [
+        '따뜻한 음료 마시며 서로의 이야기 나누기',
+        '꽃 시장이나 소품 가게 함께 구경하기',
+        '감성적인 영화 보고 감상 나누기',
+        '서로의 플레이리스트 공유하고 음악 감상하기',
+      ],
+    };
+    const friendAct = friendActivities[key] ?? friendActivities[`${fB}-${fA}`];
+    if (friendAct) return friendAct.slice(0, 4);
+    // 친구/형제자매 기본 폴백
+    const friendBase: string[] = [];
+    if (fA === 'warm_active' || fB === 'warm_active') {
+      friendBase.push('새로운 음식점 함께 탐방하기');
+      friendBase.push('함께 운동하거나 스포츠 즐기기');
+      friendBase.push('공원에서 피크닉 즐기기');
+      friendBase.push('주말 당일치기 여행 계획하기');
+    } else if (fA === 'cool_deep' || fB === 'cool_deep') {
+      friendBase.push('조용한 카페에서 각자 독서하거나 작업하기');
+      friendBase.push('전시회나 미술관 함께 방문하기');
+      friendBase.push('서로의 플레이리스트 공유하고 음악 감상하기');
+      friendBase.push('가벼운 산책 후 카페에서 대화 나누기');
+    } else if (fA === 'nature' || fB === 'nature') {
+      friendBase.push('자연 속 산책 (공원, 숲길, 강변)');
+      friendBase.push('공원에서 피크닉 즐기기');
+      friendBase.push('따뜻한 음료 마시며 조용한 시간 보내기');
+      friendBase.push('식물 가꾸기나 정원 산책');
+    } else {
+      friendBase.push('카페에서 차 한 잔 나누며 이야기하기');
+      friendBase.push('함께 보드게임이나 퍼즐 즐기기');
+      friendBase.push('서로의 플레이리스트 공유하고 음악 감상하기');
+      friendBase.push('가벼운 산책 후 식사 즐기기');
+    }
+    return friendBase.slice(0, 4);
+  }
+
+  // ── 연인 / 부부 관계 활동 (기존 comboActivities 유지) ────────────────
   const comboActivities: Partial<Record<string, string[]>> = {
     'warm_active-warm_active': [
       '함께 달리기나 자전거 타기',
       '새로운 음식점 탐방하기',
       '함께 운동하거나 스트레칭 루틴 만들기',
-      '주말 당일치기 여행 계획하기',
+      '주말 드라이브나 당일치기 여행 계획하기',
     ],
     'warm_active-cool_deep': [
       '가벼운 산책 후 조용한 카페에서 대화 나누기',
       '함께 영화 보고 각자 느낀 점 나누기',
       '한 사람이 활동을 제안하고 다른 사람이 장소를 고르기',
-      '저녁 산책 후 따뜻한 음료 나누기',
+      '드라이브하며 음악 함께 듣기',
     ],
     'cool_deep-warm_active': [
       '가벼운 산책 후 조용한 카페에서 대화 나누기',
       '함께 영화 보고 각자 느낀 점 나누기',
       '한 사람이 활동을 제안하고 다른 사람이 장소를 고르기',
-      '저녁 산책 후 따뜻한 음료 나누기',
+      '드라이브하며 음악 함께 듣기',
     ],
     'warm_soft-cool_clear': [
       '함께 요리하거나 식사 준비하기',
       '조용한 카페에서 차 한 잔 나누기',
       '서로의 플레이리스트 공유하고 음악 감상하기',
-      '집에서 보드게임이나 퍼즐 함께하기',
+      '함께 영화 보거나 드라마 정주행하기',
     ],
     'cool_clear-warm_soft': [
       '함께 요리하거나 식사 준비하기',
       '조용한 카페에서 차 한 잔 나누기',
       '서로의 플레이리스트 공유하고 음악 감상하기',
-      '집에서 보드게임이나 퍼즐 함께하기',
+      '함께 영화 보거나 드라마 정주행하기',
     ],
     'cool_deep-cool_deep': [
       '조용한 카페에서 책 읽거나 각자 작업하기',
@@ -1274,7 +1421,7 @@ function buildActivities(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType):
     ],
     'nature-nature': [
       '자연 속 산책 (공원, 숲길, 강변)',
-      '식물 가꾸기나 정원 산책',
+      '식물 가꾸기나 정원 가꾸기',
       '함께 텃밭 가꾸거나 꽃 심기',
       '조용한 카페에서 차 한 잔 나누기',
     ],
@@ -1282,13 +1429,13 @@ function buildActivities(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType):
       '자연 속 가벼운 하이킹이나 산책',
       '공원에서 피크닉 즐기기',
       '함께 요리하거나 식사 준비하기',
-      '저녁 산책 후 따뜻한 음료 나누기',
+      '드라이브 후 따뜻한 음료 나누기',
     ],
     'warm_active-nature': [
       '자연 속 가벼운 하이킹이나 산책',
       '공원에서 피크닉 즐기기',
       '함께 요리하거나 식사 준비하기',
-      '저녁 산책 후 따뜻한 음료 나누기',
+      '드라이브 후 따뜻한 음료 나누기',
     ],
     'warm_grounded-warm_grounded': [
       '함께 요리하거나 식사 준비하기',
@@ -1302,18 +1449,17 @@ function buildActivities(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType):
       '꽃 시장이나 소품 가게 함께 구경하기',
       '감성적인 영화 보고 감상 나누기',
     ],
-    // 추가 미매핑 조합
     'warm_active-warm_soft': [
       '가벼운 산책 후 따뜻한 카페에서 시간 보내기',
       '새로운 음식점 함께 탐방하기',
       '함께 요리하거나 식사 준비하기',
-      '저녁 산책 후 영화 보기',
+      '드라이브 후 영화 보기',
     ],
     'warm_grounded-cool_deep': [
       '조용한 카페에서 각자 독서하거나 작업하기',
       '전시회나 미술관 함께 방문하기',
       '함께 요리하거나 식사 준비하기',
-      '저녁 산책 후 따뜻한 음료 나누기',
+      '드라이브하며 음악 함께 듣기',
     ],
     'warm_grounded-cool_clear': [
       '함께 요리하거나 식사 준비하기',
@@ -1325,7 +1471,7 @@ function buildActivities(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType):
       '조용한 카페에서 각자 원하는 것 하기',
       '전시회나 미술관 함께 방문하기',
       '서로의 플레이리스트 공유하고 음악 감상하기',
-      '저녁 산책 후 따뜻한 음료 나누기',
+      '드라이브하며 음악 함께 듣기',
     ],
     'warm_soft-warm_grounded': [
       '따뜻한 음료 마시며 서로의 이야기 나누기',
@@ -1348,7 +1494,7 @@ function buildActivities(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType):
     'nature-warm_soft': [
       '자연 속 산책 (공원, 숲길, 강변)',
       '따뜻한 음료 마시며 조용한 시간 보내기',
-      '식물 가꾸기나 정원 산책',
+      '식물 가꾸기나 정원 가꾸기',
       '함께 요리하거나 브런치 즐기기',
     ],
     'nature-cool_deep': [
@@ -1361,11 +1507,11 @@ function buildActivities(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType):
       '자연 속 산책 (공원, 숲길, 강변)',
       '조용한 카페에서 각자 작업하거나 독서하기',
       '함께 요리하거나 식사 준비하기',
-      '저녁 산책 후 따뜻한 음료 나누기',
+      '드라이브하며 음악 함께 듣기',
     ],
     'warm_grounded-warm_active': [
       '가벼운 산책 후 식사 즐기기',
-      '주말 당일치기 여행 계획하기',
+      '주말 드라이브나 당일치기 여행 계획하기',
       '함께 요리하거나 식사 준비하기',
       '집 근처 단골 카페에서 차 나누기',
     ],
@@ -1374,48 +1520,39 @@ function buildActivities(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType):
   const activities = comboActivities[key] ?? comboActivities[`${fB}-${fA}`];
   if (activities) return activities.slice(0, 4);
 
-  // 기본 활동 (조합 미매핑 시) — 계열별 세분화
+  // 기본 활동 (연인/부부, 조합 미매핑 시) — 계열별 세분화
   const base: string[] = [];
 
-  // 에너지 계열별 대표 활동 선정
   if (fA === 'warm_active' || fB === 'warm_active') {
-    // 액티브 계열 → 움직이는 활동
     base.push('가벼운 산책이나 조깅 함께하기');
     base.push('새로운 음식점 함께 탐방하기');
-    base.push('주말 당일치기 여행 계획하기');
+    base.push('주말 드라이브나 당일치기 여행 계획하기');
     base.push('공원에서 피크닉 즐기기');
   } else if (fA === 'cool_deep' || fB === 'cool_deep') {
-    // 듥서/내향 계열 → 조용한 공간
     base.push('조용한 카페에서 각자 독서하거나 작업하기');
     base.push('전시회나 미술관 함께 방문하기');
     base.push('서로의 플레이리스트 공유하고 음악 감상하기');
-    base.push('저녁 산책 후 따뜻한 음료 나누기');
+    base.push('드라이브하며 음악 함께 듣기');
   } else if (fA === 'cool_clear' || fB === 'cool_clear') {
-    // 명료/이성 계열 → 지적 활동
     base.push('새로운 주제로 함께 공부하거나 강의 듣기');
     base.push('조용한 카페에서 차 한 잔 나누기');
     base.push('함께 요리하거나 식사 준비하기');
     base.push('서로의 관심사를 공유하고 대화하기');
   } else if (fA === 'nature' || fB === 'nature') {
-    // 자연 계열 → 자연/휴식
     base.push('자연 속 산책 (공원, 숲길, 강변)');
-    base.push('식물 가꾸기나 정원 산책');
+    base.push('식물 가꾸기나 정원 가꾸기');
     base.push('따뜻한 음료 마시며 조용한 시간 보내기');
     base.push('함께 요리하거나 브런치 즐기기');
   } else if (fA === 'warm_soft' || fB === 'warm_soft') {
-    // 따뜻한/배려 계열 → 감성 활동
     base.push('따뜻한 음료 마시며 서로의 이야기 나누기');
     base.push('꽃 시장이나 소품 가게 함께 구경하기');
     base.push('감성적인 영화 보고 감상 나누기');
-    if (isCouple) base.push('함께 베이킹하거나 요리하기');
-    else base.push('서로의 플레이리스트 공유하고 음악 감상하기');
+    base.push('함께 베이킹하거나 요리하기');
   } else {
-    // warm_grounded 등 기타
     base.push('조용한 카페에서 차 한 잔 나누기');
     base.push('자연 속 산책 (공원, 숲길, 강변)');
     base.push('함께 요리하거나 식사 준비하기');
-    if (isCouple) base.push('저녁 산책 후 따뜻한 음료 나누기');
-    else base.push('서로의 플레이리스트 공유하고 음악 감상하기');
+    base.push('드라이브하며 음악 함께 듣기');
   }
   return base.slice(0, 4);
 }
@@ -1546,7 +1683,7 @@ function buildRestTogether(fA: EnergyFamily, fB: EnergyFamily): string {
     'warm_active-cool_deep': '한 사람은 움직이고 싶고, 다른 사람은 조용히 있고 싶을 수 있습니다. 두 가지 속도가 번갈아 존중되는 시간이 두 사람 모두에게 회복입니다.',
     'cool_deep-warm_active': '한 사람은 조용히 있고 싶고, 다른 사람은 움직이고 싶을 수 있습니다. 두 가지 속도가 번갈아 존중되는 시간이 두 사람 모두에게 회복입니다.',
     'warm_soft-warm_soft': '따뜻한 음료를 마시며 서로의 이야기를 듣는 시간이 두 사람 모두에게 회복입니다. 서로를 위하는 마음이 많으니, 이제는 자신에게도 그 따뜻함을 돌려주세요.',
-    'nature-nature': '자연 속에서 함께 조용히 있는 시간이 두 사람 모두에게 가장 자연스러운 회복입니다. 말 없이 함께 숨을 쉬는 시간, 숨 쉬는 공간이 두 사람을 이어줍니다.',
+    'nature-nature': '자연 속에서 함께 조용히 있는 시간이 두 사람 모두에게 가장 자연스러운 회복입니다. 같은 공간에서 조용히 쉬는 것만으로도 두 사람은 자연스럽게 연결됩니다.',
     'warm_grounded-warm_grounded': '일상의 작은 순간에 집중해보세요. 함께 요리하거나 단골 카페에서 조용히 시간을 보내는 것이 두 사람의 에너지를 채워줍니다.',
     'cool_clear-cool_clear': '각자 하고 싶은 것을 하면서 같은 공간에 있는 것이 두 사람 모두에게 편안한 회복입니다. 서로에게 아무것도 요구하지 않는 시간이 가장 큰 신뢰입니다.',
     'warm_soft-cool_clear': '한 사람은 감성적으로, 다른 사람은 조용히 실용적으로 쉬는 방식이 다릅니다. 서로의 휴식 방식을 존중해주는 것이 두 사람 모두에게 회복입니다.',
@@ -1564,7 +1701,7 @@ function buildRestTogether(fA: EnergyFamily, fB: EnergyFamily): string {
     return '함께 가벼운 움직임을 즐기거나 새로운 장소를 다녀보는 것이 두 사람의 에너지를 자연스럽게 맞춰줍니다. 움직이면서 나누는 대화가 더 편안하게 느껴질 수 있습니다.';
   }
   if (fA === 'nature' || fB === 'nature') {
-    return '자연 속에서 함께 조용히 있는 시간이 두 사람에게 가장 자연스러운 회복입니다. 말 없이 함께 숨을 쉬는 시간이 두 사람을 이어줍니다.';
+    return '자연 속에서 함께 조용히 있는 시간이 두 사람에게 가장 자연스러운 회복입니다. 굳이 많은 말을 하지 않아도 편안함을 느끼는 흐름입니다.';
   }
   return '조용한 음악과 함께 차를 마시며 서로에게 아무것도 요구하지 않는 시간을 가져보세요. 그 조용함 안에서 두 사람의 에너지가 자연스럽게 정리됩니다.';
 }
@@ -1586,7 +1723,7 @@ function buildConnectionRoutine(
     'warm_soft-cool_clear': '한 사람이 "오늘 나한테 어떤 순간이 좋았어?"라고 물어보세요. 작은 관심이 두 사람 사이를 따뜻게 유지해줍니다.',
     'cool_clear-warm_soft': '한 사람이 "오늘 나한테 어떤 순간이 좋았어?"라고 물어보세요. 작은 관심이 두 사람 사이를 따뜻게 유지해줍니다.',
     'cool_deep-cool_deep': '말이 없어도 괜찮습니다. 같은 공간에서 조용히 있는 것만으로도 충분한 연결입니다. 다만 가끔 "지금 마음 어때?"라는 짧은 질문이 두 사람의 거리를 좌혀줍니다.',
-    'nature-nature': '자연 속에서 함께 조용히 있는 시간이 두 사람에게 가장 자연스러운 연결입니다. 말 없이 함께 승리는 시간, 승리는 공간이 두 사람을 이어줍니다.',
+    'nature-nature': '자연 속에서 함께 조용히 있는 시간이 두 사람에게 가장 자연스러운 연결입니다. 함께 편안히 시간을 보내는 것만으로도 충분한 연결이 됩니다.',
     'nature-warm_active': '한 사람이 조용히 있고 싶을 때, 다른 사람이 그 조용함을 존중해주세요. 함께 있는 것이 항상 같은 속도일 필요는 없습니다.',
     'warm_active-nature': '한 사람이 조용히 있고 싶을 때, 다른 사람이 그 조용함을 존중해주세요. 함께 있는 것이 항상 같은 속도일 필요는 없습니다.',
     'warm_grounded-warm_grounded': '일상의 작은 순간에 집중해보세요. "오늘 저녁 뛰어서 좋았어", "오늘 네가 해준 거 덕봄에 맛있었어" 같은 작은 인정이 두 사람 사이를 따뜻게 유지해줍니다.',
