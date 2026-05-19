@@ -494,19 +494,38 @@ function buildRelationFlow(
     'warm_active-nature': `${nameA}의 활기차고 표현하는 흐름과 ${nameB}의 조용하고 균형 잡힌 흐름이 만나고 있습니다. 한 사람의 빠른 에너지가 다른 사람에게는 부담으로 느껴지는 순간이 생길 수 있습니다. 서로 다른 리듬이 만날 때, 속도를 맞추려는 노력보다 각자의 리듬을 인정하는 것이 더 자연스러운 균형을 만들어줍니다.`,
     'warm_grounded-cool_deep': `${nameA}의 안정적이고 신중한 흐름과 ${nameB}의 내면으로 담아두는 흐름이 만나고 있습니다. 두 사람 모두 감정을 바로 드러내지 않아 서로의 마음을 읽기 어려울 때가 있습니다. 먼저 한 마디 건네는 것이 두 사람 사이를 가장 빠르게 연결하는 방법입니다.`,
     'warm_soft-warm_active': `${nameA}의 따뜻하고 배려하는 흐름과 ${nameB}의 활기차고 표현하는 흐름이 만나고 있습니다. 두 사람 모두 감정을 중요하게 여기지만, 한 사람은 부드럽게 감싸고 다른 사람은 즉각적으로 표현합니다. 이 온도 차이가 때로는 "왜 그렇게 강하게 반응해?"와 "왜 그렇게 조심스러워?"로 나타날 수 있습니다.`,
+    'cool_deep-warm_soft': `내면에서 천천히 정리하는 사람과 따뜻한 연결과 표현을 원하는 사람이 만났습니다. 한 사람은 마음이 충분히 정리될 때까지 조용히 있으려 하고, 다른 사람은 감정을 나누고 온기를 확인하고 싶어 합니다. 조용함이 거리두기로 오해받고, 표현 요구가 압박으로 느껴지는 순간이 반복될 수 있습니다. 침묵이 무관심이 아니라 깊이 생각하는 방식임을 서로 알면, 이 패턴에서 벗어날 수 있습니다.`,
+    'warm_soft-cool_deep': `따뜻한 연결과 표현을 원하는 사람과 내면에서 천천히 정리하는 사람이 만났습니다. 한 사람은 감정을 나누고 온기를 확인하고 싶어 하고, 다른 사람은 마음이 충분히 정리될 때까지 조용히 있으려 합니다. 한 사람의 표현 욕구가 다른 사람에게 부담으로 느껴지는 순간이 생길 수 있습니다. 서로의 속도를 인정하면 두 사람의 관계는 훨씬 편안해집니다.`,
+    'warm_active-warm_grounded': `즉각적으로 표현하고 빠르게 반응하는 사람과 안정적이고 신중하게 움직이는 사람이 만났습니다. 한 사람은 감정이 생기면 바로 꺼내야 편해지고, 다른 사람은 충분히 생각한 후에야 반응합니다. "왜 이렇게 무덤덤해?"와 "왜 이렇게 서둘러?"가 교차하는 순간이 있습니다. 표현의 속도가 다를 뿐, 두 사람 모두 관계를 소중히 여기고 있습니다.`,
+    'warm_grounded-warm_soft': `안정적이고 꾸준한 흐름을 가진 사람과 따뜻하고 감성적인 흐름을 가진 사람이 만났습니다. 한 사람은 일상 속 꾸준한 행동으로 마음을 전하고, 다른 사람은 따뜻한 말과 감정 표현으로 연결되고 싶어 합니다. 서로의 사랑 언어가 다를 뿐, 두 사람 모두 관계를 소중히 여기고 있습니다.`,
+    'cool_clear-nature': `명료하고 효율적인 흐름을 가진 사람과 자연스럽고 유연한 리듬을 가진 사람이 만났습니다. 한 사람은 계획적이고 정리된 방식을 선호하고, 다른 사람은 흐름에 맡기는 방식이 편합니다. "왜 이렇게 계획이 없어?"와 "왜 이렇게 딱딱해?"가 교차하는 순간이 있습니다. 두 방식이 균형을 이룰 때 관계가 가장 안정적입니다.`,
   };
 
   const key = `${fA}-${fB}`;
 
-  // 폴백 문장 다양화 — 계열 조합별로 다른 표현 사용
+  // 폴백 문장 다양화 — A+B 양쪽 특성이 균형 있게 드러나도록 개선
+  const getFamilyTrait = (f: EnergyFamily): string => {
+    const traitMap: Record<EnergyFamily, string> = {
+      warm_active: '감정을 바로 표현하고 빠르게 반응하는',
+      warm_soft: '따뜻하게 배려하며 관계 온도를 중요하게 여기는',
+      warm_grounded: '안정적이고 꾸준하게 신뢰를 쌓는',
+      cool_clear: '명료하게 정리하고 논리적으로 판단하는',
+      cool_deep: '내면에서 천천히 정리하며 깊이 생각하는',
+      nature: '자신의 리듬을 지키며 유연하게 흘러가는',
+      neutral: '균형 잡힌 방식으로 관계를 이어가는',
+    };
+    return traitMap[f];
+  };
+  const traitA = getFamilyTrait(fA);
+  const traitB = getFamilyTrait(fB);
   const fallbackByA: Partial<Record<EnergyFamily, string>> = {
-    warm_active: `${nameA}의 활기차고 즉각적인 흐름과 ${nameB}의 결이 만나고 있습니다. 표현 속도와 반응 방식이 달라 서로를 오해하는 순간이 생길 수 있지만, 그 차이가 오히려 서로에게 없는 것을 채워주는 힘이 됩니다.`,
-    warm_soft: `${nameA}의 따뜻하고 배려하는 흐름과 ${nameB}의 결이 만나고 있습니다. 관계 온도를 중요하게 여기는 사람과 다른 방식으로 연결되는 사람이 만날 때, 서로의 표현 언어를 이해하는 것이 핵심입니다.`,
-    warm_grounded: `${nameA}의 안정적이고 신중한 흐름과 ${nameB}의 결이 만나고 있습니다. 안정을 추구하는 사람과 다른 방향으로 움직이는 사람이 만날 때, 속도와 방향의 차이를 인정하는 것이 관계의 균형을 만들어줍니다.`,
-    cool_clear: `${nameA}의 명료하고 논리적인 흐름과 ${nameB}의 결이 만나고 있습니다. 생각 중심으로 움직이는 사람과 감정 중심으로 움직이는 사람이 만날 때, 서로의 반응 방식이 다르게 느껴질 수 있습니다.`,
-    cool_deep: `${nameA}의 깊고 내향적인 흐름과 ${nameB}의 결이 만나고 있습니다. 내면에서 천천히 정리하는 사람과 다른 방식으로 움직이는 사람이 만날 때, 표현 타이밍의 차이가 관계의 온도 차이로 느껴질 수 있습니다.`,
-    nature: `${nameA}의 자연스럽고 유연한 흐름과 ${nameB}의 결이 만나고 있습니다. 자신의 리듬을 지키는 사람과 다른 방식으로 움직이는 사람이 만날 때, 각자의 속도를 인정하는 것이 관계를 편안하게 만들어줍니다.`,
-    neutral: `${nameA}의 균형 잡힌 흐름과 ${nameB}의 결이 만나고 있습니다. 서로 다른 방식이 만날 때, 그 차이를 이해하는 것이 관계 회복의 첫 걸음입니다.`,
+    warm_active: `${traitA} 사람과 ${traitB} 사람이 만났습니다. 한 사람의 빠른 표현이 다른 사람에게 부담으로 느껴지거나, 다른 사람의 반응 방식이 무관심으로 오해받는 순간이 생길 수 있습니다. 서로의 속도와 방식이 다를 뿐, 두 사람 모두 관계를 소중히 여기고 있습니다.`,
+    warm_soft: `${traitA} 사람과 ${traitB} 사람이 만났습니다. 한 사람은 감정을 나누고 연결을 확인하고 싶어 하고, 다른 사람은 그 방식이 다를 수 있습니다. 서로의 표현 언어를 이해하는 것이 두 사람 관계의 핵심입니다.`,
+    warm_grounded: `${traitA} 사람과 ${traitB} 사람이 만났습니다. 한 사람의 꾸준하고 신중한 방식이 다른 사람에게 느리거나 무덤덤하게 느껴지는 순간이 생길 수 있습니다. 속도와 방향의 차이를 인정하는 것이 관계의 균형을 만들어줍니다.`,
+    cool_clear: `${traitA} 사람과 ${traitB} 사람이 만났습니다. 한 사람의 이성적이고 명료한 방식이 다른 사람에게 차갑게 느껴지는 순간이 생길 수 있습니다. 생각 중심과 감정 중심, 두 방식이 균형을 이룰 때 관계가 가장 안정적입니다.`,
+    cool_deep: `${traitA} 사람과 ${traitB} 사람이 만났습니다. 한 사람의 침묵과 내향적인 방식이 다른 사람에게 거리두기로 오해받는 순간이 생길 수 있습니다. 표현 타이밍의 차이가 관계의 온도 차이로 느껴질 수 있지만, 서로의 방식을 이해하면 오해가 줄어듭니다.`,
+    nature: `${traitA} 사람과 ${traitB} 사람이 만났습니다. 한 사람의 조용하고 유연한 방식이 다른 사람에게 무관심으로 느껴지는 순간이 생길 수 있습니다. 각자의 속도를 인정하는 것이 관계를 편안하게 만들어줍니다.`,
+    neutral: `${traitA} 사람과 ${traitB} 사람이 만났습니다. 서로 다른 방식이 만날 때, 그 차이를 이해하는 것이 관계 회복의 첫 걸음입니다.`,
   };
   const base = combos[key] ?? fallbackByA[fA] ?? `${nameA}와 ${nameB}처럼 서로 다른 결이 만나고 있습니다. 감정 거리감과 표현 속도의 차이가 반복될 수 있지만, 서로에게 없는 것을 채워주는 힘이기도 합니다.`;
   // 관계 유형별 마무리 문장 추가
@@ -639,7 +658,21 @@ function buildMisunderstandingPattern(fA: EnergyFamily, fB: EnergyFamily, rel: R
     'cool_clear-cool_deep': '한 사람이 명료하게 정리하려 할 때, 다른 사람은 더 깊이 생각하다가 말이 늦어집니다. "왜 이렇게 오래 걸려?"와 "왜 이렇게 서둘러?"가 교차하는 순간이 있습니다. 생각의 깊이와 속도가 다를 뿐, 두 사람 모두 진지하게 관계를 대하고 있습니다.',
   };
 
-  return patterns[key] ?? fallbackPatterns[key] ?? fallbackPatterns[`${fB}-${fA}`] ?? `두 사람은 서로 다른 방식으로 관계에 반응합니다. 한 사람의 반응 방식이 다른 사람에게 다르게 읽히는 순간이 반복될 수 있습니다. 서로의 의도를 직접 물어보는 것이 관계 거리감을 줄이는 가장 좋은 방법입니다.`;
+  const getMissTrait = (f: EnergyFamily): string => {
+    const m: Record<EnergyFamily, string> = {
+      warm_active: '감정을 바로 표현하고 빠른 반응을 기대하는',
+      warm_soft: '관계 온도를 중요하게 여기고 공감을 먼저 원하는',
+      warm_grounded: '안정적으로 신중하게 반응하는',
+      cool_clear: '명료하게 정리하고 해결책을 먼저 찾는',
+      cool_deep: '마음을 정리하다 침묵으로 있는',
+      nature: '자신의 리듬대로 유연하게 반응하는',
+      neutral: '균형 잡힌 방식으로 반응하는',
+    };
+    return m[f];
+  };
+  const missTraitA = getMissTrait(fA);
+  const missTraitB = getMissTrait(fB);
+  return patterns[key] ?? fallbackPatterns[key] ?? fallbackPatterns[`${fB}-${fA}`] ?? `${missTraitA} 사람과 ${missTraitB} 사람이 만날 때, 서로의 반응 방식이 다르게 읽히는 순간이 반복될 수 있습니다. 서로의 의도를 직접 물어보는 것이 관계 거리감을 줄이는 가장 좋은 방법입니다.`;
 }
 
 function buildCoupleRecoveryDirection(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
@@ -817,7 +850,21 @@ function buildExpressionDifference(
     'cool_clear-cool_deep': `${nameA}의 흐름을 가진 사람은 명료하게 정리하고 빠르게 결론을 냅니다. ${nameB}의 흐름을 가진 사람은 깊이 생각하다가 말이 늦어집니다.\n생각의 속도 차이가 반복되면 한 사람은 답답함을, 다른 사람은 압박감을 느낄 수 있습니다.\n생각의 깊이와 속도가 다를 뿐, 두 사람 모두 진지하게 관계를 대하고 있습니다.`,
   };
 
-  return map[key] ?? fallbackExprMap[key] ?? fallbackExprMap[`${fB}-${fA}`] ?? `${nameA}의 흐름을 가진 사람과 ${nameB}의 흐름을 가진 사람은 감정을 다루는 방식과 속도가 다릅니다.\n같은 상황에서도 서로 다른 반응이 나올 수 있으며, 이것이 때로는 관계 온도 차이로 느껴집니다.\n서로의 방식이 틀린 것이 아니라 다른 것임을 기억하는 것이 중요합니다.`;
+  const getFamilyExprTrait = (f: EnergyFamily): string => {
+    const m: Record<EnergyFamily, string> = {
+      warm_active: '감정이 생기면 바로 표현하고 빠르게 반응하는',
+      warm_soft: '부드럽게 배려하며 관계 온도를 중요하게 여기는',
+      warm_grounded: '안정적이고 신중하게 감정을 다루는',
+      cool_clear: '명료하게 정리하고 논리적으로 판단하는',
+      cool_deep: '내면에서 정리하다 천천히 표현하는',
+      nature: '자신의 리듬대로 유연하게 반응하는',
+      neutral: '균형 잡힌 방식으로 감정을 다루는',
+    };
+    return m[f];
+  };
+  const exprTraitA = getFamilyExprTrait(fA);
+  const exprTraitB = getFamilyExprTrait(fB);
+  return map[key] ?? fallbackExprMap[key] ?? fallbackExprMap[`${fB}-${fA}`] ?? `${exprTraitA} 사람과 ${exprTraitB} 사람은 같은 상황에서도 서로 다른 방식으로 반응합니다.\n한 사람의 표현 방식이 다른 사람에게 낯설게 느껴지는 순간이 반복될 수 있습니다.\n서로의 방식이 틀린 것이 아니라 다른 것임을 기억하는 것이 중요합니다.`;
 }
 
 /**
