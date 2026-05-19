@@ -109,6 +109,36 @@ export default function CoupleResultScreen() {
   }
 
   const { relationType, personA, personB } = sessionData;
+
+  // 관계 유형별 섹션 제목 분기
+  const isRomanticRel = relationType === '연인' || relationType === '부부';
+  const isParentChildRel = relationType === '아빠-아들' || relationType === '아빠-딸' || relationType === '엄마-아들' || relationType === '엄마-딸' || relationType === '부모-자녀';
+  const isFriendRel = relationType === '친구';
+  const isColleagueRel = relationType === '동료';
+
+  const getRelSectionLabel = () => {
+    if (isRomanticRel) return '두 사람 이해';
+    if (isParentChildRel) return '관계 이해';
+    if (isFriendRel) return '우정 이해';
+    if (isColleagueRel) return '관계 이해';
+    return '두 사람 이해';
+  };
+
+  const getRelSectionTitle = () => {
+    if (isRomanticRel) return '왜 끌리는데 왜 힘든지';
+    if (isParentChildRel) return '서로 다르게 표현하지만 연결되고 싶은 마음';
+    if (isFriendRel) return '편안한데 왜 가끔 어색해지는지';
+    if (isColleagueRel) return '함께 일하는 방식의 차이';
+    return '두 사람의 에너지 흐름';
+  };
+
+  const getRoutineSectionLabel = () => {
+    if (isRomanticRel) return '커플 보완 루틴';
+    if (isParentChildRel) return '관계 회복 루틴';
+    if (isFriendRel) return '관계 연결 루틴';
+    if (isColleagueRel) return '협업 연결 루틴';
+    return '관계 보완 루틴';
+  };
   const colorsA = personA.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean);
   const colorsB = personB.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean);
   const cardsA = personA.cards.map(id => CARD_DATA.find(c => c.id === id)).filter(Boolean);
@@ -307,7 +337,7 @@ export default function CoupleResultScreen() {
           <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 통합 분석</Text>
 
           {/* 두 사람 프로파일 대비 요약 — 끌림 이유 + 반복 패턴 + 해법 */}
-          <SectionCard accentColor={accentCouple} label="두 사람 이해" title="왜 끌리는데 왜 힘든지" colors={colors}>
+          <SectionCard accentColor={accentCouple} label={getRelSectionLabel()} title={getRelSectionTitle()} colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.profileContrast}</Text>
           </SectionCard>
 
@@ -344,7 +374,7 @@ export default function CoupleResultScreen() {
           {/* ═══════════════════════════════════════════════════════
               커플 보완 루틴
           ═══════════════════════════════════════════════════════ */}
-          <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>커플 보완 루틴</Text>
+          <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>{getRoutineSectionLabel()}</Text>
 
           <SectionCard accentColor={accentCouple} title="함께하기 좋은 활동" colors={colors}>
             {coupleAnalysis.coupleRoutine.activities.map((act, i) => (
