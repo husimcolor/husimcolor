@@ -13,7 +13,7 @@ const { width, height } = Dimensions.get('window');
 export default function HomeScreen() {
   const router = useRouter();
   const { resetColors } = useColorContext();
-  const { isAdmin } = useAdmin();
+  useAdmin(); // 관리자 컨텍스트 유지 (admin 탭에서 사용)
   const colors = useColors();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -196,36 +196,22 @@ export default function HomeScreen() {
             <Text style={styles.premiumButtonSub}>63장 카드 · 초기 오픈 무료체험중 · 정식 오픈 후 유료 전환 예정</Text>
           </Pressable>
 
-          {/* 커플 세션 버튼 - 관리자: 활성화 / 일반: 준비중 */}
-          {isAdmin ? (
-            <TouchableOpacity
-              style={[styles.coupleButtonWrapper]}
-              onPress={() => router.push('/(tabs)/couple-start' as any)}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.coupleButton, styles.coupleButtonActive]}>
-                <View style={styles.coupleButtonInner}>
-                  <View style={[styles.comingBadge, { backgroundColor: '#8FA68E30' }]}>
-                    <Text style={[styles.comingBadgeText, { color: '#5A8A5A' }]}>관리자 테스트</Text>
-                  </View>
-                  <Text style={[styles.coupleButtonText, { color: '#5A8A5A' }]}>💑 커플 코칭 테스트</Text>
+          {/* 커플 세션 버튼 - 일반 사용자 무료 테스트 오픈 */}
+          <TouchableOpacity
+            style={[styles.coupleButtonWrapper]}
+            onPress={() => router.push('/(tabs)/couple-start' as any)}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.coupleButton, styles.coupleButtonActive]}>
+              <View style={styles.coupleButtonInner}>
+                <View style={[styles.comingBadge, { backgroundColor: '#8FA68E30' }]}>
+                  <Text style={[styles.comingBadgeText, { color: '#5A8A5A' }]}>무료 테스트</Text>
                 </View>
-                <Text style={[styles.coupleButtonSub, { color: '#5A8A5A' }]}>실제 사용자 흐름으로 전체 체험 가능</Text>
+                <Text style={[styles.coupleButtonText, { color: '#5A8A5A' }]}>💑 커플 세션</Text>
               </View>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.coupleButtonWrapper}>
-              <View style={styles.coupleButton}>
-                <View style={styles.coupleButtonInner}>
-                  <View style={[styles.comingBadge, { backgroundColor: colors.muted + '30' }]}>
-                    <Text style={[styles.comingBadgeText, { color: colors.muted }]}>준비중</Text>
-                  </View>
-                  <Text style={[styles.coupleButtonText, { color: colors.muted }]}>💑 커플 세션</Text>
-                </View>
-                <Text style={[styles.coupleButtonSub, { color: colors.muted }]}>서로를 이해하는 감성 심리코칭 · 곧 오픈 예정</Text>
-              </View>
+              <Text style={[styles.coupleButtonSub, { color: '#5A8A5A' }]}>서로를 이해하는 감성 심리코칭 · 지금 무료로 체험하세요</Text>
             </View>
-          )}
+          </TouchableOpacity>
          </Animated.View>
       </View>
 
