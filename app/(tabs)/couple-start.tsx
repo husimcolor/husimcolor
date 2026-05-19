@@ -22,10 +22,17 @@ const RELATION_TYPES: { value: RelationType; label: string; emoji: string }[] = 
   { value: '동료', label: '동료', emoji: '🌿' },
 ];
 
+// 부모-자녀 선택 시 세부 조합
+const PARENT_CHILD_COMBOS: { value: RelationType; label: string }[] = [
+  { value: '아빠-아들', label: '아빠 ↔ 아들' },
+  { value: '아빠-딸', label: '아빠 ↔ 딸' },
+  { value: '엄마-아들', label: '엄마 ↔ 아들' },
+  { value: '엄마-딸', label: '엄마 ↔ 딸' },
+];
+
 const GENDERS: { value: GenderType; label: string }[] = [
   { value: '남성', label: '남성' },
   { value: '여성', label: '여성' },
-  { value: '기타', label: '기타' },
 ];
 
 const FAITHS: { value: FaithType; label: string }[] = [
@@ -39,6 +46,8 @@ export default function CoupleStartScreen() {
   const colors = useColors();
 
   const [relationType, setRelationType] = useState<RelationType | null>(null);
+  // 부모-자녀 선택 시 세부 조합 상태
+  const [parentChildCombo, setParentChildCombo] = useState<RelationType | null>(null);
   const [genderA, setGenderA] = useState<GenderType | null>(null);
   const [faithA, setFaithA] = useState<FaithType | null>(null);
   const [genderB, setGenderB] = useState<GenderType | null>(null);
@@ -49,18 +58,32 @@ export default function CoupleStartScreen() {
     Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
   }, []);
 
-  const canProceed = relationType && genderA && faithA && genderB && faithB;
+  // 부모-자녀 선택 시 세부 조합이 필요함
+  const isParentChild = relationType === '부모-자녀';
+  // 실제 저장될 관계 유형: 부모-자녀 선택 시 세부 조합으로 대체
+  const effectiveRelationType: RelationType | null = isParentChild
+    ? parentChildCombo
+    : relationType;
+
+  const canProceed = effectiveRelationType && genderA && faithA && genderB && faithB;
 
   const handleStart = async () => {
     if (!canProceed) return;
-    // 커플 세션 초기 데이터 저장
     const sessionData = {
-      relationType,
+      relationType: effectiveRelationType,
       personA: { info: { gender: genderA, faith: faithA }, colors: [], cards: [] },
       personB: { info: { gender: genderB, faith: faithB }, colors: [], cards: [] },
     };
     await AsyncStorage.setItem('@couple_session', JSON.stringify(sessionData));
     router.push({ pathname: '/(tabs)/couple-select', params: { person: 'A' } } as any);
+  };
+
+  const handleRelationTypeSelect = (value: RelationType) => {
+    setRelationType(value);
+    // 부모-자녀가 아닌 다른 유형 선택 시 세부 조합 초기화
+    if (value !== '부모-자녀') {
+      setParentChildCombo(null);
+    }
   };
 
   const renderChip = (
@@ -123,10 +146,24 @@ export default function CoupleStartScreen() {
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>관계 유형</Text>
             <View style={styles.chipRow}>
               {RELATION_TYPES.map(r =>
-                renderChip(r.label, relationType === r.value, () => setRelationType(r.value), r.emoji)
+                renderChip(r.label, relationType === r.value, () => handleRelationTypeSelect(r.value), r.emoji)
               )}
             </View>
           </View>
+
+          {/* 부모-자녀 세부 조합 선택 */}
+          {isParentChild && (
+            <View style={[styles.subSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.subSectionTitle, { color: colors.muted }]}>
+                관계 조합을 선택해주세요
+              </Text>
+              <View style={styles.chipRow}>
+                {PARENT_CHILD_COMBOS.map(c =>
+                  renderChip(c.label, parentChildCombo === c.value, () => setParentChildCombo(c.value))
+                )}
+              </View>
+            </View>
+          )}
 
           {/* A 정보 */}
           <View style={[styles.personSection, { borderColor: colors.border, backgroundColor: colors.surface }]}>
@@ -205,6 +242,10 @@ const styles = StyleSheet.create({
   },
   infoText: { fontSize: 13, lineHeight: 22, textAlign: 'center' },
   section: { marginBottom: 24 },
+  subSection: {
+    borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 20, marginTop: -12,
+  },
+  subSectionTitle: { fontSize: 13, fontWeight: '500', marginBottom: 10 },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10, letterSpacing: 0.2 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
