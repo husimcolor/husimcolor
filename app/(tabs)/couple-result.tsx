@@ -146,8 +146,18 @@ export default function CoupleResultScreen() {
   const cardsB = personB.cards.map(id => CARD_DATA.find(c => c.id === id)).filter(Boolean);
   const cardLabels = ['무의식', '현재', '미래'];
 
-  const accentA = colorsA[0]?.hex ?? colors.primary;
-  const accentB = colorsB[0]?.hex ?? colors.sage;
+  // 밝은 컬러(화이트, 옐로우 등)일 때 배지 텍스트가 안 보이는 문제 방지
+  const rawAccentA = colorsA[0]?.hex ?? colors.primary;
+  const rawAccentB = colorsB[0]?.hex ?? colors.sage;
+  // hex를 RGB로 변환하여 밝기 계산 (luminance < 0.6이면 그대로, 아니면 진한 색으로 대체)
+  const hexLuminance = (hex: string) => {
+    const r = parseInt(hex.slice(1,3),16)/255;
+    const g = parseInt(hex.slice(3,5),16)/255;
+    const b = parseInt(hex.slice(5,7),16)/255;
+    return 0.299*r + 0.587*g + 0.114*b;
+  };
+  const accentA = hexLuminance(rawAccentA) > 0.75 ? '#7B5E3A' : rawAccentA;
+  const accentB = hexLuminance(rawAccentB) > 0.75 ? '#7B5E3A' : rawAccentB;
     const accentCouple = '#8FA68E';
   const insets = useSafeAreaInsets();
   // 인앱브라우저(카카오톡/네이버)는 safe-area가 0으로 잡히는 경우가 있어 최소값 보장
@@ -189,7 +199,7 @@ export default function CoupleResultScreen() {
                     <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }]} />
                   ))}
                 </View>
-                <Text style={[styles.colorNames, { color: colors.muted }]}>
+                <Text style={[styles.colorNames, { color: '#5F4B3B' }]}>
                   {colorsA.map(c => c?.korName).join(' · ')}
                 </Text>
               </View>
@@ -203,7 +213,7 @@ export default function CoupleResultScreen() {
                     <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }]} />
                   ))}
                 </View>
-                <Text style={[styles.colorNames, { color: colors.muted }]}>
+                <Text style={[styles.colorNames, { color: '#5F4B3B' }]}>
                   {colorsB.map(c => c?.korName).join(' · ')}
                 </Text>
               </View>
@@ -236,7 +246,7 @@ export default function CoupleResultScreen() {
                             { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.9)' },
                           ]}>{card.colorKor}</Text>
                         </View>
-                        <Text style={[styles.miniCardLabel, { color: colors.muted }]}>{cardLabels[i]}</Text>
+                        <Text style={[styles.miniCardLabel, { color: '#6B5344' }]}>{cardLabels[i]}</Text>
                       </View>
                     ))}
                   </View>
@@ -265,7 +275,7 @@ export default function CoupleResultScreen() {
                             { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.9)' },
                           ]}>{card.colorKor}</Text>
                         </View>
-                        <Text style={[styles.miniCardLabel, { color: colors.muted }]}>{cardLabels[i]}</Text>
+                        <Text style={[styles.miniCardLabel, { color: '#6B5344' }]}>{cardLabels[i]}</Text>
                       </View>
                     ))}
                   </View>
@@ -499,21 +509,21 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   colorSummaryRow: {
-    flexDirection: 'row', alignItems: 'flex-start',
+    flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 4,
   },
-  colorSummaryPerson: { flex: 1, alignItems: 'center', gap: 6 },
+  colorSummaryPerson: { flex: 1, alignItems: 'center', gap: 8, paddingTop: 4 },
   colorSummaryDividerV: { width: 1, alignSelf: 'stretch', marginHorizontal: 8 },
   colorSummaryDividerH: { height: 1 },
 
   // ─── 컬러 구슬 ───────────────────────────────────────────────
   personBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
-  personBadgeText: { fontSize: 11, fontWeight: '600' },
+  personBadgeText: { fontSize: 11, fontWeight: '700' },
   colorDots: { flexDirection: 'row', gap: 6 },
-  colorDot: { width: 20, height: 20, borderRadius: 10 },
-  colorNames: { fontSize: 11, textAlign: 'center' },
+  colorDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
+  colorNames: { fontSize: 11, textAlign: 'center', fontWeight: '600', color: '#5F4B3B' },
 
   // ─── 심리카드 미니 카드 ──────────────────────────────────────
-  cardSectionLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.5, marginBottom: 2 },
+  cardSectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 4 },
   miniCardRow: { flexDirection: 'row', gap: 6, justifyContent: 'center' },
   miniCardItem: { alignItems: 'center', gap: 4 },
   miniCardFace: {
