@@ -234,10 +234,20 @@ export default function AdminScreen() {
 
         {/* 통계 대시보드 */}
         <View style={styles.statsGrid}>
-          {/* 방문자 */}
+          {/* 전체 방문 기록 */}
           <View style={[styles.statCard, { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE', borderWidth: 1 }]}>
-            <Text style={[styles.statNum, { color: "#5A8A5A" }]}>{stats?.totalVisitors ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: "#5A8A5A" }]}>전체 방문자{"\n"}고유기기·하루1회</Text>
+            <Text style={[styles.statNum, { color: "#5A8A5A" }]}>{stats?.totalLogs ?? "-"}</Text>
+            <Text style={[styles.statLabel, { color: "#5A8A5A" }]}>전체 방문 기록{"\n"}재방문 포함</Text>
+          </View>
+          {/* 고유 방문자 */}
+          <View style={[styles.statCard, { backgroundColor: '#E8F4E8', borderColor: '#B0D8B0', borderWidth: 1 }]}>
+            <Text style={[styles.statNum, { color: "#3A7A3A" }]}>{stats?.totalVisitors ?? "-"}</Text>
+            <Text style={[styles.statLabel, { color: "#3A7A3A" }]}>고유 방문자{"\n"}기기 기준</Text>
+          </View>
+          {/* 오늘 방문자 */}
+          <View style={[styles.statCard, { backgroundColor: '#F0FFF4', borderColor: '#A0D8A0', borderWidth: 1 }]}>
+            <Text style={[styles.statNum, { color: "#2A6A2A" }]}>{stats?.todayVisitors ?? "-"}</Text>
+            <Text style={[styles.statLabel, { color: "#2A6A2A" }]}>오늘 방문자{"\n"}고유 기기</Text>
           </View>
           {/* 무료체험 신청 */}
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>

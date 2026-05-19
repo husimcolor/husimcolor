@@ -68928,7 +68928,9 @@ async function getTestSessionStats() {
 async function getVisitorStats() {
   const db = await getDb();
   if (!db) return {
+    totalLogs: 0,
     totalVisitors: 0,
+    todayVisitors: 0,
     freeTrial: 0,
     premium: 0,
     freeStart: 0,
@@ -68938,7 +68940,9 @@ async function getVisitorStats() {
     coupleStart: 0,
     coupleResult: 0
   };
+  const totalLogsResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs);
   const totalResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs);
+  const todayResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(sql`DATE(${visitorLogs.createdAt}) = CURDATE()`);
   const freeTrialResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_trial"));
   const premiumResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "premium"));
   const freeStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_start"));
@@ -68948,7 +68952,9 @@ async function getVisitorStats() {
   const coupleStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_start"));
   const coupleResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_result"));
   return {
+    totalLogs: Number(totalLogsResult[0]?.cnt ?? 0),
     totalVisitors: Number(totalResult[0]?.cnt ?? 0),
+    todayVisitors: Number(todayResult[0]?.cnt ?? 0),
     freeTrial: Number(freeTrialResult[0]?.cnt ?? 0),
     premium: Number(premiumResult[0]?.cnt ?? 0),
     freeStart: Number(freeStartResult[0]?.cnt ?? 0),
