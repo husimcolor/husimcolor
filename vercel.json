@@ -1,5 +1,11 @@
 {
   "outputDirectory": "dist",
+  "functions": {
+    "api/trpc/[...trpc].js": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     { "source": "/api/trpc/:path*", "destination": "/api/trpc/[...trpc]" },
     { "source": "/(.*)", "destination": "/index.html" }
