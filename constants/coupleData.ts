@@ -4,6 +4,7 @@
  */
 
 import { COLOR_DATA, ColorData } from './colorData';
+import { CARD_DATA, ShapeType } from './cardData';
 
 // ── 관계 유형 ────────────────────────────────────────────────────
 export type RelationType =
@@ -414,6 +415,12 @@ export function generateCoupleAnalysis(
   const dominantA = getDominantFamily(familiesA);
   const dominantB = getDominantFamily(familiesB);
 
+  // 도형 특성 추출 (3번 카드 우선)
+  const shapeA = extractDominantShape(personA.cards);
+  const shapeB = extractDominantShape(personB.cards);
+  const shapeCtxA = buildShapeContext(shapeA);
+  const shapeCtxB = buildShapeContext(shapeB);
+
   // 관계 흐름
   const relationFlow = buildRelationFlow(dominantA, dominantB, relationType, colorsA, colorsB);
 
@@ -421,22 +428,22 @@ export function generateCoupleAnalysis(
   const expressionDifference = buildExpressionDifference(dominantA, dominantB, familiesA, familiesB, colorsA, colorsB);
 
   // 오해가 생기는 지점
-  const conflictPattern = buildMisunderstandingPattern(dominantA, dominantB, relationType);
+  const conflictPattern = buildMisunderstandingPattern(dominantA, dominantB, relationType, shapeCtxA, shapeCtxB);
 
   // 가까워지는 방법 (연결 방식 + 애정 스타일 통합)
   const connectionStyle = buildConnectionStyle(dominantA, dominantB, relationType);
 
   // 서로에게 필요한 표현
-  const neededExpression = buildNeededExpression(dominantA, dominantB, colorsA, colorsB);
+  const neededExpression = buildNeededExpression(dominantA, dominantB, colorsA, colorsB, shapeCtxA, shapeCtxB);
 
   // 커플 보완 루틴
-  const coupleRoutine = buildCoupleRoutine(dominantA, dominantB, relationType, personA.info.faith, personB.info.faith);
+  const coupleRoutine = buildCoupleRoutine(dominantA, dominantB, relationType, personA.info.faith, personB.info.faith, shapeCtxA, shapeCtxB);
 
   // 마무리 코칭 메시지
   const closingMessage = buildClosingMessage(dominantA, dominantB, relationType, personA.info.faith, personB.info.faith);
 
   // 두 사람 프로파일 대비 요약
-  const profileContrast = buildProfileContrast(dominantA, dominantB, analysisA, analysisB, colorsA, colorsB, relationType);
+  const profileContrast = buildProfileContrast(dominantA, dominantB, analysisA, analysisB, colorsA, colorsB, relationType, shapeCtxA, shapeCtxB);
 
   return {
     relationFlow,
@@ -451,6 +458,97 @@ export function generateCoupleAnalysis(
 }
 
 // ── 통합 해석 빌더 함수들 ─────────────────────────────────────────
+
+
+// ── 도형별 관계 특성 헬퍼 ─────────────────────────────────────────
+/**
+ * 도형별 관계 표현 특성 반환
+ * 컬러 = 에너지 방향, 도형 = 표현 구조
+ */
+function buildShapeContext(shape: ShapeType | undefined): {
+  modifier: string;
+  conflictTrait: string;
+  recoveryTrait: string;
+  affectionStyle: string;
+  conversationStyle: string;
+} {
+  switch (shape) {
+    case 'triangle':
+      return {
+        modifier: '경계를 중시하고 자신을 지키려는',
+        conflictTrait: '경계를 지키려는 태도가 상대에게 차갑게 느껴질 수 있습니다',
+        recoveryTrait: '경계 회복과 혼자만의 시간이 필요합니다',
+        affectionStyle: '신뢰가 쌓인 후 천천히 마음을 여는 방식으로',
+        conversationStyle: '경계를 존중하는 짧고 명확한 대화가',
+      };
+    case 'inverted_triangle':
+      return {
+        modifier: '감정이 깊이 내려앉고 예민하게 반응하는',
+        conflictTrait: '감정이 안으로 침잠할 때 상대가 원인을 알기 어렵습니다',
+        recoveryTrait: '감정을 천천히 꺼내는 시간과 조용한 공간이 필요합니다',
+        affectionStyle: '감정을 충분히 소화한 후 진심으로 표현하는 방식으로',
+        conversationStyle: '감정을 먼저 인정하는 부드러운 대화가',
+      };
+    case 'circle':
+      return {
+        modifier: '감정이 순환하고 부드럽게 연결되는',
+        conflictTrait: '감정이 빠르게 순환하여 상대가 현재 상태를 파악하기 어려울 수 있습니다',
+        recoveryTrait: '감정 순환을 돕는 부드러운 연결과 공감이 필요합니다',
+        affectionStyle: '자연스럽게 감정을 나누고 연결되는 방식으로',
+        conversationStyle: '감정의 흐름을 따라가는 부드러운 대화가',
+      };
+    case 'square':
+      return {
+        modifier: '현실적이고 구조적으로 안정을 추구하는',
+        conflictTrait: '구조와 책임을 중시하는 태도가 상대에게 딱딱하게 느껴질 수 있습니다',
+        recoveryTrait: '일상의 안정된 구조와 책임감 있는 루틴이 회복을 돕습니다',
+        affectionStyle: '꾸준하고 안정적인 행동으로 신뢰를 쌓는 방식으로',
+        conversationStyle: '구체적이고 현실적인 주제의 대화가',
+      };
+    case 'diamond':
+      return {
+        modifier: '관계 감수성이 높고 섬세하게 균형을 맞추는',
+        conflictTrait: '섬세한 감수성으로 인해 작은 변화에도 민감하게 반응할 수 있습니다',
+        recoveryTrait: '감수성을 존중하는 섬세한 공감과 균형 회복이 필요합니다',
+        affectionStyle: '세심한 배려와 균형 잡힌 표현으로',
+        conversationStyle: '섬세한 감정 교류와 균형 잡힌 대화가',
+      };
+    case 'pentagon':
+      return {
+        modifier: '자기 방향성이 뚜렷하고 성장을 추구하는',
+        conflictTrait: '자기 방향성이 강해 상대의 속도와 맞지 않을 때 갈등이 생길 수 있습니다',
+        recoveryTrait: '자기 성장과 방향성을 존중하는 공간이 필요합니다',
+        affectionStyle: '서로의 성장을 응원하고 방향을 함께 나누는 방식으로',
+        conversationStyle: '각자의 방향과 성장을 나누는 대화가',
+      };
+    case 'hexagon':
+      return {
+        modifier: '연결과 공동체를 중시하고 조화를 추구하는',
+        conflictTrait: '관계 조화를 중시하다 보니 자신의 감정을 뒤로 미룰 수 있습니다',
+        recoveryTrait: '관계 연결과 공동체 안에서의 따뜻한 소속감이 회복을 돕습니다',
+        affectionStyle: '함께하는 활동과 공동체적 연결로',
+        conversationStyle: '관계와 연결을 중심으로 한 따뜻한 대화가',
+      };
+    default:
+      return {
+        modifier: '자신만의 방식으로',
+        conflictTrait: '서로의 표현 방식이 달라 오해가 생길 수 있습니다',
+        recoveryTrait: '서로의 방식을 존중하는 시간이 필요합니다',
+        affectionStyle: '자신만의 방식으로',
+        conversationStyle: '편안한 대화가',
+      };
+  }
+}
+
+/**
+ * 카드 ID 배열에서 주요 도형 추출 (3번 카드 우선, 없으면 1번 카드)
+ */
+function extractDominantShape(cardIds: string[]): ShapeType | undefined {
+  const card3 = cardIds[2] ? CARD_DATA.find(c => c.id === cardIds[2]) : undefined;
+  if (card3?.shape) return card3.shape;
+  const card1 = cardIds[0] ? CARD_DATA.find(c => c.id === cardIds[0]) : undefined;
+  return card1?.shape;
+}
 
 function getDominantFamily(families: EnergyFamily[]): EnergyFamily {
   const count: Partial<Record<EnergyFamily, number>> = {};
@@ -617,7 +715,8 @@ function buildEmotionDifference(
   } else if (isFriend) {
     return `${nameA}의 성향을 가진 사람은 ${exprA} 방식으로, ${nameB}의 성향을 가진 사람은 ${exprB} 방식으로 감정을 나눕니다. 편안함을 느끼는 지점이 달라 대화 리듬이 어긋나는 순간이 생길 수 있습니다. 서로의 방식이 다를 뿐임을 기억하면 우정이 더 편안해집니다.`;
   }
-  return `${nameA}의 성향을 가진 사람은 ${exprA} 방식으로, ${nameB}의 성향을 가진 사람은 ${exprB} 방식으로 감정을 다룹니다. 같은 상황에서도 반응 방식이 달라 관계 온도 차이로 느껴지는 순간이 생길 수 있습니다. 서로의 방식이 틀린 것이 아니라 다른 것임을 기억하는 것이 중요합니다.`;
+  const misBase = `${nameA}의 성향을 가진 사람은 ${exprA} 방식으로, ${nameB}의 성향을 가진 사람은 ${exprB} 방식으로 감정을 다룹니다. 같은 상황에서도 반응 방식이 달라 관계 온도 차이로 느껴지는 순간이 생길 수 있습니다. 서로의 방식이 틀린 것이 아니라 다른 것임을 기억하는 것이 중요합니다.`;
+  return misBase;
 }
 
 function getEmotionExpressionShort(family: EnergyFamily): string {
@@ -661,7 +760,17 @@ function buildRhythmDifference(fA: EnergyFamily, fB: EnergyFamily): string {
   return rhythmSceneMap[key] ?? rhythmSceneMap[reverseKey] ?? `두 사람의 관계 리듬이 서로 다릅니다. 한 사람의 속도가 다른 사람에게 빠르거나 느리게 느껴질 수 있습니다. 서로의 리듬을 강요하지 않고 중간 지점을 찾아가는 것이 두 사람 관계의 편안함을 만들어줍니다.`;
 }
 
-function buildMisunderstandingPattern(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
+function buildMisunderstandingPattern(
+  fA: EnergyFamily, fB: EnergyFamily, rel: RelationType,
+  shapeCtxA?: ReturnType<typeof buildShapeContext>,
+  shapeCtxB?: ReturnType<typeof buildShapeContext>
+): string {
+  // 도형 특성 보완 문장
+  const shapeNote = (shapeCtxA && shapeCtxB && shapeCtxA.conflictTrait !== shapeCtxB.conflictTrait)
+    ? `\n특히 ${shapeCtxA.conflictTrait}. 그리고 ${shapeCtxB.conflictTrait}. 이 두 가지 특성이 겹칠 때 오해가 깊어질 수 있습니다.`
+    : shapeCtxA
+      ? `\n특히 ${shapeCtxA.conflictTrait}. 이 점을 먼저 인식하는 것이 오해를 줄이는 시작입니다.`
+      : '';
   const patterns: Partial<Record<string, string>> = {
     'warm_active-cool_deep': '한 사람이 감정을 바로 표현할 때, 다른 사람은 그 강도에 압도되어 더 안으로 들어갑니다. 이것이 반복되면 한 사람은 "나를 피하는 것 같다"고 느끼고, 다른 사람은 "왜 지금 연락이 안 돼?"라고 느낍니다. "왜 그래?"대신 "지금 어떤 마음이야?"로 시작하는 것이 이 패턴을 바꾸는 첫 걸음입니다.',
     'cool_deep-warm_active': '한 사람이 마음을 가다듬는 동안 조용히 있을 때, 다른 사람은 그 침묵을 거절로 읽습니다. 이것이 반복되면 한 사람은 "나를 싫어하는 건가?"라고 오해하고, 다른 사람은 "왜 나를 열어주지 않지?"라고 느낍니다. 침묵은 거리두기가 아니라 정리하는 시간임을 서로 알면, 오해가 줄어듭니다.',
@@ -934,7 +1043,9 @@ function buildConnectionStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationT
 
 function buildNeededExpression(
   fA: EnergyFamily, fB: EnergyFamily,
-  colorsA: ColorData[], colorsB: ColorData[]
+  colorsA: ColorData[], colorsB: ColorData[],
+  shapeCtxA?: ReturnType<typeof buildShapeContext>,
+  shapeCtxB?: ReturnType<typeof buildShapeContext>
 ): { forA: string; forB: string } {
   // 실제 컬러 ID 기반 조합별 맞춤 표현 (더 구체적인 차별화)
   const colorIdA = colorsA[0]?.id ?? '';
@@ -1182,16 +1293,25 @@ function buildNeededExpression(
     neutral: '"네가 정리한 방식이 맞아. 잘 됐어."',
   };
 
-  return {
+  const baseNeeded = {
     forA: needed[fA],
     forB: needed[fB],
   };
+  if (shapeCtxA && shapeCtxB) {
+    return {
+      forA: baseNeeded.forA + `\n(${shapeCtxA.affectionStyle} 마음을 전하는 것이 더 자연스럽습니다.)`,
+      forB: baseNeeded.forB + `\n(${shapeCtxB.affectionStyle} 마음을 전하는 것이 더 자연스럽습니다.)`,
+    };
+  }
+  return baseNeeded;
 }
 
 function buildCoupleRoutine(
   fA: EnergyFamily, fB: EnergyFamily,
   rel: RelationType,
-  faithA: FaithType, faithB: FaithType
+  faithA: FaithType, faithB: FaithType,
+  shapeCtxA?: ReturnType<typeof buildShapeContext>,
+  shapeCtxB?: ReturnType<typeof buildShapeContext>
 ): CoupleRoutine {
   const isCouple = rel === '연인' || rel === '부부';
   const isFamilyOrClose = rel === '부모-자녀' || rel === '형제자매';
@@ -1206,17 +1326,17 @@ function buildCoupleRoutine(
   const emotionRecovery = buildEmotionRecovery(fA, fB, rel);
 
   // 대화 루틴
-  const conversationRoutine = buildConversationRoutine(fA, fB, rel);
+  const conversationRoutine = buildConversationRoutine(fA, fB, rel, shapeCtxA, shapeCtxB);
 
   // 함께 쉬는 방식
   const restTogether = buildRestTogether(fA, fB);
 
   // 정서적 연결 루틴
-  const connectionRoutine = buildConnectionRoutine(fA, fB, faithA, faithB);
+  const connectionRoutine = buildConnectionRoutine(fA, fB, faithA, faithB, shapeCtxA, shapeCtxB);
 
   // 애정 표현 루틴 (연인/부부)
   const affectionRoutine = isCouple
-    ? buildAffectionRoutine(fA, fB, rel)
+    ? buildAffectionRoutine(fA, fB, rel, shapeCtxA, shapeCtxB)
     : undefined;
 
   return {
@@ -1702,7 +1822,17 @@ function buildEmotionRecovery(fA: EnergyFamily, fB: EnergyFamily, rel?: Relation
   return '감정이 올라왔을 때 바로 해결하려 하기보다, 먼저 "지금 어떤 마음이야?"라고 물어보는 것이 회복의 시작입니다. 판단 없이 듣는 것이 가장 큰 위로가 됩니다.';
 }
 
-function buildConversationRoutine(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
+function buildConversationRoutine(
+  fA: EnergyFamily, fB: EnergyFamily, rel: RelationType,
+  shapeCtxA?: ReturnType<typeof buildShapeContext>,
+  shapeCtxB?: ReturnType<typeof buildShapeContext>
+): string {
+  // 도형별 대화 스타일 보완
+  const shapeConvNote = (shapeCtxA && shapeCtxB && shapeCtxA.conversationStyle !== shapeCtxB.conversationStyle)
+    ? `\n한 분에게는 ${shapeCtxA.conversationStyle} 더 편안하고, 다른 분에게는 ${shapeCtxB.conversationStyle} 더 자연스럽습니다.`
+    : shapeCtxA
+      ? `\n${shapeCtxA.conversationStyle} 두 분 사이를 더 가깝게 만들어줍니다.`
+      : '';
   const key = `${fA}-${fB}`;
   // 에너지 조합별 대화 루틴 (연인/부부 전용)
   const comboConversation: Partial<Record<string, string>> = {
@@ -1753,7 +1883,8 @@ function buildConversationRoutine(fA: EnergyFamily, fB: EnergyFamily, rel: Relat
     '친구': '"요즘 뭐 하고 지내?" 가볍게 일상을 묻는 것이 우정을 유지하는 가장 간단한 방법입니다. 깊은 대화보다 자주 일상을 나누는 것이 더 중요합니다.',
     '동료': '"오늘 점심 뭐 드셨어요?" 같은 가벼운 일상 대화가 함께 일하는 관계를 더 편안하게 만들어줍니다.',
   };
-  return routineMap[rel] ?? '서로에게 "요즘 어때?"라고 먼저 물어보는 것이 관계를 유지하는 가장 간단한 방법입니다.';
+  const baseConv = routineMap[rel] ?? '서로에게 "요즘 어때?"라고 먼저 물어보는 것이 관계를 유지하는 가장 간단한 방법입니다.';
+  return baseConv + (shapeConvNote ?? '');
 }
 
 function buildRestTogether(fA: EnergyFamily, fB: EnergyFamily): string {
@@ -1811,9 +1942,17 @@ function buildConnectionRoutine(
   fA: EnergyFamily,
   fB: EnergyFamily,
   faithA: FaithType,
-  faithB: FaithType
+  faithB: FaithType,
+  shapeCtxA?: ReturnType<typeof buildShapeContext>,
+  shapeCtxB?: ReturnType<typeof buildShapeContext>
 ): string {
   const hasFaith = faithA === '기독교' || faithB === '기독교';
+  // 도형별 정서 연결 보완
+  const shapeConnNote = (shapeCtxA && shapeCtxB)
+    ? `\n한 분은 ${shapeCtxA.recoveryTrait}. 다른 분은 ${shapeCtxB.recoveryTrait}. 서로의 회복 방식을 먼저 인정해주는 것이 가장 깊은 연결입니다.`
+    : shapeCtxA
+      ? `\n${shapeCtxA.recoveryTrait}. 이 점을 서로 인식하는 것이 정서 연결의 시작입니다.`
+      : '';
 
   // 에너지 조합별 연결 루틴
   const key = `${fA}-${fB}`;
@@ -1895,8 +2034,20 @@ function getConnectionByRelType(rel: RelationType): {
   };
 }
 
-function buildAffectionRoutine(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType = '연인'): string {
+function buildAffectionRoutine(
+  fA: EnergyFamily, fB: EnergyFamily, rel: RelationType = '연인',
+  shapeCtxA?: ReturnType<typeof buildShapeContext>,
+  shapeCtxB?: ReturnType<typeof buildShapeContext>
+): string {
   const isCouple = rel === '연인' || rel === '부부';
+  // 도형별 애정 표현 보완
+  const shapeAffNote = (shapeCtxA && shapeCtxB && shapeCtxA.affectionStyle !== shapeCtxB.affectionStyle)
+    ? isCouple
+      ? `\n한 분은 ${shapeCtxA.affectionStyle} 마음이 전해집니다. 다른 분은 ${shapeCtxB.affectionStyle} 사랑을 느낍니다. 서로의 방식으로 한 번씩 먼저 다가가보세요.`
+      : `\n한 분은 ${shapeCtxA.affectionStyle} 연결되고, 다른 분은 ${shapeCtxB.affectionStyle} 가까워집니다.`
+    : shapeCtxA
+      ? `\n${shapeCtxA.affectionStyle} 마음을 전하는 것이 가장 자연스럽습니다.`
+      : '';
   const connTone = getConnectionByRelType(rel);
   const key = `${fA}-${fB}`;
   const comboAffection: Partial<Record<string, string>> = {
@@ -1989,9 +2140,10 @@ function buildAffectionRoutine(fA: EnergyFamily, fB: EnergyFamily, rel: Relation
   if (needsWords) {
     return '"네가 있어서 좋아", "오늘도 수고했어" 같은 짧은 말이 깊이 닿습니다. 거창한 표현보다 진심 어린 한 마디가 더 큰 연결을 만들어줍니다.';
   }
-  return isCouple
+  const baseAff = isCouple
     ? '손잡기, 짧은 포옹, 눈 맞추기 같은 작은 스킨십이 두 분의 정서적 연결을 유지해줍니다. "오늘 반가웠어", "네가 있어서 다행이야" 같은 짧은 표현을 함께 더해보세요.'
     : '"오늘도 고마워", "네가 있어서 든든해" 같은 작은 말 한 마디가 두 분 사이를 따뜻하게 유지해줍니다. 특별한 것보다 꾸준한 표현이 더 중요합니다.';
+  return baseAff + (shapeAffNote ?? '');
 }
 
 /**
@@ -2002,8 +2154,16 @@ function buildProfileContrast(
   fA: EnergyFamily, fB: EnergyFamily,
   analysisA: PersonAnalysis, analysisB: PersonAnalysis,
   colorsA: ColorData[], colorsB: ColorData[],
-  rel: RelationType
+  rel: RelationType,
+  shapeCtxA?: ReturnType<typeof buildShapeContext>,
+  shapeCtxB?: ReturnType<typeof buildShapeContext>
 ): string {
+  // 도형별 관계 특성 보완 문장
+  const shapeProfileNote = (shapeCtxA && shapeCtxB)
+    ? `\n\n도형이 말해주는 표현 구조: 첫 번째 사람은 ${shapeCtxA.modifier} 방식으로 관계를 이어갑니다. 두 번째 사람은 ${shapeCtxB.modifier} 방식으로 연결됩니다. 같은 컬러 에너지라도 도형에 따라 표현 방식이 달라집니다.`
+    : shapeCtxA
+      ? `\n\n도형이 말해주는 표현 구조: ${shapeCtxA.modifier} 방식으로 관계를 이어가는 특성이 있습니다.`
+      : '';
   const relLabel = rel === '연인' || rel === '부부' ? '두 분' : '두 사람';
   const nameA = colorsA[0]?.korName ?? 'A';
   const nameB = colorsB[0]?.korName ?? 'B';
@@ -2206,7 +2366,8 @@ function buildProfileContrast(
   const fallbackB = getFamilyProfileLabel(fB);
 
   const attrLine = getAttractionLine(fA, fB);
-  return contrastMap[key] ?? contrastMap[reverseKey] ?? `${nameA}의 성향을 가진 사람은 ${fallbackA} 중심으로 살아갑니다. ${nameB}의 성향을 가진 사람은 ${fallbackB} 중심으로 살아갑니다.\n${attrLine}\n반복되는 패턴은 이렇게 나타납니다. 서로의 방식이 다를 뿐인데, 그 다름이 거리감으로 읽히는 순간이 생깁니다. 서로의 의도를 먼저 확인하는 것이 오해를 줄이는 가장 빠른 방법입니다.`;
+  const baseResult = contrastMap[key] ?? contrastMap[reverseKey] ?? `${nameA}의 성향을 가진 사람은 ${fallbackA} 중심으로 살아갑니다. ${nameB}의 성향을 가진 사람은 ${fallbackB} 중심으로 살아갑니다.\n${attrLine}\n반복되는 패턴은 이렇게 나타납니다. 서로의 방식이 다를 뿐인데, 그 다름이 거리감으로 읽히는 순간이 생깁니다. 서로의 의도를 먼저 확인하는 것이 오해를 줄이는 가장 빠른 방법입니다.`;
+  return baseResult + (shapeProfileNote ?? '');
 }
 
 function getFamilyProfileLabel(family: EnergyFamily): string {
