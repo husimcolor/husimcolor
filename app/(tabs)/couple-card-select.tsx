@@ -57,6 +57,12 @@ function injectCoupleCSS() {
       60%  { opacity: 1; }
       100% { opacity: 1; transform: translateY(0px) scale(1); }
     }
+    @keyframes coupleCardShuffle {
+      0%   { opacity: 0; transform: translateY(28px) rotate(-2deg) scale(0.93); }
+      40%  { opacity: 0.7; transform: translateY(8px) rotate(0.5deg) scale(0.98); }
+      70%  { opacity: 1; transform: translateY(-3px) rotate(-0.3deg) scale(1.01); }
+      100% { opacity: 1; transform: translateY(0px) rotate(0deg) scale(1); }
+    }
     @keyframes coupleFlipOut {
       0%   { transform: scaleX(1); }
       100% { transform: scaleX(0); }
@@ -67,6 +73,7 @@ function injectCoupleCSS() {
     }
     .couple-card-wrapper { display: inline-block; opacity: 0; }
     .couple-card-wrapper.entering { animation: coupleCardEnter 0.9s ease both; }
+    .couple-card-wrapper.shuffling { animation: coupleCardShuffle 1.1s cubic-bezier(0.22, 1, 0.36, 1) both; }
     .couple-flip-inner { display: block; width: 100%; height: 100%; }
     .couple-flip-inner.flip-out { animation: coupleFlipOut 0.28s ease forwards; }
     .couple-flip-inner.flip-in { animation: coupleFlipIn 0.28s ease forwards; }
@@ -82,9 +89,10 @@ interface WebCardProps {
   isSelected: boolean;
   onPress: () => void;
   entryDelay: number;
+  isShuffle?: boolean; // B 진입 시 셔플 애니메이션 사용
 }
 
-function WebCard({ card, isFlipped, isSelected, onPress, entryDelay }: WebCardProps) {
+function WebCard({ card, isFlipped, isSelected, onPress, entryDelay, isShuffle }: WebCardProps) {
   const wrapperRef = useRef<any>(null);
   const flipRef = useRef<any>(null);
   const prevFlipped = useRef(isFlipped);
@@ -93,12 +101,13 @@ function WebCard({ card, isFlipped, isSelected, onPress, entryDelay }: WebCardPr
   useEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
+    const animClass = isShuffle ? 'shuffling' : 'entering';
     const timer = setTimeout(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (el) {
             el.style.animationDelay = '0ms';
-            el.classList.add('entering');
+            el.classList.add(animClass);
           }
         });
       });
@@ -492,7 +501,9 @@ export default function CoupleCardSelectScreen() {
         {/* 진행 안내 */}
         <Text style={styles.progressText}>
           {isShuffling
-            ? '✨ 카드를 섞는 중...'
+            ? person === 'B'
+              ? '🔀 두 번째 사람을 위해 카드를 새로 섞는 중...'
+              : '✨ 카드를 섞는 중...'
             : selectedCount < 3
             ? `마음이 이끄는 카드를 ${3 - selectedCount}장 선택해 주세요`
             : '3장 선택 완료 · 아래 버튼을 눌러 다음으로 이동하세요'}
@@ -508,19 +519,20 @@ export default function CoupleCardSelectScreen() {
             if (Platform.OS === 'web') {
               return (
                 <WebCard
-                  key={card.id}
+                  key={`${person}-${card.id}`}
                   card={card}
                   isFlipped={isFlipped}
                   isSelected={isSelected}
                   onPress={() => handleCardPress(index)}
                   entryDelay={entryDelay}
+                  isShuffle={person === 'B'}
                 />
               );
             }
 
             return (
               <NativeCard
-                key={card.id}
+                key={`${person}-${card.id}`}
                 card={card}
                 isFlipped={isFlipped}
                 isSelected={isSelected}
