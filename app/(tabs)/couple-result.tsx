@@ -163,8 +163,8 @@ export default function CoupleResultScreen() {
               <Text style={[styles.backBtnText, { color: colors.foreground }]}>←</Text>
             </Pressable>
             <View style={styles.headerText}>
-              <Text style={[styles.headerTitle, { color: colors.foreground }]}>커플 세션 결과</Text>
-              <Text style={[styles.headerSub, { color: colors.muted }]}>{relationType} · 감성 심리코칭</Text>
+              <Text style={[styles.headerTitle, { color: '#2D2420' }]}>커플 세션 결과</Text>
+              <Text style={[styles.headerSub, { color: '#5F4B3B' }]}>{relationType} · 감성 심리코칭</Text>
             </View>
           </View>
 
@@ -485,8 +485,8 @@ const styles = StyleSheet.create({
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   backBtnText: { fontSize: 18, fontWeight: '600' },
   headerText: { flex: 1 },
-  headerTitle: { fontSize: 22, fontWeight: '700' },
-  headerSub: { fontSize: 13, marginTop: 2 },
+  headerTitle: { fontSize: 22, fontWeight: '800' },
+  headerSub: { fontSize: 13, marginTop: 2, fontWeight: '500' },
 
   // ─── 상단 요약 카드 ───────────────────────────────────────────
   colorSummary: {

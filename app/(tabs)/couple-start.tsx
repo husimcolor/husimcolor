@@ -124,8 +124,8 @@ export default function CoupleStartScreen() {
               <Text style={[styles.backBtnText, { color: colors.muted }]}>←</Text>
             </TouchableOpacity>
             <View style={styles.headerText}>
-              <Text style={[styles.title, { color: colors.foreground }]}>커플 세션</Text>
-              <Text style={[styles.subtitle, { color: colors.muted }]}>
+              <Text style={[styles.title, { color: '#2D2420' }]}>커플 세션</Text>
+              <Text style={[styles.subtitle, { color: '#5F4B3B' }]}>
                 서로를 이해하는 감성 심리코칭
               </Text>
             </View>
@@ -235,8 +235,8 @@ const styles = StyleSheet.create({
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   backBtnText: { fontSize: 18, fontWeight: '600' },
   headerText: { flex: 1 },
-  title: { fontSize: 24, fontWeight: '700', letterSpacing: 0.5 },
-  subtitle: { fontSize: 13, marginTop: 2 },
+  title: { fontSize: 24, fontWeight: '800', letterSpacing: 0.3 },
+  subtitle: { fontSize: 13, marginTop: 2, fontWeight: '500' },
   infoCard: {
     borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 24,
   },
