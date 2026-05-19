@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Pressable, Animated,
+  View, Text, ScrollView, StyleSheet, Pressable, Animated, Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
@@ -147,12 +148,16 @@ export default function CoupleResultScreen() {
 
   const accentA = colorsA[0]?.hex ?? colors.primary;
   const accentB = colorsB[0]?.hex ?? colors.sage;
-  const accentCouple = '#8FA68E';
-
+    const accentCouple = '#8FA68E';
+  const insets = useSafeAreaInsets();
+  // 인앱브라우저(카카오톡/네이버)는 safe-area가 0으로 잡히는 경우가 있어 최소값 보장
+  const topPad = Platform.OS === 'web'
+    ? Math.max(insets.top, 16)
+    : 0;
   return (
     <ScreenContainer>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Animated.View style={{ opacity: fadeAnim }}>
+        <Animated.View style={{ opacity: fadeAnim, paddingTop: topPad }}>
 
           {/* 헤더 */}
           <View style={styles.header}>
@@ -476,12 +481,12 @@ export default function CoupleResultScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 20, paddingTop: 16 },
+  scroll: { paddingHorizontal: 20, paddingTop: 8 },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },
   loadingText: { fontSize: 15, textAlign: 'center', lineHeight: 24 },
   retryBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
   retryBtnText: { color: '#fff', fontWeight: '600' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20, paddingTop: 4 },
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   backBtnText: { fontSize: 18, fontWeight: '600' },
   headerText: { flex: 1 },

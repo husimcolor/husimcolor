@@ -5,8 +5,9 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, Pressable, ScrollView, StyleSheet,
-  Animated, TouchableOpacity,
+  Animated, TouchableOpacity, Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
@@ -54,6 +55,8 @@ export default function CoupleStartScreen() {
   const [faithB, setFaithB] = useState<FaithType | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
+  const topPad = Platform.OS === 'web' ? Math.max(insets.top, 20) : 0;
   React.useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
   }, []);
@@ -113,7 +116,13 @@ export default function CoupleStartScreen() {
 
   return (
     <ScreenContainer edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          topPad > 0 && { paddingTop: topPad },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View style={{ opacity: fadeAnim }}>
           {/* 헤더 */}
           <View style={styles.header}>
@@ -230,7 +239,7 @@ export default function CoupleStartScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  scroll: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   backBtnText: { fontSize: 18, fontWeight: '600' },
