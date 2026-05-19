@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Vercel API를 직접 사용하여 dist/ 폴더를 husimcolor 프로젝트에 배포하는 스크립트
+Vercel API를 직접 사용하여 dist/ 폴더 + api/ 서버리스 함수를 husimcolor 프로젝트에 배포하는 스크립트
 """
 import os
 import sys
@@ -15,6 +15,7 @@ TOKEN = os.environ.get("VERCEL_TOKEN", "")
 TEAM_ID = "team_7gstW63DOvDcW26u17YUeDaC"
 PROJECT_ID = "prj_VC39YhbebLBEHkw1GcOG2nBK2QR9"
 DIST_DIR = Path("/home/ubuntu/hyusim-color/dist")
+PROJECT_DIR = Path("/home/ubuntu/hyusim-color")
 
 HEADERS = {
     "Authorization": f"Bearer {TOKEN}",
@@ -48,13 +49,14 @@ def upload_file(data: bytes) -> str:
         data=data,
     )
     if resp.status_code not in (200, 201):
-        # 409 = already exists, that's fine
         if resp.status_code != 409:
             print(f"  upload warning {resp.status_code}: {resp.text[:100]}")
     return sha1
 
 def collect_files():
     files = []
+    
+    # 1. dist/ 폴더의 정적 파일들
     for path in DIST_DIR.rglob("*"):
         if path.is_file():
             rel = str(path.relative_to(DIST_DIR))
@@ -65,14 +67,26 @@ def collect_files():
                 "sha": sha1,
                 "size": len(data),
             })
-            print(f"  uploaded: {rel} ({len(data)} bytes)")
+            print(f"  [static] {rel} ({len(data)} bytes)")
+    
     return files
 
 def create_deployment(files):
+    # vercel.json 읽기
+    vercel_json_path = PROJECT_DIR / "vercel.json"
+    vercel_config = {}
+    if vercel_json_path.exists():
+        with open(vercel_json_path) as f:
+            vercel_config = json.load(f)
+    
     payload = {
         "name": "husimcolor",
         "files": files,
         "target": "production",
+        "projectSettings": {
+            "outputDirectory": "dist",
+            "framework": None,
+        },
         "routes": [
             {
                 "src": "/_expo/static/(.*)",
@@ -80,9 +94,11 @@ def create_deployment(files):
                 "continue": True,
             },
             {"handle": "filesystem"},
+            {"src": "/api/trpc/(.*)", "dest": "/api/trpc/[...trpc]"},
             {"src": "/(.*)", "dest": "/index.html"},
         ],
     }
+    
     url = f"https://api.vercel.com/v13/deployments?teamId={TEAM_ID}"
     resp = requests.post(url, headers=HEADERS, json=payload)
     return resp
@@ -91,15 +107,15 @@ def main():
     if not TOKEN:
         print("ERROR: VERCEL_TOKEN not set")
         sys.exit(1)
-
+    
     print(f"Collecting and uploading files from {DIST_DIR}...")
     files = collect_files()
     print(f"\nTotal files: {len(files)}")
-
+    
     print("\nCreating deployment...")
     resp = create_deployment(files)
     data = resp.json()
-
+    
     if resp.status_code in (200, 201):
         deploy_id = data.get("id", "?")
         url = data.get("url", "?")
