@@ -274,3 +274,11 @@
 - [x] buildClosingMessage 부모자녀 세부 조합별 문장 다양화 (아빠-아들/딸, 엄마-아들/딸 각각 고유 문장)
 - [x] buildRestTogether 에너지 계열별 조합 맵 추가 - "조용한 산책" 반복 표현 다양화
 - [x] 오타 수정 (컄는→쉬는, 즉기거나→즐기거나, 숫을 쉬는→숨을 쉬는)
+
+## 커플 세션 에너지 조합별 문장 다양화 2차 (2026-05-19)
+
+- [x] buildNeededExpression 에너지 계열 조합별 폴백 문장 세분화 (미매핑 조합 추가)
+- [x] buildAffectionRoutine warm_grounded/cool_clear 계열 조합 맞춤 루틴 추가
+- [x] buildProfileContrast 동료·친구 특화 조합 추가 (warm_active-cool_clear, warm_soft-cool_deep, warm_grounded-cool_clear 등)
+- [x] buildClosingMessage 에너지 조합 × 관계 유형 세분화 (표현 방식 차이/연결 욕구/혼자만의 시간/산책 반복 패턴 제거)
+- [x] buildClosingMessage 에너지 조합 공통 메시지 레이어 추가 (warm_active-warm_soft, cool_clear-cool_deep 등 조합별 고유 메시지)
