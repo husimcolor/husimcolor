@@ -229,8 +229,40 @@ export function generatePersonAnalysis(
 }
 
 function getEmotionExpression(family: EnergyFamily, card: ColorData): string {
+  // 컬러 ID 기반 세분화 — 같은 계열이어도 고유 감정 방식 차별화
+  const colorIdMap: Partial<Record<string, string>> = {
+    white: '감정이 생기면 혼자 조용히 정리하는 편입니다. 마음이 정리되기 전에는 표현하지 않으며, 상처가 생기면 거리를 두는 방식으로 감정을 다룹니다.',
+    black: '감정을 쉽게 드러내지 않으며, 경계를 지키며 표현합니다. 마음을 열기까지 시간이 걸리고, 한번 닫히면 다시 열기가 어렵습니다.',
+    navy: '감정을 안으로 참는 편입니다. 책임감이 강해 혼자 감당하려 하고, 표현보다 행동으로 마음을 전하는 경향이 있습니다.',
+    blue: '감정을 신중하게 정리한 후 표현합니다. 즉각 반응보다 충분히 생각한 뒤 말하는 편이며, 신뢰가 쌓인 관계에서만 마음을 엽니다.',
+    indigo: '감정을 깊이 느끼지만 표현까지 시간이 걸립니다. 혼자 오래 생각하다가 말하는 편이며, 표현이 늦어도 감정의 깊이는 깊습니다.',
+    violet: '감정을 섬세하게 느끼며, 이상적인 연결을 원합니다. 정서적으로 통한다고 느낄 때 깊이 몰입하고, 이해받지 못하면 거리감이 생깁니다.',
+    lavender: '감정을 조용히 느끼며, 직접 표현보다 분위기로 전달하는 편입니다. 섬세하게 감지하지만 말로 꺼내기까지 시간이 필요합니다.',
+    red: '감정이 생기면 바로 표현하는 편입니다. 답답함을 참지 못하고 즉각 반응하며, 표현 속도가 빠르고 직선적입니다.',
+    orange: '감정을 활기차게 표현하며, 관계 속에서 에너지를 나누는 것을 좋아합니다. 표현이 자연스럽고 관계 온도를 중요하게 여깁니다.',
+    coral: '감정을 따뜻하게 표현하지만, 상처를 받으면 조용히 물러나는 편입니다. 배려하는 마음이 크지만 자신의 감정은 뒤로 미루는 경향이 있습니다.',
+    magenta: '감정을 깊이 느끼고 강렬하게 표현합니다. 관계에 몰입하는 편이며, 상처가 생기면 오래 품는 경향이 있습니다.',
+    pink: '감정을 따뜻하고 부드럽게 표현합니다. 애정 표현을 중요하게 여기며, 차가운 반응에 쉽게 서운함을 느낍니다.',
+    peach: '감정을 부드럽게 전달하며, 주변을 배려하는 방식으로 표현합니다. 직접 표현보다 분위기와 행동으로 마음을 전하는 편입니다.',
+    yellow: '감정을 밝고 가볍게 표현하는 편이지만, 내면에는 생각이 많습니다. 걱정을 혼자 담아두다가 한꺼번에 꺼내는 경우가 있습니다.',
+    gold: '감정을 품위 있게 표현하며, 자신의 가치를 중요하게 여깁니다. 인정받을 때 마음이 열리고, 무시당하면 닫히는 경향이 있습니다.',
+    green: '감정을 조용히 담아두는 편이며, 갈등을 피하려는 성향이 있습니다. 배려하는 마음이 크지만 자신의 감정을 직접 표현하는 것이 어렵습니다.',
+    sage: '감정을 차분하게 다루며, 갈등보다 조화를 선호합니다. 표현보다 행동으로 마음을 전하는 편입니다.',
+    mint: '감정을 가볍고 산뜻하게 표현하며, 무거운 감정보다 회복과 이완을 중요하게 여깁니다.',
+    olive: '감정을 묵묵히 담아두며, 안정적으로 표현합니다. 변화보다 꾸준함으로 마음을 전하는 편입니다.',
+    teal: '감정을 이성적으로 정리한 후 표현합니다. 감정과 이성의 균형을 중요하게 여기며, 충동적인 표현을 자제합니다.',
+    skyblue: '감정을 자유롭고 가볍게 표현합니다. 무거운 감정보다 가벼운 소통을 선호하며, 부담 없는 관계를 원합니다.',
+    beige: '감정을 포근하고 안정적으로 표현합니다. 급하게 표현하기보다 천천히 편안하게 전달하는 편입니다.',
+    cream: '감정을 조용하고 고요하게 표현합니다. 복잡한 것보다 단순하고 명료한 소통을 선호합니다.',
+    brown: '감정을 안정적이고 신중하게 표현합니다. 변화보다 익숙한 방식으로 마음을 전하며, 꾸준한 행동으로 신뢰를 쌓습니다.',
+    terracotta: '감정을 현실적이고 차분하게 표현합니다. 안정과 열정 사이에서 균형을 찾으며 소통합니다.',
+    silver: '감정을 명료하게 정리한 후 표현합니다. 감정보다 논리를 앞세우는 편이며, 정리된 상태에서만 마음을 엽니다.',
+  };
+  if (colorIdMap[card.id]) {
+    return colorIdMap[card.id]!;
+  }
   const map: Record<EnergyFamily, string> = {
-    warm_active: `감정을 직접적으로 표현하는 편이며, 느끼는 것을 바로 드러내는 경향이 있습니다. ${card.korName}의 에너지처럼 솔직하고 즉각적인 표현 방식을 가지고 있습니다.`,
+    warm_active: `감정을 직접적으로 표현하는 편이며, 느끼는 것을 바로 드러내는 경향이 있습니다. ${card.korName}처럼 솔직하고 즉각적인 표현 방식을 가지고 있습니다.`,
     warm_soft: `감정을 부드럽게 전달하는 편이며, 상대방을 배려하며 표현하는 성향이 있습니다. ${card.korName}의 온기처럼 따뜻하고 섬세하게 감정을 나눕니다.`,
     warm_grounded: `감정을 안정적으로 담아두는 편이며, 신중하게 표현하는 성향이 있습니다. ${card.korName}처럼 현실적이고 차분하게 감정을 전달합니다.`,
     cool_clear: `감정보다 이성을 앞세우는 편이며, 명확하게 표현하는 성향이 있습니다. ${card.korName}처럼 논리적이고 신뢰 있는 방식으로 소통합니다.`,
@@ -428,7 +460,7 @@ export function generateCoupleAnalysis(
   const expressionDifference = buildExpressionDifference(dominantA, dominantB, familiesA, familiesB, colorsA, colorsB);
 
   // 오해가 생기는 지점
-  const conflictPattern = buildMisunderstandingPattern(dominantA, dominantB, relationType, shapeCtxA, shapeCtxB);
+  const conflictPattern = buildMisunderstandingPattern(dominantA, dominantB, relationType, shapeCtxA, shapeCtxB, colorsA, colorsB);
 
   // 가까워지는 방법 (연결 방식 + 애정 스타일 통합)
   const connectionStyle = buildConnectionStyle(dominantA, dominantB, relationType);
@@ -606,6 +638,43 @@ function buildRelationFlow(
     'warm_grounded-warm_soft': `안정적이고 꾸준한 성향을 가진 사람과 따뜻하고 감성적인 성향을 가진 사람이 만났습니다. 한 사람은 일상 속 꾸준한 행동으로 마음을 전하고, 다른 사람은 따뜻한 말과 감정 표현으로 연결되고 싶어 합니다. 서로의 사랑 언어가 다를 뿐, 두 사람 모두 관계를 소중히 여기고 있습니다.`,
     'cool_clear-nature': `명료하고 효율적인 성향을 가진 사람과 유연하고 여유 있는 리듬을 가진 사람이 만났습니다. 한 사람은 계획적이고 체계적인 방식을 선호하고, 다른 사람은 흐름에 맡기는 방식이 편합니다. "왜 이렇게 계획이 없어?"와 "왜 이렇게 딱딱해?"가 교차하는 순간이 있습니다. 두 방식이 균형을 이룰 때 관계가 가장 안정적입니다.`,
   };
+  // 컬러 ID 기반 관계 흐름 — 생활 긴장 구조 중심
+  const colorIdCombos: Partial<Record<string, string>> = {
+    // 화이트 포함 조합 — 거리두기·정리·완벽주의 긴장
+    'white-pink': `정리와 거리두기를 중요하게 여기는 사람과 따뜻한 연결을 원하는 사람이 만났습니다. 한 사람은 감정이 복잡해지면 혼자 정리하려 하고, 다른 사람은 그 거리감이 서운하게 느껴집니다. "왜 혼자 있으려 해?"와 "왜 이렇게 붙어 있으려 해?"가 교차할 수 있습니다. 서로의 회복 방식이 다를 뿐, 두 사람 모두 관계를 소중히 여기고 있습니다.`,
+    'white-red': `정리와 명료함을 중요하게 여기는 사람과 즉각적이고 빠르게 반응하는 사람이 만났습니다. 한 사람은 감정을 혼자 정리하려 하고, 다른 사람은 지금 당장 표현하고 싶어 합니다. 청소·정리 방식이나 생활 기준의 차이가 반복적인 긴장 포인트가 될 수 있습니다.`,
+    'white-magenta': `조용히 감정을 비워내는 사람과 감정에 깊이 몰입하는 사람이 만났습니다. 한 사람은 거리를 두며 정화하려 하고, 다른 사람은 그 거리감이 상처로 느껴집니다. 감정 정리 방식의 차이가 반복적인 오해를 만들 수 있습니다.`,
+    'white-navy': `두 사람 모두 감정을 안으로 담아두는 편입니다. 한 사람은 공간을 정리하며 회복하고, 다른 사람은 혼자 책임을 지며 버팁니다. 서로 표현이 부족해 거리감이 쌓일 수 있지만, 각자의 방식으로 관계를 지키고 있습니다.`,
+    'white-black': `두 사람 모두 마음을 쉽게 열지 않습니다. 한 사람은 감정을 정화하고 거리를 두며 회복하고, 다른 사람은 경계를 지키며 자신을 보호합니다. 서로의 침묵이 오해로 이어지지 않도록 작은 표현이 중요합니다.`,
+    // 블랙 포함 조합 — 통제·경계·주도권 긴장
+    'black-pink': `경계와 통제를 중요하게 여기는 사람과 따뜻한 연결을 원하는 사람이 만났습니다. 한 사람의 경계가 다른 사람에게 차갑게 느껴지고, 다른 사람의 애정 표현이 한 사람에게 부담스럽게 느껴질 수 있습니다.`,
+    'black-red': `두 사람 모두 강한 에너지를 가지고 있습니다. 주도권 문제와 자기 방식 고수가 반복적인 충돌 포인트가 될 수 있습니다. 서로의 방식을 강요하지 않는 것이 관계의 핵심입니다.`,
+    'black-magenta': `경계를 지키는 사람과 감정에 깊이 몰입하는 사람이 만났습니다. 한 사람의 거리두기가 다른 사람에게 거절로 느껴지는 순간이 반복될 수 있습니다. 서로의 감정 방식이 다를 뿐임을 이해하는 것이 중요합니다.`,
+    // 네이비/블루 포함 조합 — 책임·신뢰·표현 부족 긴장
+    'navy-pink': `책임감 있게 묵묵히 버티는 사람과 따뜻한 표현을 원하는 사람이 만났습니다. 한 사람의 표현 부족이 다른 사람에게 무관심으로 느껴질 수 있습니다. "왜 말을 안 해?"와 "말 안 해도 알잖아"가 반복되는 패턴이 생길 수 있습니다.`,
+    'navy-red': `신중하고 책임감 있는 사람과 즉각적이고 빠른 사람이 만났습니다. 한 사람의 신중함이 다른 사람에게 답답함으로, 다른 사람의 속도가 한 사람에게 부담으로 느껴질 수 있습니다. 표현 속도 차이가 반복적인 긴장 포인트입니다.`,
+    'navy-magenta': `혼자 버티는 사람과 감정에 깊이 몰입하는 사람이 만났습니다. 한 사람의 침묵이 다른 사람에게 거리감으로 느껴지고, 다른 사람의 감정 표현이 한 사람에게 부담스럽게 느껴질 수 있습니다.`,
+    'blue-pink': `신뢰와 신중함을 중요하게 여기는 사람과 따뜻한 연결을 원하는 사람이 만났습니다. 한 사람은 충분히 생각한 후에야 표현하고, 다른 사람은 지금 당장 따뜻한 반응을 원합니다. 표현 타이밍의 차이가 서운함으로 이어질 수 있습니다.`,
+    // 레드 포함 조합 — 속도·즉각반응·감정폭발 긴장
+    'red-green': `즉각적이고 빠른 사람과 갈등을 피하려는 사람이 만났습니다. 한 사람의 강한 표현이 다른 사람에게 부담이 되고, 다른 사람의 회피가 한 사람에게 답답함으로 느껴질 수 있습니다.`,
+    'red-violet': `즉각 반응하는 사람과 깊이 생각하는 사람이 만났습니다. 한 사람의 빠른 속도가 다른 사람에게 압박이 되고, 다른 사람의 느린 반응이 한 사람에게 무관심으로 느껴질 수 있습니다.`,
+    'red-lavender': `즉각적이고 표현이 강한 사람과 섬세하고 조용한 사람이 만났습니다. 한 사람의 강한 표현이 다른 사람에게 상처가 되기 쉽고, 다른 사람의 조용함이 한 사람에게 답답함으로 느껴질 수 있습니다.`,
+    // 핑크/마젠타 포함 조합 — 애정욕구·감정몰입 긴장
+    'pink-green': `애정 표현을 중요하게 여기는 사람과 갈등을 피하며 조용히 배려하는 사람이 만났습니다. 한 사람은 더 많은 표현을 원하고, 다른 사람은 그 기대가 부담스러울 수 있습니다.`,
+    'magenta-green': `감정에 깊이 몰입하는 사람과 갈등을 피하려는 사람이 만났습니다. 한 사람의 강한 감정 표현이 다른 사람에게 부담이 되고, 다른 사람의 회피가 한 사람에게 거절로 느껴질 수 있습니다.`,
+    // 퍼플/바이올렛 포함 조합 — 이상·예민·이해받지 못함 긴장
+    'violet-yellow': `이상적인 연결을 원하는 사람과 현실적이고 밝은 사람이 만났습니다. 한 사람은 깊은 의미와 감정적 연결을 원하고, 다른 사람은 가볍고 현실적인 소통을 선호합니다. "왜 이렇게 깊이 생각해?"와 "왜 이렇게 가볍게 봐?"가 교차할 수 있습니다.`,
+    'violet-red': `깊이 생각하는 사람과 즉각 반응하는 사람이 만났습니다. 한 사람의 느린 반응이 다른 사람에게 무관심으로, 다른 사람의 빠른 속도가 한 사람에게 압박으로 느껴질 수 있습니다.`,
+    // 그린 포함 조합 — 갈등회피·중재·감정 참기 긴장
+    'green-navy': `두 사람 모두 감정을 안으로 담아두는 편입니다. 한 사람은 갈등을 피하며 배려하고, 다른 사람은 혼자 책임을 지며 버팁니다. 서로 표현이 부족해 거리감이 쌓일 수 있습니다.`,
+    'green-yellow': `갈등을 피하려는 사람과 현실적이고 걱정이 많은 사람이 만났습니다. 두 사람 모두 감정을 직접 표현하기보다 안으로 담아두는 경향이 있어, 쌓인 감정이 한꺼번에 터지는 패턴이 생길 수 있습니다.`,
+  };
+  // 컬러 ID 기반 문장이 있으면 우선 사용
+  const colorA0 = colorsA[0]?.id ?? '';
+  const colorB0 = colorsB[0]?.id ?? '';
+  const colorIdKey = `${colorA0}-${colorB0}`;
+  const colorIdKeyRev = `${colorB0}-${colorA0}`;
+  const colorIdResult = colorIdCombos[colorIdKey] ?? colorIdCombos[colorIdKeyRev];
 
   const key = `${fA}-${fB}`;
 
@@ -633,7 +702,7 @@ function buildRelationFlow(
     nature: `${traitA} 사람과 ${traitB} 사람이 만났습니다. 한 사람의 조용하고 유연한 방식이 다른 사람에게 무관심으로 느껴지는 순간이 생길 수 있습니다. 각자의 속도를 인정하는 것이 관계를 편안하게 만들어줍니다.`,
     neutral: `${traitA} 사람과 ${traitB} 사람이 만났습니다. 서로 다른 방식이 만날 때, 그 차이를 이해하는 것이 관계 회복의 첫 걸음입니다.`,
   };
-  const base = combos[key] ?? fallbackByA[fA] ?? `${nameA}와 ${nameB}처럼 서로 다른 결이 만나고 있습니다. 감정 거리감과 표현 속도의 차이가 반복될 수 있지만, 서로에게 없는 것을 채워주는 힘이기도 합니다.`;
+  const base = colorIdResult ?? combos[key] ?? fallbackByA[fA] ?? `${nameA}와 ${nameB}처럼 서로 다른 결이 만나고 있습니다. 감정 거리감과 표현 속도의 차이가 반복될 수 있지만, 서로에게 없는 것을 채워주는 힘이기도 합니다.`;
   // 관계 유형별 마무리 문장 추가
   const relSuffix: Partial<Record<RelationType, string>> = {
     '부부': ' 오랜 시간이 쌓인 관계일수록, 서로의 다름을 다시 이해하는 것이 새로운 시작이 됩니다.',
@@ -763,7 +832,9 @@ function buildRhythmDifference(fA: EnergyFamily, fB: EnergyFamily): string {
 function buildMisunderstandingPattern(
   fA: EnergyFamily, fB: EnergyFamily, rel: RelationType,
   shapeCtxA?: ReturnType<typeof buildShapeContext>,
-  shapeCtxB?: ReturnType<typeof buildShapeContext>
+  shapeCtxB?: ReturnType<typeof buildShapeContext>,
+  colorsA?: ColorData[],
+  colorsB?: ColorData[]
 ): string {
   // 도형 특성 보완 문장
   const shapeNote = (shapeCtxA && shapeCtxB && shapeCtxA.conflictTrait !== shapeCtxB.conflictTrait)
@@ -810,7 +881,38 @@ function buildMisunderstandingPattern(
   };
   const missTraitA = getMissTrait(fA);
   const missTraitB = getMissTrait(fB);
-  return patterns[key] ?? fallbackPatterns[key] ?? fallbackPatterns[`${fB}-${fA}`] ?? `${missTraitA} 사람과 ${missTraitB} 사람이 만날 때, 서로의 반응 방식이 다르게 읽히는 순간이 반복될 수 있습니다. 서로의 의도를 직접 물어보는 것이 관계 거리감을 줄이는 가장 좋은 방법입니다.`;
+  // 컬러 ID 기반 생활 긴장 구조 문장
+  const colorIdA0 = colorsA?.[0]?.id ?? '';
+  const colorIdB0 = colorsB?.[0]?.id ?? '';
+  const missColorKey = `${colorIdA0}-${colorIdB0}`;
+  const missColorKeyRev = `${colorIdB0}-${colorIdA0}`;
+  const colorIdMissPatterns: Partial<Record<string, string>> = {
+    // 화이트 관련 — 정리/거리두기/완벽주의 긴장
+    'white-pink': '한 사람이 상처를 받으면 조용히 거리를 두려 할 때, 다른 사람은 그 침묵이 거절처럼 느껴집니다. "왜 말을 안 해?"와 "지금 혼자 정리가 필요해"가 반복되는 패턴입니다. 거리두기가 회복 방식임을 서로 이해하면 오해가 줄어듭니다.',
+    'white-red': '한 사람이 청소나 정리 방식에 기준이 높을 때, 다른 사람은 그 기준이 부담스럽게 느껴집니다. 생활 리듬과 기준 차이가 반복적인 긴장 포인트가 됩니다. 서로의 기준을 강요하지 않는 것이 중요합니다.',
+    'white-magenta': '한 사람이 감정을 비우고 거리를 두려 할 때, 다른 사람은 그 거리감이 상처로 느껴집니다. 감정 정리 방식의 차이가 반복적인 오해를 만듭니다. 거리두기가 관계를 끊으려는 것이 아님을 서로 확인하는 것이 중요합니다.',
+    'white-navy': '두 사람 모두 감정을 안으로 담아두어 서로의 마음을 모르는 상태가 지속될 수 있습니다. 표현이 부족해 거리감이 쌓이는 패턴입니다. 작은 표현 하나가 두 사람 사이의 거리를 좁혀줍니다.',
+    // 블랙 관련 — 통제/주도권/경계 긴장
+    'black-pink': '한 사람이 경계를 지키려 할 때, 다른 사람은 그 경계가 차갑게 느껴집니다. 한 사람의 애정 표현이 다른 사람에게 부담이 되는 패턴이 반복될 수 있습니다.',
+    'black-red': '두 사람 모두 자기 방식을 고수하는 경향이 있어 주도권 문제가 반복될 수 있습니다. "내 방식이 맞아"가 충돌하는 순간이 생깁니다. 서로의 방식을 인정하는 것이 관계의 핵심입니다.',
+    'black-magenta': '한 사람이 경계를 지키려 할 때, 다른 사람은 그 거리감이 거절로 느껴집니다. 감정 몰입과 경계 유지가 충돌하는 패턴입니다.',
+    // 네이비/블루 관련 — 표현 부족/감정 거리감 긴장
+    'navy-pink': '한 사람이 말 없이 행동으로 마음을 전할 때, 다른 사람은 표현이 부족하다고 느낍니다. "왜 말을 안 해?"와 "말 안 해도 알잖아"가 반복되는 패턴입니다.',
+    'navy-red': '한 사람의 신중함이 다른 사람에게 답답함으로, 다른 사람의 빠른 속도가 한 사람에게 부담으로 느껴집니다. 표현 속도 차이가 반복적인 긴장을 만듭니다.',
+    'navy-magenta': '한 사람의 침묵이 다른 사람에게 거리감으로 느껴지고, 다른 사람의 감정 표현이 한 사람에게 부담스럽습니다. 표현 방식의 차이가 반복적인 오해를 만듭니다.',
+    'blue-pink': '한 사람이 충분히 생각한 후에야 표현할 때, 다른 사람은 지금 당장 따뜻한 반응을 원합니다. 표현 타이밍의 차이가 서운함으로 이어지는 패턴입니다.',
+    // 레드 관련 — 속도/즉각반응/감정폭발 긴장
+    'red-green': '한 사람의 강한 표현이 다른 사람에게 부담이 되고, 다른 사람의 회피가 한 사람에게 답답함으로 느껴집니다. 표현 강도 차이가 반복적인 긴장을 만듭니다.',
+    'red-violet': '한 사람의 빠른 속도가 다른 사람에게 압박이 되고, 다른 사람의 느린 반응이 한 사람에게 무관심으로 느껴집니다.',
+    // 핑크/마젠타 관련 — 애정욕구/감정몰입 긴장
+    'pink-green': '한 사람이 더 많은 표현을 원할 때, 다른 사람은 그 기대가 부담스럽습니다. 관계 온도 차이가 반복적인 서운함을 만듭니다.',
+    'magenta-green': '한 사람의 강한 감정 표현이 다른 사람에게 부담이 되고, 다른 사람의 회피가 한 사람에게 거절로 느껴집니다.',
+    // 퍼플/바이올렛 관련 — 이상/예민/이해받지 못함 긴장
+    'violet-yellow': '한 사람은 깊은 의미와 감정적 연결을 원하고, 다른 사람은 가볍고 현실적인 소통을 선호합니다. 관계에 대한 기대 수준 차이가 반복적인 오해를 만듭니다.',
+    'violet-red': '한 사람의 느린 반응이 다른 사람에게 무관심으로, 다른 사람의 빠른 속도가 한 사람에게 압박으로 느껴집니다.',
+  };
+  const colorIdMissResult = colorIdMissPatterns[missColorKey] ?? colorIdMissPatterns[missColorKeyRev];
+  return colorIdMissResult ?? patterns[key] ?? fallbackPatterns[key] ?? fallbackPatterns[`${fB}-${fA}`] ?? `${missTraitA} 사람과 ${missTraitB} 사람이 만날 때, 서로의 반응 방식이 다르게 읽히는 순간이 반복될 수 있습니다. 서로의 의도를 직접 물어보는 것이 관계 거리감을 줄이는 가장 좋은 방법입니다.`;
 }
 
 function buildCoupleRecoveryDirection(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
@@ -838,15 +940,48 @@ function buildCoupleRecoveryDirection(fA: EnergyFamily, fB: EnergyFamily, rel: R
 
 function getRecoveryStyle(family: EnergyFamily): string {
   const map: Record<EnergyFamily, string> = {
-    warm_active: '움직이고 표현하며',
-    warm_soft: '따뜻한 연결과 대화로',
-    warm_grounded: '일상의 안정 속에서',
-    cool_clear: '혼자 정리하고 명료화하며',
-    cool_deep: '조용히 내면으로 들어가',
-    nature: '자연 속에서 천천히',
-    neutral: '정리하고 비워내며',
+    warm_active: '함께 움직이고 즉각 표현하며',
+    warm_soft: '따뜻한 말과 스킨십으로 연결되며',
+    warm_grounded: '일상의 안정된 루틴 속에서',
+    cool_clear: '혼자 생각을 정리하고 명료화하며',
+    cool_deep: '조용히 혼자 내면을 정리하며',
+    nature: '자연스러운 흐름 속에서 천천히',
+    neutral: '공간을 정리하고 감정을 비워내며',
   };
   return map[family];
+}
+
+// 컬러 ID 기반 회복 방식 세분화
+function getRecoveryStyleById(colorId: string): string {
+  const map: Record<string, string> = {
+    white: '혼자 공간을 정리하고 조용히 감정을 비워내며',
+    black: '개인 공간을 지키고 간섭 없이 쉬며',
+    navy: '조용히 혼자 있는 시간을 가지며',
+    blue: '압박 없는 대화와 혼자 생각 정리로',
+    indigo: '혼자 깊이 생각하고 성찰하며',
+    violet: '깊은 대화와 감정 의미 공유로',
+    lavender: '조용한 공감과 음악·감성 속에서',
+    red: '함께 움직이고 드라이브·산책으로',
+    orange: '사람들과 연결되고 함께 웃으며',
+    coral: '따뜻한 배려와 자기 돌봄으로',
+    magenta: '진심 어린 대화와 감정 공감으로',
+    pink: '따뜻한 말과 안아주기·애정 표현으로',
+    peach: '부드러운 배려와 포근한 연결로',
+    yellow: '가벼운 웃음과 현실 부담 나누기로',
+    gold: '자기 가치 인정과 품위 있는 쉼으로',
+    green: '차분한 대화와 중간지점 찾기로',
+    sage: '조용한 자연 속에서 천천히',
+    mint: '몸과 마음을 충분히 이완하며',
+    olive: '익숙한 일상의 안정 속에서',
+    teal: '감정을 정화하고 균형을 되찾으며',
+    skyblue: '자유롭고 가벼운 활동으로',
+    beige: '포근하고 부드러운 일상 속에서',
+    cream: '고요하고 단순한 공간에서',
+    brown: '익숙한 루틴과 안정된 환경 속에서',
+    terracotta: '현실적인 안정과 따뜻한 연결로',
+    silver: '명료하게 정리하고 감정을 추스르며',
+  };
+  return map[colorId] ?? '자신의 방식대로 천천히';
 }
 
 function buildIntimacyStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationType): string {
