@@ -612,6 +612,24 @@ export default function CoupleResultScreen() {
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.relationStrength}</Text>
           </SectionCard>
 
+          {/* 친밀감 연결 — 연인/부부 전용 */}
+          {isRomanticRel && archetypeResult.intimacyConnection && (
+            <SectionCard accentColor='#E8A0B4' label='관계 회복 언어' title="두 사람의 연결 방식" colors={colors}>
+              <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 10 }]}>
+                {relationType === '부부'
+                  ? archetypeResult.intimacyConnection.marriageNote
+                  : archetypeResult.intimacyConnection.loverNote}
+              </Text>
+              <View style={{ gap: 6, marginTop: 4 }}>
+                {archetypeResult.intimacyConnection.actions.map((action, i) => (
+                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#E8A0B4' }} />
+                    <Text style={[styles.bodyText, { color: colors.foreground, flex: 1, marginBottom: 0 }]}>{action}</Text>
+                  </View>
+                ))}
+              </View>
+            </SectionCard>
+          )}
           {/* 추천 컬러 */}
           <SectionCard accentColor={accentCouple} title="두 사람에게 권하는 컬러" colors={colors}>
             {coupleAnalysis.coupleRoutine.recommendedColors.map(rc => (
