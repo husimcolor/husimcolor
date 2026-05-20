@@ -2729,7 +2729,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
       ],
       recoveryBridge: '그래서 이 관계에는 서로 다른 속도를 인정하는 시간이 필요합니다. 먼저 도착한 사람이 기다려주는 것, 그것이 이 관계의 사랑입니다.',
     },
-    dangerPattern: '침묵이 거리감으로 번지는 패턴. 빠른 사람이 "이미 끝났어"라고 생각하는 동안 느린 사람은 혼자 감정을 삭이고 있습니다. 이 간극이 쌓이면 "우리 사이가 멀어졌다"는 느낌이 됩니다.',
+    dangerPattern: '침묵이 거리감으로 번지는 패턴. 빠른 사람은 이미 끝났다고 생각합니다. 느린 사람은 아직 혼자 삭이고 있습니다. 그 간극을 아무도 말하지 않습니다. 쌓입니다. 어느 순간 "우리 사이가 멀어진 것 같아"라는 말이 나옵니다.',
     forbiddenWords: ['"왜 아직도 그 얘기야?"', '"그냥 넘어가면 되잖아"', '"벌써 잊었어?"', '"예민하게 굴지 마"'],
     relationStrength: '한 사람의 빠름이 방향을 잡고, 다른 사람의 느림이 깊이를 만듭니다. 속도가 다른 두 사람이 함께 가는 것 자체가 이 관계의 힘입니다.',
     recommendedColors: [
@@ -2762,7 +2762,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     temperatureGraph: { emotionGap: 58, expressionIntensity: 85, recoverySpeed: 70 },
     expressionSpeed: { personA: '직접적 표현', personB: '내면 처리 후 표현', description: '한 사람은 감정을 바로 표현하고, 다른 사람은 내면에서 처리한 후 표현합니다. 이 차이가 때로는 갈등의 시작이 됩니다.' },
     recoveryStyle: { icon: 'activity' as const, label: '활동 회복형', description: '함께 움직이면서 회복합니다. 대화보다 새로운 경험이 이 관계의 회복 방식입니다.' },
-    dangerPattern: '자극이 압박이 되는 패턴. 성장을 원하는 마음이 상대에게 "나는 부족해"라는 느낌을 줄 수 있습니다. 자극과 지지의 균형이 중요합니다.',
+    dangerPattern: '자극이 압박이 되는 패턴. 성장을 원하는 마음이 상대에게는 "나는 부족해"로 들립니다. 도전이 비난처럼 느껴질 수 있습니다. 자극과 지지의 균형이 무너지면, 이 관계는 성장 대신 상처를 남깁니다.',
     forbiddenWords: ['"왜 그것밖에 못 해?"', '"나라면 벌써 했을 텐데"', '"그게 최선이야?"', '"변화가 없네"'],
     relationStrength: '서로를 흔드는 관계는 드뭅니다. 편안함에 안주하지 않고 서로를 더 나은 방향으로 밀어주는 것, 그것이 이 관계의 가장 큰 자산입니다.',
     recommendedColors: [
@@ -2813,7 +2813,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
       ],
       recoveryBridge: '그래서 이 관계에는 의식적으로 "오늘 함께해서 좋았어"라고 말하는 시간이 필요합니다. 익숙함 속에 있는 사랑을 다시 발견하는 것이 이 관계의 회복입니다.',
     },
-    dangerPattern: '편안함이 무감각이 되는 패턴. 안정이 당연해지면 서로에 대한 감사와 설렘이 줄어들 수 있습니다. 의식적으로 "오늘 함께해서 좋았어"라고 말하는 것이 필요합니다.',
+    dangerPattern: '편안함이 무감각이 되는 패턴. 안정이 당연해집니다. 감사가 줄어듭니다. 설렘이 사라집니다. "우리 괜찮은 거야?"라는 의문이 들 때쯤, 이미 거리가 생겨 있습니다. 의식적으로 "오늘 함께해서 좋았어"라고 말하는 것이 필요합니다.',
     forbiddenWords: ['"우리 너무 재미없는 것 같아"', '"항상 똑같아"', '"설레는 게 없어"', '"변화가 없네"'],
     relationStrength: '폭풍이 와도 흔들리지 않는 관계. 안정감이 있다는 것은 서로를 충분히 믿는다는 뜻입니다. 그 신뢰가 이 관계의 가장 큰 자산입니다.',
     recommendedColors: [
@@ -2846,7 +2846,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     temperatureGraph: { emotionGap: 60, expressionIntensity: 75, recoverySpeed: 65 },
     expressionSpeed: { personA: '감정 파도', personB: '감정 파도', description: '두 사람 모두 감정의 기복이 있습니다. 서로의 파도가 겹칠 때 갈등이 생기고, 엇갈릴 때 연결이 됩니다.' },
     recoveryStyle: { icon: 'talk' as const, label: '공감 대화 회복형', description: '감정이 잔잔해진 후 "그때 어떤 마음이었어?"라고 묻는 대화가 이 관계의 회복입니다.' },
-    dangerPattern: '파도가 동시에 오는 패턴. 두 사람의 감정 파도가 동시에 높아지면 갈등이 증폭됩니다. 한 사람이 먼저 파도에서 내려오는 것이 이 관계의 가장 중요한 기술입니다.',
+    dangerPattern: '파도가 동시에 오는 패턴. 두 사람의 감정이 동시에 높아집니다. 그 순간 갈등이 증폭됩니다. 말이 상처가 됩니다. 한 사람이 먼저 파도에서 내려오는 것, 그것이 이 관계에서 가장 어렵고 가장 중요한 기술입니다.',
     forbiddenWords: ['"왜 이렇게 감정적이야?"', '"좀 차분하게 말해"', '"또 그 감정이야?"', '"예민하게 굴지 마"'],
     relationStrength: '감정을 깊이 느끼는 두 사람이 만났습니다. 그 깊이가 때로는 갈등이 되지만, 그 깊이 덕분에 이 관계의 연결도 깊습니다. 감정을 함께 느끼는 것, 그것이 이 관계의 가장 큰 자산입니다.',
     recommendedColors: [
@@ -2888,7 +2888,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     temperatureGraph: { emotionGap: 65, expressionIntensity: 40, recoverySpeed: 50 },
     expressionSpeed: { personA: '거리 필요', personB: '연결 필요', description: '한 사람은 공간이 필요할 때 물러서고, 다른 사람은 연결이 필요할 때 다가옵니다. 이 타이밍의 차이가 이 관계의 핵심 긴장입니다.' },
     recoveryStyle: { icon: 'alone' as const, label: '공간 회복형', description: '각자의 공간에서 충전하고 돌아오는 것이 이 관계의 회복 방식입니다.' },
-    dangerPattern: '추격-도피 패턴. 한 사람이 다가가면 다른 사람이 물러서고, 물러서면 다시 쫓아가는 패턴. 이 패턴이 반복되면 두 사람 모두 지칩니다.',
+    dangerPattern: '추격-도피 패턴. 다가가면 물러섭니다. 물러서면 다시 쫓아갑니다. 그 반복입니다. 다가가는 사람은 지치고, 물러서는 사람은 숨막힙니다. 이 패턴이 고착되면 두 사람 모두 지칩니다.',
     forbiddenWords: ['"왜 도망가?"', '"나한테 관심 없어?"', '"왜 항상 혼자 있으려 해?"', '"나랑 있기 싫어?"'],
     relationStrength: '각자의 공간을 존중하면서도 함께 있는 것. 독립적이면서도 연결된 관계는 드뭅니다. 그 균형이 이 관계의 가장 큰 자산입니다.',
     recommendedColors: [
@@ -2939,7 +2939,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
       ],
       recoveryBridge: '그래서 이 관계에는 역할을 잠시 내려놓는 시간이 필요합니다. 보호하는 사람도 기댈 수 있을 때, 이 관계는 더 균형 잡힙니다.',
     },
-    dangerPattern: '역할 고착 패턴. 보호하는 사람은 점점 지치고, 보호받는 사람은 점점 의존합니다. 역할이 고정되면 두 사람 모두 갇히게 됩니다.',
+    dangerPattern: '역할 고착 패턴. 보호하는 사람은 지칩니다. 말하지 않습니다. 참습니다. 보호받는 사람은 의존합니다. 그것이 당연해집니다. 역할이 굳어지면 두 사람 모두 갇힙니다. 보호자는 "나는 왜 항상 이래야 해"라고 느끼고, 보호받는 사람은 "나는 왜 혼자 못 서지"라고 느낍니다.',
     forbiddenWords: ['"내가 없으면 어떻게 할 거야?"', '"항상 내가 챙겨야 해?"', '"왜 스스로 못 해?"', '"나만 힘들어"'],
     relationStrength: '한 사람이 지키고 한 사람이 기대는 관계는 깊은 신뢰가 있습니다. 그 신뢰를 바탕으로 역할을 나누는 것, 그것이 이 관계의 가장 큰 자산입니다.',
     recommendedColors: [
@@ -2972,7 +2972,16 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     temperatureGraph: { emotionGap: 20, expressionIntensity: 40, recoverySpeed: 75 },
     expressionSpeed: { personA: '편안한 표현', personB: '편안한 표현', description: '두 사람 모두 편안하게 표현합니다. 그 편안함이 이 관계의 가장 큰 특징입니다.' },
     recoveryStyle: { icon: 'activity' as const, label: '함께 즐기기 회복형', description: '함께 웃을 수 있는 것을 하면서 자연스럽게 회복됩니다.' },
-    dangerPattern: '편안함이 설렘을 대체하는 패턴. 너무 편안해지면 서로에 대한 특별함이 줄어들 수 있습니다. 의식적으로 "연인"으로서의 시간을 만드는 것이 필요합니다.',
+    realEmotions: {
+      feelings: [
+        '편안하지만 설레지 않는 순간이 올 수 있습니다.',
+        '너무 익숙해진 것 같아 불안해질 수 있습니다.',
+        '연인인지 친구인지 헷갈리는 감정이 올라올 수 있습니다.',
+        '이 관계가 맞는지 의심이 들 수 있습니다.',
+      ],
+      recoveryBridge: '그래서 이 관계에는 의식적으로 "연인"으로서의 시간을 만드는 것이 중요합니다. 편안함은 사랑이 식은 것이 아니라, 더 깊어진 것입니다.',
+    },
+    dangerPattern: '편안함이 설렘을 대체하는 패턴. 너무 익숙해집니다. 특별함이 줄어듭니다. "우리 그냥 친구 같아"라는 말이 나옵니다. 설렘이 없어진 것이 아니라, 의식하지 않게 된 것입니다. 연인으로서의 시간을 의식적으로 만들지 않으면, 편안함이 무감각이 됩니다.',
     forbiddenWords: ['"우리 너무 친구 같아"', '"설레는 게 없어"', '"재미없어졌어"', '"변한 것 같아"'],
     relationStrength: '편안함과 신뢰. 어떤 상황에서도 함께 웃을 수 있는 관계. 그 편안함이 이 관계의 가장 단단한 기반입니다.',
     recommendedColors: [
@@ -3014,7 +3023,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
       ],
       recoveryBridge: '그래서 이 관계에는 기대를 내려놓는 연습이 필요합니다. 완벽하지 않은 지금의 상대를 있는 그대로 보는 것, 그것이 이 관계의 가장 깊은 사랑입니다.',
     },
-    dangerPattern: '이상화와 실망의 반복 패턴. 이상화가 높을수록 실망도 큽니다. 현실의 상대를 있는 그대로 보는 연습이 필요합니다.',
+    dangerPattern: '이상화와 실망의 반복 패턴. 높이 올립니다. 실망합니다. 다시 올립니다. 다시 실망합니다. 이상화가 높을수록 실망도 깊습니다. 현실의 상대는 마음속 상대와 다릅니다. 그 간극을 인정하지 않으면, 이 관계는 반복됩니다.',
     forbiddenWords: ['"예전 같지 않아"', '"왜 기대에 못 미쳐?"', '"처음엔 달랐는데"', '"내가 생각한 사람이 아니야"'],
     relationStrength: '서로를 특별하게 보는 시선. 그 시선이 현실과 균형을 이룰 때, 이 관계는 가장 아름다워집니다.',
     recommendedColors: [
@@ -3047,7 +3056,16 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     temperatureGraph: { emotionGap: 30, expressionIntensity: 45, recoverySpeed: 60 },
     expressionSpeed: { personA: '현실적 판단', personB: '현실적 판단', description: '두 사람 모두 현실적으로 생각하고 행동합니다. 그 현실감이 이 관계의 안정감이 됩니다.' },
     recoveryStyle: { icon: 'activity' as const, label: '문제 해결 회복형', description: '현실적인 문제를 함께 해결하면서 자연스럽게 회복됩니다.' },
-    dangerPattern: '현실에 치여 감정을 잊는 패턴. 현실적인 것에 집중하다 보면 서로에 대한 감정 표현이 줄어들 수 있습니다. 의식적으로 감정을 표현하는 것이 필요합니다.',
+    realEmotions: {
+      feelings: [
+        '현실 책임 속에서 감정 표현이 줄어드는 흐름이 올 수 있습니다.',
+        '감정보다 해결이 먼저가 되면서 외로워질 수 있습니다.',
+        '함께 있지만 연결감이 옅어지는 느낌이 올 수 있습니다.',
+        '바쁜 일상 속에서 "우리 괜찮은 거야?"라는 의문이 들 수 있습니다.',
+      ],
+      recoveryBridge: '그래서 이 관계에는 현실 속에서도 의식적으로 감정을 표현하는 시간이 필요합니다. 현실을 함께 살아가는 것 자체가 깊은 사랑입니다.',
+    },
+    dangerPattern: '현실에 치여 감정을 잊는 패턴. 해결할 것이 많습니다. 감정 표현이 줄어듭니다. 어느 순간 "우리 요즘 감정 얘기 안 하는 것 같아"라는 말이 나옵니다. 현실을 함께 살면서 연결감을 잃지 않는 것, 그것이 이 관계의 가장 어려운 과제입니다.',
     forbiddenWords: ['"감정적으로 굴지 마"', '"현실적으로 생각해"', '"그게 중요해?"', '"그냥 해결하면 되잖아"'],
     relationStrength: '현실을 함께 살아가는 신뢰. 어떤 어려움도 함께 해결할 수 있다는 믿음. 그 신뢰가 이 관계의 가장 단단한 기반입니다.',
     recommendedColors: [
@@ -3089,7 +3107,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
       ],
       recoveryBridge: '그래서 이 관계에는 갈등 후 충분히 쉬는 시간이 필요합니다. 빠른 화해보다 진심 어린 회복이 이 관계를 더 단단하게 만듭니다.',
     },
-    dangerPattern: '회복이 반복되면서 지치는 패턴. 갈등과 회복이 반복되다 보면 "또 이 패턴이야"라는 피로감이 쌓입니다. 회복 후 근본적인 원인을 다루지 않으면 같은 갈등이 반복됩니다.',
+    dangerPattern: '회복이 반복되면서 지치는 패턴. 갈등이 옵니다. 회복됩니다. 또 갈등이 옵니다. "또 이 패턴이야." 그 피로감이 쌓입니다. 회복 후 근본 원인을 다루지 않으면 같은 갈등이 반복됩니다. 회복의 깊이가 얕아질수록 이 관계는 흔들립니다.',
     forbiddenWords: ['"또 이 얘기야?"', '"이미 사과했잖아"', '"왜 아직도 그래?"', '"그냥 넘어가면 되잖아"'],
     relationStrength: '갈등 후 회복하는 능력. 싸우고 나서 더 가까워지는 관계는 드뭅니다. 두 사람은 이미 그 방법을 알고 있습니다. 회복을 반복하면서 이 관계는 점점 더 단단해지고 있습니다.',
     recommendedColors: [
