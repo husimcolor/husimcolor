@@ -503,29 +503,27 @@ export default function CoupleResultScreen() {
 
           <SectionCard accentColor={accentCouple} title="감정 회복 루틴" colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>
-              {coupleAnalysis.coupleRoutine.emotionRecovery}
+              {archetypeResult.emotionRoutine ?? coupleAnalysis.coupleRoutine.emotionRecovery}
             </Text>
           </SectionCard>
 
           <SectionCard accentColor={accentCouple} title="대화 루틴" colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>
-              {coupleAnalysis.coupleRoutine.conversationRoutine}
+              {archetypeResult.conversationRoutine ?? coupleAnalysis.coupleRoutine.conversationRoutine}
             </Text>
           </SectionCard>
 
           <SectionCard accentColor={accentCouple} title="정서적 연결 루틴" colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>
-              {coupleAnalysis.coupleRoutine.connectionRoutine}
+              {archetypeResult.connectionRoutine ?? coupleAnalysis.coupleRoutine.connectionRoutine}
             </Text>
           </SectionCard>
 
-          {coupleAnalysis.coupleRoutine.affectionRoutine && (
-            <SectionCard accentColor='#F4A882' title="애정 표현 루틴" colors={colors}>
-              <Text style={[styles.bodyText, { color: colors.foreground }]}>
-                {coupleAnalysis.coupleRoutine.affectionRoutine}
-              </Text>
-            </SectionCard>
-          )}
+          <SectionCard accentColor='#F4A882' title="애정 표현 루틴" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>
+              {archetypeResult.affectionRoutine ?? coupleAnalysis.coupleRoutine.affectionRoutine ?? ''}
+            </Text>
+          </SectionCard>
 
           {/* 추천 컬러 */}
           <SectionCard accentColor={accentCouple} title="두 사람에게 권하는 컬러" colors={colors}>
@@ -546,7 +544,7 @@ export default function CoupleResultScreen() {
           <View style={[styles.closingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.closingLabel, { color: accentCouple }]}>마무리 코칭 메시지</Text>
             <Text style={[styles.closingMessage, { color: colors.foreground }]}>
-              {coupleAnalysis.closingMessage}
+              {archetypeResult.closingMessage ?? coupleAnalysis.closingMessage}
             </Text>
           </View>
 
