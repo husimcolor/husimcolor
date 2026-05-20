@@ -688,25 +688,25 @@ export default function CoupleResultScreen() {
             </Text>
           </SectionCard>
 
-          {/* 두 사람 프로파일 대비 요약 — 끌림 이유 + 반복 패턴 + 해법 */}
+          {/* 두 사람 프로파일 대비 요약 — 끌림 이유 + 반복 패턴 + 해법 (archetype 오버라이드 우선) */}
           <SectionCard accentColor={accentCouple} label={getRelSectionLabel()} title={getRelSectionTitle()} colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.profileContrast}</Text>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.attractionContrast ?? coupleAnalysis.profileContrast}</Text>
           </SectionCard>
 
           <SectionCard accentColor={accentCouple} label="관계 흐름" title="두 사람의 관계 패턴" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.relationFlow}</Text>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.relationFlow ?? coupleAnalysis.relationFlow}</Text>
           </SectionCard>
 
           <SectionCard accentColor={accentCouple} label="표현 방식" title="서로 다른 표현 방식" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.expressionDifference}</Text>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.expressionDifference ?? coupleAnalysis.expressionDifference}</Text>
           </SectionCard>
 
           <SectionCard accentColor={accentCouple} label="오해 지점" title="오해가 생기는 순간" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.conflictPattern}</Text>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.conflictPattern ?? coupleAnalysis.conflictPattern}</Text>
           </SectionCard>
 
           <SectionCard accentColor={accentCouple} label="가까워지는 방법" title="두 사람이 연결되는 방식" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.connectionStyle}</Text>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.connectionStyle ?? coupleAnalysis.connectionStyle}</Text>
           </SectionCard>
 
           {/* archetype 기반 필요한 말 + 추천 활동 */}
