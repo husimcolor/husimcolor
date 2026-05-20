@@ -302,7 +302,7 @@ const RECOVERY_KEYWORD: Record<string, string> = {
   olive: '뿌리를 내리고 안정을 찾는',
   sage: '치유의 마음을 자신에게도 돌려주는',
   lavender: '자신을 위한 조용하고 따뜻한 시간을 갖는',
-  white: '복잡함을 내려놓고 단순하게 정리하는',
+  white: '조용히 감정을 정리하며 진정성 있게 연결되는',
   yellow: '밝고 가벼운 마음으로 다시 시작하는',
 };
 
@@ -333,7 +333,7 @@ function buildCard1Intro(card1: ColorData): string {
     olive: '묵묵히 자리를 지켜왔지만 자신을 위한 시간이 부족했습니다.',
     sage: '주변을 치유하느라 자신의 감정은 조용히 쌓아온 시기입니다.',
     lavender: '감정을 섬세하게 느끼며 천천히 정리하고 싶은 시기입니다.',
-    white: '복잡한 것들을 내려놓고 단순하게 정리하고 싶은 마음이 있습니다.',
+    white: '상처가 생기면 조용히 거리를 두며 혼자 정리하려는 시간이 필요합니다.',
     yellow: '밝게 지내려 했지만 내면에는 정리되지 않은 감정이 있습니다.',
   };
   return intros[id] ?? `지금 마음속에 많은 것들이 쌓여 있는 시기입니다.`;
@@ -1702,7 +1702,7 @@ function buildRecommendedColors(fA: EnergyFamily, fB: EnergyFamily): { id: strin
       { id: 'cream', korName: '크림', hex: '#F5EDD6', reason: '두 사람 모두에게 편안하고 안정적인 공간을 만들어줍니다.' },
     ],
     'cool_deep-cool_deep': [
-      { id: 'white', korName: '화이트', hex: '#F8F8F8', reason: '복잡한 내면을 가다듬고 새롭게 시작하는 힘을 줍니다.' },
+      { id: 'white', korName: '화이트', hex: '#F8F8F8', reason: '정화와 비움의 힘으로 진심이 통하는 연결을 다시 시작하게 돕습니다.' },
       { id: 'lavender', korName: '라벤더', hex: '#B8A9C9', reason: '깊은 내면에 조용한 안정과 따뜻한 연결을 가져다줍니다.' },
     ],
     'nature-nature': [
