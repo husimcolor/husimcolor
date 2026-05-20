@@ -3028,7 +3028,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     relationStrength: '서로를 특별하게 보는 시선. 그 시선이 현실과 균형을 이룰 때, 이 관계는 가장 아름다워집니다.',
     recommendedColors: [
       { id: 'purple', korName: '퍼플', hex: '#7B5EA7', reason: '깊은 연결과 영적 감수성을 더해주는 이상의 컬러입니다.' },
-      { id: 'rose_pink', korName: '로즈핑크', hex: '#E8A0B4', reason: '이상화된 감정을 따뜻하게 현실로 내려주는 회복 컬러입니다.' },
+      { id: 'peach', korName: '피치', hex: '#F4A882', reason: '이상화된 감정을 따뜻하고 부드럽게 현실로 내려주는 회복 컬러입니다.' },
     ],
         intimacyConnection: {
       marriageNote: '이상이 아닌 현실의 상대와 함께하는 친밀한 시간이 이 관계를 현실에 뿌리내리게 합니다. 완벽하지 않은 순간에도 가까이 있는 것이 이 관계의 가장 깊은 연결입니다.',
@@ -3111,7 +3111,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     forbiddenWords: ['"또 이 얘기야?"', '"이미 사과했잖아"', '"왜 아직도 그래?"', '"그냥 넘어가면 되잖아"'],
     relationStrength: '갈등 후 회복하는 능력. 싸우고 나서 더 가까워지는 관계는 드뭅니다. 두 사람은 이미 그 방법을 알고 있습니다. 회복을 반복하면서 이 관계는 점점 더 단단해지고 있습니다.',
     recommendedColors: [
-      { id: 'rose_pink', korName: '로즈핑크', hex: '#E8A0B4', reason: '갈등 후 재연결과 따뜻한 회복을 도와주는 감정 치유 컬러입니다.' },
+      { id: 'coral', korName: '코랄', hex: '#E8826A', reason: '갈등 후 재연결과 따뜻한 회복을 도와주는 감정 치유 컬러입니다.' },
       { id: 'ivory', korName: '아이보리', hex: '#F5EDD6', reason: '화해와 새로운 시작을 부드럽게 감싸주는 순수한 컬러입니다.' },
     ],
         intimacyConnection: {
