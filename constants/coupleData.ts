@@ -2569,6 +2569,13 @@ export interface ArchetypeResult {
   relationStrength: string;
   /** archetype 기반 추천 컬러 (유형별 감정 에너지 맞춤) */
   recommendedColors?: { id: string; korName: string; hex: string; reason: string }[];
+  /** 현실 감정 — 이 관계에서 올라올 수 있는 감정과 회복 흐름 연결 (선택적) */
+  realEmotions?: {
+    /** "이런 감정이 올라올 수 있습니다" 목록 */
+    feelings: string[];
+    /** 현실 감정 뒤 회복 흐름 연결 문장 */
+    recoveryBridge: string;
+  };
   /** 친밀감 연결 방식 — 부부/연인 전용 (유형별 구체적 행동) */
   intimacyConnection: {
     /** 부부용 고정 안내 문구 */
@@ -2749,6 +2756,15 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
       { id: 'coral', korName: '코랄', hex: '#E8735A', reason: '긴장과 변화 에너지를 따뜻하게 전환하는 활력 컬러입니다.' },
       { id: 'deep_navy', korName: '딥네이비', hex: '#1A2744', reason: '충돌 에너지를 깊이 있는 성장으로 이어주는 안정 컬러입니다.' },
     ],
+    realEmotions: {
+      feelings: [
+        '사랑하지만 동시에 지치는 순간이 있을 수 있습니다',
+        '자극이 때로는 압박으로 느껴질 수 있습니다',
+        '말하면 더 커질 것 같아 혼자 정리하려 할 수 있습니다',
+        '긴장이 쌓이면 잠시 멀어지고 싶어질 수 있습니다',
+      ],
+      recoveryBridge: '이 긴장은 이 관계가 살아있다는 신호입니다. 지치는 순간이 있어도 괜찮습니다. 그 긴장 뒤에 성장이 있습니다.',
+    },
         intimacyConnection: {
       marriageNote: '긴장과 자극이 많은 관계에서 몸의 연결은 "우리는 여전히 한 팀"이라는 신호입니다. 갈등 후 먼저 안아주는 것이 이 관계에서 가장 강한 화해의 언어입니다.',
       loverNote: '부딪힌 후 가장 먼저 해야 할 것은 가까이 앉는 것입니다. 말보다 먼저 거리를 좁히면 대화가 훨씬 쉬워집니다.',
@@ -2813,6 +2829,15 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
       { id: 'peach', korName: '피치', hex: '#F4A882', reason: '감정 파도를 따뜻하게 받아주는 공감과 연결의 에너지입니다.' },
       { id: 'lavender', korName: '라벤더', hex: '#B8A9C9', reason: '감정 기복 속에서 조용한 안정을 찾아주는 회복 컬러입니다.' },
     ],
+    realEmotions: {
+      feelings: [
+        '감정이 갑자기 올라와 스스로도 당황할 수 있습니다',
+        '파도가 올 때 혼자 있고 싶어질 수 있습니다',
+        '너무 가까워질 때 오히려 예민해질 수 있습니다',
+        '감정을 표현했는데 오히려 더 힘들어질 수 있습니다',
+      ],
+      recoveryBridge: '이 감정들은 이 관계가 깊다는 뜻입니다. 파도는 지나갑니다. 파도 사이의 잔잔한 순간이 이 관계의 진짜 연결입니다.',
+    },
         intimacyConnection: {
       marriageNote: '감정의 파도가 지나간 후 몸의 연결이 마음을 다시 이어줍니다. 파도가 잔잔해진 순간 먼저 안아주는 것이 이 관계에서 가장 강한 회복의 신호입니다.',
       loverNote: '감정이 복잡할 때 말보다 먼저 가까이 앉아보세요. 몸의 온기가 감정의 파도를 잠재울 수 있습니다.',
@@ -2845,6 +2870,15 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
       { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '숨막히지 않는 자연스러운 거리감을 유지하는 호흡의 컬러입니다.' },
       { id: 'deep_blue', korName: '딥블루', hex: '#3A5A8C', reason: '혼자만의 공간과 연결감을 동시에 담아주는 컬러입니다.' },
     ],
+    realEmotions: {
+      feelings: [
+        '가까워질수록 숨이 막히는 감정이 올라올 수 있습니다',
+        '혼자만의 공간이 절실하게 필요해질 수 있습니다',
+        '사랑하지만 동시에 거리가 필요한 순간이 있습니다',
+        '연결되고 싶지만 너무 가까워지면 예민해질 수 있습니다',
+      ],
+      recoveryBridge: '이 감정은 관계의 약점이 아닙니다. 거리는 이 관계의 방식입니다. 숨을 고를 수 있는 공간과 다시 연결되는 시간이 모두 필요합니다.',
+    },
         intimacyConnection: {
       marriageNote: '공간이 필요한 관계에서 스킨십은 "나는 여전히 여기 있어"라는 신호입니다. 억지로 가까워지려 하지 말고, 자연스럽게 연결되는 순간을 소중히 하세요.',
       loverNote: '공간이 필요할 때 솔직하게 말하고, 돌아왔을 때 먼저 손잡는 것. 그 작은 행동이 이 관계에서 가장 큰 연결입니다.',
