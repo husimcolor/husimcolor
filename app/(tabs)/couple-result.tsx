@@ -247,6 +247,73 @@ export default function CoupleResultScreen() {
           </View>
 
           {/* ═══════════════════════════════════════════════════════
+              관계 온도 그래프 + 표현 속도 시각화 + 회복 방식 아이콘
+          ═══════════════════════════════════════════════════════ */}
+          <View style={[archetypeStyles.card, { backgroundColor: '#FAFAFA', borderColor: '#E8E0F5' }]}>
+            {/* 관계 온도 그래프 */}
+            <Text style={archetypeStyles.sectionLabel}>관계 온도 지표</Text>
+            <View style={archetypeStyles.graphRow}>
+              <View style={archetypeStyles.graphItem}>
+                <Text style={archetypeStyles.graphLabel}>감정 온도 차이</Text>
+                <View style={archetypeStyles.barBg}>
+                  <View style={[archetypeStyles.barFill, { width: `${archetypeResult.temperatureGraph.emotionGap}%` as any, backgroundColor: '#9B7FD4' }]} />
+                </View>
+                <Text style={archetypeStyles.graphValue}>{archetypeResult.temperatureGraph.emotionGap}</Text>
+              </View>
+              <View style={archetypeStyles.graphItem}>
+                <Text style={archetypeStyles.graphLabel}>표현 강도</Text>
+                <View style={archetypeStyles.barBg}>
+                  <View style={[archetypeStyles.barFill, { width: `${archetypeResult.temperatureGraph.expressionIntensity}%` as any, backgroundColor: '#F4A882' }]} />
+                </View>
+                <Text style={archetypeStyles.graphValue}>{archetypeResult.temperatureGraph.expressionIntensity}</Text>
+              </View>
+              <View style={archetypeStyles.graphItem}>
+                <Text style={archetypeStyles.graphLabel}>회복 속도</Text>
+                <View style={archetypeStyles.barBg}>
+                  <View style={[archetypeStyles.barFill, { width: `${archetypeResult.temperatureGraph.recoverySpeed}%` as any, backgroundColor: '#5BC4A0' }]} />
+                </View>
+                <Text style={archetypeStyles.graphValue}>{archetypeResult.temperatureGraph.recoverySpeed}</Text>
+              </View>
+            </View>
+
+            <View style={archetypeStyles.divider} />
+
+            {/* 표현 속도 시각화 */}
+            <Text style={archetypeStyles.sectionLabel}>표현 속도 차이</Text>
+            <View style={archetypeStyles.speedRow}>
+              <View style={archetypeStyles.speedBox}>
+                <Text style={archetypeStyles.speedIcon}>⚡</Text>
+                <Text style={archetypeStyles.speedPersonLabel}>첫 번째 사람</Text>
+                <Text style={archetypeStyles.speedValue}>{archetypeResult.expressionSpeed.personA}</Text>
+              </View>
+              <Text style={archetypeStyles.speedArrow}>↔</Text>
+              <View style={archetypeStyles.speedBox}>
+                <Text style={archetypeStyles.speedIcon}>🌙</Text>
+                <Text style={archetypeStyles.speedPersonLabel}>두 번째 사람</Text>
+                <Text style={archetypeStyles.speedValue}>{archetypeResult.expressionSpeed.personB}</Text>
+              </View>
+            </View>
+            <Text style={archetypeStyles.speedDesc}>{archetypeResult.expressionSpeed.description}</Text>
+
+            <View style={archetypeStyles.divider} />
+
+            {/* 회복 방식 아이콘 */}
+            <Text style={archetypeStyles.sectionLabel}>회복 방식</Text>
+            <View style={archetypeStyles.recoveryRow}>
+              <Text style={archetypeStyles.recoveryIcon}>
+                {archetypeResult.recoveryStyle.icon === 'alone' ? '🧘' :
+                 archetypeResult.recoveryStyle.icon === 'talk' ? '💬' :
+                 archetypeResult.recoveryStyle.icon === 'activity' ? '🏃' :
+                 archetypeResult.recoveryStyle.icon === 'touch' ? '🤝' : '✨'}
+              </Text>
+              <View style={archetypeStyles.recoveryTextBox}>
+                <Text style={archetypeStyles.recoveryLabel}>{archetypeResult.recoveryStyle.label}</Text>
+                <Text style={archetypeStyles.recoveryDesc}>{archetypeResult.recoveryStyle.description}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* ═══════════════════════════════════════════════════════
               상단 요약 카드 — 컬러 행 + 심리카드 행
           ═══════════════════════════════════════════════════════ */}
           <View style={[styles.colorSummary, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -525,6 +592,26 @@ export default function CoupleResultScreen() {
             </Text>
           </SectionCard>
 
+          {/* ═══════════════════════════════════════════════════════
+              위험 패턴 / 금지 표현 / 관계 강점
+          ═══════════════════════════════════════════════════════ */}
+          <SectionCard accentColor='#E05C5C' label={archetypeResult.typeName} title="이 관계의 위험 패턴" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.dangerPattern}</Text>
+          </SectionCard>
+
+          <SectionCard accentColor='#E05C5C' label={archetypeResult.typeName} title="싸울 때 하면 안 되는 말" colors={colors}>
+            {archetypeResult.forbiddenWords.map((word, i) => (
+              <View key={i} style={styles.bulletRow}>
+                <Text style={[styles.bullet, { color: '#E05C5C' }]}>✕</Text>
+                <Text style={[styles.bulletText, { color: colors.foreground }]}>{word}</Text>
+              </View>
+            ))}
+          </SectionCard>
+
+          <SectionCard accentColor='#5BC4A0' label={archetypeResult.typeName} title="이 관계가 오래가는 이유" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.relationStrength}</Text>
+          </SectionCard>
+
           {/* 추천 컬러 */}
           <SectionCard accentColor={accentCouple} title="두 사람에게 권하는 컬러" colors={colors}>
             {coupleAnalysis.coupleRoutine.recommendedColors.map(rc => (
@@ -732,5 +819,108 @@ const archetypeStyles = StyleSheet.create({
     fontSize: 13.5,
     lineHeight: 24,
     color: '#4A3570',
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    color: '#9B7FD4',
+    textTransform: 'uppercase' as const,
+    marginBottom: 8,
+  },
+  graphRow: {
+    gap: 10,
+  },
+  graphItem: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+  },
+  graphLabel: {
+    fontSize: 12,
+    color: '#6B5A8A',
+    width: 80,
+  },
+  barBg: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#EDE8F8',
+    borderRadius: 4,
+    overflow: 'hidden' as const,
+  },
+  barFill: {
+    height: 8,
+    borderRadius: 4,
+  },
+  graphValue: {
+    fontSize: 11,
+    color: '#9B7FD4',
+    fontWeight: '700',
+    width: 24,
+    textAlign: 'right' as const,
+  },
+  speedRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    gap: 8,
+    marginBottom: 8,
+  },
+  speedBox: {
+    flex: 1,
+    alignItems: 'center' as const,
+    backgroundColor: '#F5F0FF',
+    borderRadius: 12,
+    padding: 12,
+    gap: 4,
+  },
+  speedIcon: {
+    fontSize: 22,
+  },
+  speedPersonLabel: {
+    fontSize: 10,
+    color: '#9B7FD4',
+    fontWeight: '600',
+  },
+  speedValue: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#5B3FA0',
+    textAlign: 'center' as const,
+  },
+  speedArrow: {
+    fontSize: 20,
+    color: '#C4B5E8',
+    fontWeight: '300',
+  },
+  speedDesc: {
+    fontSize: 12.5,
+    lineHeight: 20,
+    color: '#6B5A8A',
+  },
+  recoveryRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 14,
+    backgroundColor: '#F5F0FF',
+    borderRadius: 12,
+    padding: 14,
+  },
+  recoveryIcon: {
+    fontSize: 32,
+  },
+  recoveryTextBox: {
+    flex: 1,
+    gap: 4,
+  },
+  recoveryLabel: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#5B3FA0',
+  },
+  recoveryDesc: {
+    fontSize: 12.5,
+    lineHeight: 20,
+    color: '#6B5A8A',
   },
 });

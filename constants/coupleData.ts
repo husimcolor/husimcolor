@@ -2553,6 +2553,18 @@ export interface ArchetypeResult {
   emotionRoutine: string;
   /** 마지막 코칭 메시지 (archetype 고유 엔딩 분위기) */
   closingMessage: string;
+  /** 관계 온도 지표 (0-100 범위, 감정온도/표현강도/회복속도) */
+  temperatureGraph: { emotionGap: number; expressionIntensity: number; recoverySpeed: number };
+  /** 표현 속도 차이 (A: 빠름/느림 레이블, B: 빠름/느림 레이블) */
+  expressionSpeed: { personA: string; personB: string; description: string };
+  /** 회복 방식 아이콘 타입 */
+  recoveryStyle: { icon: 'alone' | 'talk' | 'activity' | 'touch' | 'mixed'; label: string; description: string };
+  /** 이 관계의 위험 패턴 */
+  dangerPattern: string;
+  /** 싸울 때 하면 안 되는 말 */
+  forbiddenWords: string[];
+  /** 이 관계가 오래가는 이유 (실제 강점) */
+  relationStrength: string;
 }
 
 // 도형 조합 → 관계 긴장 방향 분류
@@ -2681,6 +2693,12 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     affectionRoutine: '말보다 타이밍이 중요합니다. 상대가 준비됐을 때 건네는 짧은 문자 한 통, 혹은 조용히 옆에 앉아 있는 것이 이 관계에서 가장 따뜻한 표현입니다.',
     emotionRoutine: '감정이 올라왔을 때 바로 해결하려 하지 마세요. "나 지금 좀 정리가 필요해"라고 먼저 말하고, 30분 후 다시 시작하는 것이 이 관계의 회복 공식입니다.',
     closingMessage: '두 사람의 속도가 다른 것은 문제가 아닙니다. 빠른 사람이 기다려주고, 느린 사람이 신호를 보내는 것. 그 작은 배려가 이 관계를 오래 지속시키는 힘입니다.',
+    temperatureGraph: { emotionGap: 75, expressionIntensity: 40, recoverySpeed: 35 },
+    expressionSpeed: { personA: '즉시 표현', personB: '정리 후 표현', description: '한 사람은 감정이 생기는 즉시 말하고, 다른 사람은 혼자 정리한 후에 표현합니다. 이 속도 차이가 오해의 시작입니다.' },
+    recoveryStyle: { icon: 'alone' as const, label: '혼자 정리형', description: '각자 충분한 혼자 시간을 가진 후 다시 연결됩니다.' },
+    dangerPattern: '침묵이 거리감으로 번지는 패턴. 한 사람이 정리 중인 침묵을 다른 사람이 무관심이나 거부로 읽으면서 오해가 쌓입니다. 시간이 지날수록 "왜 먼저 말 안 해?"와 "왜 바로 반응해?"가 반복됩니다.',
+    forbiddenWords: ['"왜 바로 말 안 해?"', '"그냥 넘어가면 되잖아"', '"왜 이렇게 예민해?"', '"또 그 얘기야?"'],
+    relationStrength: '두 사람의 온도 차이는 약점이 아닙니다. 빠른 표현은 관계에 활기를 주고, 느린 표현은 관계에 깊이를 줍니다. 서로의 속도를 존중하는 법을 배운 두 사람은 어떤 갈등도 함께 넘을 수 있습니다.',
   },
   성장자극형: {
     typeName: '성장자극형 관계',
@@ -2697,6 +2715,12 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     affectionRoutine: '함께 새로운 것을 시도하는 것이 이 관계의 애정 표현입니다. 처음 가보는 레스토랑, 함께 등록한 수업, 짧은 여행. 일상에서 벗어나는 경험이 두 사람을 더 가깝게 만듭니다.',
     emotionRoutine: '갈등 후 혼자 시간을 갖는 것보다, 함께 어딘가를 다녀오는 것이 이 관계의 회복 방식입니다. 움직이면서 나누는 대화가 더 편안하게 느껴지는 관계입니다.',
     closingMessage: '두 사람이 서로에게 불편함을 줌으로써 성장하고 있다는 것, 그 자체가 이 관계의 가장 큰 자산입니다. 싸운 후 더 가깝습니다. 성장한 후 더 많이 웃습니다. 이 관계는 끝나는 것이 아니라, 계속 진화하고 있습니다.',
+    temperatureGraph: { emotionGap: 55, expressionIntensity: 85, recoverySpeed: 70 },
+    expressionSpeed: { personA: '강하게 직진', personB: '저항 후 수용', description: '한 사람은 변화를 강하게 밀어붙이고, 다른 사람은 처음엔 저항하지만 결국 그 에너지를 받아들입니다. 이 긴장이 두 사람을 성장시킵니다.' },
+    recoveryStyle: { icon: 'activity' as const, label: '활동 회복형', description: '함께 움직이고 새로운 것을 시도하면서 갈등이 자연스럽게 해소됩니다.' },
+    dangerPattern: '자극이 압박으로 변하는 패턴. 성장을 원하는 마음이 상대에게 "너는 왜 안 변해?"로 느껴지는 순간, 관계가 긴장됩니다. 변화의 속도 차이가 갈등의 핵심입니다.',
+    forbiddenWords: ['"왜 아직도 그래?"', '"그 정도도 못 해?"', '"나는 이미 변했는데"', '"넌 의지가 없어"'],
+    relationStrength: '서로에게 불편함을 주면서도 함께 있는 것, 그것이 이 관계의 가장 큰 힘입니다. 편안한 관계는 성장을 멈추게 하지만, 이 관계는 두 사람을 계속 움직이게 만듭니다. 싸운 후 더 단단해지는 관계입니다.',
   },
   안정추구형: {
     typeName: '안정추구형 관계',
@@ -2713,6 +2737,12 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     affectionRoutine: '함께 요리하거나, 좋아하는 공간에서 나란히 쉬는 시간이 이 관계의 애정 표현입니다. 특별한 이벤트보다 반복되는 일상의 온기가 이 관계를 따뜻하게 유지합니다.',
     emotionRoutine: '감정이 쌓이기 전에 작은 것부터 표현하는 연습이 필요합니다. "사실 그때 조금 서운했어"라고 말하는 것, 그것이 이 관계의 가장 중요한 회복 루틴입니다.',
     closingMessage: '두 사람의 관계 안에는 이미 많은 신뢰와 안정감이 쌓여 있습니다. 지금 필요한 것은 새로운 시작이 아니라, 서로에게 조금 더 솔직해지는 용기입니다. 편안한 관계 안에서 진심을 꺼내는 것, 그것이 이 관계의 다음 단계입니다.',
+    temperatureGraph: { emotionGap: 25, expressionIntensity: 30, recoverySpeed: 55 },
+    expressionSpeed: { personA: '천천히 신중하게', personB: '천천히 신중하게', description: '두 사람 모두 감정을 빠르게 표현하지 않습니다. 충분히 생각한 후에 말하는 편이라 갈등이 적지만, 중요한 감정이 전달되지 않는 경우도 있습니다.' },
+    recoveryStyle: { icon: 'talk' as const, label: '대화 회복형', description: '충분히 시간이 지난 후 조용한 대화로 회복됩니다. 급하게 화해하려 하지 않습니다.' },
+    dangerPattern: '"괜찮아"가 쌓이는 패턴. 서로 불편한 말을 피하다 보니 중요한 감정이 전달되지 않고, 시간이 지나면서 거리감이 생깁니다. 작은 불만이 쌓여 어느 순간 폭발하는 패턴이 생길 수 있습니다.',
+    forbiddenWords: ['"그냥 넘어가자"', '"별거 아니잖아"', '"예전에도 그랬잖아"', '"왜 이제 와서 말해?"'],
+    relationStrength: '두 사람이 함께 있으면 편안합니다. 그 편안함이 이 관계의 가장 큰 자산입니다. 갈등이 적고 신뢰가 깊으며, 오래 함께할수록 더 자연스러워지는 관계입니다. 안정감 위에 솔직함을 더하면 이 관계는 더 깊어집니다.',
   },
   감정순환형: {
     typeName: '감정순환형 관계',
@@ -2729,6 +2759,12 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     affectionRoutine: '감성적인 순간을 함께 만드는 것이 이 관계의 애정 표현입니다. 좋아하는 음악을 함께 듣거나, 감동적인 영화를 보거나, 서로에게 짧은 편지를 써보세요.',
     emotionRoutine: '감정이 올라왔을 때 "나 지금 이런 감정이야"라고 먼저 말하는 것이 이 관계의 회복 시작입니다. 감정을 이름 붙이는 것만으로도 절반은 회복됩니다.',
     closingMessage: '두 사람의 감정이 빠르게 순환하는 것은 이 관계가 살아있다는 증거입니다. 기쁠 때 함께 기뻐하고, 힘들 때 함께 힘들어하는 것. 그 공감의 흐름이 이 관계를 특별하게 만듭니다.',
+    temperatureGraph: { emotionGap: 60, expressionIntensity: 70, recoverySpeed: 80 },
+    expressionSpeed: { personA: '감정 즉시 표현', personB: '감정 즉시 반응', description: '두 사람 모두 감정이 빠르게 오르내립니다. 기쁠 때 함께 기쁘고, 힘들 때 함께 힘든 관계입니다. 감정의 파도가 빠르지만 회복도 빠릅니다.' },
+    recoveryStyle: { icon: 'talk' as const, label: '대화 회복형', description: '감정을 충분히 나누고 공감받으면 빠르게 회복됩니다. 해결보다 공감이 먼저입니다.' },
+    dangerPattern: '감정 과부하 패턴. 두 사람의 감정이 동시에 올라오면 서로를 진정시키기 어려워집니다. 한 사람이 힘들 때 다른 사람도 힘들면, 서로에게 기댈 수 없는 상황이 생깁니다.',
+    forbiddenWords: ['"나도 힘들어"(공감 없이)', '"그게 뭐가 힘들어?"', '"좀 진정해"', '"왜 이렇게 예민하게 굴어?"'],
+    relationStrength: '감정을 함께 느끼는 것, 그것이 이 관계의 가장 큰 선물입니다. 기쁨이 두 배가 되고, 슬픔이 절반이 되는 관계입니다. 감정의 파도가 있지만 그 파도를 함께 타는 두 사람은 어떤 상황에서도 연결되어 있습니다.',
   },
   거리조절형: {
     typeName: '거리조절형 관계',
@@ -2745,6 +2781,12 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     affectionRoutine: '각자의 시간을 충분히 보낸 후 다시 만나는 것 자체가 이 관계의 애정 표현입니다. "보고 싶었어"라는 말이 이 관계에서 가장 강력한 표현입니다.',
     emotionRoutine: '혼자만의 시간이 충분히 주어진 후에야 마음이 열립니다. 회복 후 먼저 연락하는 작은 행동이 이 관계를 따뜻하게 만드는 가장 확실한 방법입니다.',
     closingMessage: '가까워졌다 멀어지는 것이 이 관계의 리듬입니다. 그 리듬을 불안해하지 마세요. 멀어지는 것은 관계가 끝나는 것이 아니라, 각자가 충전하는 방식입니다. 다시 가까워질 때 더 깊이 연결됩니다.',
+    temperatureGraph: { emotionGap: 65, expressionIntensity: 35, recoverySpeed: 45 },
+    expressionSpeed: { personA: '공간 필요 후 표현', personB: '기다린 후 연결', description: '한 사람은 충분한 혼자 시간이 필요하고, 다른 사람은 그 시간을 기다리며 연결을 원합니다. 이 리듬을 맞추는 것이 이 관계의 핵심입니다.' },
+    recoveryStyle: { icon: 'alone' as const, label: '혼자 정리형', description: '각자의 공간에서 충전한 후 다시 연결됩니다. 혼자 시간이 회복의 시작입니다.' },
+    dangerPattern: '멀어짐이 끝처럼 느껴지는 패턴. 한 사람이 공간을 원할 때 다른 사람이 불안해하면서 더 가까이 다가가려 하고, 그것이 오히려 더 멀어지게 만드는 패턴이 반복됩니다.',
+    forbiddenWords: ['"왜 연락 안 해?"', '"나 싫어진 거야?"', '"혼자 있고 싶으면 헤어지자"', '"왜 이렇게 차가워?"'],
+    relationStrength: '각자의 공간을 존중하면서도 다시 연결되는 것, 그것이 이 관계의 가장 성숙한 부분입니다. 멀어졌다가 다시 가까워질 때 더 깊이 연결되는 관계입니다. 독립성과 연결감을 동시에 가진 관계입니다.',
   },
   보호자형: {
     typeName: '보호자형 관계',
@@ -2761,6 +2803,12 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     affectionRoutine: '역할을 바꿔 한 사람이 다른 사람을 위해 무언가를 준비하는 것이 이 관계의 애정 표현입니다. 서로를 위한 작은 이벤트나 선물, 혹은 "오늘은 내가 챙길게"라는 말 한마디.',
     emotionRoutine: '배려하는 사람이 먼저 자신을 돌보는 시간을 갖는 것이 이 관계의 가장 중요한 회복 방식입니다. "나 오늘 좀 쉬어야 할 것 같아"라고 말할 수 있는 것이 이 관계의 건강함입니다.',
     closingMessage: '한 사람이 감싸고 다른 사람이 기대는 구조, 그 안에 깊은 신뢰가 있습니다. 다만 감싸는 사람도 기댈 수 있는 공간이 필요합니다. "나도 네가 필요해"라고 말할 수 있는 관계가 되어가고 있습니다.',
+    temperatureGraph: { emotionGap: 50, expressionIntensity: 45, recoverySpeed: 60 },
+    expressionSpeed: { personA: '먼저 챙기고 표현', personB: '받고 나서 표현', description: '한 사람이 먼저 배려하고 감싸면, 다른 사람이 그 안에서 안정을 찾고 표현합니다. 이 흐름이 자연스럽지만, 배려하는 사람의 감정이 소외될 수 있습니다.' },
+    recoveryStyle: { icon: 'touch' as const, label: '스킨십 회복형', description: '따뜻한 신체 접촉이나 작은 배려 행동이 이 관계의 회복을 돕습니다.' },
+    dangerPattern: '배려의 불균형 패턴. 한 사람이 계속 감싸고 다른 사람이 계속 기대는 구조가 고착되면, 배려하는 사람이 지치거나 서운함이 쌓입니다. "나는 항상 챙기는데 왜 나는 챙김을 못 받지?"라는 감정이 생깁니다.',
+    forbiddenWords: ['"당연한 거 아니야?"', '"네가 알아서 해야지"', '"나도 힘들어"(공감 없이)', '"왜 이렇게 의존해?"'],
+    relationStrength: '한 사람의 따뜻한 배려가 다른 사람을 안정시키고, 그 안정이 관계를 지탱합니다. 깊은 신뢰와 안전감이 이 관계의 가장 큰 자산입니다. 배려하는 사람도 기댈 수 있는 공간이 생기면, 이 관계는 더 균형 잡힌 아름다움을 갖게 됩니다.',
   },
   친구형: {
     typeName: '친구형 관계',
@@ -2777,6 +2825,12 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     affectionRoutine: '함께 새로운 경험을 하거나, 평소와 다른 주제로 대화하는 시간을 만들어보세요. 함께 처음 해보는 것들이 이 관계에 새로운 활기를 줍니다.',
     emotionRoutine: '편안함 때문에 중요한 감정을 표현하지 않게 되는 패턴을 주의하세요. "사실 그때 좀 서운했어"라고 말하는 것이 이 관계의 회복 시작입니다.',
     closingMessage: '편안한 관계가 가장 오래 지속됩니다. 다만 편안함 안에서도 감정의 깊이를 유지하는 것이 중요합니다. "우리 사이에서 뭐든 말할 수 있어"라는 신뢰가 이 관계의 가장 큰 자산입니다.',
+    temperatureGraph: { emotionGap: 20, expressionIntensity: 50, recoverySpeed: 75 },
+    expressionSpeed: { personA: '편하게 즉시', personB: '편하게 즉시', description: '두 사람 모두 서로에게 편하게 표현합니다. 감정을 숨기지 않고 자연스럽게 나누는 편이지만, 편함 때문에 중요한 감정을 가볍게 다루는 경우도 있습니다.' },
+    recoveryStyle: { icon: 'activity' as const, label: '활동 회복형', description: '함께 뭔가를 하면서 자연스럽게 회복됩니다. 직접적인 대화보다 함께하는 시간이 더 효과적입니다.' },
+    dangerPattern: '편함이 무감각으로 변하는 패턴. 너무 편한 나머지 중요한 감정을 표현하지 않거나, 상대의 감정을 가볍게 여기는 순간이 생깁니다. "우리 사이에 뭘 그렇게 따져?"가 상처가 될 수 있습니다.',
+    forbiddenWords: ['"우리 사이에 뭘 그렇게 따져?"', '"그냥 웃고 넘어가"', '"왜 이렇게 진지해?"', '"별거 아니잖아"'],
+    relationStrength: '편안함이 이 관계의 가장 큰 힘입니다. 어떤 상황에서도 서로 옆에 있을 수 있는 관계, 그것이 이 관계의 본질입니다. 편안함 위에 진심을 더하면 이 관계는 오래가는 깊은 연결이 됩니다.',
   },
   이상주의형: {
     typeName: '이상주의형 관계',
@@ -2793,6 +2847,12 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     affectionRoutine: '특별한 것보다 평범한 하루를 함께 보내는 경험이 이 관계를 현실로 가져옵니다. 집에서 함께 요리하거나, 동네를 산책하거나, 아무것도 하지 않고 나란히 있는 시간.',
     emotionRoutine: '기대가 충족되지 않았을 때 "나는 이런 걸 기대했는데"라고 솔직하게 말하는 것이 이 관계의 회복 시작입니다. 기대를 숨기는 것보다 나누는 것이 더 안전합니다.',
     closingMessage: '깊은 연결을 꿈꾸는 것은 이 관계의 가장 아름다운 부분입니다. 다만 그 이상이 현실의 상대를 가리지 않도록 하세요. 지금 앞에 있는 사람, 그 사람이 이미 충분합니다.',
+    temperatureGraph: { emotionGap: 45, expressionIntensity: 60, recoverySpeed: 50 },
+    expressionSpeed: { personA: '이상적 기대로 표현', personB: '현실적 반응', description: '한 사람은 이상적인 관계를 꿈꾸며 표현하고, 다른 사람은 현실적으로 반응합니다. 이 차이가 때로는 실망으로, 때로는 서로를 보완하는 힘으로 작용합니다.' },
+    recoveryStyle: { icon: 'talk' as const, label: '대화 회복형', description: '기대와 현실의 차이를 솔직하게 나누는 대화가 이 관계의 회복 방식입니다.' },
+    dangerPattern: '기대가 실망으로 변하는 패턴. 이상적인 관계를 기대하다가 현실의 상대에게 실망하는 순간이 반복됩니다. "내가 생각한 것과 달라"가 쌓이면 관계가 흔들립니다.',
+    forbiddenWords: ['"왜 내 기대에 못 미쳐?"', '"그 정도도 못 해줘?"', '"다른 사람들은 다 해주던데"', '"나는 이런 관계를 원했어"'],
+    relationStrength: '깊은 연결을 꿈꾸는 마음이 이 관계를 특별하게 만듭니다. 이상을 향해 함께 나아가는 두 사람은 평범한 관계에서 느낄 수 없는 깊이를 경험합니다. 지금 앞에 있는 사람을 있는 그대로 받아들이는 순간, 이 관계는 진짜 이상에 가까워집니다.',
   },
   현실균형형: {
     typeName: '현실균형형 관계',
@@ -2809,6 +2869,12 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     affectionRoutine: '일상에서 벗어나 감성적인 시간을 의도적으로 만드세요. 함께 영화 보기, 음악 듣기, 저녁 산책. 현실 속에서 감성을 찾는 것이 이 관계의 애정 표현입니다.',
     emotionRoutine: '현실적인 문제보다 감정을 먼저 확인하는 대화가 이 관계를 회복시킵니다. "지금 어때? 나는 좀 지쳐있어"라고 먼저 말하는 것이 이 관계의 회복 시작입니다.',
     closingMessage: '두 사람은 함께 현실을 잘 꾸려가고 있습니다. 그 안정감이 이 관계의 가장 큰 힘입니다. 이제 필요한 것은 그 안정감 위에 감성의 온기를 더하는 것입니다. 잘 해주고 있습니다. 그리고 서로에게 고맙습니다.',
+    temperatureGraph: { emotionGap: 30, expressionIntensity: 55, recoverySpeed: 65 },
+    expressionSpeed: { personA: '현실 중심 표현', personB: '현실 중심 표현', description: '두 사람 모두 현실적이고 실용적으로 표현합니다. 감정보다 상황을 먼저 파악하는 편이라 안정적이지만, 감성적인 연결이 부족해질 수 있습니다.' },
+    recoveryStyle: { icon: 'mixed' as const, label: '복합 회복형', description: '상황에 따라 대화, 활동, 혼자 시간을 유연하게 활용합니다.' },
+    dangerPattern: '현실에 치여 감정을 잊는 패턴. 일상의 역할과 책임에 집중하다 보니 감정적인 연결이 줄어들고, 어느 순간 "우리 요즘 그냥 같이 사는 것 같아"라는 느낌이 생깁니다.',
+    forbiddenWords: ['"그게 지금 중요해?"', '"현실적으로 생각해"', '"감정적으로 굴지 마"', '"그냥 하면 되잖아"'],
+    relationStrength: '현실을 함께 꾸려가는 능력이 이 관계의 가장 큰 힘입니다. 어떤 상황에서도 함께 해결책을 찾는 두 사람은 삶의 어떤 도전도 함께 넘을 수 있습니다. 현실의 안정 위에 감성의 온기를 더하면 이 관계는 완성됩니다.',
   },
   회복형: {
     typeName: '회복형 관계',
@@ -2825,6 +2891,12 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     affectionRoutine: '갈등 후 함께 즐거운 시간을 만드는 것이 이 관계의 애정 표현입니다. 맛있는 것 먹기, 좋아하는 장소 방문, 함께 웃을 수 있는 것. 회복 후의 연결이 이 관계를 더 단단하게 만듭니다.',
     emotionRoutine: '갈등 후 빠른 화해보다 충분한 감정 처리 시간이 필요합니다. "나 아직 정리가 안 됐어, 조금만 기다려줘"라고 말하는 것이 이 관계의 가장 정직한 회복 방식입니다.',
     closingMessage: '갈등 후 회복하는 것을 반복하며 이 관계는 더 단단해지고 있습니다. 싸우는 것이 문제가 아니라, 어떻게 회복하느냐가 이 관계의 핵심입니다. 두 사람은 이미 그 방법을 알고 있습니다.',
+    temperatureGraph: { emotionGap: 55, expressionIntensity: 65, recoverySpeed: 85 },
+    expressionSpeed: { personA: '갈등 후 정리', personB: '갈등 후 표현', description: '갈등이 생기면 한 사람은 혼자 정리하고, 다른 사람은 표현하면서 회복합니다. 회복 방식의 차이가 있지만, 두 사람 모두 회복을 원한다는 것이 이 관계의 핵심입니다.' },
+    recoveryStyle: { icon: 'talk' as const, label: '대화 회복형', description: '충분한 시간이 지난 후 진심 어린 대화로 회복됩니다. 빠른 화해보다 진짜 회복을 선택합니다.' },
+    dangerPattern: '회복이 반복되면서 지치는 패턴. 갈등과 회복이 반복되다 보면 "또 이 패턴이야"라는 피로감이 쌓입니다. 회복 후 근본적인 원인을 다루지 않으면 같은 갈등이 반복됩니다.',
+    forbiddenWords: ['"또 이 얘기야?"', '"이미 사과했잖아"', '"왜 아직도 그래?"', '"그냥 넘어가면 되잖아"'],
+    relationStrength: '갈등 후 회복하는 능력, 그것이 이 관계의 가장 큰 자산입니다. 싸우고 나서 더 가까워지는 관계는 드뭅니다. 두 사람은 이미 그 방법을 알고 있습니다. 회복을 반복하면서 이 관계는 점점 더 단단해지고 있습니다.',
   },
 };
 
