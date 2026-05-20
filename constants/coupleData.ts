@@ -2505,3 +2505,292 @@ function buildClosingMessage(
   const base = relMessages[rel] ?? `${relLabel}의 에너지 결을 함께 살펴보았습니다. 서로를 이해하는 것이 관계를 더 깊게 만드는 시작입니다.`;
   return base + faithSuffix;
 }
+
+// ── 관계 Archetype 시스템 ─────────────────────────────────────────────────────
+/**
+ * 10가지 관계 유형 (archetype)
+ * 컬러 에너지 조합 + 도형 특성 → 관계의 핵심 긴장 구조 결정
+ */
+export type RelationArchetype =
+  | '온도차형'        // 표현 속도·온도 차이 중심
+  | '성장자극형'      // 서로를 변화시키는 긴장 중심
+  | '안정추구형'      // 평온하지만 정체될 수 있는 패턴
+  | '감정순환형'      // 감정이 빠르게 돌고 회복도 빠름
+  | '거리조절형'      // 가까워졌다 멀어지는 반복 패턴
+  | '보호자형'        // 한 사람이 감싸고 다른 사람이 기대는 구조
+  | '친구형'          // 편안하지만 감정 깊이가 얕아질 수 있음
+  | '이상주의형'      // 깊은 연결을 꿈꾸지만 현실과 충돌
+  | '현실균형형'      // 실용적이고 안정적이지만 감성 연결 필요
+  | '회복형';         // 갈등 후 회복 패턴이 반복됨
+
+export interface ArchetypeResult {
+  archetype: RelationArchetype;
+  /** 결과 상단에 표시되는 유형 이름 */
+  typeName: string;
+  /** 한 줄 핵심 요약 (캡쳐/공유용) */
+  coreSummary: string;
+  /** 이 관계의 핵심 긴장 구조 설명 */
+  tensionDescription: string;
+  /** 오해 패턴 (archetype 고유) */
+  misunderstandingPattern: string;
+  /** 연결 방식 (archetype 고유) */
+  connectionStyle: string;
+  /** 회복 루틴 (archetype 고유) */
+  recoveryRoutine: string;
+  /** 필요한 말 (archetype 고유) */
+  neededWords: string;
+  /** 추천 활동 (archetype 고유) */
+  recommendedActivity: string;
+  /** 감정 회복 방식 (archetype 고유) */
+  emotionRecoveryStyle: string;
+}
+
+// 도형 조합 → 관계 긴장 방향 분류
+type ShapeTension =
+  | 'defense'       // 역삼각형 포함 — 방어/거리두기
+  | 'stable'        // 네모 포함 — 안정/구조
+  | 'flow'          // 원 포함 — 감정 순환/부드러운 연결
+  | 'sensitive'     // 마름모 포함 — 감정 긴장/민감성
+  | 'growth'        // 오각형 포함 — 성장/방향성
+  | 'harmony'       // 육각형 포함 — 조율/균형
+  | 'boundary'      // 삼각형 포함 — 경계/보호
+  | 'mixed';        // 혼합
+
+function getShapeTension(shapeA: string | undefined, shapeB: string | undefined): ShapeTension {
+  const shapes = [shapeA, shapeB].filter(Boolean) as string[];
+  if (shapes.includes('inverted_triangle')) return 'defense';
+  if (shapes.includes('triangle')) return 'boundary';
+  if (shapes.includes('diamond')) return 'sensitive';
+  if (shapes.includes('pentagon')) return 'growth';
+  if (shapes.includes('hexagon')) return 'harmony';
+  if (shapes.includes('square')) return 'stable';
+  if (shapes.includes('circle')) return 'flow';
+  return 'mixed';
+}
+
+// 에너지 조합 키 → archetype 매핑
+const ARCHETYPE_MAP: Record<string, RelationArchetype> = {
+  // 온도차형: 표현 vs 내면 정리
+  'warm_active-cool_deep': '온도차형',
+  'cool_deep-warm_active': '온도차형',
+  'warm_soft-cool_deep': '온도차형',
+  'cool_deep-warm_soft': '온도차형',
+  'warm_active-cool_clear': '온도차형',
+  'cool_clear-warm_active': '온도차형',
+
+  // 성장자극형: 서로 다른 방향성이 충돌하며 성장
+  'warm_active-nature': '성장자극형',
+  'nature-warm_active': '성장자극형',
+  'cool_clear-warm_grounded': '성장자극형',
+  'warm_grounded-cool_clear': '성장자극형',
+  'cool_deep-nature': '성장자극형',
+  'nature-cool_deep': '성장자극형',
+
+  // 안정추구형: 비슷한 에너지 — 편안하지만 정체 가능
+  'warm_grounded-warm_grounded': '안정추구형',
+  'neutral-warm_grounded': '안정추구형',
+  'warm_grounded-neutral': '안정추구형',
+  'cool_clear-cool_clear': '안정추구형',
+  'neutral-neutral': '안정추구형',
+
+  // 감정순환형: 감정이 빠르게 돌고 회복도 빠름
+  'warm_active-warm_soft': '감정순환형',
+  'warm_soft-warm_active': '감정순환형',
+  'warm_soft-warm_soft': '감정순환형',
+  'warm_active-warm_active': '감정순환형',
+
+  // 거리조절형: 가까워졌다 멀어지는 반복
+  'cool_deep-cool_deep': '거리조절형',
+  'cool_deep-cool_clear': '거리조절형',
+  'cool_clear-cool_deep': '거리조절형',
+  'cool_clear-nature': '거리조절형',
+  'nature-cool_clear': '거리조절형',
+
+  // 보호자형: 한 사람이 감싸고 다른 사람이 기대는 구조
+  'warm_soft-warm_grounded': '보호자형',
+  'warm_grounded-warm_soft': '보호자형',
+  'warm_soft-nature': '보호자형',
+  'nature-warm_soft': '보호자형',
+  'warm_grounded-nature': '보호자형',
+  'nature-warm_grounded': '보호자형',
+
+  // 친구형: 편안하지만 감정 깊이가 얕아질 수 있음
+  'neutral-cool_clear': '친구형',
+  'cool_clear-neutral': '친구형',
+  'neutral-nature': '친구형',
+  'nature-neutral': '친구형',
+  'nature-nature': '친구형',
+
+  // 이상주의형: 깊은 연결을 꿈꾸지만 현실과 충돌
+  'cool_deep-warm_grounded': '이상주의형',
+  'warm_grounded-cool_deep': '이상주의형',
+  'cool_deep-neutral': '이상주의형',
+  'neutral-cool_deep': '이상주의형',
+
+  // 현실균형형: 실용적이고 안정적이지만 감성 연결 필요
+  'warm_grounded-warm_active': '현실균형형',
+  'warm_active-warm_grounded': '현실균형형',
+  'cool_clear-warm_soft': '현실균형형',
+  'warm_soft-cool_clear': '현실균형형',
+
+  // 회복형: 갈등 후 회복 패턴이 반복됨 (도형 보정으로 적용 — 역삼각형/마름모 도형 조합에서 적용)
+  'warm_soft-neutral': '회복형',
+  'neutral-warm_soft': '회복형',
+};
+
+// 도형 긴장 방향이 archetype을 보정하는 경우
+function adjustArchetypeByShape(
+  base: RelationArchetype,
+  shapeTension: ShapeTension
+): RelationArchetype {
+  // 역삼각형(방어) → 거리조절형으로 강화
+  if (shapeTension === 'defense' && base !== '거리조절형') return '거리조절형';
+  // 마름모(민감) → 감정순환형 또는 회복형으로 보정
+  if (shapeTension === 'sensitive' && base === '안정추구형') return '감정순환형';
+  // 오각형(성장) → 성장자극형으로 강화
+  if (shapeTension === 'growth' && base === '친구형') return '성장자극형';
+  // 삼각형(경계) → 온도차형으로 보정
+  if (shapeTension === 'boundary' && base === '안정추구형') return '온도차형';
+  return base;
+}
+
+// archetype별 상세 데이터
+const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype'>> = {
+  온도차형: {
+    typeName: '온도차형 관계',
+    coreSummary: '두 사람은 서로 다른 속도로 사랑을 표현합니다.',
+    tensionDescription: '한 사람은 감정이 생기면 바로 꺼내야 편해지고, 다른 사람은 충분히 정리된 후에야 말할 수 있습니다. 이 속도 차이가 "왜 말을 안 해?"와 "왜 지금 당장 얘기해야 해?"로 반복되는 패턴을 만듭니다. 표현의 타이밍이 다를 뿐, 두 사람 모두 관계를 소중히 여기고 있습니다.',
+    misunderstandingPattern: '빠른 표현이 압박으로, 침묵이 무관심으로 오해받는 순간이 반복됩니다. 실제로는 표현 방식의 차이일 뿐입니다.',
+    connectionStyle: '한 사람이 먼저 "지금 말하기 어려워, 조금 있다가 얘기해도 될까?"라고 신호를 보내는 것만으로도 온도 차이가 줄어듭니다.',
+    recoveryRoutine: '갈등 후 각자 30분의 냉각 시간을 갖고, 준비됐을 때 다시 이야기하는 루틴이 이 관계에 가장 잘 맞습니다.',
+    neededWords: '"지금 바로 답하지 않아도 돼. 네 속도로 괜찮아."',
+    recommendedActivity: '함께 조용히 걷거나 드라이브하며 말 없이도 편안한 시간을 만들어보세요.',
+    emotionRecoveryStyle: '한 사람은 혼자 정리하는 시간이, 다른 사람은 표현하고 공감받는 시간이 회복의 핵심입니다. 서로의 회복 방식을 존중하는 것이 먼저입니다.',
+  },
+  성장자극형: {
+    typeName: '성장자극형 관계',
+    coreSummary: '두 사람은 서로를 변화시키는 긴장 속에서 성장합니다.',
+    tensionDescription: '한 사람의 에너지가 다른 사람을 움직이게 만들고, 그 자극이 때로는 불편하지만 결국 두 사람 모두를 더 나은 방향으로 이끕니다. 편안함보다 성장을 선택하는 관계입니다.',
+    misunderstandingPattern: '한 사람의 변화 요구가 다른 사람에게 압박으로 느껴지거나, 다른 사람의 저항이 거부로 읽히는 순간이 있습니다.',
+    connectionStyle: '서로의 성장을 응원하는 말 한마디가 이 관계의 가장 강력한 연결 방식입니다. "네가 도전하는 모습이 나를 움직여"라는 표현이 두 사람을 가장 가깝게 만듭니다.',
+    recoveryRoutine: '갈등 후 각자의 시간을 충분히 갖고, 다시 만날 때 "그때 내가 왜 그랬는지 이제 알 것 같아"라고 시작하는 대화가 회복을 돕습니다.',
+    neededWords: '"네가 나를 더 나은 사람으로 만들어줘. 그게 때로는 불편하지만 고마워."',
+    recommendedActivity: '함께 새로운 것을 배우거나 도전하는 활동 — 요리 클래스, 등산, 새로운 취미 시작.',
+    emotionRecoveryStyle: '갈등 자체보다 갈등 후의 성장에 집중하는 것이 이 관계의 회복 방식입니다. 싸운 후 "우리 이번에 뭘 배웠지?"라고 묻는 습관이 도움이 됩니다.',
+  },
+  안정추구형: {
+    typeName: '안정추구형 관계',
+    coreSummary: '두 사람은 평온하고 안정적인 관계를 원합니다.',
+    tensionDescription: '두 사람 모두 변화보다 익숙한 안정감을 선호합니다. 갈등이 적고 편안하지만, 시간이 지나면 관계가 정체되거나 감정 표현이 줄어드는 패턴이 생길 수 있습니다.',
+    misunderstandingPattern: '서로 불편한 말을 피하다 보니 중요한 감정이 전달되지 않는 순간이 생깁니다. "괜찮아"가 실제로는 괜찮지 않은 경우가 반복될 수 있습니다.',
+    connectionStyle: '작은 일상의 인정과 감사 표현이 이 관계를 살아있게 만듭니다. "오늘도 고마워"라는 말이 가장 강력한 연결입니다.',
+    recoveryRoutine: '갈등보다 일상의 작은 변화가 이 관계를 회복시킵니다. 평소와 다른 장소에서 식사하거나, 새로운 활동을 함께 시도해보세요.',
+    neededWords: '"우리 요즘 어때? 솔직하게 얘기해도 괜찮아."',
+    recommendedActivity: '함께 새로운 장소를 방문하거나, 평소와 다른 방식으로 시간을 보내는 것이 관계에 활력을 줍니다.',
+    emotionRecoveryStyle: '감정을 쌓아두지 않고 작은 것부터 표현하는 연습이 이 관계의 가장 중요한 회복 방식입니다.',
+  },
+  감정순환형: {
+    typeName: '감정순환형 관계',
+    coreSummary: '두 사람의 감정은 빠르게 돌고, 회복도 빠릅니다.',
+    tensionDescription: '두 사람 모두 감정이 풍부하고 표현이 활발합니다. 감정이 빠르게 올라오고 내려가며, 갈등도 강하지만 화해도 빠른 편입니다. 감정의 파도가 잦은 관계입니다.',
+    misunderstandingPattern: '감정이 격해질 때 서로 상처가 되는 말을 하거나, 감정이 가라앉은 후 그 말이 오래 남는 패턴이 있습니다.',
+    connectionStyle: '감정이 올라올 때 잠깐 멈추는 신호를 만들어두는 것이 이 관계의 핵심입니다. "잠깐, 우리 숨 한번 고르자"라는 말이 두 사람을 지켜줍니다.',
+    recoveryRoutine: '갈등 후 빠른 화해보다 충분한 냉각 시간이 필요합니다. 감정이 가라앉은 후 "그때 내 말이 상처가 됐을 것 같아, 미안해"라고 시작하는 대화가 진짜 회복입니다.',
+    neededWords: '"감정이 올라올 때 잠깐 멈출 수 있어. 우리 같이 연습하자."',
+    recommendedActivity: '함께 산책하거나 조용한 카페에서 시간을 보내며 감정을 차분하게 나누는 시간을 만들어보세요.',
+    emotionRecoveryStyle: '감정이 가라앉은 후 서로의 감정을 다시 확인하는 시간이 이 관계의 회복 방식입니다. "그때 어떤 마음이었어?"라고 묻는 것이 시작입니다.',
+  },
+  거리조절형: {
+    typeName: '거리조절형 관계',
+    coreSummary: '거리감은 무관심이 아니라 회복 방식의 차이일 수 있습니다.',
+    tensionDescription: '한 사람 또는 두 사람 모두 가까워지면 본능적으로 거리를 두려는 패턴이 있습니다. 가까워졌다 멀어지는 리듬이 반복되며, 이것이 상대에게 불안이나 혼란을 줄 수 있습니다.',
+    misunderstandingPattern: '거리를 두는 것이 관계를 정리하려는 신호로 오해받거나, 다가가는 것이 부담으로 느껴지는 순간이 반복됩니다.',
+    connectionStyle: '"지금 혼자 있고 싶어, 잠깐 시간이 필요해"라고 먼저 말해주는 것만으로도 상대의 불안이 줄어듭니다. 거리의 이유를 설명하는 것이 이 관계의 핵심 연결 방식입니다.',
+    recoveryRoutine: '각자의 공간을 충분히 갖고, 다시 만날 때 "보고 싶었어"라는 말로 시작하는 루틴이 이 관계를 지켜줍니다.',
+    neededWords: '"혼자 있는 게 필요할 때 말해줘. 기다릴 수 있어."',
+    recommendedActivity: '각자의 시간을 갖고 다시 만나는 데이트 — 따로 시간을 보낸 후 저녁에 만나 각자의 하루를 나누는 방식이 이 관계에 잘 맞습니다.',
+    emotionRecoveryStyle: '혼자만의 시간이 충분히 주어질 때 비로소 마음이 열립니다. 회복 후 먼저 연락하는 작은 행동이 이 관계를 따뜻하게 만듭니다.',
+  },
+  보호자형: {
+    typeName: '보호자형 관계',
+    coreSummary: '한 사람은 감싸고, 다른 사람은 기대는 구조가 자연스럽게 형성됩니다.',
+    tensionDescription: '한 사람이 더 많이 배려하고 감싸는 역할을 맡고, 다른 사람은 그 안에서 안정을 찾는 구조입니다. 이 균형이 오래 지속되면 한 사람의 소진으로 이어질 수 있습니다.',
+    misunderstandingPattern: '배려하는 사람이 지쳐서 거리를 두면, 기대던 사람은 갑작스러운 변화로 혼란을 느낍니다. "왜 갑자기 달라졌어?"라는 오해가 생기는 패턴입니다.',
+    connectionStyle: '배려하는 사람도 자신의 필요를 표현할 수 있는 공간이 필요합니다. "나도 가끔 기대고 싶어"라는 말이 이 관계의 균형을 만들어줍니다.',
+    recoveryRoutine: '역할을 바꿔보는 시간이 이 관계를 회복시킵니다. 평소 기대던 사람이 먼저 "오늘은 내가 챙길게"라고 말하는 것이 시작입니다.',
+    neededWords: '"네가 지칠 때 나도 여기 있어. 혼자 다 감당하지 않아도 돼."',
+    recommendedActivity: '역할을 바꿔 한 사람이 다른 사람을 위해 무언가를 준비하는 활동 — 서로를 위한 작은 이벤트나 선물.',
+    emotionRecoveryStyle: '배려하는 사람이 먼저 자신을 돌보는 시간을 갖는 것이 이 관계의 가장 중요한 회복 방식입니다.',
+  },
+  친구형: {
+    typeName: '친구형 관계',
+    coreSummary: '두 사람은 편안하지만, 감정의 깊이를 더할 수 있는 관계입니다.',
+    tensionDescription: '두 사람 사이에는 편안함과 자연스러운 흐름이 있습니다. 갈등이 적고 함께 있으면 가볍고 즐겁습니다. 다만 시간이 지나면 감정의 깊이가 얕아지거나, 중요한 감정을 나누지 않게 되는 패턴이 생길 수 있습니다.',
+    misunderstandingPattern: '너무 편안해서 중요한 감정을 굳이 표현하지 않게 되고, 그것이 쌓여 "우리 사이가 예전 같지 않아"라는 느낌으로 이어질 수 있습니다.',
+    connectionStyle: '가끔은 가벼운 대화 대신 "요즘 진짜 어때?"라고 깊이 묻는 시간이 이 관계를 더 단단하게 만들어줍니다.',
+    recoveryRoutine: '일상의 가벼운 연결을 유지하면서, 가끔 진지한 대화 시간을 의도적으로 만드는 것이 이 관계의 회복 방식입니다.',
+    neededWords: '"편한 사이라서 더 솔직하게 말할 수 있어. 요즘 진짜 어때?"',
+    recommendedActivity: '함께 새로운 경험을 하거나, 평소와 다른 주제로 대화하는 시간을 만들어보세요.',
+    emotionRecoveryStyle: '편안함을 유지하면서도 감정을 나누는 시간을 의도적으로 만드는 것이 이 관계의 회복 방식입니다.',
+  },
+  이상주의형: {
+    typeName: '이상주의형 관계',
+    coreSummary: '두 사람은 깊은 연결을 꿈꾸지만, 현실과의 간극이 긴장을 만듭니다.',
+    tensionDescription: '한 사람 또는 두 사람 모두 관계에 대한 깊은 기대와 이상이 있습니다. 그 이상이 현실과 충돌할 때 실망이나 거리감이 생기고, "내가 기대했던 관계가 아니야"라는 느낌이 반복될 수 있습니다.',
+    misunderstandingPattern: '이상적인 기대가 높아서 상대의 작은 실수나 변화가 크게 느껴지는 패턴이 있습니다. "왜 예전 같지 않아?"라는 말이 반복될 수 있습니다.',
+    connectionStyle: '이상보다 지금 이 순간의 상대를 바라보는 연습이 이 관계의 핵심입니다. "지금 이 모습도 좋아"라는 말이 가장 강력한 연결입니다.',
+    recoveryRoutine: '기대를 내려놓고 지금 있는 그대로의 관계를 인정하는 시간이 회복을 돕습니다. "우리가 완벽하지 않아도 괜찮아"라는 대화가 시작입니다.',
+    neededWords: '"완벽하지 않아도 돼. 지금 이 모습으로도 충분해."',
+    recommendedActivity: '일상의 소소한 것을 함께 즐기는 활동 — 특별한 것보다 평범한 하루를 함께 보내는 경험이 이 관계를 현실로 가져옵니다.',
+    emotionRecoveryStyle: '이상과 현실의 간극을 인정하고, 지금 있는 것에 감사하는 연습이 이 관계의 회복 방식입니다.',
+  },
+  현실균형형: {
+    typeName: '현실균형형 관계',
+    coreSummary: '두 사람은 실용적이고 안정적이지만, 감성 연결이 더 필요합니다.',
+    tensionDescription: '두 사람 모두 현실적이고 책임감이 있습니다. 일상을 함께 잘 꾸려가지만, 감정적인 연결이나 표현이 부족해지는 패턴이 생길 수 있습니다. "우리 잘 지내고 있는데 왜 이렇게 멀게 느껴지지?"라는 감각이 올 수 있습니다.',
+    misunderstandingPattern: '현실적인 문제 해결에 집중하다 보니 감정 표현이 줄어들고, 상대가 "나를 당연하게 여기는 것 같아"라고 느끼는 순간이 생깁니다.',
+    connectionStyle: '일상 속 작은 감정 표현이 이 관계를 살아있게 만듭니다. "고마워, 네가 있어서 든든해"라는 말이 가장 강력한 연결입니다.',
+    recoveryRoutine: '현실적인 문제보다 감정을 먼저 확인하는 대화가 이 관계를 회복시킵니다. "요즘 어때? 힘든 건 없어?"라고 먼저 묻는 습관이 도움이 됩니다.',
+    neededWords: '"잘 해주고 있어. 고마워. 네가 있어서 든든해."',
+    recommendedActivity: '일상에서 벗어나 감성적인 시간을 만드는 활동 — 함께 영화 보기, 음악 듣기, 저녁 산책.',
+    emotionRecoveryStyle: '현실적인 역할 분담보다 감정적인 연결을 먼저 회복하는 것이 이 관계의 핵심 회복 방식입니다.',
+  },
+  회복형: {
+    typeName: '회복형 관계',
+    coreSummary: '두 사람은 갈등 후 회복하는 패턴을 반복하며 관계를 이어갑니다.',
+    tensionDescription: '두 사람 사이에는 감정의 충돌과 화해가 반복되는 흐름이 있습니다. 갈등이 생기면 힘들지만, 회복 후에는 더 깊이 연결되는 경험을 합니다. 이 패턴 자체가 두 사람의 관계 방식입니다.',
+    misunderstandingPattern: '갈등이 반복되면서 "우리는 왜 이렇게 자주 싸우지?"라는 의문이 생기고, 회복의 과정이 점점 힘들어지는 패턴이 있습니다.',
+    connectionStyle: '갈등 자체보다 갈등을 다루는 방식을 함께 만들어가는 것이 이 관계의 핵심입니다. "우리만의 화해 루틴"을 만들어두는 것이 도움이 됩니다.',
+    recoveryRoutine: '갈등 후 충분한 시간을 갖고, 다시 만날 때 "그때 힘들었지? 나도 미안했어"라고 시작하는 대화가 진짜 회복입니다.',
+    neededWords: '"우리 또 회복했어. 이번에도 우리가 이겼어."',
+    recommendedActivity: '갈등 후 함께 즐거운 시간을 만드는 활동 — 맛있는 것 먹기, 좋아하는 장소 방문, 함께 웃을 수 있는 것.',
+    emotionRecoveryStyle: '갈등 후 빠른 화해보다 충분한 감정 처리 시간이 필요합니다. 회복 후 "우리 이번에 뭘 배웠지?"라고 묻는 습관이 이 관계를 더 단단하게 만듭니다.',
+  },
+};
+
+/**
+ * 두 사람의 컬러 에너지 조합 + 도형 특성 → 관계 archetype 결정
+ */
+export function getRelationArchetype(
+  familiesA: EnergyFamily[],
+  familiesB: EnergyFamily[],
+  shapeA?: string,
+  shapeB?: string
+): ArchetypeResult {
+  const dominantA = getDominantFamily(familiesA);
+  const dominantB = getDominantFamily(familiesB);
+  const key = `${dominantA}-${dominantB}`;
+  const reverseKey = `${dominantB}-${dominantA}`;
+
+  // 에너지 조합으로 기본 archetype 결정
+  let baseArchetype: RelationArchetype = ARCHETYPE_MAP[key] ?? ARCHETYPE_MAP[reverseKey] ?? '온도차형';
+
+  // 도형 긴장 방향으로 보정
+  const shapeTension = getShapeTension(shapeA, shapeB);
+  const finalArchetype = adjustArchetypeByShape(baseArchetype, shapeTension);
+
+  return {
+    archetype: finalArchetype,
+    ...ARCHETYPE_DATA[finalArchetype],
+  };
+}

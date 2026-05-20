@@ -11,8 +11,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLOR_DATA } from '@/constants/colorData';
 import { CARD_DATA } from '@/constants/cardData';
 import {
-  generatePersonAnalysis, generateCoupleAnalysis,
-  type CoupleSessionData, type PersonAnalysis, type CoupleAnalysis,
+  generatePersonAnalysis, generateCoupleAnalysis, getRelationArchetype,
+  type CoupleSessionData, type PersonAnalysis, type CoupleAnalysis, type ArchetypeResult,
 } from '@/constants/coupleData';
 
 // ─── SectionCard ─────────────────────────────────────────────────────────────
@@ -55,6 +55,7 @@ export default function CoupleResultScreen() {
   const [personAAnalysis, setPersonAAnalysis] = useState<PersonAnalysis | null>(null);
   const [personBAnalysis, setPersonBAnalysis] = useState<PersonAnalysis | null>(null);
   const [coupleAnalysis, setCoupleAnalysis] = useState<CoupleAnalysis | null>(null);
+  const [archetypeResult, setArchetypeResult] = useState<ArchetypeResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,9 +74,40 @@ export default function CoupleResultScreen() {
       const aAnalysis = generatePersonAnalysis(data.personA, 'A');
       const bAnalysis = generatePersonAnalysis(data.personB, 'B');
       const cAnalysis = generateCoupleAnalysis(data, aAnalysis, bAnalysis);
+      // archetype 계산
+      const famsA = data.personA.colors.map((id: string) => {
+        const c = COLOR_DATA.find((x: any) => x.id === id);
+        const ENERGY_FAM: Record<string, string> = {
+          red:'warm_active',orange:'warm_active',coral:'warm_active',magenta:'warm_active',
+          pink:'warm_soft',peach:'warm_soft',beige:'warm_soft',cream:'warm_soft',
+          gold:'warm_grounded',brown:'warm_grounded',terracotta:'warm_grounded',
+          blue:'cool_clear',skyblue:'cool_clear',teal:'cool_clear',mint:'cool_clear',
+          indigo:'cool_deep',violet:'cool_deep',black:'cool_deep',silver:'cool_deep',
+          green:'nature',olive:'nature',sage:'nature',lavender:'nature',
+          white:'neutral',yellow:'neutral',
+        };
+        return c ? (ENERGY_FAM[c.id] ?? 'neutral') : 'neutral';
+      }) as any[];
+      const famsB = data.personB.colors.map((id: string) => {
+        const c = COLOR_DATA.find((x: any) => x.id === id);
+        const ENERGY_FAM: Record<string, string> = {
+          red:'warm_active',orange:'warm_active',coral:'warm_active',magenta:'warm_active',
+          pink:'warm_soft',peach:'warm_soft',beige:'warm_soft',cream:'warm_soft',
+          gold:'warm_grounded',brown:'warm_grounded',terracotta:'warm_grounded',
+          blue:'cool_clear',skyblue:'cool_clear',teal:'cool_clear',mint:'cool_clear',
+          indigo:'cool_deep',violet:'cool_deep',black:'cool_deep',silver:'cool_deep',
+          green:'nature',olive:'nature',sage:'nature',lavender:'nature',
+          white:'neutral',yellow:'neutral',
+        };
+        return c ? (ENERGY_FAM[c.id] ?? 'neutral') : 'neutral';
+      }) as any[];
+      const shapeA3 = data.personA.cards[2] ? CARD_DATA.find((c: any) => c.id === data.personA.cards[2])?.shape : undefined;
+      const shapeB3 = data.personB.cards[2] ? CARD_DATA.find((c: any) => c.id === data.personB.cards[2])?.shape : undefined;
+      const archRes = getRelationArchetype(famsA, famsB, shapeA3, shapeB3);
       setPersonAAnalysis(aAnalysis);
       setPersonBAnalysis(bAnalysis);
       setCoupleAnalysis(cAnalysis);
+      setArchetypeResult(archRes);
       setLoading(false);
       Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
       // 커플 결과 도달 추적
@@ -109,7 +141,7 @@ export default function CoupleResultScreen() {
     );
   }
 
-  if (error || !sessionData || !personAAnalysis || !personBAnalysis || !coupleAnalysis) {
+  if (error || !sessionData || !personAAnalysis || !personBAnalysis || !coupleAnalysis || !archetypeResult) {
     return (
       <ScreenContainer>
         <View style={styles.loadingContainer}>
@@ -197,6 +229,21 @@ export default function CoupleResultScreen() {
               <Text style={[styles.headerTitle, { color: '#2D2420' }]}>커플 세션 결과</Text>
               <Text style={[styles.headerSub, { color: '#5F4B3B' }]}>{relationType} · 감성 심리코칭</Text>
             </View>
+          </View>
+
+          {/* ═══════════════════════════════════════════════════════
+              관계 유형 핵심 요약 카드 (archetype)
+          ═══════════════════════════════════════════════════════ */}
+          <View style={[archetypeStyles.card, { backgroundColor: '#F5F0FF', borderColor: '#C4B5E8' }]}>
+            <View style={archetypeStyles.typeRow}>
+              <View style={archetypeStyles.typeBadge}>
+                <Text style={archetypeStyles.typeBadgeText}>관계 유형</Text>
+              </View>
+              <Text style={archetypeStyles.typeName}>{archetypeResult.typeName}</Text>
+            </View>
+            <Text style={archetypeStyles.coreSummary}>❝ {archetypeResult.coreSummary} ❞</Text>
+            <View style={archetypeStyles.divider} />
+            <Text style={archetypeStyles.tensionText}>{archetypeResult.tensionDescription}</Text>
           </View>
 
           {/* ═══════════════════════════════════════════════════════
@@ -367,6 +414,16 @@ export default function CoupleResultScreen() {
           ═══════════════════════════════════════════════════════ */}
           <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 통합 분석</Text>
 
+          {/* archetype 기반 오해 패턴 + 연결 방식 */}
+          <SectionCard accentColor='#9B7FD4' label={archetypeResult.typeName} title="이 관계의 오해 패턴" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.misunderstandingPattern}</Text>
+            <View style={[sectionStyles.divider, { backgroundColor: '#9B7FD430', marginTop: 4 }]} />
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>
+              <Text style={{ fontWeight: '700' }}>연결 방식  </Text>
+              {archetypeResult.connectionStyle}
+            </Text>
+          </SectionCard>
+
           {/* 두 사람 프로파일 대비 요약 — 끌림 이유 + 반복 패턴 + 해법 */}
           <SectionCard accentColor={accentCouple} label={getRelSectionLabel()} title={getRelSectionTitle()} colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.profileContrast}</Text>
@@ -388,8 +445,20 @@ export default function CoupleResultScreen() {
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.connectionStyle}</Text>
           </SectionCard>
 
+          {/* archetype 기반 필요한 말 + 추천 활동 */}
+          <SectionCard accentColor='#9B7FD4' label={archetypeResult.typeName} title="지금 이 말이 필요합니다" colors={colors}>
+            <View style={[styles.neededRow, { backgroundColor: '#9B7FD415', borderColor: '#9B7FD440' }]}>
+              <Text style={[styles.neededText, { color: colors.foreground }]}>{archetypeResult.neededWords}</Text>
+            </View>
+            <View style={[sectionStyles.divider, { backgroundColor: '#9B7FD430', marginTop: 8 }]} />
+            <Text style={[styles.bodyText, { color: colors.muted, fontSize: 13 }]}>
+              <Text style={{ fontWeight: '700', color: colors.foreground }}>추천 활동  </Text>
+              {archetypeResult.recommendedActivity}
+            </Text>
+          </SectionCard>
+
           {/* 서로에게 필요한 표현 */}
-          <SectionCard accentColor='#B8A9C9' label="서로에게 필요한 말" title="지금 이 말이 필요합니다" colors={colors}>
+          <SectionCard accentColor='#B8A9C9' label="서로에게 필요한 말" title="두 사람의 표현 언어" colors={colors}>
             <View style={[styles.neededRow, { backgroundColor: accentA + '12', borderColor: accentA + '30' }]}>
               <Text style={[styles.neededText, { color: colors.foreground }]}>
                 {coupleAnalysis.neededExpression.forA}
@@ -406,6 +475,16 @@ export default function CoupleResultScreen() {
               커플 보완 루틴
           ═══════════════════════════════════════════════════════ */}
           <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>{getRoutineSectionLabel()}</Text>
+
+          {/* archetype 기반 회복 루틴 + 감정 회복 방식 */}
+          <SectionCard accentColor='#9B7FD4' label={archetypeResult.typeName} title="이 관계의 회복 루틴" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.recoveryRoutine}</Text>
+            <View style={[sectionStyles.divider, { backgroundColor: '#9B7FD430', marginTop: 4 }]} />
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>
+              <Text style={{ fontWeight: '700' }}>감정 회복 방식  </Text>
+              {archetypeResult.emotionRecoveryStyle}
+            </Text>
+          </SectionCard>
 
           <SectionCard accentColor={accentCouple} title="함께하기 좋은 활동" colors={colors}>
             {coupleAnalysis.coupleRoutine.activities.map((act, i) => (
@@ -604,4 +683,56 @@ const styles = StyleSheet.create({
     borderWidth: 1, marginBottom: 12, marginTop: 4,
   },
   shareBtnText: { fontSize: 14, fontWeight: '600' },
+});
+
+const archetypeStyles = StyleSheet.create({
+  card: {
+    borderRadius: 18,
+    borderWidth: 1.5,
+    padding: 20,
+    marginBottom: 20,
+    gap: 12,
+  },
+  typeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  typeBadge: {
+    backgroundColor: '#9B7FD4',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  typeBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  typeName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#5B3FA0',
+    letterSpacing: 0.2,
+  },
+  coreSummary: {
+    fontSize: 16,
+    lineHeight: 26,
+    fontStyle: 'italic',
+    color: '#5B3FA0',
+    fontWeight: '600',
+    textAlign: 'center',
+    paddingHorizontal: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#C4B5E840',
+    marginVertical: 4,
+  },
+  tensionText: {
+    fontSize: 13.5,
+    lineHeight: 24,
+    color: '#4A3570',
+  },
 });
