@@ -2985,3 +2985,369 @@ export function getRelationArchetype(
     ...ARCHETYPE_DATA[finalArchetype],
   };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  경량 Archetype 시스템 (친구 / 부모자녀 / 형제자매 / 동료)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface LightArchetypeResult {
+  /** 유형 이름 */
+  typeName: string;
+  /** 한 줄 핵심 요약 */
+  coreSummary: string;
+  /** 이 관계의 핵심 흐름 설명 */
+  description: string;
+  /** 이 관계에서 자주 생기는 오해 패턴 */
+  misunderstandingPattern: string;
+  /** 연결 방식 */
+  connectionStyle: string;
+  /** 대화 루틴 */
+  conversationRoutine: string;
+  /** 관계 회복 루틴 */
+  recoveryRoutine: string;
+  /** 이 관계가 오래가는 이유 */
+  relationStrength: string;
+  /** 마무리 메시지 */
+  closingMessage: string;
+}
+
+// ─── 친구 5유형 ─────────────────────────────────────────────────────────────
+type FriendArchetype =
+  | '편안한공감형'
+  | '거리존중형'
+  | '감정교류형'
+  | '오래가는안정형'
+  | '자극성장형';
+
+const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
+  편안한공감형: {
+    typeName: '편안한 공감형 우정',
+    coreSummary: '말하지 않아도 통하는 사이, 그것이 이 우정의 가장 큰 힘입니다.',
+    description: '두 사람은 서로의 감정을 자연스럽게 읽어내는 흐름이 있습니다. 말이 많지 않아도 편안하고, 함께 있는 것만으로 충분한 관계입니다. 다만 서로 너무 배려하다 보면 정작 하고 싶은 말을 못 하는 순간이 생길 수 있습니다.',
+    misunderstandingPattern: '배려하느라 솔직한 말을 참다가 나중에 서운함이 쌓이는 패턴이 있습니다.',
+    connectionStyle: '조용히 옆에 있어주는 것, 말 없이 함께 있는 시간이 이 우정의 연결 방식입니다.',
+    conversationRoutine: '하루 중 기억나는 순간 하나씩 나누기 / 서로 "요즘 어때?" 한 마디로 시작하기',
+    recoveryRoutine: '어색해지면 평소처럼 연락하기 / 굳이 설명하지 않아도 다시 연결되는 흐름 믿기',
+    relationStrength: '서로를 판단하지 않는 편안함이 이 우정의 가장 큰 자산입니다. 오래 함께할수록 더 자연스러워지는 관계입니다.',
+    closingMessage: '이 우정은 말이 많지 않아도 따뜻합니다. 편안함이 진심이라는 것을 두 사람 모두 알고 있습니다.',
+  },
+  거리존중형: {
+    typeName: '거리 존중형 우정',
+    coreSummary: '각자의 공간을 지키면서도 필요할 때 곁에 있는 관계입니다.',
+    description: '두 사람은 서로의 독립적인 시간과 공간을 존중하는 흐름이 있습니다. 자주 연락하지 않아도 멀어진 것이 아니고, 다시 만나면 바로 연결되는 관계입니다. 다만 한 사람이 더 자주 연락을 원할 때 온도 차이가 느껴질 수 있습니다.',
+    misunderstandingPattern: '연락이 뜸해지면 "나한테 관심이 없나?"라고 오해할 수 있습니다.',
+    connectionStyle: '강요 없이 서로의 페이스를 맞추는 것, 다시 만날 때 자연스럽게 이어지는 흐름이 연결 방식입니다.',
+    conversationRoutine: '연락 없이 지내다가 생각날 때 먼저 연락하기 / 만나면 근황 나누기',
+    recoveryRoutine: '거리가 생겨도 먼저 "잘 지내?" 한 마디로 다시 연결하기',
+    relationStrength: '서로의 공간을 존중하면서도 다시 연결될 수 있다는 신뢰가 이 우정의 힘입니다.',
+    closingMessage: '자주 만나지 않아도 마음속에 있는 관계가 있습니다. 이 우정이 그런 관계입니다.',
+  },
+  감정교류형: {
+    typeName: '감정 교류형 우정',
+    coreSummary: '감정을 솔직하게 나눌 수 있는 사이, 그것이 이 우정의 핵심입니다.',
+    description: '두 사람은 감정을 나누는 것이 자연스러운 흐름입니다. 기쁨도 슬픔도 함께 느끼고, 서로의 감정에 진심으로 반응하는 관계입니다. 다만 감정의 파도가 클 때 서로에게 부담이 될 수 있습니다.',
+    misunderstandingPattern: '감정을 많이 나누다 보면 한 사람이 에너지를 더 많이 쓰는 불균형이 생길 수 있습니다.',
+    connectionStyle: '감정을 솔직하게 표현하고 공감받는 것이 이 우정의 연결 방식입니다.',
+    conversationRoutine: '오늘 기분 어때? 한 마디로 시작하기 / 힘든 일 생기면 먼저 연락하기',
+    recoveryRoutine: '서운한 감정이 생기면 바로 이야기하기 / 공감 먼저, 해결은 나중에',
+    relationStrength: '감정을 숨기지 않아도 되는 관계, 그것이 이 우정의 가장 큰 선물입니다.',
+    closingMessage: '서로의 감정을 진심으로 받아주는 사람이 있다는 것, 그것만으로도 충분합니다.',
+  },
+  오래가는안정형: {
+    typeName: '오래가는 안정형 우정',
+    coreSummary: '시간이 지날수록 더 편안해지는, 오래된 나무 같은 우정입니다.',
+    description: '두 사람은 오랜 시간을 함께하며 쌓인 신뢰가 있습니다. 특별한 이벤트 없이도 함께 있는 것이 자연스럽고, 서로의 변화를 가장 가까이서 지켜본 관계입니다. 다만 익숙함이 당연함이 되지 않도록 가끔은 감사를 표현하는 것이 필요합니다.',
+    misunderstandingPattern: '너무 익숙해져서 서로에게 소홀해지거나 당연하게 여기는 순간이 생길 수 있습니다.',
+    connectionStyle: '함께한 시간과 공유된 기억이 이 우정의 연결 방식입니다.',
+    conversationRoutine: '오래된 추억 이야기하기 / 요즘 달라진 것 나누기',
+    recoveryRoutine: '멀어진 느낌이 들면 함께했던 장소 다시 가보기 / 예전처럼 연락하기',
+    relationStrength: '세월이 쌓인 관계는 쉽게 흔들리지 않습니다. 이 우정은 시간이 증명한 관계입니다.',
+    closingMessage: '오래된 우정은 새로운 설렘은 없어도, 어떤 관계보다 깊은 안정감을 줍니다.',
+  },
+  자극성장형: {
+    typeName: '자극 성장형 우정',
+    coreSummary: '서로를 더 나은 사람으로 만드는 우정, 편안하지만 자극이 있습니다.',
+    description: '두 사람은 서로에게 긍정적인 자극을 주는 흐름이 있습니다. 대화를 나누면 새로운 생각이 생기고, 함께 있으면 더 성장하고 싶어지는 관계입니다. 다만 경쟁심이나 비교가 생기지 않도록 서로를 응원하는 방향을 유지하는 것이 중요합니다.',
+    misunderstandingPattern: '서로의 성장을 응원하다가 어느 순간 비교하거나 경쟁하는 느낌이 생길 수 있습니다.',
+    connectionStyle: '서로의 목표와 성장을 공유하고 응원하는 것이 이 우정의 연결 방식입니다.',
+    conversationRoutine: '요즘 하고 있는 것 나누기 / 서로의 꿈과 목표 이야기하기',
+    recoveryRoutine: '경쟁 느낌이 생기면 "나는 네가 잘 됐으면 좋겠어"라고 솔직하게 말하기',
+    relationStrength: '서로를 더 나은 방향으로 이끄는 우정은 드뭅니다. 이 관계가 그런 우정입니다.',
+    closingMessage: '함께 성장하는 친구가 있다는 것은 삶에서 가장 큰 선물 중 하나입니다.',
+  },
+};
+
+// ─── 부모자녀 6유형 ──────────────────────────────────────────────────────────
+type ParentChildArchetype =
+  | '보호자형'
+  | '기대압박형'
+  | '정서연결형'
+  | '성장지원형'
+  | '표현서툼형'
+  | '거리조율형';
+
+const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeResult> = {
+  보호자형: {
+    typeName: '보호자형 관계',
+    coreSummary: '사랑이 보호의 언어로 표현되는 관계입니다.',
+    description: '한 사람의 깊은 사랑이 보호와 배려의 형태로 나타나는 흐름입니다. 상대를 지키고 싶은 마음이 크지만, 때로는 그 마음이 통제나 간섭으로 느껴질 수 있습니다. 보호하는 사람도, 보호받는 사람도 서로의 마음을 이해하는 것이 필요합니다.',
+    misunderstandingPattern: '사랑에서 나온 보호가 "간섭"이나 "통제"로 느껴지는 순간이 생길 수 있습니다.',
+    connectionStyle: '걱정과 배려를 표현하되, 상대의 선택을 존중하는 것이 이 관계의 연결 방식입니다.',
+    conversationRoutine: '걱정 대신 "어떻게 하고 싶어?" 먼저 묻기 / 결과보다 과정 응원하기',
+    recoveryRoutine: '거리가 생기면 "나는 네가 잘 됐으면 해서 그랬어"라고 솔직하게 말하기',
+    relationStrength: '깊은 사랑이 이 관계의 뿌리입니다. 표현 방식을 조금씩 조율하면 이 관계는 더 따뜻해집니다.',
+    closingMessage: '사랑의 방식이 달라도, 마음의 방향은 같습니다. 그것이 이 관계의 가장 큰 힘입니다.',
+  },
+  기대압박형: {
+    typeName: '기대 압박형 관계',
+    coreSummary: '기대가 사랑의 언어이지만, 때로는 무게가 되는 관계입니다.',
+    description: '한 사람의 기대가 다른 사람에게 동기가 되기도 하고, 부담이 되기도 하는 흐름입니다. 기대하는 사람은 사랑의 표현으로 기대를 전하지만, 받는 사람은 그 무게를 느낄 수 있습니다. 기대를 응원으로 바꾸는 연습이 필요한 관계입니다.',
+    misunderstandingPattern: '기대가 크면 클수록 실망도 커지고, 그 실망이 관계를 차갑게 만들 수 있습니다.',
+    connectionStyle: '기대 대신 "지금 이대로도 충분해"라는 메시지를 전달하는 것이 연결 방식입니다.',
+    conversationRoutine: '"잘 해야 해"보다 "어떻게 하고 싶어?" 먼저 묻기 / 결과보다 노력 인정하기',
+    recoveryRoutine: '압박감이 생기면 솔직하게 "조금 힘들어"라고 말하기 / 기대를 줄이고 응원으로 바꾸기',
+    relationStrength: '기대의 뿌리는 사랑입니다. 그 사랑을 더 부드러운 방식으로 표현하면 이 관계는 더 가까워집니다.',
+    closingMessage: '기대보다 응원이, 평가보다 인정이 이 관계를 더 따뜻하게 만듭니다.',
+  },
+  정서연결형: {
+    typeName: '정서 연결형 관계',
+    coreSummary: '감정을 함께 나눌 수 있는, 세대를 넘은 따뜻한 연결입니다.',
+    description: '두 사람은 감정을 자연스럽게 나누는 흐름이 있습니다. 세대 차이가 있어도 서로의 감정을 이해하고 공감하는 능력이 이 관계의 강점입니다. 감정 표현이 자유로운 관계일수록 서로를 더 깊이 이해할 수 있습니다.',
+    misunderstandingPattern: '감정 표현 방식이 달라 "왜 저렇게 반응하지?"라고 오해할 수 있습니다.',
+    connectionStyle: '서로의 감정을 판단하지 않고 들어주는 것이 이 관계의 연결 방식입니다.',
+    conversationRoutine: '오늘 기분 어땠어? 한 마디로 시작하기 / 감정 먼저 공감하고 조언은 나중에',
+    recoveryRoutine: '감정이 상하면 시간을 두고 "그때 내 마음은 이랬어"라고 차분하게 이야기하기',
+    relationStrength: '감정을 나눌 수 있는 부모자녀 관계는 드뭅니다. 이 관계의 정서적 연결이 가장 큰 자산입니다.',
+    closingMessage: '세대가 달라도 마음이 통하는 관계, 그것이 이 관계의 가장 특별한 부분입니다.',
+  },
+  성장지원형: {
+    typeName: '성장 지원형 관계',
+    coreSummary: '한 사람의 성장을 진심으로 응원하는 관계입니다.',
+    description: '한 사람이 다른 사람의 성장을 진심으로 지원하는 흐름이 있습니다. 방향을 제시하되 강요하지 않고, 선택을 존중하면서도 곁에 있어주는 관계입니다. 지원하는 사람의 따뜻한 존재감이 이 관계의 핵심입니다.',
+    misunderstandingPattern: '지원이 지나치면 "내가 스스로 할 수 없나?"라는 느낌을 줄 수 있습니다.',
+    connectionStyle: '방향을 제시하되 선택은 상대에게 맡기는 것이 이 관계의 연결 방식입니다.',
+    conversationRoutine: '"네가 원하는 게 뭐야?" 먼저 묻기 / 결과보다 과정을 함께 이야기하기',
+    recoveryRoutine: '거리가 생기면 "나는 네 편이야"라고 먼저 표현하기',
+    relationStrength: '진심 어린 응원이 이 관계의 가장 큰 힘입니다. 방향보다 존재가 더 중요한 관계입니다.',
+    closingMessage: '곁에서 응원해주는 사람이 있다는 것만으로도 더 멀리 나아갈 수 있습니다.',
+  },
+  표현서툼형: {
+    typeName: '표현 서툰 관계',
+    coreSummary: '마음은 크지만 표현이 서툰, 그래서 더 오해가 생기는 관계입니다.',
+    description: '두 사람 모두 마음이 크지만 표현하는 방식이 서툰 흐름이 있습니다. 사랑하지만 "사랑해"라는 말이 어색하고, 고마워도 표현하기 어려운 관계입니다. 작은 행동과 표현이 이 관계를 더 따뜻하게 만들 수 있습니다.',
+    misunderstandingPattern: '표현이 없어서 "관심이 없나?"라고 오해하는 순간이 자주 생깁니다.',
+    connectionStyle: '말보다 행동으로 마음을 전하는 것이 이 관계의 연결 방식입니다.',
+    conversationRoutine: '작은 것이라도 "고마워", "잘했어" 말하기 / 말이 어색하면 문자로 표현하기',
+    recoveryRoutine: '어색함이 쌓이면 함께 식사하거나 드라이브하며 자연스럽게 대화하기',
+    relationStrength: '표현이 서툴어도 마음이 깊은 관계입니다. 조금씩 표현을 연습하면 이 관계는 더 따뜻해집니다.',
+    closingMessage: '말하지 않아도 알 것 같지만, 말로 표현할 때 관계는 더 깊어집니다.',
+  },
+  거리조율형: {
+    typeName: '거리 조율형 관계',
+    coreSummary: '적당한 거리가 이 관계를 더 건강하게 만드는 흐름입니다.',
+    description: '두 사람은 서로의 공간과 독립성을 존중하는 흐름이 있습니다. 너무 가까우면 불편하고, 너무 멀면 외로운 관계입니다. 서로에게 맞는 거리를 찾아가는 과정이 이 관계의 핵심입니다.',
+    misunderstandingPattern: '거리를 두면 "나를 피하나?"라고 오해하거나, 너무 가까우면 숨막힌다는 느낌이 생길 수 있습니다.',
+    connectionStyle: '서로에게 맞는 거리를 대화로 조율하는 것이 이 관계의 연결 방식입니다.',
+    conversationRoutine: '"요즘 어때?" 가볍게 묻기 / 서로의 공간을 인정하면서 연결 유지하기',
+    recoveryRoutine: '거리가 너무 멀어지면 먼저 연락하기 / 너무 가까워지면 "나 오늘은 혼자 있고 싶어"라고 솔직하게 말하기',
+    relationStrength: '서로의 공간을 존중하면서도 연결을 유지하는 것이 이 관계의 가장 성숙한 부분입니다.',
+    closingMessage: '적당한 거리가 관계를 더 오래 유지하게 합니다. 이 관계는 그 균형을 찾아가고 있습니다.',
+  },
+};
+
+// ─── 형제자매 5유형 ──────────────────────────────────────────────────────────
+type SiblingArchetype =
+  | '친구형형제자매'
+  | '보호형형제자매'
+  | '거리유지형형제자매'
+  | '감정공유형형제자매'
+  | '경쟁성장형형제자매';
+
+const SIBLING_ARCHETYPE_DATA: Record<SiblingArchetype, LightArchetypeResult> = {
+  친구형형제자매: {
+    typeName: '친구형 형제자매',
+    coreSummary: '가족이면서 친구인, 가장 편안한 관계입니다.',
+    description: '두 사람은 가족이지만 친구처럼 편안한 흐름이 있습니다. 격식 없이 솔직하게 이야기할 수 있고, 함께 있으면 자연스럽게 웃음이 나오는 관계입니다. 가족의 깊이와 친구의 편안함을 동시에 가진 관계입니다.',
+    misunderstandingPattern: '너무 편해서 상처가 되는 말을 무심코 하는 순간이 생길 수 있습니다.',
+    connectionStyle: '편안하게 솔직하게 이야기하는 것이 이 관계의 연결 방식입니다.',
+    conversationRoutine: '요즘 어때? 가볍게 묻기 / 재미있는 것 함께 찾기',
+    recoveryRoutine: '서운한 일이 생기면 "그 말이 조금 상처였어"라고 솔직하게 말하기',
+    relationStrength: '가족이면서 친구인 관계는 드뭅니다. 이 관계의 편안함과 솔직함이 가장 큰 자산입니다.',
+    closingMessage: '가장 가까운 사람이 가장 편안한 친구이기도 한 것, 그것이 이 관계의 선물입니다.',
+  },
+  보호형형제자매: {
+    typeName: '보호형 형제자매',
+    coreSummary: '한 사람이 다른 사람을 지키려는 마음이 강한 관계입니다.',
+    description: '한 사람의 보호하려는 마음이 이 관계를 이끄는 흐름이 있습니다. 형제자매 중 한 사람이 더 많이 배려하고 챙기는 역할을 하는 경우가 많습니다. 보호받는 사람도 자신의 마음을 표현하는 것이 이 관계를 더 균형 있게 만듭니다.',
+    misunderstandingPattern: '보호하려는 마음이 "왜 나를 어린아이 취급해?"라는 느낌을 줄 수 있습니다.',
+    connectionStyle: '보호하되 상대의 독립성을 존중하는 것이 이 관계의 연결 방식입니다.',
+    conversationRoutine: '"내가 도와줄까?" 먼저 묻기 / 상대가 원하는 것 확인하기',
+    recoveryRoutine: '역할 불균형이 느껴지면 솔직하게 이야기하기',
+    relationStrength: '서로를 지키려는 마음이 이 관계의 가장 깊은 뿌리입니다.',
+    closingMessage: '형제자매 사이의 보호는 세상 어떤 관계보다 깊은 사랑에서 나옵니다.',
+  },
+  거리유지형형제자매: {
+    typeName: '거리 유지형 형제자매',
+    coreSummary: '가족이지만 각자의 공간을 존중하는 성숙한 관계입니다.',
+    description: '두 사람은 가족이지만 서로의 독립적인 삶을 존중하는 흐름이 있습니다. 자주 연락하지 않아도 필요할 때 곁에 있을 수 있는 관계입니다. 가족이라는 이유로 너무 가까워지려 하지 않는 것이 오히려 이 관계를 건강하게 유지합니다.',
+    misunderstandingPattern: '연락이 뜸하면 "가족인데 왜 이렇게 멀어?"라고 서운함이 생길 수 있습니다.',
+    connectionStyle: '서로의 삶을 존중하면서도 중요한 순간에 함께하는 것이 연결 방식입니다.',
+    conversationRoutine: '명절이나 특별한 날 연락하기 / 중요한 일 생기면 먼저 알리기',
+    recoveryRoutine: '거리가 너무 멀어지면 "요즘 어때?" 한 마디로 다시 연결하기',
+    relationStrength: '각자의 삶을 존중하면서도 가족이라는 연결을 유지하는 것이 이 관계의 성숙함입니다.',
+    closingMessage: '자주 보지 않아도 마음속에 있는 관계, 그것이 형제자매의 특별함입니다.',
+  },
+  감정공유형형제자매: {
+    typeName: '감정 공유형 형제자매',
+    coreSummary: '가족 안에서 감정을 가장 솔직하게 나눌 수 있는 관계입니다.',
+    description: '두 사람은 가족 안에서 감정을 자유롭게 나누는 흐름이 있습니다. 기쁨도 슬픔도 함께 느끼고, 서로의 감정에 진심으로 반응하는 관계입니다. 가족이기에 더 솔직하게, 더 깊이 연결될 수 있습니다.',
+    misunderstandingPattern: '감정을 너무 솔직하게 표현하다가 상처를 주거나 받는 순간이 생길 수 있습니다.',
+    connectionStyle: '감정을 솔직하게 나누되 서로의 감정을 존중하는 것이 연결 방식입니다.',
+    conversationRoutine: '오늘 기분 어때? 가볍게 묻기 / 힘든 일 생기면 먼저 연락하기',
+    recoveryRoutine: '감정이 상하면 시간을 두고 "그때 나는 이런 마음이었어"라고 이야기하기',
+    relationStrength: '감정을 나눌 수 있는 형제자매 관계는 삶에서 가장 큰 지지대가 됩니다.',
+    closingMessage: '가장 가까운 가족에게 감정을 솔직하게 나눌 수 있다는 것은 큰 선물입니다.',
+  },
+  경쟁성장형형제자매: {
+    typeName: '경쟁 성장형 형제자매',
+    coreSummary: '서로를 자극하며 함께 성장하는, 긴장감 있는 관계입니다.',
+    description: '두 사람은 서로에게 자극이 되는 흐름이 있습니다. 경쟁처럼 보이지만 그 안에 서로를 향한 응원이 있는 관계입니다. 비교보다 응원으로 방향을 바꾸면 이 관계는 서로를 가장 성장시키는 관계가 됩니다.',
+    misunderstandingPattern: '비교나 경쟁 느낌이 생기면 "나는 왜 저렇게 못하지?"라는 자책이나 서운함이 생길 수 있습니다.',
+    connectionStyle: '서로의 성장을 진심으로 응원하는 것이 이 관계의 연결 방식입니다.',
+    conversationRoutine: '서로의 근황과 목표 나누기 / "잘 하고 있어" 응원 한 마디 건네기',
+    recoveryRoutine: '경쟁 느낌이 생기면 "나는 네가 잘 됐으면 해"라고 솔직하게 말하기',
+    relationStrength: '서로를 자극하며 함께 성장하는 형제자매 관계는 삶에서 가장 강한 동반자가 됩니다.',
+    closingMessage: '경쟁이 아닌 응원으로 바뀔 때, 이 관계는 서로를 가장 멀리 데려다주는 힘이 됩니다.',
+  },
+};
+
+// ─── 동료 4유형 ──────────────────────────────────────────────────────────────
+type ColleagueArchetype =
+  | '협업균형형'
+  | '역할분리형'
+  | '소통중심형'
+  | '에너지소모형';
+
+const COLLEAGUE_ARCHETYPE_DATA: Record<ColleagueArchetype, LightArchetypeResult> = {
+  협업균형형: {
+    typeName: '협업 균형형 관계',
+    coreSummary: '서로의 역할을 존중하며 균형 있게 협업하는 관계입니다.',
+    description: '두 사람은 서로의 강점을 인정하고 역할을 자연스럽게 나누는 흐름이 있습니다. 한 사람이 더 많이 하거나 적게 하는 불균형 없이, 서로의 기여를 인정하는 관계입니다. 협업이 자연스럽고 편안한 관계입니다.',
+    misunderstandingPattern: '역할 분담이 명확하지 않으면 "내가 더 많이 하는 것 같은데"라는 느낌이 생길 수 있습니다.',
+    connectionStyle: '서로의 기여를 인정하고 역할을 명확하게 나누는 것이 연결 방식입니다.',
+    conversationRoutine: '업무 시작 전 역할 확인하기 / 마무리 후 서로의 수고 인정하기',
+    recoveryRoutine: '불균형이 느껴지면 솔직하게 이야기하고 역할 재조정하기',
+    relationStrength: '서로의 강점을 인정하고 균형 있게 협업하는 능력이 이 관계의 가장 큰 자산입니다.',
+    closingMessage: '좋은 협업 관계는 업무를 넘어 서로에 대한 신뢰를 만들어냅니다.',
+  },
+  역할분리형: {
+    typeName: '역할 분리형 관계',
+    coreSummary: '각자의 역할이 명확하게 분리된, 효율적인 관계입니다.',
+    description: '두 사람은 서로의 역할과 영역을 명확하게 구분하는 흐름이 있습니다. 업무에서는 효율적이지만, 개인적인 연결이 부족할 수 있습니다. 역할 너머의 사람을 이해하는 것이 이 관계를 더 풍부하게 만듭니다.',
+    misunderstandingPattern: '역할만 보고 사람을 보지 않으면 "우리는 그냥 일하는 사이"라는 거리감이 생길 수 있습니다.',
+    connectionStyle: '역할을 존중하되 가끔은 업무 외의 대화로 연결하는 것이 이 관계의 방식입니다.',
+    conversationRoutine: '업무 이야기 외에 가끔 가벼운 일상 이야기 나누기 / 점심이나 커피 함께하기',
+    recoveryRoutine: '갈등이 생기면 역할과 감정을 분리해서 이야기하기',
+    relationStrength: '명확한 역할 분리가 효율적인 협업을 만들고, 그 신뢰가 관계의 기반이 됩니다.',
+    closingMessage: '역할이 명확한 관계는 신뢰를 만들고, 그 신뢰가 더 좋은 협업으로 이어집니다.',
+  },
+  소통중심형: {
+    typeName: '소통 중심형 관계',
+    coreSummary: '대화와 소통이 이 관계의 가장 큰 강점입니다.',
+    description: '두 사람은 소통이 자연스럽고 편안한 흐름이 있습니다. 업무 이야기도, 개인적인 이야기도 자연스럽게 나눌 수 있는 관계입니다. 소통이 잘 되는 동료 관계는 업무 효율을 높이고 직장 생활을 더 즐겁게 만듭니다.',
+    misunderstandingPattern: '소통이 너무 많아지면 업무 집중이 어려워지거나 개인 공간이 침범되는 느낌이 생길 수 있습니다.',
+    connectionStyle: '업무와 개인 이야기를 균형 있게 나누는 것이 이 관계의 연결 방식입니다.',
+    conversationRoutine: '업무 시작 전 가볍게 인사하기 / 어려운 일 생기면 먼저 이야기하기',
+    recoveryRoutine: '오해가 생기면 바로 이야기하기 / 감정보다 사실 중심으로 대화하기',
+    relationStrength: '소통이 잘 되는 동료 관계는 직장 생활의 가장 큰 자산입니다.',
+    closingMessage: '좋은 소통은 업무를 넘어 서로를 더 잘 이해하게 만듭니다.',
+  },
+  에너지소모형: {
+    typeName: '에너지 소모형 관계',
+    coreSummary: '함께 있으면 에너지가 소모되는 느낌이 있는 관계입니다.',
+    description: '두 사람의 업무 스타일이나 소통 방식이 맞지 않아 에너지가 소모되는 흐름이 있습니다. 갈등이 잦거나 오해가 반복되는 경우가 많습니다. 서로의 방식을 이해하고 최소한의 협업 규칙을 만드는 것이 필요합니다.',
+    misunderstandingPattern: '서로의 방식이 달라 "왜 저렇게 하지?"라는 답답함이 반복될 수 있습니다.',
+    connectionStyle: '최소한의 명확한 소통 규칙을 만들고 지키는 것이 이 관계의 연결 방식입니다.',
+    conversationRoutine: '업무 관련 소통은 명확하게 / 오해가 생기면 바로 확인하기',
+    recoveryRoutine: '갈등이 생기면 감정이 아닌 업무 중심으로 이야기하기 / 필요하면 제3자 도움 받기',
+    relationStrength: '어려운 관계에서도 협업을 유지하는 것 자체가 이 관계의 강점입니다.',
+    closingMessage: '모든 관계가 편안할 수는 없습니다. 최소한의 존중으로 협업을 유지하는 것이 현명한 방법입니다.',
+  },
+};
+
+// ─── 경량 archetype 분류 함수 ────────────────────────────────────────────────
+
+function getFriendArchetype(familiesA: EnergyFamily[], familiesB: EnergyFamily[]): FriendArchetype {
+  const domA = getDominantFamily(familiesA);
+  const domB = getDominantFamily(familiesB);
+  // 에너지 조합 기반 분류
+  if (domA === domB) return '편안한공감형';
+  if ((domA === 'warm_active' && domB === 'cool_deep') || (domA === 'cool_deep' && domB === 'warm_active')) return '자극성장형';
+  if ((domA === 'cool_deep' || domB === 'cool_deep') && (domA === 'neutral' || domB === 'neutral')) return '거리존중형';
+  if ((domA === 'warm_soft' || domB === 'warm_soft') || (domA === 'nature' || domB === 'nature')) return '감정교류형';
+  if ((domA === 'warm_grounded' || domB === 'warm_grounded') || (domA === 'cool_clear' || domB === 'cool_clear')) return '오래가는안정형';
+  return '편안한공감형';
+}
+
+function getParentChildArchetype(familiesA: EnergyFamily[], familiesB: EnergyFamily[]): ParentChildArchetype {
+  const domA = getDominantFamily(familiesA);
+  const domB = getDominantFamily(familiesB);
+  if (domA === domB) return '정서연결형';
+  if ((domA === 'warm_active' || domB === 'warm_active') && (domA === 'cool_deep' || domB === 'cool_deep')) return '기대압박형';
+  if ((domA === 'warm_grounded' || domB === 'warm_grounded')) return '보호자형';
+  if ((domA === 'warm_soft' || domB === 'warm_soft') || (domA === 'nature' || domB === 'nature')) return '성장지원형';
+  if ((domA === 'neutral' || domB === 'neutral') || (domA === 'cool_clear' || domB === 'cool_clear')) return '거리조율형';
+  if ((domA === 'cool_deep' || domB === 'cool_deep')) return '표현서툼형';
+  return '정서연결형';
+}
+
+function getSiblingArchetype(familiesA: EnergyFamily[], familiesB: EnergyFamily[]): SiblingArchetype {
+  const domA = getDominantFamily(familiesA);
+  const domB = getDominantFamily(familiesB);
+  if (domA === domB) return '감정공유형형제자매';
+  if ((domA === 'warm_active' && domB === 'warm_active')) return '경쟁성장형형제자매';
+  if ((domA === 'warm_grounded' || domB === 'warm_grounded')) return '보호형형제자매';
+  if ((domA === 'cool_deep' || domB === 'cool_deep') && (domA === 'neutral' || domB === 'neutral')) return '거리유지형형제자매';
+  if ((domA === 'warm_soft' || domB === 'warm_soft') || (domA === 'nature' || domB === 'nature')) return '친구형형제자매';
+  return '친구형형제자매';
+}
+
+function getColleagueArchetype(familiesA: EnergyFamily[], familiesB: EnergyFamily[]): ColleagueArchetype {
+  const domA = getDominantFamily(familiesA);
+  const domB = getDominantFamily(familiesB);
+  if (domA === domB) return '소통중심형';
+  if ((domA === 'warm_active' && domB === 'cool_deep') || (domA === 'cool_deep' && domB === 'warm_active')) return '에너지소모형';
+  if ((domA === 'warm_grounded' || domB === 'warm_grounded') || (domA === 'cool_clear' || domB === 'cool_clear')) return '협업균형형';
+  return '역할분리형';
+}
+
+/**
+ * 관계 유형에 따라 경량 archetype 결과 반환
+ * 연인/부부는 기존 getRelationArchetype 사용
+ */
+export function getLightArchetype(
+  relationType: RelationType,
+  familiesA: EnergyFamily[],
+  familiesB: EnergyFamily[],
+): LightArchetypeResult | null {
+  const isFriend = relationType === '친구';
+  const isParentChild = relationType === '부모-자녀' || relationType === '아빠-아들' || relationType === '아빠-딸' || relationType === '엄마-아들' || relationType === '엄마-딸';
+  const isSibling = relationType === '형제자매';
+  const isColleague = relationType === '동료';
+
+  if (isFriend) {
+    return FRIEND_ARCHETYPE_DATA[getFriendArchetype(familiesA, familiesB)];
+  }
+  if (isParentChild) {
+    return PARENT_CHILD_ARCHETYPE_DATA[getParentChildArchetype(familiesA, familiesB)];
+  }
+  if (isSibling) {
+    return SIBLING_ARCHETYPE_DATA[getSiblingArchetype(familiesA, familiesB)];
+  }
+  if (isColleague) {
+    return COLLEAGUE_ARCHETYPE_DATA[getColleagueArchetype(familiesA, familiesB)];
+  }
+  // 연인/부부는 null 반환 → 기존 getRelationArchetype 사용
+  return null;
+}
+
