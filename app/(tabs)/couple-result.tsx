@@ -668,9 +668,9 @@ export default function CoupleResultScreen() {
               </View>
             </SectionCard>
           )}
-          {/* 추천 컬러 */}
+          {/* 추천 컬러 - archetype 기반 우선, 없으면 기존 컬러 사용 */}
           <SectionCard accentColor={accentCouple} title="두 사람에게 권하는 컬러" colors={colors}>
-            {coupleAnalysis.coupleRoutine.recommendedColors.map(rc => (
+            {(archetypeResult.recommendedColors ?? coupleAnalysis.coupleRoutine.recommendedColors).map(rc => (
               <View key={rc.id} style={[styles.complementRow, { backgroundColor: rc.hex + '18', borderColor: rc.hex + '40' }]}>
                 <View style={[styles.complementDot, { backgroundColor: rc.hex }]} />
                 <View style={styles.complementText}>
@@ -679,7 +679,7 @@ export default function CoupleResultScreen() {
                 </View>
               </View>
             ))}
-                    </SectionCard>
+          </SectionCard>
           {/* 연인/부부 전용 풀 archetype 블록 닫기 */}
           </>)}
           {/* ═══════════════════════════════════════════════════════

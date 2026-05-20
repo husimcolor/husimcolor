@@ -2567,6 +2567,8 @@ export interface ArchetypeResult {
   forbiddenWords: string[];
   /** 이 관계가 오래가는 이유 (실제 강점) */
   relationStrength: string;
+  /** archetype 기반 추천 컬러 (유형별 감정 에너지 맞춤) */
+  recommendedColors?: { id: string; korName: string; hex: string; reason: string }[];
   /** 친밀감 연결 방식 — 부부/연인 전용 (유형별 구체적 행동) */
   intimacyConnection: {
     /** 부부용 고정 안내 문구 */
@@ -2711,7 +2713,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     dangerPattern: '침묵이 거리감으로 번지는 패턴. 빠른 사람이 "이미 끝났어"라고 생각하는 동안 느린 사람은 혼자 감정을 삭이고 있습니다. 이 간극이 쌓이면 "우리 사이가 멀어졌다"는 느낌이 됩니다.',
     forbiddenWords: ['"왜 아직도 그 얘기야?"', '"그냥 넘어가면 되잖아"', '"벌써 잊었어?"', '"예민하게 굴지 마"'],
     relationStrength: '한 사람의 빠름이 방향을 잡고, 다른 사람의 느림이 깊이를 만듭니다. 속도가 다른 두 사람이 함께 가는 것 자체가 이 관계의 힘입니다.',
-    intimacyConnection: {
+    recommendedColors: [
+      { id: 'navy', korName: '네이비', hex: '#2C3E6B', reason: '거리감을 안정적으로 담아주는 깊고 차분한 연결 에너지입니다.' },
+      { id: 'steel_blue', korName: '스틸블루', hex: '#6B8CAE', reason: '속도 차이를 자연스럽게 조율하는 신뢰의 에너지입니다.' },
+    ],
+        intimacyConnection: {
       marriageNote: '바쁜 일상 속에서 속도가 달라도, 몸의 연결은 말보다 빠르게 마음을 닿게 합니다. 빠른 사람이 먼저 손을 내미는 것이 이 관계에서 가장 용기 있는 행동입니다.',
       loverNote: '속도가 달라서 어색할 때, 말 대신 가까이 앉는 것부터 시작해보세요. 거리가 좁혀지면 말도 자연스럽게 따라옵니다.',
       actions: ['말 없이 옆에 앉아 있기', '빠른 사람이 먼저 손 내밀기', '각자 시간 후 다시 만날 때 짧게 안아주기', '"기다려줘서 고마워" 한마디'],
@@ -2739,7 +2745,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     dangerPattern: '자극이 압박이 되는 패턴. 성장을 원하는 마음이 상대에게 "나는 부족해"라는 느낌을 줄 수 있습니다. 자극과 지지의 균형이 중요합니다.',
     forbiddenWords: ['"왜 그것밖에 못 해?"', '"나라면 벌써 했을 텐데"', '"그게 최선이야?"', '"변화가 없네"'],
     relationStrength: '서로를 흔드는 관계는 드뭅니다. 편안함에 안주하지 않고 서로를 더 나은 방향으로 밀어주는 것, 그것이 이 관계의 가장 큰 자산입니다.',
-    intimacyConnection: {
+    recommendedColors: [
+      { id: 'coral', korName: '코랄', hex: '#E8735A', reason: '긴장과 변화 에너지를 따뜻하게 전환하는 활력 컬러입니다.' },
+      { id: 'deep_navy', korName: '딥네이비', hex: '#1A2744', reason: '충돌 에너지를 깊이 있는 성장으로 이어주는 안정 컬러입니다.' },
+    ],
+        intimacyConnection: {
       marriageNote: '긴장과 자극이 많은 관계에서 몸의 연결은 "우리는 여전히 한 팀"이라는 신호입니다. 갈등 후 먼저 안아주는 것이 이 관계에서 가장 강한 화해의 언어입니다.',
       loverNote: '부딪힌 후 가장 먼저 해야 할 것은 가까이 앉는 것입니다. 말보다 먼저 거리를 좁히면 대화가 훨씬 쉬워집니다.',
       actions: ['갈등 후 먼저 안아주기', '새로운 도전 후 함께 자축하기', '긴장이 풀린 순간 손잡기', '"우리 잘 했어" 말하며 토닥이기'],
@@ -2767,7 +2777,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     dangerPattern: '편안함이 무감각이 되는 패턴. 안정이 당연해지면 서로에 대한 감사와 설렘이 줄어들 수 있습니다. 의식적으로 "오늘 함께해서 좋았어"라고 말하는 것이 필요합니다.',
     forbiddenWords: ['"우리 너무 재미없는 것 같아"', '"항상 똑같아"', '"설레는 게 없어"', '"변화가 없네"'],
     relationStrength: '폭풍이 와도 흔들리지 않는 관계. 안정감이 있다는 것은 서로를 충분히 믿는다는 뜻입니다. 그 신뢰가 이 관계의 가장 큰 자산입니다.',
-    intimacyConnection: {
+    recommendedColors: [
+      { id: 'beige', korName: '베이지', hex: '#D4B896', reason: '생활 속 신뢰와 익숙한 편안함을 강화하는 따뜻한 컬러입니다.' },
+      { id: 'olive', korName: '올리브', hex: '#7A8C5E', reason: '일상의 안정과 자연스러운 연결감을 더해주는 컬러입니다.' },
+    ],
+        intimacyConnection: {
       marriageNote: '오래된 관계에서 익숙한 스킨십은 "나는 여전히 당신 곁에 있어"라는 신호입니다. 매일 하는 작은 것들 — 어깨 토닥이기, 손잡기, 포옹 — 이 관계를 따뜻하게 유지합니다.',
       loverNote: '특별한 날이 아니어도 괜찮습니다. 평범한 날 먼저 손잡는 것, 그것이 이 관계에서 가장 따뜻한 표현입니다.',
       actions: ['매일 아침 짧게 안아주기', '함께 요리하면서 어깨 기대기', '잠들기 전 손잡기', '"오늘도 함께해서 좋았어" 한마디'],
@@ -2795,7 +2809,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     dangerPattern: '파도가 동시에 오는 패턴. 두 사람의 감정 파도가 동시에 높아지면 갈등이 증폭됩니다. 한 사람이 먼저 파도에서 내려오는 것이 이 관계의 가장 중요한 기술입니다.',
     forbiddenWords: ['"왜 이렇게 감정적이야?"', '"좀 차분하게 말해"', '"또 그 감정이야?"', '"예민하게 굴지 마"'],
     relationStrength: '감정을 깊이 느끼는 두 사람이 만났습니다. 그 깊이가 때로는 갈등이 되지만, 그 깊이 덕분에 이 관계의 연결도 깊습니다. 감정을 함께 느끼는 것, 그것이 이 관계의 가장 큰 자산입니다.',
-    intimacyConnection: {
+    recommendedColors: [
+      { id: 'peach', korName: '피치', hex: '#F4A882', reason: '감정 파도를 따뜻하게 받아주는 공감과 연결의 에너지입니다.' },
+      { id: 'lavender', korName: '라벤더', hex: '#B8A9C9', reason: '감정 기복 속에서 조용한 안정을 찾아주는 회복 컬러입니다.' },
+    ],
+        intimacyConnection: {
       marriageNote: '감정의 파도가 지나간 후 몸의 연결이 마음을 다시 이어줍니다. 파도가 잔잔해진 순간 먼저 안아주는 것이 이 관계에서 가장 강한 회복의 신호입니다.',
       loverNote: '감정이 복잡할 때 말보다 먼저 가까이 앉아보세요. 몸의 온기가 감정의 파도를 잠재울 수 있습니다.',
       actions: ['파도가 지나간 후 조용히 손잡기', '감정이 잔잔할 때 어깨 기대기', '"지금 이 순간이 좋아" 말하며 안아주기', '함께 음악 들으며 가까이 앉기'],
@@ -2823,7 +2841,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     dangerPattern: '추격-도피 패턴. 한 사람이 다가가면 다른 사람이 물러서고, 물러서면 다시 쫓아가는 패턴. 이 패턴이 반복되면 두 사람 모두 지칩니다.',
     forbiddenWords: ['"왜 도망가?"', '"나한테 관심 없어?"', '"왜 항상 혼자 있으려 해?"', '"나랑 있기 싫어?"'],
     relationStrength: '각자의 공간을 존중하면서도 함께 있는 것. 독립적이면서도 연결된 관계는 드뭅니다. 그 균형이 이 관계의 가장 큰 자산입니다.',
-    intimacyConnection: {
+    recommendedColors: [
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '숨막히지 않는 자연스러운 거리감을 유지하는 호흡의 컬러입니다.' },
+      { id: 'deep_blue', korName: '딥블루', hex: '#3A5A8C', reason: '혼자만의 공간과 연결감을 동시에 담아주는 컬러입니다.' },
+    ],
+        intimacyConnection: {
       marriageNote: '공간이 필요한 관계에서 스킨십은 "나는 여전히 여기 있어"라는 신호입니다. 억지로 가까워지려 하지 말고, 자연스럽게 연결되는 순간을 소중히 하세요.',
       loverNote: '공간이 필요할 때 솔직하게 말하고, 돌아왔을 때 먼저 손잡는 것. 그 작은 행동이 이 관계에서 가장 큰 연결입니다.',
       actions: ['돌아왔을 때 짧게 안아주기', '공간 후 재연결 시 손잡기', '억지로 가까워지지 않기', '"돌아와줘서 고마워" 한마디'],
@@ -2851,7 +2873,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     dangerPattern: '역할 고착 패턴. 보호하는 사람은 점점 지치고, 보호받는 사람은 점점 의존합니다. 역할이 고정되면 두 사람 모두 갇히게 됩니다.',
     forbiddenWords: ['"내가 없으면 어떻게 할 거야?"', '"항상 내가 챙겨야 해?"', '"왜 스스로 못 해?"', '"나만 힘들어"'],
     relationStrength: '한 사람이 지키고 한 사람이 기대는 관계는 깊은 신뢰가 있습니다. 그 신뢰를 바탕으로 역할을 나누는 것, 그것이 이 관계의 가장 큰 자산입니다.',
-    intimacyConnection: {
+    recommendedColors: [
+      { id: 'gold', korName: '골드', hex: '#D4A843', reason: '보호 에너지에 따뜻한 자신감과 품격을 더해주는 컬러입니다.' },
+      { id: 'warm_brown', korName: '웜브라운', hex: '#8B6348', reason: '안정적인 보호 본능을 따뜻하게 감싸주는 대지의 컬러입니다.' },
+    ],
+        intimacyConnection: {
       marriageNote: '보호하는 사람이 가끔 기대는 것, 그것이 이 관계에서 가장 용기 있는 행동입니다. 보호받는 사람이 먼저 안아주는 것이 이 관계의 가장 깊은 연결입니다.',
       loverNote: '보호받는 사람이 먼저 다가가는 것. 그 작은 역할 전환이 이 관계를 더 균형 있게 만듭니다.',
       actions: ['보호받는 사람이 먼저 안아주기', '보호하는 사람이 기댈 수 있도록 공간 만들기', '역할 바꿔서 손잡기', '"오늘은 내가 챙길게" 말하기'],
@@ -2879,7 +2905,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     dangerPattern: '편안함이 설렘을 대체하는 패턴. 너무 편안해지면 서로에 대한 특별함이 줄어들 수 있습니다. 의식적으로 "연인"으로서의 시간을 만드는 것이 필요합니다.',
     forbiddenWords: ['"우리 너무 친구 같아"', '"설레는 게 없어"', '"재미없어졌어"', '"변한 것 같아"'],
     relationStrength: '편안함과 신뢰. 어떤 상황에서도 함께 웃을 수 있는 관계. 그 편안함이 이 관계의 가장 단단한 기반입니다.',
-    intimacyConnection: {
+    recommendedColors: [
+      { id: 'sky_blue', korName: '스카이블루', hex: '#87CEEB', reason: '가볍고 자유로운 연결감을 더해주는 밝은 소통 컬러입니다.' },
+      { id: 'mint', korName: '민트', hex: '#A8D8C8', reason: '편안하고 신선한 우정 에너지를 유지하는 회복 컬러입니다.' },
+    ],
+        intimacyConnection: {
       marriageNote: '친구 같은 관계에서 의식적인 스킨십이 "우리는 친구 이상이야"라는 신호가 됩니다. 편안한 관계에서도 연인으로서의 연결을 잊지 마세요.',
       loverNote: '편안한 관계에서 가끔 먼저 손잡는 것, 그것이 "우리는 친구 이상이야"라는 가장 자연스러운 표현입니다.',
       actions: ['함께 웃다가 자연스럽게 손잡기', '편안한 순간 먼저 안아주기', '같이 좋아하는 것 하면서 어깨 기대기', '"오늘 함께해서 좋았어" 말하기'],
@@ -2907,7 +2937,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     dangerPattern: '이상화와 실망의 반복 패턴. 이상화가 높을수록 실망도 큽니다. 현실의 상대를 있는 그대로 보는 연습이 필요합니다.',
     forbiddenWords: ['"예전 같지 않아"', '"왜 기대에 못 미쳐?"', '"처음엔 달랐는데"', '"내가 생각한 사람이 아니야"'],
     relationStrength: '서로를 특별하게 보는 시선. 그 시선이 현실과 균형을 이룰 때, 이 관계는 가장 아름다워집니다.',
-    intimacyConnection: {
+    recommendedColors: [
+      { id: 'purple', korName: '퍼플', hex: '#7B5EA7', reason: '깊은 연결과 영적 감수성을 더해주는 이상의 컬러입니다.' },
+      { id: 'rose_pink', korName: '로즈핑크', hex: '#E8A0B4', reason: '이상화된 감정을 따뜻하게 현실로 내려주는 회복 컬러입니다.' },
+    ],
+        intimacyConnection: {
       marriageNote: '이상이 아닌 현실의 상대와 함께하는 친밀한 시간이 이 관계를 현실에 뿌리내리게 합니다. 완벽하지 않은 순간에도 가까이 있는 것이 이 관계의 가장 깊은 연결입니다.',
       loverNote: '완벽하지 않은 순간에 먼저 손잡는 것. "지금 네가 좋아"라고 말하며 가까이 다가가는 것이 이 관계의 가장 현실적인 사랑 표현입니다.',
       actions: ['평범한 순간에 먼저 안아주기', '"지금 네가 좋아" 말하며 손잡기', '완벽하지 않은 날 가까이 앉기', '일상 속 작은 것 함께 즐기기'],
@@ -2935,7 +2969,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     dangerPattern: '현실에 치여 감정을 잊는 패턴. 현실적인 것에 집중하다 보면 서로에 대한 감정 표현이 줄어들 수 있습니다. 의식적으로 감정을 표현하는 것이 필요합니다.',
     forbiddenWords: ['"감정적으로 굴지 마"', '"현실적으로 생각해"', '"그게 중요해?"', '"그냥 해결하면 되잖아"'],
     relationStrength: '현실을 함께 살아가는 신뢰. 어떤 어려움도 함께 해결할 수 있다는 믿음. 그 신뢰가 이 관계의 가장 단단한 기반입니다.',
-    intimacyConnection: {
+    recommendedColors: [
+      { id: 'teal', korName: '틸', hex: '#4AADA8', reason: '현실과 감정 사이의 균형을 자연스럽게 조율하는 컬러입니다.' },
+      { id: 'warm_gray', korName: '웜그레이', hex: '#A09080', reason: '현실적인 안정감을 따뜻하게 감싸주는 균형의 컬러입니다.' },
+    ],
+        intimacyConnection: {
       marriageNote: '현실적인 관계에서 의식적인 친밀함이 "우리는 현실 이상의 연결이 있어"라는 신호입니다. 바쁜 일상 속에서도 몸의 연결을 잊지 마세요.',
       loverNote: '현실적인 대화 후 가까이 앉는 것. 문제를 함께 해결한 후 손잡는 것이 이 관계의 가장 자연스러운 연결입니다.',
       actions: ['문제 해결 후 함께 안아주기', '현실적인 대화 후 손잡기', '"우리 해냈어" 말하며 토닥이기', '바쁜 날 짧게 포옹하기'],
@@ -2963,7 +3001,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     dangerPattern: '회복이 반복되면서 지치는 패턴. 갈등과 회복이 반복되다 보면 "또 이 패턴이야"라는 피로감이 쌓입니다. 회복 후 근본적인 원인을 다루지 않으면 같은 갈등이 반복됩니다.',
     forbiddenWords: ['"또 이 얘기야?"', '"이미 사과했잖아"', '"왜 아직도 그래?"', '"그냥 넘어가면 되잖아"'],
     relationStrength: '갈등 후 회복하는 능력. 싸우고 나서 더 가까워지는 관계는 드뭅니다. 두 사람은 이미 그 방법을 알고 있습니다. 회복을 반복하면서 이 관계는 점점 더 단단해지고 있습니다.',
-    intimacyConnection: {
+    recommendedColors: [
+      { id: 'rose_pink', korName: '로즈핑크', hex: '#E8A0B4', reason: '갈등 후 재연결과 따뜻한 회복을 도와주는 감정 치유 컬러입니다.' },
+      { id: 'ivory', korName: '아이보리', hex: '#F5EDD6', reason: '화해와 새로운 시작을 부드럽게 감싸주는 순수한 컬러입니다.' },
+    ],
+        intimacyConnection: {
       marriageNote: '회복하는 부부에게 화해의 포옹은 말보다 먼저 마음을 열어줍니다. 갈등 후 먼저 손을 내미는 것, 그것이 이 관계에서 가장 용기 있는 행동입니다.',
       loverNote: '회복하는 과정에서 말이 어렵다면 먼저 가까이 앉는 것부터 시작하세요. 거리가 좁혀지면 말도 자연스럽게 따라옵니다.',
       actions: ['갈등 후 먼저 옆에 앉기', '말 없이 손을 내밀기', '화해 후 짧게 안아주기', '"우리 잘 했어" 말하며 토닥이기'],
