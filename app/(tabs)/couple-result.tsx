@@ -630,6 +630,32 @@ export default function CoupleResultScreen() {
             </Text>
           </SectionCard>
 
+          {/* 현실 감정 섹션 — realEmotions가 있는 유형에만 표시 */}
+          {archetypeResult.realEmotions && (
+            <SectionCard accentColor='#9B8EA8' label={archetypeResult.typeName} title="이 관계에서 올라올 수 있는 감정" colors={colors}>
+              <View style={{ gap: 8, marginBottom: 12 }}>
+                {archetypeResult.realEmotions.feelings.map((feeling, i) => (
+                  <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                    <Text style={{ color: '#9B8EA8', fontSize: 14, lineHeight: 22, marginTop: 1 }}>•</Text>
+                    <Text style={[styles.bodyText, { color: colors.foreground, flex: 1, marginBottom: 0 }]}>{feeling}</Text>
+                  </View>
+                ))}
+              </View>
+              <View style={{
+                backgroundColor: '#9B8EA8' + '18',
+                borderLeftWidth: 3,
+                borderLeftColor: '#9B8EA8',
+                borderRadius: 6,
+                padding: 12,
+                marginTop: 4,
+              }}>
+                <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0, lineHeight: 22 }]}>
+                  {archetypeResult.realEmotions.recoveryBridge}
+                </Text>
+              </View>
+            </SectionCard>
+          )}
+
           {/* ═══════════════════════════════════════════════════════
               위험 패턴 / 금지 표현 / 관계 강점
           ═══════════════════════════════════════════════════════ */}
