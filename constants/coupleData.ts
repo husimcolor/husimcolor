@@ -2628,89 +2628,160 @@ function getShapeTension(shapeA: string | undefined, shapeB: string | undefined)
   return 'mixed';
 }
 
-// 에너지 조합 키 → archetype 매핑
-const ARCHETYPE_MAP: Record<string, RelationArchetype> = {
-  // 온도차형: 표현 vs 내면 정리
-  'warm_active-cool_deep': '온도차형',
-  'cool_deep-warm_active': '온도차형',
-  'warm_soft-cool_deep': '온도차형',
-  'cool_deep-warm_soft': '온도차형',
-  'warm_active-cool_clear': '온도차형',
-  'cool_clear-warm_active': '온도차형',
-
-  // 성장자극형: 서로 다른 방향성이 충돌하며 성장
-  'warm_active-nature': '성장자극형',
-  'nature-warm_active': '성장자극형',
-  'cool_clear-warm_grounded': '성장자극형',
-  'warm_grounded-cool_clear': '성장자극형',
-  'cool_deep-nature': '성장자극형',
-  'nature-cool_deep': '성장자극형',
-
-  // 안정추구형: 비슷한 에너지 — 편안하지만 정체 가능
-  'warm_grounded-warm_grounded': '안정추구형',
-  'neutral-warm_grounded': '안정추구형',
-  'warm_grounded-neutral': '안정추구형',
-  'cool_clear-cool_clear': '안정추구형',
-  'neutral-neutral': '안정추구형',
-
-  // 감정순환형: 감정이 빠르게 돌고 회복도 빠름
-  'warm_active-warm_soft': '감정순환형',
-  'warm_soft-warm_active': '감정순환형',
-  'warm_soft-warm_soft': '감정순환형',
-  'warm_active-warm_active': '감정순환형',
-
-  // 거리조절형: 가까워졌다 멀어지는 반복
-  'cool_deep-cool_deep': '거리조절형',
-  'cool_deep-cool_clear': '거리조절형',
-  'cool_clear-cool_deep': '거리조절형',
-  'cool_clear-nature': '거리조절형',
-  'nature-cool_clear': '거리조절형',
-
-  // 보호자형: 한 사람이 감싸고 다른 사람이 기대는 구조
-  'warm_soft-warm_grounded': '보호자형',
-  'warm_grounded-warm_soft': '보호자형',
-  'warm_soft-nature': '보호자형',
-  'nature-warm_soft': '보호자형',
-  'warm_grounded-nature': '보호자형',
-  'nature-warm_grounded': '보호자형',
-
-  // 친구형: 편안하지만 감정 깊이가 얕아질 수 있음
-  'neutral-cool_clear': '친구형',
-  'cool_clear-neutral': '친구형',
-  'neutral-nature': '친구형',
-  'nature-neutral': '친구형',
-  'nature-nature': '친구형',
-
-  // 이상주의형: 깊은 연결을 꿈꾸지만 현실과 충돌
-  'cool_deep-warm_grounded': '이상주의형',
-  'warm_grounded-cool_deep': '이상주의형',
-  'cool_deep-neutral': '이상주의형',
-  'neutral-cool_deep': '이상주의형',
-
-  // 현실균형형: 실용적이고 안정적이지만 감성 연결 필요
-  'warm_grounded-warm_active': '현실균형형',
-  'warm_active-warm_grounded': '현실균형형',
-  'cool_clear-warm_soft': '현실균형형',
-  'warm_soft-cool_clear': '현실균형형',
-
-  // 회복형: 갈등 후 회복 패턴이 반복됨 (도형 보정으로 적용 — 역삼각형/마름모 도형 조합에서 적용)
-  'warm_soft-neutral': '회복형',
-  'neutral-warm_soft': '회복형',
+// ─── 다차원 감정 결 점수 테이블 ───────────────────────────────────────────
+// 각 컬러 ID에 대해 6개 차원의 점수를 부여
+// 차원: distance(거리/정화), tension(긴장/성장), recovery(회복/재연결), stable(안정/신뢰), expression(표현/즉각), circulation(감정순환/파도)
+type EmotionDimension = {
+  distance: number;    // 거리두기·정화·혼자 정리 신호
+  tension: number;     // 긴장·충돌·성장 압박 신호
+  recovery: number;    // 갈등 후 회복·재연결·다시 돌아오는 신호
+  stable: number;      // 안정·신뢰·생활 루틴 신호
+  expression: number;  // 즉각 표현·추진·감정 분출 신호
+  circulation: number; // 감정 파도·빠른 순환·감정 온도 변화 신호
 };
 
-// 도형 긴장 방향이 archetype을 보정하는 경우
+const COLOR_EMOTION_SCORE: Record<string, EmotionDimension> = {
+  // ── 화이트: 거리/정화/감정 비움/완벽주의
+  white:      { distance: 9, tension: 2, recovery: 3, stable: 4, expression: 1, circulation: 2 },
+  // ── 그린: 관계 조율/회복/중재/균형
+  green:      { distance: 3, tension: 2, recovery: 8, stable: 6, expression: 3, circulation: 4 },
+  olive:      { distance: 3, tension: 3, recovery: 7, stable: 7, expression: 2, circulation: 3 },
+  sage:       { distance: 4, tension: 2, recovery: 7, stable: 6, expression: 2, circulation: 3 },
+  // ── 네이비: 책임/신뢰/압박/통제/긴장
+  navy:       { distance: 5, tension: 7, recovery: 3, stable: 8, expression: 3, circulation: 2 },
+  // ── 인디고: 내면/깊이/경계/성찰
+  indigo:     { distance: 7, tension: 5, recovery: 4, stable: 5, expression: 2, circulation: 3 },
+  // ── 바이올렛: 깊은 연결/이상/내면 탐색
+  violet:     { distance: 5, tension: 4, recovery: 5, stable: 4, expression: 3, circulation: 5 },
+  // ── 핑크: 애정/정서 회복/배려
+  pink:       { distance: 2, tension: 2, recovery: 8, stable: 4, expression: 5, circulation: 7 },
+  peach:      { distance: 2, tension: 2, recovery: 7, stable: 5, expression: 5, circulation: 6 },
+  // ── 레드: 추진/욕구/즉각 반응/충돌
+  red:        { distance: 2, tension: 8, recovery: 3, stable: 2, expression: 9, circulation: 6 },
+  coral:      { distance: 2, tension: 6, recovery: 4, stable: 3, expression: 8, circulation: 6 },
+  // ── 마젠타: 감정 몰입/깊은 연결/상처 후 회복
+  magenta:    { distance: 3, tension: 5, recovery: 7, stable: 3, expression: 7, circulation: 8 },
+  // ── 오렌지: 활력/관계/표현/생기
+  orange:     { distance: 1, tension: 5, recovery: 5, stable: 3, expression: 8, circulation: 7 },
+  // ── 블루: 신뢰/표현/진솔한 소통
+  blue:       { distance: 4, tension: 3, recovery: 5, stable: 7, expression: 6, circulation: 4 },
+  skyblue:    { distance: 3, tension: 2, recovery: 5, stable: 6, expression: 6, circulation: 5 },
+  teal:       { distance: 4, tension: 2, recovery: 6, stable: 6, expression: 4, circulation: 4 },
+  mint:       { distance: 3, tension: 1, recovery: 7, stable: 5, expression: 4, circulation: 5 },
+  // ── 골드: 안정된 자신감/품격/현실
+  gold:       { distance: 3, tension: 3, recovery: 4, stable: 9, expression: 4, circulation: 3 },
+  brown:      { distance: 3, tension: 2, recovery: 4, stable: 9, expression: 2, circulation: 2 },
+  terracotta: { distance: 3, tension: 4, recovery: 5, stable: 7, expression: 5, circulation: 4 },
+  // ── 블랙: 경계/보호/깊이/내면 침잠
+  black:      { distance: 8, tension: 6, recovery: 2, stable: 5, expression: 2, circulation: 2 },
+  silver:     { distance: 6, tension: 3, recovery: 3, stable: 6, expression: 3, circulation: 3 },
+  // ── 라벤더: 회복/균형/치유/부드러움
+  lavender:   { distance: 4, tension: 1, recovery: 8, stable: 5, expression: 3, circulation: 5 },
+  // ── 옐로우: 명료/밝음/가벼운 소통
+  yellow:     { distance: 2, tension: 2, recovery: 5, stable: 5, expression: 7, circulation: 6 },
+  // ── 베이지/크림: 편안함/안정/익숙함
+  beige:      { distance: 2, tension: 1, recovery: 5, stable: 8, expression: 3, circulation: 3 },
+  cream:      { distance: 2, tension: 1, recovery: 5, stable: 8, expression: 3, circulation: 3 },
+};
+
+// 기본값 (알 수 없는 컬러)
+const DEFAULT_EMOTION_SCORE: EmotionDimension = { distance: 3, tension: 3, recovery: 4, stable: 5, expression: 4, circulation: 4 };
+
+// 3컬러 배열에서 각 차원 합산 점수 계산
+function calcEmotionScore(colorIds: string[]): EmotionDimension {
+  const total: EmotionDimension = { distance: 0, tension: 0, recovery: 0, stable: 0, expression: 0, circulation: 0 };
+  for (const id of colorIds) {
+    const s = COLOR_EMOTION_SCORE[id] ?? DEFAULT_EMOTION_SCORE;
+    total.distance    += s.distance;
+    total.tension     += s.tension;
+    total.recovery    += s.recovery;
+    total.stable      += s.stable;
+    total.expression  += s.expression;
+    total.circulation += s.circulation;
+  }
+  return total;
+}
+
+// 두 사람의 점수를 합산하여 관계 신호 계산
+function calcRelationSignal(scoreA: EmotionDimension, scoreB: EmotionDimension): EmotionDimension {
+  return {
+    distance:    scoreA.distance    + scoreB.distance,
+    tension:     scoreA.tension     + scoreB.tension,
+    recovery:    scoreA.recovery    + scoreB.recovery,
+    stable:      scoreA.stable      + scoreB.stable,
+    expression:  scoreA.expression  + scoreB.expression,
+    circulation: scoreA.circulation + scoreB.circulation,
+  };
+}
+
+// 점수 기반 archetype 결정 (다차원 가중치)
+function scoreToArchetype(signal: EmotionDimension): RelationArchetype {
+  const { distance, tension, recovery, stable, expression, circulation } = signal;
+
+  // 각 archetype 후보 점수 계산
+  const scores: Record<RelationArchetype, number> = {
+    '거리조절형':  distance * 1.4 + tension * 0.4,
+    '성장자극형':  tension * 1.4 + expression * 0.8,
+    '회복형':      recovery * 1.4 + circulation * 0.5,
+    '감정순환형':  circulation * 1.4 + expression * 0.7,
+    '온도차형':    Math.abs(expression - distance) * 1.2 + tension * 0.6,
+    '안정추구형':  stable * 1.4 + recovery * 0.3,
+    '보호자형':    stable * 0.8 + recovery * 0.7 + (expression < 14 ? 4 : 0),
+    '친구형':      stable * 0.7 + circulation * 0.4 + (tension < 16 ? 5 : 0),
+    '이상주의형':  distance * 0.6 + tension * 0.5 + (stable < 20 ? 5 : 0),
+    '현실균형형':  stable * 0.9 + expression * 0.5,
+  };
+
+  // 가장 높은 점수의 archetype 선택
+  let best: RelationArchetype = '온도차형';
+  let bestScore = -1;
+  for (const [arch, score] of Object.entries(scores) as [RelationArchetype, number][]) {
+    if (score > bestScore) {
+      bestScore = score;
+      best = arch;
+    }
+  }
+  return best;
+}
+
+// 도형 긴장 방향이 archetype을 보정하는 경우 (확장)
 function adjustArchetypeByShape(
   base: RelationArchetype,
-  shapeTension: ShapeTension
+  shapeTension: ShapeTension,
+  signal: EmotionDimension
 ): RelationArchetype {
-  // 역삼각형(방어) → 거리조절형으로 강화
-  if (shapeTension === 'defense' && base !== '거리조절형') return '거리조절형';
-  // 마름모(민감) → 감정순환형 또는 회복형으로 보정
-  if (shapeTension === 'sensitive' && base === '안정추구형') return '감정순환형';
-  // 오각형(성장) → 성장자극형으로 강화
-  if (shapeTension === 'growth' && base === '친구형') return '성장자극형';
-  // 삼각형(경계) → 온도차형으로 보정
-  if (shapeTension === 'boundary' && base === '안정추구형') return '온도차형';
+  // 역삼각형(방어) → 거리조절형 강화
+  if (shapeTension === 'defense') {
+    if (base === '안정추구형' || base === '보호자형' || base === '친구형') return '거리조절형';
+    if (base === '감정순환형' && signal.distance > signal.circulation) return '거리조절형';
+  }
+  // 마름모(민감) → 회복형 또는 감정순환형
+  if (shapeTension === 'sensitive') {
+    if (base === '안정추구형') return signal.recovery > signal.circulation ? '회복형' : '감정순환형';
+    if (base === '친구형' || base === '보호자형') return '회복형';
+  }
+  // 오각형(성장) → 성장자극형 강화
+  if (shapeTension === 'growth') {
+    if (base === '친구형' || base === '안정추구형') return '성장자극형';
+    if (base === '온도차형') return '성장자극형';
+  }
+  // 삼각형(경계) → 온도차형 또는 거리조절형
+  if (shapeTension === 'boundary') {
+    if (base === '안정추구형') return '온도차형';
+    if (base === '보호자형') return signal.distance > signal.recovery ? '거리조절형' : '온도차형';
+  }
+  // 원(순환) → 감정순환형 강화
+  if (shapeTension === 'flow') {
+    if (base === '안정추구형' || base === '친구형') return '감정순환형';
+  }
+  // 육각형(조화) → 안정추구형 강화
+  if (shapeTension === 'harmony') {
+    if (base === '거리조절형' && signal.stable > signal.distance) return '안정추구형';
+  }
+  // 네모(안정) → 안정추구형 강화
+  if (shapeTension === 'stable') {
+    if (base === '감정순환형' && signal.stable > signal.circulation) return '안정추구형';
+  }
   return base;
 }
 
@@ -3149,19 +3220,22 @@ export function getRelationArchetype(
   familiesA: EnergyFamily[],
   familiesB: EnergyFamily[],
   shapeA?: string,
-  shapeB?: string
+  shapeB?: string,
+  colorIdsA?: string[],
+  colorIdsB?: string[]
 ): ArchetypeResult {
-  const dominantA = getDominantFamily(familiesA);
-  const dominantB = getDominantFamily(familiesB);
-  const key = `${dominantA}-${dominantB}`;
-  const reverseKey = `${dominantB}-${dominantA}`;
+  // ── 다차원 감정 결 점수 기반 archetype 결정 ──
+  // 1. 3컬러 전체에서 감정 결 점수 계산
+  const scoreA = calcEmotionScore(colorIdsA ?? []);
+  const scoreB = calcEmotionScore(colorIdsB ?? []);
+  const signal = calcRelationSignal(scoreA, scoreB);
 
-  // 에너지 조합으로 기본 archetype 결정
-  let baseArchetype: RelationArchetype = ARCHETYPE_MAP[key] ?? ARCHETYPE_MAP[reverseKey] ?? '온도차형';
+  // 2. 점수 기반 기본 archetype 결정
+  const baseArchetype: RelationArchetype = scoreToArchetype(signal);
 
-  // 도형 긴장 방향으로 보정
+  // 3. 도형 긴장 방향으로 보정 (확장된 로직)
   const shapeTension = getShapeTension(shapeA, shapeB);
-  const finalArchetype = adjustArchetypeByShape(baseArchetype, shapeTension);
+  const finalArchetype = adjustArchetypeByShape(baseArchetype, shapeTension, signal);
 
   return {
     archetype: finalArchetype,
