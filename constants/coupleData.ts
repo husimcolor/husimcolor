@@ -2525,6 +2525,8 @@ export type RelationArchetype =
 
 export interface ArchetypeResult {
   archetype: RelationArchetype;
+  /** 유형 대표 컬러 (카드 배경/배지/강조에 사용) */
+  accentColor: string;
   /** 결과 상단에 표시되는 유형 이름 */
   typeName: string;
   /** 유형 이모지 */
@@ -2699,6 +2701,7 @@ function adjustArchetypeByShape(
 // archetype별 상세 데이터
 const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype'>> = {
   온도차형: {
+    accentColor: '#8FA68E',
     typeName: '온도차형 관계',
     typeEmoji: '🌡️',
     coreSummary: '한 사람이 이미 결론에 도달했을 때, 다른 사람은 아직 감정 안에 있습니다.',
@@ -2731,10 +2734,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     },
   },
   성장자극형: {
+    accentColor: '#D4603A',
     typeName: '성장자극형 관계',
     typeEmoji: '⚡',
-    coreSummary: '두 사람은 서로를 흔들고, 흔들리면서 성장합니다.',
-    tensionDescription: '이 관계에는 긴장이 있습니다. 편안함보다 자극이 있고, 안정보다 변화가 있습니다. 그 긴장이 때로는 갈등이 되지만, 그 갈등이 두 사람을 더 크게 만듭니다.',
+    coreSummary: '우리는 서로를 흔들며 성장하는 관계입니다. 편안하지 않아도 괜찮습니다.',
+    tensionDescription: '이 관계는 편안하지 않습니다. 자극이 있고, 갈등이 있고, 긴장이 있습니다. 한 사람의 도전이 다른 사람에게는 압박이 될 수 있습니다. 사랑하지만 동시에 지치는 순간도 있습니다. 그러나 그 긴장이 두 사람을 더 크게 만듭니다. 부딪힌 후 더 가까워지는 것, 그것이 이 관계의 방식입니다.',
     misunderstandingPattern: '"왜 항상 도전해?"  "왜 그냥 넘어가지 못해?" — 한 사람의 자극이 다른 사람에게는 압박이 됩니다. 성장을 원하는 마음이 상대에게는 불편함으로 전달될 수 있습니다.',
     connectionStyle: '갈등 후 "그래서 우리가 성장했어"라고 말할 수 있는 관계. 부딪힌 후 더 가까워지는 것이 이 관계의 연결 방식입니다.',
     recoveryRoutine: '갈등 후 함께 새로운 것을 경험하기. 움직이면서 회복하는 관계입니다. 앉아서 대화하기보다 함께 걷거나 새로운 장소에 가는 것이 효과적입니다.',
@@ -2772,6 +2776,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     },
   },
   안정추구형: {
+    accentColor: '#8A7B6A',
     typeName: '안정추구형 관계',
     typeEmoji: '🏠',
     coreSummary: '두 사람은 함께 있을 때 가장 편안합니다. 그 편안함이 이 관계의 전부입니다.',
@@ -2804,6 +2809,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     },
   },
   감정순환형: {
+    accentColor: '#9B5EA8',
     typeName: '감정순환형 관계',
     typeEmoji: '🌊',
     coreSummary: '두 사람의 감정은 파도처럼 오고 갑니다. 그 흐름을 함께 타는 것이 이 관계입니다.',
@@ -2845,6 +2851,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     },
   },
   거리조절형: {
+    accentColor: '#3A5A8C',
     typeName: '거리조절형 관계',
     typeEmoji: '↔️',
     coreSummary: '가까워지면 숨막히고, 멀어지면 불안합니다. 두 사람은 지금 그 사이 어딘가를 찾고 있습니다.',
@@ -2886,6 +2893,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     },
   },
   보호자형: {
+    accentColor: '#7B5E3A',
     typeName: '보호자형 관계',
     typeEmoji: '🛡️',
     coreSummary: '한 사람이 지키고, 한 사람이 기댑니다. 그 역할이 때로는 짐이 됩니다.',
@@ -2918,6 +2926,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     },
   },
   친구형: {
+    accentColor: '#E8A05A',
     typeName: '친구형 관계',
     typeEmoji: '🤝',
     coreSummary: '두 사람은 연인이기 전에 친구입니다. 그 편안함이 이 관계의 가장 큰 자산입니다.',
@@ -2950,6 +2959,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     },
   },
   이상주의형: {
+    accentColor: '#5B8FBF',
     typeName: '이상주의형 관계',
     typeEmoji: '✨',
     coreSummary: '두 사람은 서로에게서 특별한 무언가를 봅니다. 그 시선이 이 관계를 아름답게 만들고, 때로는 힘들게 합니다.',
@@ -2982,6 +2992,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     },
   },
   현실균형형: {
+    accentColor: '#6B8A5A',
     typeName: '현실균형형 관계',
     typeEmoji: '⚖️',
     coreSummary: '두 사람은 현실을 함께 살아갑니다. 그 현실 속에서 사랑을 찾는 것이 이 관계의 과제입니다.',
@@ -3014,6 +3025,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     },
   },
   회복형: {
+    accentColor: '#C47E8A',
     typeName: '회복형 관계',
     typeEmoji: '🌱',
     coreSummary: '두 사람은 갈등 후 반드시 다시 연결됩니다. 그 회복이 이 관계의 가장 큰 힘입니다.',
@@ -3078,6 +3090,10 @@ export function getRelationArchetype(
 export interface LightArchetypeResult {
   /** 유형 이름 */
   typeName: string;
+  /** 유형 대표 컬러 (카드 배경/배지에 사용) */
+  accentColor?: string;
+  /** 관계 에너지 맞춤 보완 컬러 (1~2개) */
+  recommendedColors?: { id: string; korName: string; hex: string; reason: string }[];
   /** 한 줄 핵심 요약 */
   coreSummary: string;
   /** 이 관계의 핵심 흐름 설명 */
@@ -3107,6 +3123,11 @@ type FriendArchetype =
 const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
   편안한공감형: {
     typeName: '편안한 공감형 우정',
+    accentColor: '#C47E8A',
+    recommendedColors: [
+      { id: 'rose', korName: '로즈', hex: '#C47E8A', reason: '말하지 않아도 통하는 따뜻한 공감 에너지입니다.' },
+      { id: 'peach', korName: '피치', hex: '#F4A882', reason: '편안하고 자연스러운 연결을 지속시켜주는 컬러입니다.' },
+    ],
     coreSummary: '말하지 않아도 통하는 사이, 그것이 이 우정의 가장 큰 힘입니다.',
     description: '두 사람은 서로의 감정을 자연스럽게 읽어내는 흐름이 있습니다. 말이 많지 않아도 편안하고, 함께 있는 것만으로 충분한 관계입니다. 다만 서로 너무 배려하다 보면 정작 하고 싶은 말을 못 하는 순간이 생길 수 있습니다.',
     misunderstandingPattern: '배려하느라 솔직한 말을 참다가 나중에 서운함이 쌓이는 패턴이 있습니다.',
@@ -3118,6 +3139,11 @@ const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
   },
   거리존중형: {
     typeName: '거리 존중형 우정',
+    accentColor: '#3A5A8C',
+    recommendedColors: [
+      { id: 'deep_blue', korName: '딥블루', hex: '#3A5A8C', reason: '서로의 공간을 존중하는 조용한 신뢰의 컬러입니다.' },
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '거리를 두면서도 연결을 유지하는 호흡의 컬러입니다.' },
+    ],
     coreSummary: '각자의 공간을 지키면서도 필요할 때 곁에 있는 관계입니다.',
     description: '두 사람은 서로의 독립적인 시간과 공간을 존중하는 흐름이 있습니다. 자주 연락하지 않아도 멀어진 것이 아니고, 다시 만나면 바로 연결되는 관계입니다. 다만 한 사람이 더 자주 연락을 원할 때 온도 차이가 느껴질 수 있습니다.',
     misunderstandingPattern: '연락이 뜸해지면 "나한테 관심이 없나?"라고 오해할 수 있습니다.',
@@ -3129,6 +3155,11 @@ const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
   },
   감정교류형: {
     typeName: '감정 교류형 우정',
+    accentColor: '#9B5EA8',
+    recommendedColors: [
+      { id: 'lavender', korName: '라벤더', hex: '#B8A9C9', reason: '감정을 나누고 공감받는 따뜻한 연결의 컬러입니다.' },
+      { id: 'peach', korName: '피치', hex: '#F4A882', reason: '감정 파도를 부드럽게 받아주는 공감 에너지입니다.' },
+    ],
     coreSummary: '감정을 솔직하게 나눌 수 있는 사이, 그것이 이 우정의 핵심입니다.',
     description: '두 사람은 감정을 나누는 것이 자연스러운 흐름입니다. 기쁨도 슬픔도 함께 느끼고, 서로의 감정에 진심으로 반응하는 관계입니다. 다만 감정의 파도가 클 때 서로에게 부담이 될 수 있습니다.',
     misunderstandingPattern: '감정을 많이 나누다 보면 한 사람이 에너지를 더 많이 쓰는 불균형이 생길 수 있습니다.',
@@ -3140,6 +3171,11 @@ const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
   },
   오래가는안정형: {
     typeName: '오래가는 안정형 우정',
+    accentColor: '#8A7B6A',
+    recommendedColors: [
+      { id: 'warm_beige', korName: '웜베이지', hex: '#C8B89A', reason: '시간이 쌓인 신뢰와 안정을 담은 컬러입니다.' },
+      { id: 'olive', korName: '올리브', hex: '#8A9A6A', reason: '오래된 우정의 깊이와 자연스러움을 표현하는 컬러입니다.' },
+    ],
     coreSummary: '시간이 지날수록 더 편안해지는, 오래된 나무 같은 우정입니다.',
     description: '두 사람은 오랜 시간을 함께하며 쌓인 신뢰가 있습니다. 특별한 이벤트 없이도 함께 있는 것이 자연스럽고, 서로의 변화를 가장 가까이서 지켜본 관계입니다. 다만 익숙함이 당연함이 되지 않도록 가끔은 감사를 표현하는 것이 필요합니다.',
     misunderstandingPattern: '너무 익숙해져서 서로에게 소홀해지거나 당연하게 여기는 순간이 생길 수 있습니다.',
@@ -3151,6 +3187,11 @@ const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
   },
   자극성장형: {
     typeName: '자극 성장형 우정',
+    accentColor: '#D4603A',
+    recommendedColors: [
+      { id: 'coral', korName: '코랄', hex: '#D4603A', reason: '서로를 자극하고 성장시키는 활력의 컬러입니다.' },
+      { id: 'deep_navy', korName: '딥네이비', hex: '#2C3E6A', reason: '성장 에너지를 안정적으로 담아주는 깊이의 컬러입니다.' },
+    ],
     coreSummary: '서로를 더 나은 사람으로 만드는 우정, 편안하지만 자극이 있습니다.',
     description: '두 사람은 서로에게 긍정적인 자극을 주는 흐름이 있습니다. 대화를 나누면 새로운 생각이 생기고, 함께 있으면 더 성장하고 싶어지는 관계입니다. 다만 경쟁심이나 비교가 생기지 않도록 서로를 응원하는 방향을 유지하는 것이 중요합니다.',
     misunderstandingPattern: '서로의 성장을 응원하다가 어느 순간 비교하거나 경쟁하는 느낌이 생길 수 있습니다.',
@@ -3174,6 +3215,11 @@ type ParentChildArchetype =
 const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeResult> = {
   보호자형: {
     typeName: '보호자형 관계',
+    accentColor: '#7B5E3A',
+    recommendedColors: [
+      { id: 'brown', korName: '브라운', hex: '#7B5E3A', reason: '보호와 신뢰를 담은 따뜻한 안정의 컬러입니다.' },
+      { id: 'warm_beige', korName: '웜베이지', hex: '#C8B89A', reason: '역할 교환과 상호 돌봄을 지지하는 컬러입니다.' },
+    ],
     coreSummary: '사랑이 보호의 언어로 표현되는 관계입니다.',
     description: '한 사람의 깊은 사랑이 보호와 배려의 형태로 나타나는 흐름입니다. 상대를 지키고 싶은 마음이 크지만, 때로는 그 마음이 통제나 간섭으로 느껴질 수 있습니다. 보호하는 사람도, 보호받는 사람도 서로의 마음을 이해하는 것이 필요합니다.',
     misunderstandingPattern: '사랑에서 나온 보호가 "간섭"이나 "통제"로 느껴지는 순간이 생길 수 있습니다.',
@@ -3185,6 +3231,11 @@ const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeRe
   },
   기대압박형: {
     typeName: '기대 압박형 관계',
+    accentColor: '#3A5A8C',
+    recommendedColors: [
+      { id: 'deep_blue', korName: '딥블루', hex: '#3A5A8C', reason: '기대와 압박 속에서 서로를 이해하는 깊이의 컬러입니다.' },
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '긴장을 완화하고 호흡을 찾게 해주는 컬러입니다.' },
+    ],
     coreSummary: '기대가 사랑의 언어이지만, 때로는 무게가 되는 관계입니다.',
     description: '한 사람의 기대가 다른 사람에게 동기가 되기도 하고, 부담이 되기도 하는 흐름입니다. 기대하는 사람은 사랑의 표현으로 기대를 전하지만, 받는 사람은 그 무게를 느낄 수 있습니다. 기대를 응원으로 바꾸는 연습이 필요한 관계입니다.',
     misunderstandingPattern: '기대가 크면 클수록 실망도 커지고, 그 실망이 관계를 차갑게 만들 수 있습니다.',
@@ -3196,6 +3247,11 @@ const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeRe
   },
   정서연결형: {
     typeName: '정서 연결형 관계',
+    accentColor: '#C47E8A',
+    recommendedColors: [
+      { id: 'rose', korName: '로즈', hex: '#C47E8A', reason: '정서적 연결과 따뜻한 유대를 담은 컬러입니다.' },
+      { id: 'peach', korName: '피치', hex: '#F4A882', reason: '감정을 나누는 따뜻한 가족 에너지입니다.' },
+    ],
     coreSummary: '감정을 함께 나눌 수 있는, 세대를 넘은 따뜻한 연결입니다.',
     description: '두 사람은 감정을 자연스럽게 나누는 흐름이 있습니다. 세대 차이가 있어도 서로의 감정을 이해하고 공감하는 능력이 이 관계의 강점입니다. 감정 표현이 자유로운 관계일수록 서로를 더 깊이 이해할 수 있습니다.',
     misunderstandingPattern: '감정 표현 방식이 달라 "왜 저렇게 반응하지?"라고 오해할 수 있습니다.',
@@ -3207,6 +3263,11 @@ const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeRe
   },
   성장지원형: {
     typeName: '성장 지원형 관계',
+    accentColor: '#6B8A5A',
+    recommendedColors: [
+      { id: 'olive', korName: '올리브', hex: '#8A9A6A', reason: '성장과 지원을 담은 자연스러운 에너지입니다.' },
+      { id: 'peach', korName: '피치', hex: '#F4A882', reason: '따뜻한 응원과 연결을 표현하는 컬러입니다.' },
+    ],
     coreSummary: '한 사람의 성장을 진심으로 응원하는 관계입니다.',
     description: '한 사람이 다른 사람의 성장을 진심으로 지원하는 흐름이 있습니다. 방향을 제시하되 강요하지 않고, 선택을 존중하면서도 곁에 있어주는 관계입니다. 지원하는 사람의 따뜻한 존재감이 이 관계의 핵심입니다.',
     misunderstandingPattern: '지원이 지나치면 "내가 스스로 할 수 없나?"라는 느낌을 줄 수 있습니다.',
@@ -3218,6 +3279,11 @@ const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeRe
   },
   표현서툼형: {
     typeName: '표현 서툰 관계',
+    accentColor: '#8A7B6A',
+    recommendedColors: [
+      { id: 'warm_beige', korName: '웜베이지', hex: '#C8B89A', reason: '말 없이도 전해지는 마음을 담은 컬러입니다.' },
+      { id: 'lavender', korName: '라벤더', hex: '#B8A9C9', reason: '서툰 표현 뒤의 깊은 감정을 담아주는 컬러입니다.' },
+    ],
     coreSummary: '마음은 크지만 표현이 서툰, 그래서 더 오해가 생기는 관계입니다.',
     description: '두 사람 모두 마음이 크지만 표현하는 방식이 서툰 흐름이 있습니다. 사랑하지만 "사랑해"라는 말이 어색하고, 고마워도 표현하기 어려운 관계입니다. 작은 행동과 표현이 이 관계를 더 따뜻하게 만들 수 있습니다.',
     misunderstandingPattern: '표현이 없어서 "관심이 없나?"라고 오해하는 순간이 자주 생깁니다.',
@@ -3229,6 +3295,11 @@ const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeRe
   },
   거리조율형: {
     typeName: '거리 조율형 관계',
+    accentColor: '#5B8FBF',
+    recommendedColors: [
+      { id: 'sky_blue', korName: '스카이블루', hex: '#5B8FBF', reason: '거리를 조율하며 연결을 유지하는 컬러입니다.' },
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '자연스러운 거리감과 호흡의 컬러입니다.' },
+    ],
     coreSummary: '적당한 거리가 이 관계를 더 건강하게 만드는 흐름입니다.',
     description: '두 사람은 서로의 공간과 독립성을 존중하는 흐름이 있습니다. 너무 가까우면 불편하고, 너무 멀면 외로운 관계입니다. 서로에게 맞는 거리를 찾아가는 과정이 이 관계의 핵심입니다.',
     misunderstandingPattern: '거리를 두면 "나를 피하나?"라고 오해하거나, 너무 가까우면 숨막힌다는 느낌이 생길 수 있습니다.',
@@ -3251,6 +3322,11 @@ type SiblingArchetype =
 const SIBLING_ARCHETYPE_DATA: Record<SiblingArchetype, LightArchetypeResult> = {
   친구형형제자매: {
     typeName: '친구형 형제자매',
+    accentColor: '#E8A05A',
+    recommendedColors: [
+      { id: 'peach_orange', korName: '피치오렌지', hex: '#E8A05A', reason: '친구처럼 편안하고 따뜻한 형제자매 연결의 컬러입니다.' },
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '자연스럽고 편안한 관계 에너지를 담은 컬러입니다.' },
+    ],
     coreSummary: '가족이면서 친구인, 가장 편안한 관계입니다.',
     description: '두 사람은 가족이지만 친구처럼 편안한 흐름이 있습니다. 격식 없이 솔직하게 이야기할 수 있고, 함께 있으면 자연스럽게 웃음이 나오는 관계입니다. 가족의 깊이와 친구의 편안함을 동시에 가진 관계입니다.',
     misunderstandingPattern: '너무 편해서 상처가 되는 말을 무심코 하는 순간이 생길 수 있습니다.',
@@ -3262,6 +3338,11 @@ const SIBLING_ARCHETYPE_DATA: Record<SiblingArchetype, LightArchetypeResult> = {
   },
   보호형형제자매: {
     typeName: '보호형 형제자매',
+    accentColor: '#7B5E3A',
+    recommendedColors: [
+      { id: 'brown', korName: '브라운', hex: '#7B5E3A', reason: '보호와 신뢰를 담은 따뜻한 형제자매 에너지입니다.' },
+      { id: 'warm_beige', korName: '웜베이지', hex: '#C8B89A', reason: '역할 교환과 상호 돌봄을 지지하는 컬러입니다.' },
+    ],
     coreSummary: '한 사람이 다른 사람을 지키려는 마음이 강한 관계입니다.',
     description: '한 사람의 보호하려는 마음이 이 관계를 이끄는 흐름이 있습니다. 형제자매 중 한 사람이 더 많이 배려하고 챙기는 역할을 하는 경우가 많습니다. 보호받는 사람도 자신의 마음을 표현하는 것이 이 관계를 더 균형 있게 만듭니다.',
     misunderstandingPattern: '보호하려는 마음이 "왜 나를 어린아이 취급해?"라는 느낌을 줄 수 있습니다.',
@@ -3273,6 +3354,11 @@ const SIBLING_ARCHETYPE_DATA: Record<SiblingArchetype, LightArchetypeResult> = {
   },
   거리유지형형제자매: {
     typeName: '거리 유지형 형제자매',
+    accentColor: '#3A5A8C',
+    recommendedColors: [
+      { id: 'deep_blue', korName: '딥블루', hex: '#3A5A8C', reason: '서로의 공간을 존중하는 조용한 신뢰의 컬러입니다.' },
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '거리를 두면서도 연결을 유지하는 호흡의 컬러입니다.' },
+    ],
     coreSummary: '가족이지만 각자의 공간을 존중하는 성숙한 관계입니다.',
     description: '두 사람은 가족이지만 서로의 독립적인 삶을 존중하는 흐름이 있습니다. 자주 연락하지 않아도 필요할 때 곁에 있을 수 있는 관계입니다. 가족이라는 이유로 너무 가까워지려 하지 않는 것이 오히려 이 관계를 건강하게 유지합니다.',
     misunderstandingPattern: '연락이 뜸하면 "가족인데 왜 이렇게 멀어?"라고 서운함이 생길 수 있습니다.',
@@ -3284,6 +3370,11 @@ const SIBLING_ARCHETYPE_DATA: Record<SiblingArchetype, LightArchetypeResult> = {
   },
   감정공유형형제자매: {
     typeName: '감정 공유형 형제자매',
+    accentColor: '#C47E8A',
+    recommendedColors: [
+      { id: 'rose', korName: '로즈', hex: '#C47E8A', reason: '감정을 나누는 따뜻한 형제자매 연결의 컬러입니다.' },
+      { id: 'peach', korName: '피치', hex: '#F4A882', reason: '공감과 친밀함을 담은 따뜻한 에너지입니다.' },
+    ],
     coreSummary: '가족 안에서 감정을 가장 솔직하게 나눌 수 있는 관계입니다.',
     description: '두 사람은 가족 안에서 감정을 자유롭게 나누는 흐름이 있습니다. 기쁨도 슬픔도 함께 느끼고, 서로의 감정에 진심으로 반응하는 관계입니다. 가족이기에 더 솔직하게, 더 깊이 연결될 수 있습니다.',
     misunderstandingPattern: '감정을 너무 솔직하게 표현하다가 상처를 주거나 받는 순간이 생길 수 있습니다.',
@@ -3295,6 +3386,11 @@ const SIBLING_ARCHETYPE_DATA: Record<SiblingArchetype, LightArchetypeResult> = {
   },
   경쟁성장형형제자매: {
     typeName: '경쟁 성장형 형제자매',
+    accentColor: '#D4603A',
+    recommendedColors: [
+      { id: 'coral', korName: '코랄', hex: '#D4603A', reason: '경쟁 속에서도 서로를 성장시키는 활력의 컬러입니다.' },
+      { id: 'deep_navy', korName: '딥네이비', hex: '#2C3E6A', reason: '경쟁 에너지를 안정적으로 담아주는 컬러입니다.' },
+    ],
     coreSummary: '서로를 자극하며 함께 성장하는, 긴장감 있는 관계입니다.',
     description: '두 사람은 서로에게 자극이 되는 흐름이 있습니다. 경쟁처럼 보이지만 그 안에 서로를 향한 응원이 있는 관계입니다. 비교보다 응원으로 방향을 바꾸면 이 관계는 서로를 가장 성장시키는 관계가 됩니다.',
     misunderstandingPattern: '비교나 경쟁 느낌이 생기면 "나는 왜 저렇게 못하지?"라는 자책이나 서운함이 생길 수 있습니다.',
@@ -3316,6 +3412,11 @@ type ColleagueArchetype =
 const COLLEAGUE_ARCHETYPE_DATA: Record<ColleagueArchetype, LightArchetypeResult> = {
   협업균형형: {
     typeName: '협업 균형형 관계',
+    accentColor: '#6B8A5A',
+    recommendedColors: [
+      { id: 'olive', korName: '올리브', hex: '#8A9A6A', reason: '균형 잡힌 협업과 신뢰를 담은 컬러입니다.' },
+      { id: 'warm_beige', korName: '웜베이지', hex: '#C8B89A', reason: '안정적인 업무 관계를 지속시켜주는 컬러입니다.' },
+    ],
     coreSummary: '서로의 역할을 존중하며 균형 있게 협업하는 관계입니다.',
     description: '두 사람은 서로의 강점을 인정하고 역할을 자연스럽게 나누는 흐름이 있습니다. 한 사람이 더 많이 하거나 적게 하는 불균형 없이, 서로의 기여를 인정하는 관계입니다. 협업이 자연스럽고 편안한 관계입니다.',
     misunderstandingPattern: '역할 분담이 명확하지 않으면 "내가 더 많이 하는 것 같은데"라는 느낌이 생길 수 있습니다.',
@@ -3327,6 +3428,11 @@ const COLLEAGUE_ARCHETYPE_DATA: Record<ColleagueArchetype, LightArchetypeResult>
   },
   역할분리형: {
     typeName: '역할 분리형 관계',
+    accentColor: '#7B5E3A',
+    recommendedColors: [
+      { id: 'brown', korName: '브라운', hex: '#7B5E3A', reason: '명확한 역할과 신뢰를 상징하는 컬러입니다.' },
+      { id: 'deep_navy', korName: '딥네이비', hex: '#2C3E6A', reason: '전문성과 집중력을 담은 컬러입니다.' },
+    ],
     coreSummary: '각자의 역할이 명확하게 분리된, 효율적인 관계입니다.',
     description: '두 사람은 서로의 역할과 영역을 명확하게 구분하는 흐름이 있습니다. 업무에서는 효율적이지만, 개인적인 연결이 부족할 수 있습니다. 역할 너머의 사람을 이해하는 것이 이 관계를 더 풍부하게 만듭니다.',
     misunderstandingPattern: '역할만 보고 사람을 보지 않으면 "우리는 그냥 일하는 사이"라는 거리감이 생길 수 있습니다.',
@@ -3338,6 +3444,11 @@ const COLLEAGUE_ARCHETYPE_DATA: Record<ColleagueArchetype, LightArchetypeResult>
   },
   소통중심형: {
     typeName: '소통 중심형 관계',
+    accentColor: '#5B8FBF',
+    recommendedColors: [
+      { id: 'sky_blue', korName: '스카이블루', hex: '#5B8FBF', reason: '열린 소통과 신뢰를 표현하는 컬러입니다.' },
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '편안한 대화 분위기를 만들어주는 컬러입니다.' },
+    ],
     coreSummary: '대화와 소통이 이 관계의 가장 큰 강점입니다.',
     description: '두 사람은 소통이 자연스럽고 편안한 흐름이 있습니다. 업무 이야기도, 개인적인 이야기도 자연스럽게 나눌 수 있는 관계입니다. 소통이 잘 되는 동료 관계는 업무 효율을 높이고 직장 생활을 더 즐겁게 만듭니다.',
     misunderstandingPattern: '소통이 너무 많아지면 업무 집중이 어려워지거나 개인 공간이 침범되는 느낌이 생길 수 있습니다.',
@@ -3349,6 +3460,11 @@ const COLLEAGUE_ARCHETYPE_DATA: Record<ColleagueArchetype, LightArchetypeResult>
   },
   에너지소모형: {
     typeName: '에너지 소모형 관계',
+    accentColor: '#8A7B6A',
+    recommendedColors: [
+      { id: 'sage', korName: '세이지', hex: '#9CAF88', reason: '긴장을 완화하고 호흡을 되찾게 해주는 컬러입니다.' },
+      { id: 'lavender', korName: '라벤더', hex: '#B8A9C9', reason: '감정 소모를 회복시켜주는 안정의 컬러입니다.' },
+    ],
     coreSummary: '함께 있으면 에너지가 소모되는 느낌이 있는 관계입니다.',
     description: '두 사람의 업무 스타일이나 소통 방식이 맞지 않아 에너지가 소모되는 흐름이 있습니다. 갈등이 잦거나 오해가 반복되는 경우가 많습니다. 서로의 방식을 이해하고 최소한의 협업 규칙을 만드는 것이 필요합니다.',
     misunderstandingPattern: '서로의 방식이 달라 "왜 저렇게 하지?"라는 답답함이 반복될 수 있습니다.',

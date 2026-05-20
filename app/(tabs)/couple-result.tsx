@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import {
-  View, Text, ScrollView, StyleSheet, Pressable, Animated, Platform,
+  View, Text, ScrollView, StyleSheet, Pressable, Animated, Platform, Alert, TouchableOpacity,
 } from 'react-native';
+import ViewShot, { captureRef, type ViewShotRef } from 'react-native-view-shot';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -59,6 +62,8 @@ export default function CoupleResultScreen() {
   const [lightArchetypeResult, setLightArchetypeResult] = useState<LightArchetypeResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const shareCardRef = useRef<ViewShotRef>(null);
 
   const logVisitor = trpc.visitors.log.useMutation();
 
@@ -209,7 +214,10 @@ export default function CoupleResultScreen() {
   };
   const accentA = hexLuminance(rawAccentA) > 0.75 ? '#7B5E3A' : rawAccentA;
   const accentB = hexLuminance(rawAccentB) > 0.75 ? '#7B5E3A' : rawAccentB;
-    const accentCouple = '#8FA68E';
+  // archetype 유형별 대표 컬러 연동 (없으면 기본 세이지)
+  const accentCouple = archetypeResult?.accentColor
+    ?? lightArchetypeResult?.accentColor
+    ?? '#8FA68E';
   const insets = useSafeAreaInsets();
   // 인앱브라우저(카카오톡/네이버)는 safe-area가 0으로 잡히는 경우가 있어 최소값 보장
   const topPad = Platform.OS === 'web'
@@ -240,47 +248,198 @@ export default function CoupleResultScreen() {
           {/* 경량 archetype (친구/부모자녀/형제자매/동료) */}
           {lightArchetypeResult && (
             <>
-              <View style={[archetypeStyles.card, { backgroundColor: '#F0F7FF', borderColor: '#B8D4F0' }]}>
+              {/* 핵심 한 줄 공유 카드 */}
+              <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 0.95 }}>
+              <View style={[archetypeStyles.card, {
+                backgroundColor: accentCouple + '18',
+                borderColor: accentCouple + '60',
+              }]}>
                 <View style={archetypeStyles.typeRow}>
-                  <View style={[archetypeStyles.typeBadge, { backgroundColor: '#4A90D9' }]}>
+                  <View style={[archetypeStyles.typeBadge, { backgroundColor: accentCouple }]}>
                     <Text style={archetypeStyles.typeBadgeText}>관계 유형</Text>
                   </View>
-                  <Text style={archetypeStyles.typeName}>{lightArchetypeResult.typeName}</Text>
+                  <Text style={[archetypeStyles.typeName, { color: accentCouple }]}>{lightArchetypeResult.typeName}</Text>
                 </View>
-                <Text style={archetypeStyles.coreSummary}>❝ {lightArchetypeResult.coreSummary} ❞</Text>
-                <View style={archetypeStyles.divider} />
-                <Text style={archetypeStyles.tensionText}>{lightArchetypeResult.description}</Text>
+                <Text style={[archetypeStyles.coreSummary, { color: accentCouple }]}>❝ {lightArchetypeResult.coreSummary} ❞</Text>
+                <View style={[archetypeStyles.divider, { backgroundColor: accentCouple + '40' }]} />
+                <Text style={[archetypeStyles.tensionText, { color: colors.foreground }]}>{lightArchetypeResult.description}</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
+                  <Text style={{ fontSize: 10, color: accentCouple + 'AA', fontWeight: '600', letterSpacing: 0.5 }}>휴심컬러 · 관계 심리코칭</Text>
+                </View>
               </View>
-              <SectionCard accentColor='#4A90D9' label={lightArchetypeResult.typeName} title="이 관계의 오해 패턴" colors={colors}>
+              </ViewShot>
+              {/* 공유 버튼 */}
+              <View style={shareCardStyles.row}>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[shareCardStyles.btn, { backgroundColor: accentCouple + '20', borderColor: accentCouple + '60' }]}
+                  onPress={async () => {
+                    if (isSaving) return;
+                    setIsSaving(true);
+                    try {
+                      let uri: string | undefined;
+                      if (shareCardRef.current && typeof shareCardRef.current.capture === 'function') {
+                        uri = await shareCardRef.current.capture();
+                      } else {
+                        uri = await captureRef(shareCardRef, { format: 'png', quality: 0.95 });
+                      }
+                      if (!uri) throw new Error('캡처 실패');
+                      if (Platform.OS === 'web') {
+                        const link = document.createElement('a');
+                        link.href = uri;
+                        link.download = `husimcolor_couple_${Date.now()}.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      } else {
+                        const dest = `${FileSystem.cacheDirectory}husimcolor_couple_${Date.now()}.png`;
+                        await FileSystem.copyAsync({ from: uri, to: dest });
+                        const ok = await Sharing.isAvailableAsync();
+                        if (ok) await Sharing.shareAsync(dest, { mimeType: 'image/png', dialogTitle: '관계 유형 카드 저장', UTI: 'public.png' });
+                        else Alert.alert('알림', '이 환경에서는 저장 기능을 사용할 수 없습니다.');
+                      }
+                    } catch (e) {
+                      Alert.alert('저장 실패', '이미지 저장에 실패했습니다.');
+                    } finally { setIsSaving(false); }
+                  }}
+                >
+                  <Text style={[shareCardStyles.btnText, { color: accentCouple }]}>📷 {isSaving ? '저장 중...' : '이미지 저장'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[shareCardStyles.btn, { backgroundColor: '#FEE500', borderColor: '#FEE500' }]}
+                  onPress={async () => {
+                    if (Platform.OS === 'web') {
+                      const shareUrl = typeof window !== 'undefined' ? window.location.href : 'https://husimcolor.vercel.app';
+                      if (typeof navigator !== 'undefined' && navigator.share) {
+                        try { await navigator.share({ title: '휴심컬러 커플 세션 결과', text: `우리 관계 유형은 ${lightArchetypeResult.typeName}입니다 💫`, url: shareUrl }); return; } catch {}
+                      }
+                      try { await navigator.clipboard.writeText(shareUrl); Alert.alert('링크 복사 완료', '카카오톡에 붙여넣기 하여 공유해보세요!'); } catch { Alert.alert('공유 링크', shareUrl); }
+                      return;
+                    }
+                    try {
+                      const uri = await captureRef(shareCardRef, { format: 'png', quality: 0.95 });
+                      const ok = await Sharing.isAvailableAsync();
+                      if (ok) await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '휴심컬러 결과 공유' });
+                      else Alert.alert('알림', '이 환경에서는 공유 기능을 사용할 수 없습니다.');
+                    } catch { Alert.alert('오류', '공유에 실패했습니다.'); }
+                  }}
+                >
+                  <Text style={[shareCardStyles.btnText, { color: '#3A1D1D' }]}>💬 카카오 공유</Text>
+                </TouchableOpacity>
+              </View>
+              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title="이 관계의 오해 패턴" colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.misunderstandingPattern}</Text>
               </SectionCard>
-              <SectionCard accentColor='#4A90D9' label={lightArchetypeResult.typeName} title="연결 방식" colors={colors}>
+              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title="연결 방식" colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.connectionStyle}</Text>
               </SectionCard>
-              <SectionCard accentColor='#4A90D9' label={lightArchetypeResult.typeName} title="대화 루틴" colors={colors}>
+              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title="대화 루틴" colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.conversationRoutine}</Text>
               </SectionCard>
-              <SectionCard accentColor='#5BC4A0' label={lightArchetypeResult.typeName} title="관계 회복 루틴" colors={colors}>
+              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title="관계 회복 루틴" colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.recoveryRoutine}</Text>
               </SectionCard>
-              <SectionCard accentColor='#5BC4A0' label={lightArchetypeResult.typeName} title="이 관계가 오래가는 이유" colors={colors}>
+              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title="이 관계가 오래가는 이유" colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.relationStrength}</Text>
               </SectionCard>
+              {/* 경량 archetype 보완 컬러 */}
+              {lightArchetypeResult.recommendedColors && lightArchetypeResult.recommendedColors.length > 0 && (
+                <SectionCard accentColor={accentCouple} title="이 관계에 어울리는 컬러" colors={colors}>
+                  {lightArchetypeResult.recommendedColors.map(rc => (
+                    <View key={rc.id} style={[styles.complementRow, { backgroundColor: rc.hex + '18', borderColor: rc.hex + '40' }]}>
+                      <View style={[styles.complementDot, { backgroundColor: rc.hex }]} />
+                      <View style={styles.complementText}>
+                        <Text style={[styles.complementName, { color: rc.hex }]}>{rc.korName}</Text>
+                        <Text style={[styles.complementMeaning, { color: colors.muted }]}>{rc.reason}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </SectionCard>
+              )}
             </>
           )}
           {/* 연인/부부 전용 풀 archetype */}
           {!lightArchetypeResult && (
             <>
-          <View style={[archetypeStyles.card, { backgroundColor: '#F5F0FF', borderColor: '#C4B5E8' }]}>
+          {/* 핵심 한 줄 공유 카드 */}
+          <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 0.95 }}>
+          <View style={[archetypeStyles.card, {
+            backgroundColor: accentCouple + '18',
+            borderColor: accentCouple + '60',
+          }]}>
             <View style={archetypeStyles.typeRow}>
-              <View style={archetypeStyles.typeBadge}>
+              <View style={[archetypeStyles.typeBadge, { backgroundColor: accentCouple }]}>
                 <Text style={archetypeStyles.typeBadgeText}>관계 유형</Text>
               </View>
-              <Text style={archetypeStyles.typeName}>{archetypeResult.typeName}</Text>
+              <Text style={[archetypeStyles.typeName, { color: accentCouple }]}>{archetypeResult.typeName}</Text>
             </View>
-            <Text style={archetypeStyles.coreSummary}>❝ {archetypeResult.coreSummary} ❞</Text>
-            <View style={archetypeStyles.divider} />
-            <Text style={archetypeStyles.tensionText}>{archetypeResult.tensionDescription}</Text>
+            <Text style={[archetypeStyles.coreSummary, { color: accentCouple }]}>❝ {archetypeResult.coreSummary} ❞</Text>
+            <View style={[archetypeStyles.divider, { backgroundColor: accentCouple + '40' }]} />
+            <Text style={[archetypeStyles.tensionText, { color: colors.foreground }]}>{archetypeResult.tensionDescription}</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
+              <Text style={{ fontSize: 10, color: accentCouple + 'AA', fontWeight: '600', letterSpacing: 0.5 }}>휴심컬러 · 커플 심리코칭</Text>
+            </View>
+          </View>
+          </ViewShot>
+          {/* 공유 버튼 */}
+          <View style={shareCardStyles.row}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[shareCardStyles.btn, { backgroundColor: accentCouple + '20', borderColor: accentCouple + '60' }]}
+              onPress={async () => {
+                if (isSaving) return;
+                setIsSaving(true);
+                try {
+                  let uri: string | undefined;
+                  if (shareCardRef.current && typeof shareCardRef.current.capture === 'function') {
+                    uri = await shareCardRef.current.capture();
+                  } else {
+                    uri = await captureRef(shareCardRef, { format: 'png', quality: 0.95 });
+                  }
+                  if (!uri) throw new Error('캡처 실패');
+                  if (Platform.OS === 'web') {
+                    const link = document.createElement('a');
+                    link.href = uri;
+                    link.download = `husimcolor_couple_${Date.now()}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  } else {
+                    const dest = `${FileSystem.cacheDirectory}husimcolor_couple_${Date.now()}.png`;
+                    await FileSystem.copyAsync({ from: uri, to: dest });
+                    const ok = await Sharing.isAvailableAsync();
+                    if (ok) await Sharing.shareAsync(dest, { mimeType: 'image/png', dialogTitle: '관계 유형 카드 저장', UTI: 'public.png' });
+                    else Alert.alert('알림', '이 환경에서는 저장 기능을 사용할 수 없습니다.');
+                  }
+                } catch { Alert.alert('저장 실패', '이미지 저장에 실패했습니다.'); }
+                finally { setIsSaving(false); }
+              }}
+            >
+              <Text style={[shareCardStyles.btnText, { color: accentCouple }]}>📷 {isSaving ? '저장 중...' : '이미지 저장'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[shareCardStyles.btn, { backgroundColor: '#FEE500', borderColor: '#FEE500' }]}
+              onPress={async () => {
+                if (Platform.OS === 'web') {
+                  const shareUrl = typeof window !== 'undefined' ? window.location.href : 'https://husimcolor.vercel.app';
+                  if (typeof navigator !== 'undefined' && navigator.share) {
+                    try { await navigator.share({ title: '휴심컬러 커플 세션 결과', text: `우리 관계 유형은 ${archetypeResult.typeName}입니다 💫`, url: shareUrl }); return; } catch {}
+                  }
+                  try { await navigator.clipboard.writeText(shareUrl); Alert.alert('링크 복사 완료', '카카오톡에 붙여넣기 하여 공유해보세요!'); } catch { Alert.alert('공유 링크', shareUrl); }
+                  return;
+                }
+                try {
+                  const uri = await captureRef(shareCardRef, { format: 'png', quality: 0.95 });
+                  const ok = await Sharing.isAvailableAsync();
+                  if (ok) await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '휴심컬러 결과 공유' });
+                  else Alert.alert('알림', '이 환경에서는 공유 기능을 사용할 수 없습니다.');
+                } catch { Alert.alert('오류', '공유에 실패했습니다.'); }
+              }}
+            >
+              <Text style={[shareCardStyles.btnText, { color: '#3A1D1D' }]}>💬 카카오 공유</Text>
+            </TouchableOpacity>
           </View>
 
           {/* ═══════════════════════════════════════════════════════
@@ -853,6 +1012,26 @@ const styles = StyleSheet.create({
     borderWidth: 1, marginBottom: 12, marginTop: 4,
   },
   shareBtnText: { fontSize: 14, fontWeight: '600' },
+});
+
+const shareCardStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+    marginTop: -4,
+  },
+  btn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  btnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
 });
 
 const archetypeStyles = StyleSheet.create({
