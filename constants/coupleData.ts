@@ -2926,6 +2926,23 @@ function calcRelationSignal(scoreA: EmotionDimension, scoreB: EmotionDimension):
   };
 }
 
+// 모든 archetype 점수 반환 (도형 보너스 적용 시 비교용)
+function scoreToArchetypeScores(signal: EmotionDimension): Record<RelationArchetype, number> {
+  const { distance, tension, recovery, stable, expression, circulation } = signal;
+  return {
+    '거리조절형':  distance * 1.4 + tension * 0.4,
+    '성장자극형':  tension * 1.5 + expression * 0.9,
+    '회복형':      recovery * 1.4 + circulation * 0.5,
+    '감정순환형':  circulation * 1.4 + expression * 0.6,
+    '온도차형':    Math.abs(expression - distance) * 1.2 + tension * 0.6,
+    '안정추구형':  stable * 1.4 + recovery * 0.3,
+    '보호자형':    stable * 0.8 + recovery * 0.7 + (expression < 14 ? 4 : 0),
+    '친구형':      stable * 0.7 + circulation * 0.4 + (tension < 16 ? 5 : 0),
+    '이상주의형':  distance * 0.6 + tension * 0.5 + (stable < 20 ? 5 : 0),
+    '현실균형형':  stable * 0.9 + expression * 0.5,
+  };
+}
+
 // 점수 기반 archetype 결정 (다차원 가중치)
 function scoreToArchetype(signal: EmotionDimension): RelationArchetype {
   const { distance, tension, recovery, stable, expression, circulation } = signal;
@@ -2933,9 +2950,9 @@ function scoreToArchetype(signal: EmotionDimension): RelationArchetype {
   // 각 archetype 후보 점수 계산
   const scores: Record<RelationArchetype, number> = {
     '거리조절형':  distance * 1.4 + tension * 0.4,
-    '성장자극형':  tension * 1.4 + expression * 0.8,
+    '성장자극형':  tension * 1.5 + expression * 0.9,
     '회복형':      recovery * 1.4 + circulation * 0.5,
-    '감정순환형':  circulation * 1.4 + expression * 0.7,
+    '감정순환형':  circulation * 1.4 + expression * 0.6,
     '온도차형':    Math.abs(expression - distance) * 1.2 + tension * 0.6,
     '안정추구형':  stable * 1.4 + recovery * 0.3,
     '보호자형':    stable * 0.8 + recovery * 0.7 + (expression < 14 ? 4 : 0),
@@ -3436,18 +3453,87 @@ export function getRelationArchetype(
   colorIdsA?: string[],
   colorIdsB?: string[]
 ): ArchetypeResult {
-  // ── 다차원 감정 결 점수 기반 archetype 결정 ──
-  // 1. 3컬러 전체에서 감정 결 점수 계산
-  const scoreA = calcEmotionScore(colorIdsA ?? []);
-  const scoreB = calcEmotionScore(colorIdsB ?? []);
+  // ── 레이어형 가중치 구조 ──
+  // Layer 1: 컬러 조합 (주축 — archetype의 70~80%)
+  //   - 첫 번째 컬러: 1.5배 가중치 (핵심 기질)
+  //   - 2·3번째 컬러: 1.0배 가중치
+  // Layer 2: 도형 (modifier — 점수 보너스만, archetype 완전교체 금지)
+  //   - 같은 컬러 조합이면 도형이 바뀌어도 archetype 유지
+  //   - 극단적 조합에서만 인접 archetype으로 이동
+
+  // 1. 컬러 점수 계산 — 첫 번째 컬러 1.5배 가중치
+  function calcWeightedEmotionScore(colorIds: string[]): EmotionDimension {
+    const total: EmotionDimension = { distance: 0, tension: 0, recovery: 0, stable: 0, expression: 0, circulation: 0 };
+    colorIds.forEach((id, idx) => {
+      const s = COLOR_EMOTION_SCORE[id] ?? DEFAULT_EMOTION_SCORE;
+      const weight = idx === 0 ? 1.5 : 1.0; // 첫 컬러 핵심 기질 가중치
+      (Object.keys(total) as (keyof EmotionDimension)[]).forEach(k => {
+        total[k] += s[k] * weight;
+      });
+    });
+    return total;
+  }
+
+  const scoreA = calcWeightedEmotionScore(colorIdsA ?? []);
+  const scoreB = calcWeightedEmotionScore(colorIdsB ?? []);
   const signal = calcRelationSignal(scoreA, scoreB);
 
-  // 2. 점수 기반 기본 archetype 결정
+  // 2. 컬러 기반 기본 archetype 결정 (안정적 주축)
   const baseArchetype: RelationArchetype = scoreToArchetype(signal);
 
-  // 3. 도형 긴장 방향으로 보정 (확장된 로직)
+  // 3. 도형 보정 — 점수 보너스 방식 (archetype 완전교체 금지)
+  //    도형은 narrative modifier 역할만 수행
+  //    baseArchetype과 인접한 archetype에만 소폭 보너스 부여
   const shapeTension = getShapeTension(shapeA, shapeB);
-  const finalArchetype = adjustArchetypeByShape(baseArchetype, shapeTension, signal);
+  const shapeBonus: Partial<Record<RelationArchetype, number>> = {};
+
+  // 도형별 인접 archetype에 보너스 점수 부여 (최대 12점 — 컬러 점수 대비 소폭)
+  if (shapeTension === 'defense') {
+    // 역삼각형(방어) → 거리조절형·온도차형에 소폭 보너스
+    shapeBonus['거리조절형'] = 10;
+    shapeBonus['온도차형'] = 6;
+  } else if (shapeTension === 'sensitive') {
+    // 마름모(민감) → 회복형·감정순환형에 소폭 보너스
+    shapeBonus['회복형'] = 10;
+    shapeBonus['감정순환형'] = 6;
+  } else if (shapeTension === 'growth') {
+    // 오각형(성장) → 성장자극형에 소폭 보너스
+    shapeBonus['성장자극형'] = 12;
+  } else if (shapeTension === 'boundary') {
+    // 삼각형(경계) → 온도차형·거리조절형에 소폭 보너스
+    shapeBonus['온도차형'] = 10;
+    shapeBonus['거리조절형'] = 6;
+  } else if (shapeTension === 'flow') {
+    // 원(순환) → 감정순환형·회복형에 소폭 보너스
+    shapeBonus['감정순환형'] = 10;
+    shapeBonus['회복형'] = 6;
+  } else if (shapeTension === 'harmony') {
+    // 육각형(조화) → 안정추구형·친구형에 소폭 보너스
+    shapeBonus['안정추구형'] = 10;
+    shapeBonus['친구형'] = 6;
+  } else if (shapeTension === 'stable') {
+    // 네모(안정) → 안정추구형·현실균형형에 소폭 보너스
+    shapeBonus['안정추구형'] = 12;
+    shapeBonus['현실균형형'] = 6;
+  }
+
+  // 보너스 적용 후 최종 archetype 결정
+  // baseArchetype 점수에 충분한 안정 마진(+20) 부여 → 도형 보너스로 쉽게 뒤집히지 않음
+  const BASE_STABILITY_MARGIN = 20;
+  const archetypeScores = scoreToArchetypeScores(signal);
+  const baseScore = archetypeScores[baseArchetype] + BASE_STABILITY_MARGIN;
+
+  let finalArchetype = baseArchetype;
+  let bestScore = baseScore;
+  for (const [arch, bonus] of Object.entries(shapeBonus) as [RelationArchetype, number][]) {
+    if (arch !== baseArchetype) {
+      const totalScore = (archetypeScores[arch] ?? 0) + bonus;
+      if (totalScore > bestScore) {
+        bestScore = totalScore;
+        finalArchetype = arch;
+      }
+    }
+  }
 
   return {
     archetype: finalArchetype,
