@@ -218,9 +218,10 @@ export default function CoupleResultScreen() {
   const accentCouple = archetypeResult?.accentColor
     ?? lightArchetypeResult?.accentColor
     ?? '#8FA68E';
-  // 카드 배경(연한 accent 오버레이)에서 텍스트가 보이도록 배경 밝기 기반 텍스트 색상 결정
-  // 라이트 모드(밝은 배경): 어두운 텍스트 / 다크 모드(어두운 배경): 밝은 텍스트
-  const cardNarrativeColor = hexLuminance(colors.background) > 0.5 ? '#3D3530' : '#EDE8E0';
+  // 상단 archetype 카드는 항상 라이트 배경 고정 → 어두운 텍스트 고정
+  // 카카오/네이버 인앱브라우저, 다크모드 강제 적용 환경에서도 카드 자체가 밝게 유지됨
+  const CARD_BG = '#FAF0EA';       // 완전 불투명 크림 배경 (accentCouple 투명 오버레이 대신)
+  const CARD_TEXT = '#5C4A42';     // 다크 브라운 고정 텍스트
   const insets = useSafeAreaInsets();
   // 인앱브라우저(카카오톡/네이버)는 safe-area가 0으로 잡히는 경우가 있어 최소값 보장
   const topPad = Platform.OS === 'web'
@@ -254,8 +255,8 @@ export default function CoupleResultScreen() {
               {/* 핵심 한 줄 공유 카드 */}
               <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 0.95 }}>
               <View style={[archetypeStyles.card, {
-                backgroundColor: accentCouple + '18',
-                borderColor: accentCouple + '60',
+                backgroundColor: CARD_BG,
+                borderColor: accentCouple + '80',
               }]}>
                 <View style={archetypeStyles.typeRow}>
                   <View style={[archetypeStyles.typeBadge, { backgroundColor: accentCouple }]}>
@@ -265,7 +266,7 @@ export default function CoupleResultScreen() {
                 </View>
                 <Text style={[archetypeStyles.coreSummary, { color: accentCouple }]}>❝ {lightArchetypeResult.coreSummary} ❞</Text>
                 <View style={[archetypeStyles.divider, { backgroundColor: accentCouple + '40' }]} />
-                <Text style={[archetypeStyles.tensionText, { color: cardNarrativeColor }]}>{lightArchetypeResult.description}</Text>
+                <Text style={{ fontSize: 13.5, lineHeight: 24, color: '#5C4A42', opacity: 1 }}>{lightArchetypeResult.description}</Text>
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
                   <Text style={{ fontSize: 10, color: accentCouple + 'AA', fontWeight: '600', letterSpacing: 0.5 }}>휴심컬러 · 관계 심리코칭</Text>
                 </View>
@@ -368,8 +369,8 @@ export default function CoupleResultScreen() {
           {/* 핵심 한 줄 공유 카드 */}
           <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 0.95 }}>
           <View style={[archetypeStyles.card, {
-            backgroundColor: accentCouple + '18',
-            borderColor: accentCouple + '60',
+            backgroundColor: CARD_BG,
+            borderColor: accentCouple + '80',
           }]}>
             <View style={archetypeStyles.typeRow}>
               <View style={[archetypeStyles.typeBadge, { backgroundColor: accentCouple }]}>
@@ -379,7 +380,7 @@ export default function CoupleResultScreen() {
             </View>
             <Text style={[archetypeStyles.coreSummary, { color: accentCouple }]}>❝ {archetypeResult.coreSummary} ❞</Text>
             <View style={[archetypeStyles.divider, { backgroundColor: accentCouple + '40' }]} />
-            <Text style={[archetypeStyles.tensionText, { color: cardNarrativeColor }]}>{archetypeResult.tensionDescription}</Text>
+            <Text style={{ fontSize: 13.5, lineHeight: 24, color: '#5C4A42', opacity: 1 }}>{archetypeResult.tensionDescription}</Text>
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
               <Text style={{ fontSize: 10, color: accentCouple + 'AA', fontWeight: '600', letterSpacing: 0.5 }}>휴심컬러 · 커플 심리코칭</Text>
             </View>
@@ -1085,7 +1086,8 @@ const archetypeStyles = StyleSheet.create({
   tensionText: {
     fontSize: 13.5,
     lineHeight: 24,
-    color: '#4A3570',
+    color: '#5C4A42',
+    opacity: 1,
   },
   sectionLabel: {
     fontSize: 11,
