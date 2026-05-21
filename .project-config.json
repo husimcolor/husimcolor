@@ -14,10 +14,10 @@
   ],
   "git_remote": {
     "repo_url": "s3://vida-prod-gitrepo/webdev-git/310519663646006927/mTvBGzpe4naoi2CdDkbujz",
-    "access_key_id": "ASIAZV3A2ECZAL5VTE23",
-    "secret_access_key": "6oR53zZ3LRybIRVSbiQ3PG7REyN9umdd/AXC9Xr2",
-    "session_token": "IQoJb3JpZ2luX2VjEAcaCXVzLWVhc3QtMSJHMEUCIQDi5xjF8JxCl4wJH1vBXQqps46hTRUlLLN5t0QL0qzMeAIgSMd/kJWccB5pbVfwoz2d7uHIpDdaQbxVPYrBZGvRT/Yq/wMI0P//////////ARAEGgw2NjUzODYwOTg4NjYiDGBR4LyoIhag2Ji0WyrTAzoA/UBHiwyBc2TQ6UgFxkOVHeYjhsGxXi4z90JK6qccmnbuu0VUcMSCE48Liwh3sseVM0DmzpqdPeSTY+oAm9Lph5q3a+f1Dfx6KsiBVrIy+AL7tmOs0VV6xhFLg8bduLQr7OkYgq5H9KdFfQAW54HhHehXOHzvj3ems8CFdQ3dAt5ndgdhCo67KoiwvVhBm62BXOaCFgxGzYf/r0CEN3lCUSW88zsiUNrfdPrpNyeHoLcvl390GPAYOrdGDoYzZrL1E4T5rJKBIQusv7dEq6j1lezmHDBTztwX4YypMt8L0tQ4dqPKJa5nvZTfXoPthEnEX/Axf5g0KTm+IIU0Rbh4CkxVjysRMEwNqNkPoh5bbQTgYYTQimvyxXtfujTv8wJ/5flmqLP5g1bbWw10p7WzrM84lsMvKaYk85YbUTynnAhjvwiWSDhoVbV1qgs/mfChDnCR05I5gRLriO/RDaipQREC39Z9aikeJL+GRPkIuuxtfFzlEO1TO7iz/uhmwzxN073lBl+E3AGq4s6nJHhz+mWHxzT3myE/tuVP1ZFo9+z+eY0vGIMZUaGyGaoFvnmXdsxxzGI767bGt3LJZqD+v2JYmeRGz+rBqOLIrKaECvYTMMuLsNAGOp0BNg8pgeIlZ+esYVREFWVtsvnXyzkjrKBmCQVKxKnLi8/+N0epjJAEwjGPWV+PMpwuHquoJsSTLDbq9KruCUTbET84vXHv1QbcaD1rO42dv7am8aFVm963ASMfQvnmFfnDkBpeCvG4bv4ErJpVmNLOf2bZZMooM69x7M0GEDWDgaSI37Y/d27SOE5o2O1Uhgx9DWIQdAnhoG46NVTDfA==",
-    "expiration": "2026-05-19T18:40:11.000Z"
+    "access_key_id": "ASIAZV3A2ECZCIHEL4XK",
+    "secret_access_key": "t6VTLtMZlPI8gP/Ti8e0AWfvoNEtzfGI/Qo1SnKi",
+    "session_token": "IQoJb3JpZ2luX2VjEDIaCXVzLWVhc3QtMSJHMEUCIGPOWP2mHWkilYY3d5BXUlqLlZHt8WNrrX5FPTL9CYgpAiEA8+XU/dETsLzKOc3EN9M6hyPchFapKvTApinO60M48Gsq/wMI+v//////////ARAEGgw2NjUzODYwOTg4NjYiDJGmvYQ0LEaeg/6TqirTAyqT5+YSODLFnSVG87q6mpqNuz+ccIBuf/oC2j+9VN4BB14oyQKRDvfpXBK5EukF/L+1/Eh6kfxiTy8HnPx3pD9yx1WRzJTcXF8e5bFpjhKSdAUH72U4VRcbF3Xf1GpbOTYVStucCefJt1dNl9vyKqvrk94AsTvqZtuY4Us5m7kK6tLKeu1J80iOAg8Ptsi6uyoNjU1DOF7GIkpMMlY4qzQCMSz5EvwqKXUF8hxLYQt2BPvrzDVSWd08wn/AMmj49RUL6sgBO8x1sWfXcDM2ctLGfqWRucA+/lDYJMeL10p20wMj3rsK8ep3nJgjesLqtedRW66tUCGQIda0u70yzxhHmboc7r6p2grB2lTzN1Q4B4bV+UAhnN8LxR5I60sINsyixE0IrSvouxS2iKmTRQDNVasFsxY+Cv8YxzwfNOYVy1GBaBOQNPlW+Qu56l3nZ4oToGgA6ehEKbNb6rExGr35oJ7UP0n1cHYQSZEtBhgzkgHQIeQXd5SULZaUhxwSmwH9FQPWpg3qiyOm6IW+pNZ+bxdgjWTyJsqqnQF41/Ic26NcOh0Amxj0rR9vcazKnyhkI+A8+xaoV1zkVkGpgGI+3yZTMkLJynybQ8icLq1Y5kF1MJS1udAGOp0B/P5MolGXQ3vFbLiBxsu3AQ5EystK8SglutZi2/IwwN7PKitx3Z8GXrswFHkGDLYOIxlGbq6F2F3qhhxzaWjCXwMqzBmtUNbjdXZKWufMohwDrECe818oYUkZUnwKu0B+RkZr9k91OfdHP6085kM6XvIqfj3ElqT2djb4y/ZTuJ0r4qlrMFJ6Je7u+eyxmkFiKOC8o10CWf55XJRd8A==",
+    "expiration": "2026-05-21T13:06:28.000Z"
   },
   "name": "hyusim-color",
   "path": "/home/ubuntu/hyusim-color",
