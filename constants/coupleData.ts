@@ -4111,6 +4111,120 @@ export function getRelationArchetype(
         tip: '"지금 많이 화났구나"라는 공감 한 마디가 논리보다 먼저 필요합니다.',
       },
     },
+    // ── purple-yellow-red + orange-white-yellow 3컬러 전체 조합 ──
+    'purple-yellow-red|orange-white-yellow': {
+      finance: {
+        title: '재정 스타일 차이',
+        description: '한 사람은 의미와 깊이 있는 소비를 원하고, 다른 사람은 현재 경험과 활력 중심의 소비를 선호합니다.',
+        personA: '"이게 정말 가치 있는 건지 먼저 생각해봐야 해." 의미·깊이 중심 소비입니다. 충동 소비보다 신중한 결정을 선호하며, 한 번 결정하면 오래 씁니다.',
+        personB: '"지금 이 순간이 중요해. 경험에 쓰는 건 아깝지 않아." 현재 경험 중심 소비입니다. 맛있는 것, 재미있는 것, 함께하는 것에 기꺼이 씁니다.',
+        tension: '"왜 이렇게 즉흥적이야?"와 "왜 이렇게 따져?"가 반복될 수 있습니다. 소비 전 간단한 기준 합의가 마찰을 줄입니다.',
+      },
+      cleaning: {
+        title: '청소·정리 스타일',
+        description: '한 사람은 공간의 의미와 분위기를 중시하고, 다른 사람은 활동 중심이라 정리보다 생활이 우선입니다.',
+        personA: '"공간이 어수선하면 마음도 어수선해." 분위기·의미 중심 정리형입니다. 물건 하나하나에 의미를 두고, 공간이 감성적으로 정돈되어야 편안합니다.',
+        personB: '"치우는 것보다 지금 하고 싶은 게 더 중요해." 활동 우선형입니다. 정리보다 현재 활동에 에너지를 씁니다.',
+        tension: '"내 공간은 내가 정리할게, 공용 공간만 같이 기준 정하자"는 합의가 효과적입니다.',
+      },
+      rest: {
+        title: '휴식·회복 방식',
+        description: '한 사람은 조용한 내면 충전을 원하고, 다른 사람은 활동과 연결로 에너지를 회복합니다.',
+        personA: '"혼자 조용히 있어야 진짜 충전이 돼." 내면 고독 충전형입니다. 깊은 생각, 음악, 독서처럼 내면을 채우는 시간이 필요합니다.',
+        personB: '"나가서 뭔가 하거나, 사람 만나면 기분 풀려." 활동·연결 회복형입니다. 가만히 있으면 오히려 더 지칩니다.',
+        tension: '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다. "나 지금 충전 중이야"라는 신호가 오해를 줄입니다.',
+      },
+      affection: {
+        title: '애정 표현 방식',
+        description: '한 사람은 깊은 감정 연결로, 다른 사람은 활발한 표현과 함께하는 시간으로 사랑을 표현합니다.',
+        personA: '"네가 나를 진짜 이해해줬으면 해." 깊은 연결·공감 중심입니다. 표면적인 표현보다 진심이 느껴지는 연결을 원합니다.',
+        personB: '"같이 웃고, 같이 뭔가 하는 게 사랑이야." 활동·표현 중심입니다. 함께 경험하고 즐기는 시간이 애정의 언어입니다.',
+        tip: '"오늘 뭐 하고 싶어?"라는 질문 하나가 두 사람을 연결합니다. 깊이와 활력이 만나면 이 관계는 풍성해집니다.',
+      },
+      conflict: {
+        title: '갈등 직후 반응',
+        description: '한 사람은 내면에서 먼저 정리하고, 다른 사람은 즉각 표현하며 해결하려 합니다.',
+        personA: '"조금만 시간 줘. 나 아직 정리가 안 됐어." 내면 정리 후 대화형입니다. 감정이 정리되지 않으면 말이 나오지 않습니다.',
+        personB: '"지금 바로 얘기하자. 이 감정 그냥 두면 더 커져." 즉각 해결형입니다. 감정을 바로 표현해야 풀립니다.',
+        tip: '"나 지금 정리 중이야, 30분 후에 얘기하자"는 신호가 두 사람 모두에게 필요합니다.',
+      },
+    },
+    // ── orange-white-yellow + purple-yellow-red 역방향 (동일 데이터) ──
+    'orange-white-yellow|purple-yellow-red': {
+      finance: {
+        title: '재정 스타일 차이',
+        description: '한 사람은 현재 경험 중심 소비, 다른 사람은 의미와 깊이 있는 소비를 선호합니다.',
+        personA: '"지금 이 순간이 중요해. 경험에 쓰는 건 아깝지 않아." 현재 경험 중심 소비입니다.',
+        personB: '"이게 정말 가치 있는 건지 먼저 생각해봐야 해." 의미·깊이 중심 소비입니다.',
+        tension: '소비 기준이 달라 마찰이 생길 수 있습니다. 함께 기준을 정하는 것이 도움이 됩니다.',
+      },
+      cleaning: {
+        title: '청소·정리 스타일',
+        description: '한 사람은 활동 우선형, 다른 사람은 공간 분위기를 중시합니다.',
+        personA: '"치우는 것보다 지금 하고 싶은 게 더 중요해." 활동 우선형입니다.',
+        personB: '"공간이 어수선하면 마음도 어수선해." 분위기·의미 중심 정리형입니다.',
+        tension: '공용 공간 기준만 함께 정하면 충돌이 줄어듭니다.',
+      },
+      rest: {
+        title: '휴식·회복 방식',
+        description: '한 사람은 활동·연결 회복형, 다른 사람은 내면 고독 충전형입니다.',
+        personA: '"나가서 뭔가 하거나, 사람 만나면 기분 풀려." 활동·연결 회복형입니다.',
+        personB: '"혼자 조용히 있어야 진짜 충전이 돼." 내면 고독 충전형입니다.',
+        tension: '쉬는 방식이 달라 오해가 생길 수 있습니다. 서로의 충전 방식을 인정하는 것이 중요합니다.',
+      },
+      affection: {
+        title: '애정 표현 방식',
+        description: '한 사람은 활발한 표현과 함께하는 시간으로, 다른 사람은 깊은 감정 연결로 사랑을 표현합니다.',
+        personA: '"같이 웃고, 같이 뭔가 하는 게 사랑이야." 활동·표현 중심입니다.',
+        personB: '"네가 나를 진짜 이해해줬으면 해." 깊은 연결·공감 중심입니다.',
+        tip: '함께하는 시간과 깊은 대화가 균형을 이룰 때 이 관계가 풍성해집니다.',
+      },
+      conflict: {
+        title: '갈등 직후 반응',
+        description: '한 사람은 즉각 표현, 다른 사람은 내면 정리 후 대화형입니다.',
+        personA: '"지금 바로 얘기하자. 이 감정 그냥 두면 더 커져." 즉각 해결형입니다.',
+        personB: '"조금만 시간 줘. 나 아직 정리가 안 됐어." 내면 정리 후 대화형입니다.',
+        tip: '"나 지금 정리 중이야, 잠깐 기다려줘"라는 신호가 두 사람 모두에게 필요합니다.',
+      },
+    },
+    // ── magenta-cream-lavender + magenta-cream-lavender (같은 계열 조합) ──
+    'magenta-cream-lavender|magenta-cream-lavender': {
+      finance: {
+        title: '재정 스타일 차이',
+        description: '두 사람 모두 감정과 관계 중심의 소비 성향이 있습니다.',
+        personA: '"기분이 좋아지는 것, 관계를 위한 것에 쓰는 건 아깝지 않아." 감정·관계 중심 소비입니다.',
+        personB: '"예쁜 것, 분위기 있는 것에 쓰면 마음이 채워져." 감성·분위기 중심 소비입니다.',
+        tension: '두 사람 모두 감정 소비 성향이 강해 현실 재정 관리가 소홀해질 수 있습니다. 함께 저축 목표를 정하는 것이 도움이 됩니다.',
+      },
+      cleaning: {
+        title: '청소·정리 스타일',
+        description: '두 사람 모두 분위기와 감성을 중시하는 공간 관리 성향입니다.',
+        personA: '"공간이 감성적이어야 마음이 편해." 감성 공간 중심형입니다. 물건보다 분위기가 중요합니다.',
+        personB: '"예쁘고 아늑한 공간이 있어야 쉴 수 있어." 아늑함 중심형입니다. 정돈보다 분위기를 먼저 만들려 합니다.',
+        tension: '두 사람 모두 분위기를 중시하므로 공간 취향이 잘 맞을 수 있습니다. 다만 실용적인 정리 기준도 함께 정하면 좋습니다.',
+      },
+      rest: {
+        title: '휴식·회복 방식',
+        description: '두 사람 모두 감정 연결과 아늑한 공간에서 회복하는 성향입니다.',
+        personA: '"같이 있어줘. 네가 옆에 있어야 편해." 연결 회복형입니다.',
+        personB: '"분위기 좋은 곳에서 조용히 쉬어야 충전돼." 감성 공간 회복형입니다.',
+        tension: '두 사람 모두 연결을 원하지만 회복 방식이 미묘하게 다를 수 있습니다. 함께 있되 각자의 공간을 인정하는 균형이 필요합니다.',
+      },
+      affection: {
+        title: '애정 표현 방식',
+        description: '두 사람 모두 감정 깊이와 따뜻한 연결을 중시합니다.',
+        personA: '"네가 내 마음을 알아줬으면 해." 감정 공감 중심입니다. 표현보다 이해받는 것이 더 중요합니다.',
+        personB: '"같이 있는 시간, 따뜻한 분위기가 사랑이야." 감성 연결 중심입니다.',
+        tip: '두 사람 모두 감정 깊이를 원하므로 서로의 마음을 먼저 확인하는 대화가 이 관계의 핵심입니다.',
+      },
+      conflict: {
+        title: '갈등 직후 반응',
+        description: '두 사람 모두 감정이 먼저이고, 상처에 민감한 패턴이 있습니다.',
+        personA: '"내 마음을 먼저 알아줬으면 해." 공감 먼저형입니다. 해결보다 이해가 먼저입니다.',
+        personB: '"상처받았어. 잠깐 혼자 있고 싶어." 감정 회복 후 대화형입니다.',
+        tip: '두 사람 모두 상처에 민감하므로 "지금 많이 힘들었구나"라는 공감 한 마디가 가장 중요합니다.',
+      },
+    },
   };
 
   // 전체 조합 키 매칭 (양방향)
@@ -4126,7 +4240,7 @@ export function getRelationArchetype(
   if (!lifestyleSections) {
     const fA0 = familiesA[0] ?? 'neutral';
     const fB0 = familiesB[0] ?? 'neutral';
-    lifestyleSections = buildDefaultLifestyleSections(fA0, fB0);
+    lifestyleSections = buildDefaultLifestyleSections(fA0, fB0, shapeA, shapeB);
   }
 
   // ── 컬러 조합 기반 profileContrastOverride 동적 교체 ──
@@ -4175,6 +4289,30 @@ export function getRelationArchetype(
       conflictPattern: '한 사람이 조용해지면, 다른 사람은 "뭔가 잘못됐나?"라고 불안해합니다. 침묵이 거리감으로 번지는 패턴이 반복됩니다. "나 지금 생각 중이야"라고 먼저 말해주는 것이 이 관계의 숙제입니다.',
       connectionStyle: '재정 계획이나 생활 루틴을 함께 정하는 시간이 두 사람을 연결합니다. 같이 미래를 설계하고, 현실적인 목표를 공유하는 것이 이 관계의 깊은 연결 방식입니다.',
     },
+    // ── purple-yellow-red + orange-white-yellow 3컬러 전체 조합 ──
+    'purple-yellow-red|orange-white-yellow': {
+      attractionContrast: '첫 번째 사람은 의미 있는 것, 깊이 있는 것, 자신만의 세계를 중시합니다. 표현보다 내면이 먼저이고, 관계 안에서도 진심이 느껴지는 연결을 원합니다. 두 번째 사람은 현재의 활력과 경험, 함께 웃고 즐기는 시간을 중요하게 여깁니다. 그래서 한 사람은 "왜 이렇게 즉흥적이야?"라고 느끼고, 다른 사람은 "왜 이렇게 무거워?"라고 느낄 수 있습니다. 이 관계의 끌림은 깊이와 활력이 만나는 데 있고, 힘든 지점은 생활 리듬과 소비 기준의 차이에서 생깁니다.',
+      relationFlow: '한 사람이 신중하게 결정하려 할 때, 다른 사람은 이미 행동하고 있는 패턴이 반복됩니다. 결정 속도와 생활 리듬이 다릅니다. "나 먼저 생각해볼게"라는 신호와 "그래, 기다릴게"라는 여유가 이 관계의 균형입니다.',
+      expressionDifference: '한 사람은 "말하기 전에 충분히 정리해야 해"라는 내면 정리형입니다. 다른 사람은 "지금 느끼는 걸 바로 표현하는 게 자연스러워"라는 즉각 표현형입니다. 같은 상황에서 표현 방식이 완전히 다릅니다.',
+      conflictPattern: '한 사람은 "나 아직 정리 중이야"라고 느끼고, 다른 사람은 "왜 말을 안 해?"라고 불안해합니다. 침묵과 표현 욕구가 충돌하는 패턴이 반복됩니다. "나 지금 정리 중이야, 조금만 기다려줘"라는 신호가 오해를 줄입니다.',
+      connectionStyle: '함께 새로운 것을 경험하거나, 의미 있는 대화를 나누는 시간이 두 사람을 연결합니다. 한 사람의 깊이와 다른 사람의 활력이 만나면 서로에게 없는 에너지를 채워줍니다. "오늘 뭐 하고 싶어?"라는 질문 하나가 이 관계의 시작입니다.',
+    },
+    // ── orange-white-yellow + purple-yellow-red 역방향 ──
+    'orange-white-yellow|purple-yellow-red': {
+      attractionContrast: '첫 번째 사람은 현재의 활력과 경험, 함께 즐기는 시간을 중요하게 여깁니다. 두 번째 사람은 의미 있는 것, 깊이 있는 연결, 자신만의 세계를 중시합니다. 끌림은 활력과 깊이가 만나는 데 있고, 힘든 지점은 생활 리듬과 결정 속도의 차이에서 생깁니다.',
+      relationFlow: '한 사람이 이미 행동하고 있을 때, 다른 사람은 아직 생각 중인 패턴이 반복됩니다. "먼저 생각해볼게"라는 신호와 "그래, 기다릴게"라는 여유가 이 관계의 균형입니다.',
+      expressionDifference: '한 사람은 즉각 표현형, 다른 사람은 내면 정리 후 표현형입니다. 표현 속도와 방식이 다릅니다.',
+      conflictPattern: '한 사람은 "왜 말을 안 해?"라고 불안해하고, 다른 사람은 "나 아직 정리 중이야"라고 느낍니다. "나 지금 정리 중이야, 조금만 기다려줘"라는 신호가 오해를 줄입니다.',
+      connectionStyle: '함께 새로운 것을 경험하거나 의미 있는 대화를 나누는 시간이 두 사람을 연결합니다.',
+    },
+    // ── magenta-cream-lavender + magenta-cream-lavender (같은 계열 조합) ──
+    'magenta-cream-lavender|magenta-cream-lavender': {
+      attractionContrast: '두 사람 모두 감정 깊이와 따뜻한 연결을 중시합니다. 한 사람은 감정 공감과 관계 온도를 중요하게 여기고, 다른 사람은 감성적인 분위기와 아늑한 연결을 원합니다. 끌림은 서로의 감정 결이 비슷한 데 있고, 힘든 지점은 두 사람 모두 상처에 민감하여 작은 말 한마디가 오래 남을 수 있다는 것입니다.',
+      relationFlow: '두 사람 모두 감정이 먼저인 패턴입니다. 한 사람이 상처받으면 다른 사람도 민감하게 반응하는 흐름이 반복됩니다. 서로의 감정을 먼저 확인하는 습관이 이 관계를 안정적으로 만듭니다.',
+      expressionDifference: '한 사람은 "내 마음을 먼저 알아줬으면 해"라는 공감 먼저형입니다. 다른 사람은 "분위기가 좋아야 말이 나와"라는 감성 환경형입니다. 두 사람 모두 감정이 먼저이지만 표현 방식이 미묘하게 다릅니다.',
+      conflictPattern: '두 사람 모두 상처에 민감하여 갈등 후 회복이 느릴 수 있습니다. "지금 많이 힘들었구나"라는 공감 한 마디가 이 관계에서 가장 중요한 회복 언어입니다.',
+      connectionStyle: '감성적인 공간에서 함께 있는 시간, 따뜻한 대화, 서로의 감정을 나누는 순간이 두 사람을 깊이 연결합니다. 분위기 좋은 카페, 함께 음악 듣기, 조용한 산책이 이 관계의 자연스러운 연결 방식입니다.',
+    },
   };
   // 3컬러 전체 조합 키로 먼저 매칭, 없으면 첫 컬러 쌍으로 매칭
   const profileKey1 = `${fullKeyA}|${fullKeyB}`;
@@ -4203,8 +4341,95 @@ export function getRelationArchetype(
 // ── 에너지 계열 기반 기본 생활 섹션 생성 ──────────────────────────────────
 function buildDefaultLifestyleSections(
   fA: EnergyFamily,
-  fB: EnergyFamily
+  fB: EnergyFamily,
+  shapeA?: string,
+  shapeB?: string
 ): NonNullable<ArchetypeResult['lifestyleSections']> {
+  // 도형별 생활 특성 키워드
+  const getShapeLifestyleNote = (shape?: string): string => {
+    if (!shape) return '';
+    const notes: Record<string, string> = {
+      hexagon: '생활 구조와 루틴을 중시하는 성향이 있습니다.',
+      inverted_triangle: '내면에서 먼저 처리하고 표현하는 패턴입니다.',
+      pentagon: '자기만의 방식과 페이스를 중요하게 여깁니다.',
+      triangle: '바로 반응하고 즉각 표현하는 특성이 있습니다.',
+      circle: '감정이 순환하며 부드러운 연결을 선호합니다.',
+      square: '현실적이고 체계적인 생활 구조를 선호합니다.',
+      diamond: '관계 감수성이 높고 섬세한 분위기를 선호합니다.',
+    };
+    return notes[shape] ?? '';
+  };
+  const shapeNoteA = getShapeLifestyleNote(shapeA);
+  const shapeNoteB = getShapeLifestyleNote(shapeB);
+
+  // 도형별 재정 수식어 보정
+  const shapeFinanceNote = (shape?: string): string => {
+    if (!shape) return '';
+    const m: Record<string, string> = {
+      hexagon: ' 주로 생활에 필요한 것을 안정적으로 구비하는 패턴입니다.',
+      inverted_triangle: ' 필요하다고 느끼면 신중하게 결정하는 편입니다.',
+      pentagon: ' 자신만의 기준으로 소비하며 타협이 어렵습니다.',
+      triangle: ' 직관적으로 소비하며 나중에 후회하는 패턴이 있습니다.',
+      circle: ' 기분에 따라 소비가 달라지는 편입니다.',
+      square: ' 예산을 정하고 계획적으로 소비하는 패턴입니다.',
+      diamond: ' 주변의 분위기나 관계에 따라 소비가 달라지는 편입니다.',
+    };
+    return m[shape] ?? '';
+  };
+  // 도형별 휴식 수식어 보정
+  const shapeRestNote = (shape?: string): string => {
+    if (!shape) return '';
+    const m: Record<string, string> = {
+      hexagon: ' 루틴이 있는 휴식이 안정감을 줍니다.',
+      inverted_triangle: ' 혼자만의 조용한 시간이 진정한 충전입니다.',
+      pentagon: ' 자신만의 방식으로 충전하는 것을 선호합니다.',
+      triangle: ' 활동적으로 에너지를 풀어야 충전된다고 느낍니다.',
+      circle: ' 사람과 함께 있을 때 자연스럽게 충전됩니다.',
+      square: ' 계획된 휴식 스케줄이 있어야 편안합니다.',
+      diamond: ' 분위기 좋은 공간에서 충전하는 것을 선호합니다.',
+    };
+    return m[shape] ?? '';
+  };
+  // 도형별 갈등 수식어 보정
+  const shapeConflictNote = (shape?: string): string => {
+    if (!shape) return '';
+    const m: Record<string, string> = {
+      hexagon: ' 관계 유지를 위해 스스로 조율하는 편입니다.',
+      inverted_triangle: ' 내면에서 먼저 정리하고 나서 표현하는 패턴입니다.',
+      pentagon: ' 자신의 페이스를 지키면서 해결하려는 편입니다.',
+      triangle: ' 바로 말하고 싶어하며 늘어지면 더 힘들어합니다.',
+      circle: ' 감정이 수습되면 자연스럽게 화해하는 편입니다.',
+      square: ' 논리적으로 정리하고 해결하려는 편입니다.',
+      diamond: ' 상대의 감정에 섬세하게 반응하는 편입니다.',
+    };
+    return m[shape] ?? '';
+  };
+
+  // 도형 조합에 따른 생활 리듬 설명 생성
+  const getShapeRhythmDesc = (sA?: string, sB?: string): string => {
+    if (!sA || !sB) return '';
+    if (sA === 'hexagon' && sB === 'inverted_triangle') {
+      return '첫 번째 사람은 생활 루틴과 구조를 중시하고, 두 번째 사람은 내면에서 먼저 정리하는 패턴입니다. 일상 속에서 의사결정 속도가 다를 수 있습니다.';
+    }
+    if (sA === 'pentagon' && sB === 'triangle') {
+      return '첫 번째 사람은 자신만의 페이스를 유지하고, 두 번째 사람은 즉각 반응하는 패턴입니다. 생활 속 속도 차이가 마찰이 될 수 있습니다.';
+    }
+    if (sA === 'triangle' && sB === 'pentagon') {
+      return '첫 번째 사람은 즉각 반응하고, 두 번째 사람은 자신만의 페이스를 유지하는 패턴입니다. 생활 속 속도 차이가 마찰이 될 수 있습니다.';
+    }
+    if ((sA === 'circle' || sB === 'circle') && (sA === 'square' || sB === 'square')) {
+      return '한 사람은 감정 순환형, 다른 사람은 구조 안정형입니다. 일상에서 유연성과 질서 사이의 균형이 필요합니다.';
+    }
+    if (sA === 'hexagon' && sB === 'pentagon') {
+      return '첫 번째 사람은 공동 루틴을 중시하고, 두 번째 사람은 자기 방식을 유지하려 합니다. 생활 규칙을 함께 정하는 과정이 중요합니다.';
+    }
+    if (sA === 'pentagon' && sB === 'hexagon') {
+      return '첫 번째 사람은 자기 방식을 유지하려 하고, 두 번째 사람은 공동 루틴을 중시합니다. 생활 규칙을 함께 정하는 과정이 중요합니다.';
+    }
+    return '';
+  };
+  const shapeRhythmDesc = getShapeRhythmDesc(shapeA, shapeB);
+
   // 재정 스타일 맵
   const financePersonMap: Record<EnergyFamily, string> = {
     warm_active: '"지금 필요하면 바로 사자." 현재 중심, 경험 소비형입니다.',
@@ -4235,27 +4460,28 @@ function buildDefaultLifestyleSections(
     nature: '"자연 속에서 천천히 회복해." 자연 회복형입니다.',
     neutral: '"아무것도 안 하고 비워야 충전돼." 고요 회복형입니다.',
   };
+
   return {
     finance: {
       title: '재정 스타일 차이',
       description: '두 사람의 소비 기준과 재정 관리 방식이 다릅니다.',
-      personA: financePersonMap[fA],
-      personB: financePersonMap[fB],
+      personA: financePersonMap[fA] + shapeFinanceNote(shapeA),
+      personB: financePersonMap[fB] + shapeFinanceNote(shapeB),
       tension: '소비 기준이 달라 "왜 이걸 샀어?"가 반복될 수 있습니다. 함께 기준을 정하는 것이 도움이 됩니다.',
     },
     rest: {
       title: '휴식·회복 방식',
-      description: '두 사람이 쉬는 방식이 다릅니다.',
-      personA: restPersonMap[fA],
-      personB: restPersonMap[fB],
+      description: '두 사람이 쉬는 방식이 다릅니다.' + (shapeRhythmDesc ? ' ' + shapeRhythmDesc : ''),
+      personA: restPersonMap[fA] + shapeRestNote(shapeA),
+      personB: restPersonMap[fB] + shapeRestNote(shapeB),
       tension: '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
     },
     conflict: {
       title: '갈등 직후 반응',
       description: '갈등 후 두 사람의 반응 방식이 다릅니다.',
-      personA: conflictPersonMap[fA],
-      personB: conflictPersonMap[fB],
-      tip: '서로의 갈등 반응 방식이 다름을 인정하는 것이 첫 번째 단계입니다.',
+      personA: conflictPersonMap[fA] + shapeConflictNote(shapeA),
+      personB: conflictPersonMap[fB] + shapeConflictNote(shapeB),
+      tip: '서로의 갈등 반응 방식이 다름을 인정하는 것이 첫 번째 단계입니다.' + (shapeNoteA || shapeNoteB ? ' ' + [shapeNoteA, shapeNoteB].filter(Boolean).join(' / ') : ''),
     },
   };
 }
