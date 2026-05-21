@@ -218,6 +218,9 @@ export default function CoupleResultScreen() {
   const accentCouple = archetypeResult?.accentColor
     ?? lightArchetypeResult?.accentColor
     ?? '#8FA68E';
+  // 카드 배경(연한 accent 오버레이)에서 텍스트가 보이도록 배경 밝기 기반 텍스트 색상 결정
+  // 라이트 모드(밝은 배경): 어두운 텍스트 / 다크 모드(어두운 배경): 밝은 텍스트
+  const cardNarrativeColor = hexLuminance(colors.background) > 0.5 ? '#3D3530' : '#EDE8E0';
   const insets = useSafeAreaInsets();
   // 인앱브라우저(카카오톡/네이버)는 safe-area가 0으로 잡히는 경우가 있어 최소값 보장
   const topPad = Platform.OS === 'web'
@@ -262,7 +265,7 @@ export default function CoupleResultScreen() {
                 </View>
                 <Text style={[archetypeStyles.coreSummary, { color: accentCouple }]}>❝ {lightArchetypeResult.coreSummary} ❞</Text>
                 <View style={[archetypeStyles.divider, { backgroundColor: accentCouple + '40' }]} />
-                <Text style={[archetypeStyles.tensionText, { color: colors.foreground }]}>{lightArchetypeResult.description}</Text>
+                <Text style={[archetypeStyles.tensionText, { color: cardNarrativeColor }]}>{lightArchetypeResult.description}</Text>
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
                   <Text style={{ fontSize: 10, color: accentCouple + 'AA', fontWeight: '600', letterSpacing: 0.5 }}>휴심컬러 · 관계 심리코칭</Text>
                 </View>
@@ -376,7 +379,7 @@ export default function CoupleResultScreen() {
             </View>
             <Text style={[archetypeStyles.coreSummary, { color: accentCouple }]}>❝ {archetypeResult.coreSummary} ❞</Text>
             <View style={[archetypeStyles.divider, { backgroundColor: accentCouple + '40' }]} />
-            <Text style={[archetypeStyles.tensionText, { color: colors.foreground }]}>{archetypeResult.tensionDescription}</Text>
+            <Text style={[archetypeStyles.tensionText, { color: cardNarrativeColor }]}>{archetypeResult.tensionDescription}</Text>
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
               <Text style={{ fontSize: 10, color: accentCouple + 'AA', fontWeight: '600', letterSpacing: 0.5 }}>휴심컬러 · 커플 심리코칭</Text>
             </View>
