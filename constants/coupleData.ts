@@ -3638,9 +3638,38 @@ export function getRelationArchetype(
     }
   }
 
+  // ── 표현 속도 동적 할당 ──
+  // 콜러의 expression 점수를 기반으로 personA/personB 표현 스타일을 실제 입력에 맞게 할당
+  // (archetype의 고정값이 아닌, 실제 두 사람의 콜러 성향 반영)
+  const baseData = ARCHETYPE_DATA[finalArchetype];
+  const exprScoreA = scoreA.expression;
+  const exprScoreB = scoreB.expression;
+  // 표현 점수 차이가 2 이상일 때만 동적 할당 (차이가 작으면 archetype 기본값 유지)
+  let dynamicExpressionSpeed = baseData.expressionSpeed;
+  if (Math.abs(exprScoreA - exprScoreB) >= 2) {
+    // 두 스타일 레이블 결정
+    const getExprLabel = (score: number): string => {
+      if (score >= 8) return '즉각적 표현';
+      if (score >= 6) return '직접적 표현';
+      if (score >= 4) return '상황에 따라 표현';
+      if (score >= 2) return '내면 처리 후 표현';
+      return '조용한 표현';
+    };
+    const labelA = getExprLabel(exprScoreA);
+    const labelB = getExprLabel(exprScoreB);
+    // 두 레이블이 다를 때만 교체 (같으면 archetype 기본값 유지)
+    if (labelA !== labelB) {
+      dynamicExpressionSpeed = {
+        personA: labelA,
+        personB: labelB,
+        description: baseData.expressionSpeed.description,
+      };
+    }
+  }
   return {
     archetype: finalArchetype,
-    ...ARCHETYPE_DATA[finalArchetype],
+    ...baseData,
+    expressionSpeed: dynamicExpressionSpeed,
   };
 }
 
