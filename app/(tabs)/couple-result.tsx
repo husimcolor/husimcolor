@@ -88,7 +88,7 @@ export default function CoupleResultScreen() {
           pink:'warm_soft',peach:'warm_soft',beige:'warm_soft',cream:'warm_soft',
           gold:'warm_grounded',brown:'warm_grounded',terracotta:'warm_grounded',
           blue:'cool_clear',skyblue:'cool_clear',teal:'cool_clear',mint:'cool_clear',
-          indigo:'cool_deep',violet:'cool_deep',black:'cool_deep',silver:'cool_deep',
+          indigo:'cool_deep',violet:'cool_deep',black:'cool_deep',silver:'cool_deep',navy:'cool_deep',
           green:'nature',olive:'nature',sage:'nature',lavender:'nature',
           white:'neutral',yellow:'neutral',
         };
@@ -101,7 +101,7 @@ export default function CoupleResultScreen() {
           pink:'warm_soft',peach:'warm_soft',beige:'warm_soft',cream:'warm_soft',
           gold:'warm_grounded',brown:'warm_grounded',terracotta:'warm_grounded',
           blue:'cool_clear',skyblue:'cool_clear',teal:'cool_clear',mint:'cool_clear',
-          indigo:'cool_deep',violet:'cool_deep',black:'cool_deep',silver:'cool_deep',
+          indigo:'cool_deep',violet:'cool_deep',black:'cool_deep',silver:'cool_deep',navy:'cool_deep',
           green:'nature',olive:'nature',sage:'nature',lavender:'nature',
           white:'neutral',yellow:'neutral',
         };
@@ -196,6 +196,29 @@ export default function CoupleResultScreen() {
     if (isColleagueRel) return '협업 연결 루틴';
     return '관계 보완 루틴';
   };
+  // 유사형/차이형 관계 판별 (중간 설명부 타이틀 동적 변경용)
+  const _EFMAP: Record<string, string> = {
+    red:'warm_active',orange:'warm_active',coral:'warm_active',magenta:'warm_active',
+    pink:'warm_soft',peach:'warm_soft',beige:'warm_soft',cream:'warm_soft',
+    gold:'warm_grounded',brown:'warm_grounded',terracotta:'warm_grounded',
+    blue:'cool_clear',skyblue:'cool_clear',teal:'cool_clear',mint:'cool_clear',
+    indigo:'cool_deep',violet:'cool_deep',black:'cool_deep',silver:'cool_deep',navy:'cool_deep',
+    green:'nature',olive:'nature',sage:'nature',lavender:'nature',
+    white:'neutral',yellow:'neutral',
+  };
+  const _domFamA = (() => {
+    const fams = personA.colors.map(id => _EFMAP[id] ?? 'neutral');
+    const cnt: Record<string,number> = {};
+    fams.forEach(f => { cnt[f] = (cnt[f]??0)+1; });
+    return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0]?.[0] ?? 'neutral';
+  })();
+  const _domFamB = (() => {
+    const fams = personB.colors.map(id => _EFMAP[id] ?? 'neutral');
+    const cnt: Record<string,number> = {};
+    fams.forEach(f => { cnt[f] = (cnt[f]??0)+1; });
+    return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0]?.[0] ?? 'neutral';
+  })();
+  const isSimilarRelation = _domFamA === _domFamB;
   const colorsA = personA.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean);
   const colorsB = personB.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean);
   const cardsA = personA.cards.map(id => CARD_DATA.find(c => c.id === id)).filter(Boolean);
@@ -586,7 +609,7 @@ export default function CoupleResultScreen() {
             <View style={archetypeStyles.divider} />
 
             {/* 표현 속도 시각화 */}
-            <Text style={archetypeStyles.sectionLabel}>표현 속도 차이</Text>
+            <Text style={archetypeStyles.sectionLabel}>{isSimilarRelation ? '두 사람의 표현 방식' : '표현 속도 차이'}</Text>
             <View style={archetypeStyles.speedRow}>
               <View style={archetypeStyles.speedBox}>
                 <Text style={archetypeStyles.speedIcon}>⚡</Text>
@@ -934,11 +957,11 @@ export default function CoupleResultScreen() {
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.relationFlow ?? coupleAnalysis.relationFlow}</Text>
           </SectionCard>
 
-          <SectionCard accentColor={accentCouple} label="표현 방식" title="서로 다른 표현 방식" colors={colors}>
+          <SectionCard accentColor={accentCouple} label="표현 방식" title={isSimilarRelation ? '두 사람의 표현 방식' : '서로 다른 표현 방식'} colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.expressionDifference ?? coupleAnalysis.expressionDifference}</Text>
           </SectionCard>
 
-          <SectionCard accentColor={accentCouple} label="오해 지점" title="오해가 생기는 순간" colors={colors}>
+          <SectionCard accentColor={accentCouple} label="오해 지점" title={isSimilarRelation ? '닮은 에너지가 만날 때' : '오해가 생기는 순간'} colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.conflictPattern ?? coupleAnalysis.conflictPattern}</Text>
           </SectionCard>
 
