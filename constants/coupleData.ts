@@ -56,7 +56,7 @@ const ENERGY_FAMILY: Record<string, EnergyFamily> = {
   pink: 'warm_soft', peach: 'warm_soft', beige: 'warm_soft', cream: 'warm_soft',
   gold: 'warm_grounded', brown: 'warm_grounded', terracotta: 'warm_grounded',
   blue: 'cool_clear', skyblue: 'cool_clear', teal: 'cool_clear', mint: 'cool_clear',
-  indigo: 'cool_deep', violet: 'cool_deep', black: 'cool_deep', silver: 'cool_deep',
+  indigo: 'cool_deep', violet: 'cool_deep', black: 'cool_deep', silver: 'cool_deep', navy: 'cool_deep',
   green: 'nature', olive: 'nature', sage: 'nature', lavender: 'nature',
   white: 'neutral', yellow: 'neutral',
 };
@@ -620,7 +620,16 @@ function buildRelationFlow(
       '부모-자녀': `${prefix} ${nameA}와 ${nameB}처럼 비슷한 기질을 가지고 있어 서로를 이해하는 부분이 많습니다. 하지만 같은 성향끼리는 서로의 기대가 높아지기도 합니다. 이해의 언어를 조금 더 부드럽게 표현하는 것이 관계를 따뜻하게 만들어줍니다.`,
       '형제자매': `${prefix} ${nameA}와 ${nameB}처럼 비슷한 결을 가지고 있어 서로 통하는 부분이 많습니다. 가장 가까운 사이일수록 서로의 다름보다 닮음이 더 크게 느껴질 때, 관계가 편안해집니다.`,
     };
-    return sameMsg[rel] ?? `${relLabel}은 비슷한 에너지 결을 가지고 있습니다. ${nameA}와 ${nameB}처럼 서로 닮은 흐름이 있어 공감대가 깊고, 같은 방향을 바라볼 때 서로 가까워질 수 있습니다. 다만 비슷한 성향이 만날 때는 서로의 약한 부분도 함께 드러날 수 있어, 이해와 여유가 더욱 중요합니다.`;
+    const sameFamilyMsg: Record<EnergyFamily, string> = {
+      warm_active: `${relLabel}은 둘 다 감정이 생기면 바로 표현하고 빠르게 반응하는 에너지를 가지고 있습니다. 함께 있으면 활기차고 공감이 빠르지만, 둘 다 흥분하면 감정 강도가 함께 올라가는 순간이 생깁니다. 서로 닮아서 과열되는 패턴을 인식하고, 한 사람이 먼저 속도를 낮춰주는 것이 이 관계의 핵심입니다.`,
+      warm_soft: `${relLabel}은 둘 다 따뜻하게 배려하고 감성적으로 연결되는 에너지를 가지고 있습니다. 서로의 마음을 잘 알아채지만, 둘 다 자신의 감정을 뒤로 미루다가 소진되는 패턴이 생길 수 있습니다. 가끔 자신의 감정을 먼저 꺼내는 것이 두 사람 모두에게 필요합니다.`,
+      warm_grounded: `${relLabel}은 둘 다 안정적이고 신중하게 관계를 이어가는 에너지를 가지고 있습니다. 함께 있으면 편안하지만, 변화나 결정이 필요한 순간에 둘 다 망설이다가 정체되는 패턴이 생길 수 있습니다. 작은 제안 하나가 관계를 앞으로 나아가게 합니다.`,
+      cool_clear: `${relLabel}은 둘 다 명료하고 효율적인 방식으로 소통하는 에너지를 가지고 있습니다. 서로의 방식을 잘 이해하지만, 감정적 연결보다 결론을 먼저 내리다가 관계가 사무적으로 느껴지는 순간이 생길 수 있습니다. 가끔 감정을 먼저 나누는 시간이 필요합니다.`,
+      cool_deep: `${relLabel}은 둘 다 감정을 깊이 담아두고 천천히 꺼내는 에너지를 가지고 있습니다. 서로의 침묵을 이해하지만, 둘 다 기다리다가 연결이 늦어지는 패턴이 반복될 수 있습니다. 먼저 한 마디 건네는 것이 두 사람 사이를 가장 빠르게 연결합니다.`,
+      nature: `${relLabel}은 둘 다 자연스럽고 유연한 리듬으로 관계를 이어가는 에너지를 가지고 있습니다. 서로를 강요하지 않아 편안하지만, 둘 다 방향을 기다리다가 관계가 정체되는 순간이 생길 수 있습니다. 누군가 먼저 방향을 제안하는 것이 관계를 앞으로 나아가게 합니다.`,
+      neutral: `${relLabel}은 둘 다 균형 잡힌 방식으로 감정을 다루는 에너지를 가지고 있습니다. 서로의 속도를 편안하게 맞춰가지만, 때로는 누군가 먼저 감정을 꺼내는 것이 필요합니다. 지금의 균형을 유지하면서 조금씩 더 깊이 연결되어 가는 것이 두 사람에게 맞는 방향입니다.`,
+    };
+    return sameMsg[rel] ?? sameFamilyMsg[fA];
   }
 
   const combos: Partial<Record<string, string>> = {
@@ -893,6 +902,19 @@ function buildMisunderstandingPattern(
   };
   const missTraitA = getMissTrait(fA);
   const missTraitB = getMissTrait(fB);
+  // ── 유사형 관계 분기 (fA === fB) ──
+  if (fA === fB) {
+    const sameMissMap: Record<EnergyFamily, string> = {
+      warm_active: '두 사람 모두 감정이 생기면 바로 표현하고 빠르게 반응하는 편입니다. 같은 언어를 쓰기 때문에 소통이 빠르지만, 둘 다 흥분하면 감정 강도가 함께 올라가는 순간이 생깁니다. "왜 이렇게 예민하게 반응해?"가 아니라 "지금 우리 둘 다 지쳐있는 것 같아"라고 먼저 말해주는 것이 이 패턴을 넘는 방법입니다.',
+      warm_soft: '두 사람 모두 상대방의 감정을 먼저 살피고 배려하는 편입니다. 서로를 잘 이해하지만, 둘 다 자신의 감정을 뒤로 미루다가 어느 순간 "나는 항상 참는 것 같아"라는 말이 나오는 패턴이 생길 수 있습니다. 가끔 "나는 지금 이런 마음이야"라고 먼저 표현하는 것이 두 사람 모두에게 필요합니다.',
+      warm_grounded: '두 사람 모두 안정적이고 신중하게 감정을 다루는 편입니다. 함께 있으면 편안하지만, 변화나 새로운 시도가 필요한 순간에 둘 다 망설이다가 아무것도 진행되지 않는 패턴이 생길 수 있습니다. 누군가 먼저 "우리 이렇게 해보자"고 제안하는 것이 관계를 앞으로 나아가게 합니다.',
+      cool_clear: '두 사람 모두 명료하고 효율적인 방식으로 소통하는 편입니다. 서로의 방식을 잘 이해하지만, 감정적인 연결보다 결론을 먼저 내리다가 "우리 요즘 대화가 너무 사무적인 것 같아"라는 느낌이 드는 순간이 생길 수 있습니다. 가끔 "오늘 어떤 마음이야?"라고 먼저 물어보는 것이 두 사람 사이를 더 따뜻하게 만들어줍니다.',
+      cool_deep: '두 사람 모두 감정을 깊이 담아두고 천천히 꺼내는 편입니다. 서로의 침묵을 이해하지만, 둘 다 기다리다가 연결이 늦어지는 패턴이 반복될 수 있습니다. 먼저 한 마디 건네는 것이 두 사람 사이를 가장 빠르게 연결하는 방법입니다.',
+      nature: '두 사람 모두 자연스럽고 유연한 리듬으로 관계를 이어가는 편입니다. 서로를 강요하지 않아 편안하지만, 둘 다 방향을 기다리다가 관계가 정체되는 순간이 생길 수 있습니다. 가끔 "우리 이렇게 해보자"고 먼저 제안하는 것이 관계를 앞으로 나아가게 합니다.',
+      neutral: '두 사람 모두 균형 잡힌 방식으로 감정을 다루는 편입니다. 서로의 속도를 편안하게 맞춰가지만, 때로는 누군가 먼저 감정을 꺼내는 것이 필요합니다. 지금의 균형을 유지하면서 조금씩 더 깊이 연결되어 가는 것이 두 사람에게 맞는 방향입니다.',
+    };
+    return sameMissMap[fA] + shapeNote;
+  }
   // 컬러 ID 기반 생활 긴장 구조 문장
   const colorIdA0 = colorsA?.[0]?.id ?? '';
   const colorIdB0 = colorsB?.[0]?.id ?? '';
@@ -3723,9 +3745,25 @@ export function getRelationArchetype(
   const baseData = ARCHETYPE_DATA[finalArchetype];
   const exprScoreA = scoreA.expression;
   const exprScoreB = scoreB.expression;
+  // ── 유사형 관계 expressionSpeed 오버라이드 ──
+  // dominantA === dominantB인 경우 '차이' 중심 description 대신 '유사형 과열' 중심으로 교체
+  const dominantA = getDominantFamily(familiesA);
+  const dominantB = getDominantFamily(familiesB);
+  const isSameEnergyFamily = dominantA === dominantB;
+  const sameExprDescMap: Record<EnergyFamily, string> = {
+    warm_active: '두 사람 모두 빠르게 반응하는 편입니다. 같은 언어를 쓰지만 둘 다 흥분하면 감정 강도가 함께 올라가는 순간이 생깁니다.',
+    warm_soft: '두 사람 모두 감성적으로 표현하는 편입니다. 서로 잘 이해하지만 둘 다 자신의 감정을 뒤로 미루다 소진되는 패턴이 생길 수 있습니다.',
+    warm_grounded: '두 사람 모두 신중하게 표현하는 편입니다. 비슷한 속도로 움직이지만 변화가 필요한 순간 둘 다 망설이는 패턴이 생길 수 있습니다.',
+    cool_clear: '두 사람 모두 명료하게 표현하는 편입니다. 효율적으로 소통하지만 감정 연결보다 결론을 먼저 내리다 관계가 사무적으로 느껴지는 순간이 생길 수 있습니다.',
+    cool_deep: '두 사람 모두 내면 처리 후 표현하는 편입니다. 서로의 침묵을 이해하지만 둘 다 기다리다 연결이 늦어지는 패턴이 반복될 수 있습니다.',
+    nature: '두 사람 모두 자연스러운 리듬으로 표현하는 편입니다. 서로를 강요하지 않아 편안하지만 둘 다 방향을 기다리다 관계가 정체되는 순간이 생길 수 있습니다.',
+    neutral: '두 사람 모두 균형 잡힌 방식으로 표현하는 편입니다. 비슷한 속도로 맞춰가지만 때로는 누군가 먼저 감정을 꺼내는 것이 필요합니다.',
+  };
   // 표현 점수 차이가 2 이상일 때만 동적 할당 (차이가 작으면 archetype 기본값 유지)
-  let dynamicExpressionSpeed = baseData.expressionSpeed;
-  if (Math.abs(exprScoreA - exprScoreB) >= 2) {
+  let dynamicExpressionSpeed = isSameEnergyFamily
+    ? { personA: baseData.expressionSpeed.personA, personB: baseData.expressionSpeed.personB, description: sameExprDescMap[dominantA] }
+    : baseData.expressionSpeed;
+  if (!isSameEnergyFamily && Math.abs(exprScoreA - exprScoreB) >= 2) {
     // 두 스타일 레이블 결정
     const getExprLabel = (score: number): string => {
       if (score >= 8) return '즉각적 표현';
@@ -4835,27 +4873,40 @@ function buildDefaultLifestyleSections(
     neutral: '"아무것도 안 하고 비워야 충전돼." 고요 회복형입니다.',
   };
 
+  const isSameFamily = fA === fB;
   return {
     finance: {
-      title: '재정 스타일 차이',
-      description: '두 사람의 소비 기준과 재정 관리 방식이 다릅니다.',
+      title: isSameFamily ? '재정 스타일' : '재정 스타일 차이',
+      description: isSameFamily
+        ? '두 사람의 소비 방식이 비슷합니다. 같은 성향이 만나면 서로의 소비 패턴이 강화되는 순간이 생길 수 있습니다.'
+        : '두 사람의 소비 기준과 재정 관리 방식이 다릅니다.',
       personA: financePersonMap[fA] + shapeFinanceNote(shapeA),
       personB: financePersonMap[fB] + shapeFinanceNote(shapeB),
-      tension: '소비 기준이 달라 "왜 이걸 샀어?"가 반복될 수 있습니다. 함께 기준을 정하는 것이 도움이 됩니다.',
+      tension: isSameFamily
+        ? '두 사람 모두 비슷한 소비 성향이 있어, 서로의 패턴이 강화되는 순간을 주의하세요. 함께 기준을 정하는 것이 도움이 됩니다.'
+        : '소비 기준이 달라 "왜 이걸 샰어?"가 반복될 수 있습니다. 함께 기준을 정하는 것이 도움이 됩니다.',
     },
     rest: {
-      title: '휴식·회복 방식',
-      description: '두 사람이 쉬는 방식이 다릅니다.' + (shapeRhythmDesc ? ' ' + shapeRhythmDesc : ''),
+      title: isSameFamily ? '휴식·회복 방식' : '휴식·회복 방식',
+      description: isSameFamily
+        ? '두 사람의 휴식 방식이 비슷합니다.' + (shapeRhythmDesc ? ' ' + shapeRhythmDesc : '')
+        : '두 사람이 쉬는 방식이 다릅니다.' + (shapeRhythmDesc ? ' ' + shapeRhythmDesc : ''),
       personA: restPersonMap[fA] + shapeRestNote(shapeA),
       personB: restPersonMap[fB] + shapeRestNote(shapeB),
-      tension: '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
+      tension: isSameFamily
+        ? '두 사람 모두 비슷한 휴식 패턴이 있어 서로의 성향이 강화되는 순간을 주의하세요. 가끔 다른 방식으로 함께 충전하는 시간을 만들어보세요.'
+        : '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
     },
     conflict: {
       title: '갈등 직후 반응',
-      description: '갈등 후 두 사람의 반응 방식이 다릅니다.',
+      description: isSameFamily
+        ? '갈등 후 두 사람의 반응 방식이 비슷합니다. 같은 방식이 만나면 서로의 패턴이 강화되는 순간을 주의하세요.'
+        : '갈등 후 두 사람의 반응 방식이 다릅니다.',
       personA: conflictPersonMap[fA] + shapeConflictNote(shapeA),
       personB: conflictPersonMap[fB] + shapeConflictNote(shapeB),
-      tip: '서로의 갈등 반응 방식이 다름을 인정하는 것이 첫 번째 단계입니다.' + (shapeNoteA || shapeNoteB ? ' ' + [shapeNoteA, shapeNoteB].filter(Boolean).join(' / ') : ''),
+      tip: isSameFamily
+        ? '두 사람의 갈등 반응 방식이 비슷하기 때문에 서로의 패턴이 강화될 수 있습니다. 한 사람이 먼저 다른 방식으로 다가가는 것이 중요합니다.' + (shapeNoteA || shapeNoteB ? ' ' + [shapeNoteA, shapeNoteB].filter(Boolean).join(' / ') : '')
+        : '서로의 갈등 반응 방식이 다름을 인정하는 것이 첫 번째 단계입니다.' + (shapeNoteA || shapeNoteB ? ' ' + [shapeNoteA, shapeNoteB].filter(Boolean).join(' / ') : ''),
     },
   };
 }
