@@ -557,6 +557,8 @@ export interface LifeEnergyResult {
   energyFlow: EnergyFlowResult;
   /** Archetype + 오행 흐름 조합 맞춤 회복 루틴 */
   routines: ContextualRoutine;
+  /** 오행 흐름 유형 (성경구절 매칭용 내부값) */
+  flowType: string;
 }
 
 // 오행 흐름 유형 (6가지)
@@ -725,5 +727,19 @@ export function buildLifeEnergyResult(
   const archetypeCoaching = buildArchetypeCoaching(archetypes);
   const energyFlow = interpretEnergyFlow(ohangScore);
   const routines = buildContextualRoutines(archetypes, ohangScore);
-  return { archetypes, archetypeCoaching, energyFlow, routines };
+  // 오행 흐름 유형 계산 (성경구절 매칭용)
+  const dom = (Object.keys(ohangScore) as Array<keyof typeof ohangScore>).reduce((a, b) =>
+    ohangScore[a] >= ohangScore[b] ? a : b
+  );
+  const total = Object.values(ohangScore).reduce((a, b) => a + b, 0);
+  const domRatio = total === 0 ? 0 : ohangScore[dom] / total;
+  let flowType = '균형';
+  if (domRatio >= 0.35) {
+    if (dom === '화') flowType = '진장';
+    else if (dom === '수') flowType = '침잠';
+    else if (dom === '토') flowType = '정체';
+    else if (dom === '금') flowType = '예민';
+    else if (dom === '목') flowType = '성장';
+  }
+  return { archetypes, archetypeCoaching, energyFlow, routines, flowType };
 }
