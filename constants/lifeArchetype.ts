@@ -303,6 +303,8 @@ export interface LifeArchetype {
   key: LifeArchetypeKey;
   /** 사용자에게 보여줄 역할 이름 */
   label: string;
+  /** MaterialIcons 아이콘 이름 (라인 심볼형) */
+  iconName: string;
   /** 핵심 에너지 설명 (1~2문장) */
   coreEnergy: string;
   /** 살아나는 환경 (1문장) */
@@ -313,62 +315,76 @@ export interface LifeArchetype {
   lifeDirection: string;
   /** 연결 방식 (1문장) */
   connectionStyle: string;
+  /** 메인 Archetype 기반 오늘의 실천 한 가지 (짧고 현실적) */
+  dailyPractice: string;
 }
 
 const ARCHETYPE_MAP: Record<LifeArchetypeKey, LifeArchetype> = {
   connector: {
     key: 'connector',
-    label: '연결형 — 사람과 사람을 잇는 역할',
+    label: '연결형 — 사람과 사람을 잋는 역할',
+    iconName: 'people-outline',
     coreEnergy: '사람들 사이를 자연스럽게 이어주고, 관계와 커뮤니티를 만들어가는 역할에서 에너지가 살아납니다.',
     thriveIn: '다양한 사람들이 모이는 환경, 소통과 관계가 중심이 되는 공간에서 가장 빛납니다.',
     drainPattern: '관계 사이에서 중간 역할을 하다가 자신의 감정을 뒤로 미루고 소진되는 패턴이 생길 수 있습니다.',
     lifeDirection: '관계와 공동체 중심의 삶이 자연스럽게 맞습니다. 자신의 필요도 함께 표현하는 것이 오래 연결할 수 있는 힘이 됩니다.',
     connectionStyle: '자연스럽게 먼저 다가가고, 상대가 편안하게 느끼도록 분위기를 만드는 방식으로 연결됩니다.',
+    dailyPractice: '오늘 마음에 떠오르는 한 사람에게 먼저 안부를 묻어보세요.',
   },
   healer: {
     key: 'healer',
     label: '회복형 — 감정과 정서를 안정시키는 역할',
+    iconName: 'favorite-border',
     coreEnergy: '사람의 감정적 상처와 내면의 흐름을 읽고, 정서적 안정과 회복을 돕는 역할에서 에너지가 살아납니다.',
     thriveIn: '깊은 공감과 신뢰가 있는 환경, 감정적 안전감이 있는 공간에서 가장 빛납니다.',
-    drainPattern: '타인의 감정을 너무 깊이 흡수하다가 자신이 지치는 패턴이 반복될 수 있습니다.',
+    drainPattern: '타인의 감정을 너무 깊이 흥수하다가 자신이 지치는 패턴이 반복될 수 있습니다.',
     lifeDirection: '감정 회복과 정서 안정 중심의 삶이 자연스럽게 맞습니다. 자신의 감정도 돌보는 루틴이 있을 때 더 오래 빛납니다.',
     connectionStyle: '상대의 감정을 먼저 읽고 조용히 공감하는 방식으로 깊이 연결됩니다.',
+    dailyPractice: '오늘 나의 감정을 한 줄로 적어보세요. 좋은 말이어도, 힘들었던 말이어도 관다어요.',
   },
   analyst: {
     key: 'analyst',
     label: '분석형 — 구조와 패턴을 읽는 역할',
+    iconName: 'grid-view',
     coreEnergy: '복잡한 상황을 논리적으로 분석하고 구조화하는 역할에서 에너지가 살아납니다. 패턴을 읽고 질서를 만드는 것이 자연스럽습니다.',
     thriveIn: '명확한 기준과 논리가 필요한 환경, 데이터나 정보를 다루는 공간에서 가장 빛납니다.',
-    drainPattern: '감정보다 논리를 우선하다가 관계에서 오해가 생기거나, 완벽한 분석을 추구하다가 실행이 늦어지는 패턴이 생길 수 있습니다.',
+    drainPattern: '감정보다 논리를 우선하다가 관계에서 오해가 생기거나, 완벽한 분석을 추구하다가 실행이 늘어지는 패턴이 생길 수 있습니다.',
     lifeDirection: '분석과 구조화 중심의 삶이 자연스럽게 맞습니다. 감정적 연결도 함께 챙기는 것이 균형을 만들어줍니다.',
     connectionStyle: '논리적 대화와 정보 교환을 통해 연결되며, 명확한 소통을 선호합니다.',
+    dailyPractice: '오늘 주변의 작은 공간 하나를 정리해보세요. 정리된 공간이 생각도 정리해줍니다.',
   },
   leader: {
     key: 'leader',
     label: '리더형 — 방향성과 추진력의 역할',
+    iconName: 'explore',
     coreEnergy: '사람들을 모으고 방향을 제시하며 추진하는 역할에서 에너지가 살아납니다. 영향력을 통해 변화를 만드는 것이 자연스럽습니다.',
     thriveIn: '결정이 필요한 환경, 팀이나 공동체를 이끄는 공간에서 가장 빛납니다.',
     drainPattern: '혼자 모든 것을 책임지려다가 소진되거나, 속도가 다른 사람들을 기다리는 것이 힘들게 느껴지는 패턴이 생길 수 있습니다.',
     lifeDirection: '영향력과 책임 중심의 삶이 자연스럽게 맞습니다. 위임하고 쉬는 것도 리더십의 일부입니다.',
     connectionStyle: '먼저 비전을 제시하고, 사람들이 자연스럽게 따라오는 방식으로 연결됩니다.',
+    dailyPractice: '오늘 이끄는 역할에서 잠시 내려와 스스로를 쉽히는 시간을 허락하세요.',
   },
   artist: {
     key: 'artist',
     label: '예술가형 — 감수성과 창작의 역할',
+    iconName: 'brush',
     coreEnergy: '감정과 분위기를 읽고 창의적으로 표현하는 역할에서 에너지가 살아납니다. 아름다움과 의미를 만드는 것이 자연스럽습니다.',
     thriveIn: '자유롭게 표현할 수 있는 환경, 창의성이 존중받는 공간에서 가장 빛납니다.',
     drainPattern: '감정이 너무 강하게 올라오거나 표현이 막힐 때 내면에서 압박감이 쌓이는 패턴이 생길 수 있습니다.',
     lifeDirection: '감성과 표현 중심의 삶이 자연스럽게 맞습니다. 감정을 표현하는 루틴이 있을 때 가장 안정적입니다.',
     connectionStyle: '감정과 분위기로 먼저 연결되며, 공감이 깊은 관계에서 에너지가 살아납니다.',
+    dailyPractice: '오늘 마음에 떠오르는 감정이나 색감을 짧게 메모해두세요. 완성하지 않아도 관다어요.',
   },
   expert: {
     key: 'expert',
     label: '전문가형 — 깊이와 신뢰 기반의 역할',
+    iconName: 'bookmark-border',
     coreEnergy: '한 분야를 깊이 파고들어 전문성을 쌓고, 신뢰를 바탕으로 영향을 미치는 역할에서 에너지가 살아납니다.',
     thriveIn: '집중할 수 있는 환경, 깊이 있는 연구나 작업이 가능한 공간에서 가장 빛납니다.',
-    drainPattern: '완벽함을 추구하다가 시작을 미루거나, 자신의 전문성을 스스로 낮게 평가하는 패턴이 생길 수 있습니다.',
+    drainPattern: '완벽함을 추구하다가 시작을 미루거나, 자신의 전문성을 스스로 낙게 평가하는 패턴이 생길 수 있습니다.',
     lifeDirection: '깊이와 전문성 중심의 삶이 자연스럽게 맞습니다. 완성보다 성장의 과정을 즐기는 것이 중요합니다.',
     connectionStyle: '공통 관심사나 전문 영역을 통해 연결되며, 신뢰가 쌓인 관계를 소중히 합니다.',
+    dailyPractice: '오늘 스스로를 인정하는 문장 하나를 써보세요. 작은 인정이 큰 성장의 시작입니다.',
   },
 };
 
