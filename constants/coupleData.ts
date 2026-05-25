@@ -2767,7 +2767,7 @@ function buildProfileContrast(
   const fallbackA = getFamilyProfileLabel(fA);
   const fallbackB = getFamilyProfileLabel(fB);
   const attrLine = getAttractionLine(fA, fB);
-  const baseResult = contrastMap[key] ?? contrastMap[reverseKey] ?? `${nameA}의 성향을 가진 사람은 ${fallbackA} 중심으로 살아갑니다. ${nameB}의 성향을 가진 사람은 ${fallbackB} 중심으로 살아갑니다.\n${attrLine}\n반복되는 패턴은 이렇게 나타납니다. 서로의 방식이 다를 뿐인데, 그 다름이 거리감으로 읽히는 순간이 생깁니다. 서로의 의도를 먼저 확인하는 것이 오해를 줄이는 가장 빠른 방법입니다.`;
+  const baseResult = contrastMap[key] ?? contrastMap[reverseKey] ?? `${nameA}의 성향을 가진 사람은 ${fallbackA} 방식으로 관계를 이어갑니다. ${nameB}의 성향을 가진 사람은 ${fallbackB} 방식으로 연결됩니다.\n${attrLine}\n반복되는 패턴은 이렇게 나타납니다. 서로의 방식이 다를 뿐인데, 그 다름이 거리감으로 읽히는 순간이 생깁니다. 서로의 의도를 먼저 확인하는 것이 오해를 줄이는 가장 빠른 방법입니다.`;
   return baseResult + (shapeProfileNote ?? '');
 }
 
@@ -2778,8 +2778,8 @@ function getFamilyProfileLabel(family: EnergyFamily): string {
     warm_grounded: '안정적이고 꾸준하게 신뢰를 쌓는',
     cool_clear: '명료하게 정리하고 논리적으로 판단하는',
     cool_deep: '내면에서 천천히 정리하며 깊이 생각하는',
-    nature: '자신의 리듬',
-    neutral: '균형',
+    nature: '자신의 리듬을 따르며 자연스럽게 흐르는',
+    neutral: '균형을 유지하며 안정적으로 살아가는',
   };
   return map[family];
 }
@@ -5526,7 +5526,7 @@ export function getRelationArchetype(
   if (!lifestyleSections) {
     const fA0 = familiesA[0] ?? 'neutral';
     const fB0 = familiesB[0] ?? 'neutral';
-    lifestyleSections = buildDefaultLifestyleSections(fA0, fB0, shapeA, shapeB);
+    lifestyleSections = buildDefaultLifestyleSections(fA0, fB0, shapeA, shapeB, finalArchetype);
   }
 
   // ── 컬러 조합 기반 profileContrastOverride 동적 교체 ──
@@ -5661,7 +5661,8 @@ function buildDefaultLifestyleSections(
   fA: EnergyFamily,
   fB: EnergyFamily,
   shapeA?: string,
-  shapeB?: string
+  shapeB?: string,
+  archetype?: RelationArchetype
 ): NonNullable<ArchetypeResult['lifestyleSections']> {
   // 도형별 생활 특성 키워드
   const getShapeLifestyleNote = (shape?: string): string => {
@@ -5679,6 +5680,86 @@ function buildDefaultLifestyleSections(
   };
   const shapeNoteA = getShapeLifestyleNote(shapeA);
   const shapeNoteB = getShapeLifestyleNote(shapeB);
+
+  // ── archetype별 표현 오버라이드 맵 ──────────────────────────────
+  // 각 archetype에 맞는 restPersonMap/conflictPersonMap 오버라이드
+  type ArchetypeOverride = {
+    rest?: Partial<Record<EnergyFamily, string>>;
+    conflict?: Partial<Record<EnergyFamily, string>>;
+    shapeRhythmOverride?: string;
+    restDescription?: string;
+    conflictDescription?: string;
+  };
+  const ARCHETYPE_LIFESTYLE_OVERRIDE: Partial<Record<RelationArchetype, ArchetypeOverride>> = {
+    성장자극형: {
+      rest: {
+        nature: '"나가서 뭔가 새로운 걸 해야 충전돼." 활동 전환형입니다.',
+        neutral: '"아무것도 안 하고 완전히 비워야 다시 달릴 수 있어." 완전 리셋형입니다.',
+        warm_soft: '"함께 새로운 걸 경험하면 충전돼." 공유 활동형입니다.',
+        cool_deep: '"혼자 깊이 생각하며 정리해야 충전돼." 내면 정리형입니다.',
+      },
+      conflict: {
+        nature: '"일단 같이 움직이자. 걸으면서 얘기해." 활동 해소형입니다.',
+        neutral: '"각자 정리하고 다시 만나자. 그게 더 빨라." 공간 회복형입니다.',
+        warm_soft: '"지금 바로 얘기하자. 미루면 더 힘들어." 즉각 해결형입니다.',
+      },
+      shapeRhythmOverride: undefined,
+      restDescription: '두 사람이 쉬는 방식이 다릅니다. 한 사람은 활동으로 에너지를 전환하고, 다른 사람은 자신만의 방식으로 충전합니다.',
+      conflictDescription: '갈등 후 두 사람의 반응 방식이 다릅니다. 이 관계에서는 앉아서 해결하기보다 함께 움직이는 것이 먼저입니다.',
+    },
+    거리조절형: {
+      rest: {
+        nature: '"혼자만의 시간이 있어야 다시 가까워질 수 있어." 독립 충전형입니다.',
+        warm_active: '"나가서 에너지를 쓰고 나면 다시 가까워지고 싶어져." 활동 후 연결형입니다.',
+        warm_soft: '"가까이 있다가도 숨 쉴 공간이 필요해." 거리 조절형입니다.',
+      },
+      conflict: {
+        nature: '"잠깐 거리를 두고 각자 숨 좀 쉬자." 공간 회복형입니다.',
+        warm_active: '"지금 바로 해결하고 싶어. 미루면 더 멀어져." 즉각 해결형입니다.',
+      },
+      restDescription: '두 사람이 쉬는 방식이 다릅니다. 가까워졌다 멀어지는 패턴이 휴식 방식에도 나타납니다.',
+      conflictDescription: '갈등 후 한 사람은 거리를 두고 싶고, 다른 사람은 바로 해결하고 싶어합니다.',
+    },
+    온도차형: {
+      rest: {
+        nature: '"자연스럽게 속도가 맞춰질 때까지 기다려." 속도 조절형입니다.',
+        warm_active: '"빨리 풀고 다음으로 넘어가야 충전돼." 빠른 전환형입니다.',
+      },
+      conflict: {
+        nature: '"천천히 정리될 때까지 기다리자." 속도 존중형입니다.',
+        neutral: '"각자 정리하고 준비됐을 때 얘기하자." 공간 회복형입니다.',
+      },
+      restDescription: '두 사람이 쉬는 속도가 다릅니다. 빠른 사람은 이미 충전됐는데 느린 사람은 아직 회복 중일 수 있습니다.',
+      conflictDescription: '갈등 후 두 사람의 회복 속도가 다릅니다. 빠른 사람이 기다려주는 것이 이 관계의 핵심입니다.',
+    },
+    회복형: {
+      rest: {
+        nature: '"함께 조용히 있는 것만으로도 충전돼." 공존 회복형입니다.',
+        warm_soft: '"네가 옆에 있으면 자연스럽게 회복돼." 연결 충전형입니다.',
+      },
+      conflict: {
+        nature: '"잠깐 각자 숨 쉬고, 다시 천천히 연결하자." 재연결형입니다.',
+        warm_soft: '"먼저 안아주면 말이 나와." 스킨십 회복형입니다.',
+      },
+      restDescription: '두 사람이 쉬는 방식이 다릅니다. 회복 후 다시 연결되는 것이 이 관계의 패턴입니다.',
+      conflictDescription: '갈등 후 두 사람의 반응 방식이 다릅니다. 이 관계에서는 회복 후 재연결이 핵심입니다.',
+    },
+    현실균형형: {
+      rest: {
+        nature: '"계획된 휴식이 있어야 진짜 쉬어지는 느낌이야." 루틴 회복형입니다.',
+        warm_active: '"뭔가 해야 쉬는 것 같아." 활동 충전형입니다.',
+      },
+      conflict: {
+        nature: '"논리적으로 정리하고 얘기하자." 현실 해결형입니다.',
+        warm_active: '"지금 바로 얘기하고 해결하자." 즉각 해결형입니다.',
+      },
+      restDescription: '두 사람이 쉬는 방식이 다릅니다. 현실적이고 계획적인 휴식 방식이 이 관계의 특징입니다.',
+      conflictDescription: '갈등 후 두 사람의 반응 방식이 다릅니다. 감정보다 현실적 해결을 먼저 찾는 패턴입니다.',
+    },
+  };
+
+
+  const archetypeOverride = archetype ? ARCHETYPE_LIFESTYLE_OVERRIDE[archetype] : undefined;
 
   // 도형별 재정 수식어 보정
   const shapeFinanceNote = (shape?: string): string => {
@@ -5746,7 +5827,22 @@ function buildDefaultLifestyleSections(
     }
     return '';
   };
-  const shapeRhythmDesc = getShapeRhythmDesc(shapeA, shapeB);
+  // archetype 오버라이드 적용된 shapeRhythmDesc
+  let shapeRhythmDesc = getShapeRhythmDesc(shapeA, shapeB);
+  // 성장자극형에서 circle+square 조합은 "감정 순환형/구조 안정형" 대신 archetype 맞는 표현으로
+  if (archetype === '성장자극형' && ((shapeA === 'circle' || shapeB === 'circle') && (shapeA === 'square' || shapeB === 'square'))) {
+    shapeRhythmDesc = '한 사람은 유연하게 흐르고, 다른 사람은 구조를 잡으려 합니다. 이 차이가 성장자극형 관계에서 창의적 긴장의 원천이 됩니다.';
+  } else if (archetype === '거리조절형' && ((shapeA === 'circle' || shapeB === 'circle') && (shapeA === 'square' || shapeB === 'square'))) {
+    shapeRhythmDesc = '한 사람은 유연하게 연결을 원하고, 다른 사람은 일정한 구조와 거리를 유지하려 합니다.';
+  } else if (archetype === '온도차형' && ((shapeA === 'circle' || shapeB === 'circle') && (shapeA === 'square' || shapeB === 'square'))) {
+    shapeRhythmDesc = '한 사람은 감정의 흐름을 따르고, 다른 사람은 체계적인 리듬을 선호합니다. 속도와 방식이 다릅니다.';
+  }
+
+  // archetype 오버라이드 적용된 restPersonMap/conflictPersonMap 생성
+  const applyOverride = (base: Record<EnergyFamily, string>, override?: Partial<Record<EnergyFamily, string>>): Record<EnergyFamily, string> => {
+    if (!override) return base;
+    return { ...base, ...override };
+  };
 
   // 재정 스타일 맵
   const financePersonMap: Record<EnergyFamily, string> = {
@@ -5780,6 +5876,17 @@ function buildDefaultLifestyleSections(
   };
 
   const isSameFamily = fA === fB;
+
+  // archetype 오버라이드 적용
+  const effectiveRestMap = applyOverride(restPersonMap, archetypeOverride?.rest);
+  const effectiveConflictMap = applyOverride(conflictPersonMap, archetypeOverride?.conflict);
+  const restDesc = archetypeOverride?.restDescription
+    ? (isSameFamily ? '두 사람의 휴식 방식이 비슷합니다.' : archetypeOverride.restDescription) + (shapeRhythmDesc ? ' ' + shapeRhythmDesc : '')
+    : (isSameFamily ? '두 사람의 휴식 방식이 비슷합니다.' : '두 사람이 쉬는 방식이 다릅니다.') + (shapeRhythmDesc ? ' ' + shapeRhythmDesc : '');
+  const conflictDesc = archetypeOverride?.conflictDescription
+    ? (isSameFamily ? '갈등 후 두 사람의 반응 방식이 비슷합니다.' : archetypeOverride.conflictDescription)
+    : (isSameFamily ? '갈등 후 두 사람의 반응 방식이 비슷합니다.' : '갈등 후 두 사람의 반응 방식이 다릅니다.');
+
   return {
     finance: {
       title: isSameFamily ? '재정 스타일' : '재정 스타일 차이',
@@ -5793,26 +5900,22 @@ function buildDefaultLifestyleSections(
         : '소비 기준이 달라 "왜 이걸 샰어?"가 반복될 수 있습니다. 함께 기준을 정하는 것이 도움이 됩니다.',
     },
     rest: {
-      title: isSameFamily ? '휴식·회복 방식' : '휴식·회복 방식',
-      description: isSameFamily
-        ? '두 사람의 휴식 방식이 비슷합니다.' + (shapeRhythmDesc ? ' ' + shapeRhythmDesc : '')
-        : '두 사람이 쉬는 방식이 다릅니다.' + (shapeRhythmDesc ? ' ' + shapeRhythmDesc : ''),
-      personA: restPersonMap[fA] + shapeRestNote(shapeA),
-      personB: restPersonMap[fB] + shapeRestNote(shapeB),
+      title: '휴식·회복 방식',
+      description: restDesc,
+      personA: effectiveRestMap[fA] + shapeRestNote(shapeA),
+      personB: effectiveRestMap[fB] + shapeRestNote(shapeB),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 휴식 패턴이 있어 서로의 성향이 강화되는 순간을 주의하세요. 가끔 다른 방식으로 함께 충전하는 시간을 만들어보세요.'
         : '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
     },
     conflict: {
       title: '갈등 직후 반응',
-      description: isSameFamily
-        ? '갈등 후 두 사람의 반응 방식이 비슷합니다. 같은 방식이 만나면 서로의 패턴이 강화되는 순간을 주의하세요.'
-        : '갈등 후 두 사람의 반응 방식이 다릅니다.',
-      personA: conflictPersonMap[fA] + shapeConflictNote(shapeA),
-      personB: conflictPersonMap[fB] + shapeConflictNote(shapeB),
+      description: conflictDesc,
+      personA: effectiveConflictMap[fA] + shapeConflictNote(shapeA),
+      personB: effectiveConflictMap[fB] + shapeConflictNote(shapeB),
       tip: isSameFamily
-        ? '두 사람의 갈등 반응 방식이 비슷하기 때문에 서로의 패턴이 강화될 수 있습니다. 한 사람이 먼저 다른 방식으로 다가가는 것이 중요합니다.' + (shapeNoteA || shapeNoteB ? ' ' + [shapeNoteA, shapeNoteB].filter(Boolean).join(' / ') : '')
-        : '서로의 갈등 반응 방식이 다름을 인정하는 것이 첫 번째 단계입니다.' + (shapeNoteA || shapeNoteB ? ' ' + [shapeNoteA, shapeNoteB].filter(Boolean).join(' / ') : ''),
+        ? '두 사람의 갈등 반응 방식이 비슷하기 때문에 서로의 패턴이 강화될 수 있습니다. 한 사람이 먼저 다른 방식으로 다가가는 것이 중요합니다.'
+        : '서로의 갈등 반응 방식이 다름을 인정하는 것이 첫 번째 단계입니다.',
     },
   };
 }
