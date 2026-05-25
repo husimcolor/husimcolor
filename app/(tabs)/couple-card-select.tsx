@@ -141,12 +141,13 @@ function WebCard({ card, isFlipped, isSelected, onPress, entryDelay, isShuffle }
     flipEl.addEventListener('animationend', onFlipOutEnd);
   }, [isFlipped]);
 
-  const borderStyle = card.colorKor === '화이트'
-    ? { borderWidth: isSelected ? 2.5 : 1.5, borderColor: isSelected ? '#A08050' : '#D8C7A5', borderStyle: 'solid' as const }
+  // 선택 강조: 모든 카드 공통 soft sage outline (카드 고유 컬러와 분리)
+  const borderStyle = isSelected
+    ? { borderWidth: 2, borderColor: '#B8A898', borderStyle: 'solid' as const }
+    : card.colorKor === '화이트'
+    ? { borderWidth: 1.5, borderColor: '#D8C7A5', borderStyle: 'solid' as const }
     : card.colorKor === '블랙'
-    ? { borderWidth: isSelected ? 2.5 : 1.5, borderColor: '#D4AF37', borderStyle: 'solid' as const }
-    : isSelected
-    ? { borderWidth: 2.5, borderColor: '#FFFFFF', borderStyle: 'solid' as const }
+    ? { borderWidth: 1.5, borderColor: '#5A5A5A', borderStyle: 'solid' as const }
     : {};
 
   return (
@@ -165,7 +166,7 @@ function WebCard({ card, isFlipped, isSelected, onPress, entryDelay, isShuffle }
           backgroundColor: showFront ? card.colorHex : CARD_BACK_COLOR,
           ...borderStyle,
           boxShadow: isSelected
-            ? `0 4px 14px ${card.colorHex}88`
+            ? '0 0 10px rgba(184,168,152,0.45)'
             : '0 2px 6px rgba(0,0,0,0.18)',
         }}
       >
@@ -282,11 +283,13 @@ function NativeCard({
                 backgroundColor: card.colorHex,
                 transform: [{ rotateY: frontRotate }],
                 ...(isSelected ? {
-                  shadowColor: card.colorHex,
-                  shadowOffset: { width: 0, height: 4 },
+                  borderWidth: 2,
+                  borderColor: '#B8A898',
+                  shadowColor: '#B8A898',
+                  shadowOffset: { width: 0, height: 0 },
                   shadowOpacity: 0.5,
-                  shadowRadius: 8,
-                  elevation: 8,
+                  shadowRadius: 6,
+                  elevation: 6,
                 } : {}),
               },
             ]}
