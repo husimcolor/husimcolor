@@ -523,6 +523,15 @@ export function buildArchetypeCoaching(archetypes: LifeArchetype[]): string {
 // 8. 외부 인터페이스 — 심화 결과 화면에서 호출하는 메인 함수
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface ContextualRoutine {
+  /** 루틴 카테고리 레이블 (예: "오늘의 회복 루틴") */
+  label: string;
+  /** 루틴 항목 3~4개 */
+  items: string[];
+  /** 한 줄 코칭 메시지 */
+  coaching: string;
+}
+
 export interface LifeEnergyResult {
   /** 삶의 역할 Archetype 목록 (메인 1개 + 보조 최대 1개) */
   archetypes: LifeArchetype[];
@@ -530,11 +539,165 @@ export interface LifeEnergyResult {
   archetypeCoaching: string;
   /** 몸·감정 에너지 흐름 해석 */
   energyFlow: EnergyFlowResult;
+  /** Archetype + 오행 흐름 조합 맞춤 회복 루틴 */
+  routines: ContextualRoutine;
+}
+
+// 오행 흐름 유형 (6가지)
+type FlowType = '진장' | '침잠' | '정체' | '예민' | '성장' | '균형';
+
+/** 오행 점수 기반으로 흐름 유형 결정 */
+function detectFlowType(score: OhangScore): FlowType {
+  const dom = dominant(score);
+  const domRatio = ratio(score, dom);
+  const isOverloaded = domRatio >= 0.35;
+  if (!isOverloaded) return '균형';
+  if (dom === '화') return '진장';
+  if (dom === '수') return '침잠';
+  if (dom === '토') return '정체';
+  if (dom === '금') return '예민';
+  if (dom === '목') return '성장';
+  return '균형';
+}
+
+/**
+ * Archetype 키 + 오행 흐름 유형 조합으로 맞춤 회복 루틴 생성
+ * 오행 용어는 사용자에게 노출하지 않음
+ */
+export function buildContextualRoutines(
+  archetypes: LifeArchetype[],
+  score: OhangScore,
+): ContextualRoutine {
+  const flowType = detectFlowType(score);
+  const mainKey = archetypes[0]?.key ?? 'connector';
+
+  // 흐름 유형별 기본 루틴 풀 (오행 용어 미노출)
+  const baseRoutinePool: Record<FlowType, string[]> = {
+    '진장': [
+      '저녀 스마트폰 사용을 1시간 일시 중단하기',
+      '자기 전 따뜻한 물 한 잔 마시며 속도 낮추기',
+      '콧에서 시작하는 짧은 복식호흡 (4초 들이실이고 실어내기)',
+      '오늘 하루 중 가장 진장된 순간을 일기에 적어보기',
+    ],
+    '침잠': [
+      '낙살 시간 에 10분 햇빛 속에 앜아있기',
+      '짧은 걸음으로 머리를 비우는 시간 만들기',
+      '오래된 친구나 가족에게 먼저 연락하기',
+      '자신에게 에너지를 주는 음식 한 가지 선택하기',
+    ],
+    '정체': [
+      '사용하지 않는 동선이나 앱 하나 지우기',
+      '집 안 공간 하나를 정리하고 비우기',
+      '오늘 안에 담아둔 감정을 말로 표현해보기',
+      '작은 일상 루틴 하나를 다시 시작하기',
+    ],
+    '예민': [
+      '하루 중 연락과 정보를 의도적으로 줄이기',
+      '감정이 올라올 때 말로 표현하는 연습하기',
+      '주변 소음과 자극을 줄이는 조용한 환경 만들기',
+      '공간 정리 후 혼자만의 조용한 시간 확보하기',
+    ],
+    '성장': [
+      '지금 가장 중요한 일 하나를 정하고 나머지는 잊어두기',
+      '관심사를 일주일 단위로 정리하는 노트 작성하기',
+      '새로운 정보를 트레이스하기 전에 하루 쉽는 시간 넣기',
+      '완성하지 못한 것을 시작한 것으로 인정하기',
+    ],
+    '균형': [
+      '지금 이 상태를 유지하는 작은 루틴 하나 선택하기',
+      '오늘 자신에게 좋았던 순간을 떠올려보기',
+      '미루던 연락이나 일을 하나 실행하기',
+      '오늘 하루를 짧게 일기로 정리하기',
+    ],
+  };
+
+  // Archetype별 특화 루틴 (흐름 유형과 조합하여 삽입)
+  const archetypeRoutineAdd: Record<LifeArchetypeKey, Record<FlowType, string>> = {
+    connector: {
+      '진장': '누군가를 돕는 역할에서 잠시 벗어나 나 자신을 먼저 돌보는 시간 확보하기',
+      '침잠': '혼자서 회복하는 시간이 사람과 다시 연결할 수 있는 에너지를 만들어줍니다',
+      '정체': '연락하고 싶은 사람에게 먼저 가벼운 메시지 보내기',
+      '예민': '관계 속에서 나의 경계를 지키는 연습하기',
+      '성장': '새로운 사람보다 기존 관계를 더 깊게 만들어가기',
+      '균형': '오늘 한 사람에게 먼저 안부 묻기',
+    },
+    healer: {
+      '진장': '타인의 감정을 수신하기 전에 나의 감정 상태를 먼저 점검하기',
+      '침잠': '남의 회복을 돕기 전에 나 자신의 회복을 먼저 완료하기',
+      '정체': '감정 일기를 써서 안에 담아둔 감정을 바깥으로 꼼어내기',
+      '예민': '감정을 수신하는 양을 의도적으로 줄이는 날 만들기',
+      '성장': '새로운 역할보다 지금 있는 관계를 더 깊이 돌보기',
+      '균형': '오늘 나 자신에게 코칭하듯 한 마디 써보기',
+    },
+    analyst: {
+      '진장': '지금 해결해야 할 일목록에서 오늘은 하나만 남기고 나머지는 내일로 미루기',
+      '침잠': '생각을 정리하는 노트를 쓰되 결론은 내지 않아도 되는 향식으로 쓰기',
+      '정체': '지금 멈춰있는 프로젝트 중 하나를 선택해 작은 진전 만들기',
+      '예민': '완벽한 분석보다 지금 할 수 있는 것에 집중하기',
+      '성장': '관심사를 일주일 단위로 정리하는 노트 작성하기',
+      '균형': '오늘 배운 것 중 하나를 누군가에게 설명해보기',
+    },
+    leader: {
+      '진장': '오늘은 이끄는 역할에서 잠시 내려와 휴식을 선택하기',
+      '침잠': '작은 성취 하나를 완료하며 추진력을 다시 쌓아올리기',
+      '정체': '지금 멈춰있는 이유를 일기에 쓰고 다음 방향을 정하기',
+      '예민': '결정을 잠시 다음으로 미루고 먼저 에너지를 회복하기',
+      '성장': '새로운 방향을 선택하기 전에 지금까지의 과정을 인정하기',
+      '균형': '오늘 나의 에너지가 가장 잘 쓰이는 시간대를 파악하기',
+    },
+    artist: {
+      '진장': '지금 느끼는 감정을 그림이나 글로 표현해보기',
+      '침잠': '좋아하는 음악을 틀으며 감정을 지금 이대로 느끼기',
+      '정체': '작은 창작물 (노트, 스케치, 사진)으로 막힌 표현을 틀어내기',
+      '예민': '감각적 자극을 줄이고 자신만의 창작 시간에 집중하기',
+      '성장': '새로운 표현 방식을 시도하되 완성도보다 과정을 즐기기',
+      '균형': '오늘 마음에 떠오르는 이미지나 색감을 메모해두기',
+    },
+    expert: {
+      '진장': '지금 하는 일에서 완벽하지 않아도 되는 부분을 인정하기',
+      '침잠': '지식보다 지금 자신의 머리와 몸을 쉽히는 것을 우선하기',
+      '정체': '깊이 파고들던 주제를 잠시 닫어두고 다른 것에 시선 돌리기',
+      '예민': '완벽한 전문성보다 지금 할 수 있는 수준에서 시작하기',
+      '성장': '배우고 싶은 것이 너무 많을 때 하나를 고르고 나머지는 내려놓기',
+      '균형': '오늘 스스로를 인정하는 문장 하나 쓰기',
+    },
+  };
+
+  // 흐름 유형별 코칭 메시지
+  const flowCoaching: Record<FlowType, string> = {
+    '진장': '지금 속도를 조금 낮춰도 관다는 것을 스스로에게 허락하세요.',
+    '침잠': '회복은 큰 변화가 아니라 작은 연결에서 시작됩니다.',
+    '정체': '멈춰있는 것이 실패가 아닙니다. 지금은 정리의 시간입니다.',
+    '예민': '예민함은 당신이 더 많은 것을 느끼고 있다는 증거입니다.',
+    '성장': '모든 것을 동시에 이루려 하지 않아도 됩니다. 하나씩 충분합니다.',
+    '균형': '지금 이 상태를 유지하는 것 자체가 이미 회복입니다.',
+  };
+
+  // 기본 루틴 3개 + Archetype 특화 루틴 1개 조합
+  const baseItems = baseRoutinePool[flowType].slice(0, 3);
+  const archetypeItem = archetypeRoutineAdd[mainKey][flowType];
+  const items = [...baseItems, archetypeItem];
+
+  // 레이블: 흐름 유형별 이름
+  const flowLabel: Record<FlowType, string> = {
+    '진장': '속도 조절 회복 루틴',
+    '침잠': '활력 회복 루틴',
+    '정체': '흐름 회복 루틴',
+    '예민': '안정 회복 루틴',
+    '성장': '집중 회복 루틴',
+    '균형': '오늘의 자기 돌봄 루틴',
+  };
+
+  return {
+    label: flowLabel[flowType],
+    items,
+    coaching: flowCoaching[flowType],
+  };
 }
 
 /**
  * 심화 결과 화면에서 호출하는 메인 함수
- * @param colorIds 컬러 3장 ID (colorData.ts 기준)
+ * @param colorIds 콜러 3장 ID (colorData.ts 기준)
  * @param cards 심리카드 3장 { color, shape }
  */
 export function buildLifeEnergyResult(
@@ -545,5 +708,6 @@ export function buildLifeEnergyResult(
   const archetypes = deriveLifeArchetypes(colorIds, cards);
   const archetypeCoaching = buildArchetypeCoaching(archetypes);
   const energyFlow = interpretEnergyFlow(ohangScore);
-  return { archetypes, archetypeCoaching, energyFlow };
+  const routines = buildContextualRoutines(archetypes, ohangScore);
+  return { archetypes, archetypeCoaching, energyFlow, routines };
 }

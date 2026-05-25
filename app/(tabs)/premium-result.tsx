@@ -20,7 +20,7 @@ import { type CardData, CARD_DATA } from "@/constants/cardData";
 import { type ColorData } from "@/constants/colorData";
 import { type UserProfile } from "./profile";
 import { trpc } from "@/lib/trpc";
-import { buildLifeEnergyResult, type LifeEnergyResult } from "@/constants/lifeArchetype";
+import { buildLifeEnergyResult, type LifeEnergyResult, type ContextualRoutine } from "@/constants/lifeArchetype";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -949,6 +949,27 @@ export default function PremiumResultScreen() {
               </Text>
             </View>
           )}
+        </View>
+
+        {/* 맞춤 회복 루틴 섹션 — Archetype + 에너지 흐름 조합 */}
+        <View style={[styles.contextualRoutineSection, { backgroundColor: '#F0F4FF', borderColor: '#B8C8F0' }]}>
+          <Text style={[styles.contextualRoutineTitle, { color: '#2A3A6E' }]}>
+            🌱 {lifeEnergyResult.routines.label}
+          </Text>
+          <Text style={[styles.contextualRoutineSub, { color: '#4A5A8E' }]}>
+            지금 나의 에너지 흐름에 맞춘 실천 제안입니다
+          </Text>
+          {lifeEnergyResult.routines.items.map((item, idx) => (
+            <View key={idx} style={styles.contextualRoutineItem}>
+              <Text style={[styles.contextualRoutineDot, { color: '#5B6FB8' }]}>·</Text>
+              <Text style={[styles.contextualRoutineText, { color: '#2A3A6E' }]}>{item}</Text>
+            </View>
+          ))}
+          <View style={[styles.contextualRoutineCoachingBox, { backgroundColor: '#E8EDFF', borderColor: '#B8C8F0' }]}>
+            <Text style={[styles.contextualRoutineCoachingText, { color: '#1A2A5E' }]}>
+              {lifeEnergyResult.routines.coaching}
+            </Text>
+          </View>
         </View>
 
         {/* 체험 중 결제 유도 배너 */}
@@ -2047,5 +2068,50 @@ const styles = StyleSheet.create({
   reviewEditBtnText: {
     fontSize: 13,
     textDecorationLine: 'underline',
+  },
+  contextualRoutineSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+  },
+  contextualRoutineTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  contextualRoutineSub: {
+    fontSize: 13,
+    marginBottom: 14,
+    lineHeight: 18,
+  },
+  contextualRoutineItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+    gap: 6,
+  },
+  contextualRoutineDot: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '700',
+  },
+  contextualRoutineText: {
+    fontSize: 14,
+    lineHeight: 21,
+    flex: 1,
+  },
+  contextualRoutineCoachingBox: {
+    marginTop: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 14,
+  },
+  contextualRoutineCoachingText: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontStyle: 'italic',
+    fontWeight: '500',
   },
 });
