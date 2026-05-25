@@ -161,7 +161,12 @@ const COMFORT_QUOTES: Record<string, { text: string; ref: string }> = {
   neutral:     { text: '조용히 정리하는 시간이 다음 흐름을 준비합니다.', ref: '' },
 };
 
-function getScriptureVerse(colorId: string, faith: string): { text: string; ref: string; label: string } {
+function getScriptureVerse(
+  colorId: string,
+  faith: string,
+  flowType?: string,
+  archetypeKey?: string,
+): { text: string; ref: string; label: string } {
   const family = getColorFamily(colorId);
 
   // 무교 사용자: 성경구절 대신 위로 문구
@@ -171,23 +176,105 @@ function getScriptureVerse(colorId: string, faith: string): { text: string; ref:
   }
 
   const label = '✝️ 오늘의 말씀';
-  const verseMap: Record<string, { text: string; ref: string }> = {
-    warm_active: { text: '내가 너와 함께 하노라 두려워하지 말라', ref: '이사야 41:10' },
-    warm_social: { text: '사랑은 오래 참고 온유하며', ref: '고린도전서 13:4' },
-    yellow:      { text: '내 멍에는 쉽고 내 짐은 가벼움이라', ref: '마태복음 11:30' },
-    green:       { text: '여호와는 나의 목자시니 내게 부족함이 없으리로다', ref: '시편 23:1' },
-    blue:        { text: '하나님이 우리에게 주신 것은 두려워하는 마음이 아니요', ref: '디모데후서 1:7' },
-    purple:      { text: '네 마음을 다하여 여호와를 신뢰하고', ref: '잠언 3:5' },
-    lavender:    { text: '내 영혼아 잠잠히 하나님만 바라라', ref: '시편 62:5' },
-    cool:        { text: '평강의 하나님이 친히 너희와 함께 하시리라', ref: '빌립보서 4:9' },
-    black:       { text: '사망의 음침한 골짜기로 다닐지라도 해를 두려워하지 않을 것은', ref: '시편 23:4' },
-    neutral:     { text: '수고하고 무거운 짐 진 자들아 다 내게로 오라', ref: '마태복음 11:28' },
+
+  // ── 오행 흐름 유형별 구절 풀 (각 유형당 4~6개, 컬러 계열로 세분화) ──
+  // 진장(화 과다): 긴장·예민·압박 → 담대함·평안·쉼
+  const tensionVerses: Record<string, { text: string; ref: string }> = {
+    warm_active: { text: '두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라', ref: '이사야 41:10' },
+    warm_social: { text: '아무것도 염려하지 말고 다만 모든 일에 기도와 간구로 너희 구할 것을 감사함으로 하나님께 아뢰라', ref: '빌립보서 4:6' },
+    yellow:      { text: '내가 주는 평안은 세상이 주는 것과 같지 아니하니라 너희는 마음에 근심하지도 말고 두려워하지도 말라', ref: '요한복음 14:27' },
+    green:       { text: '그가 나를 푸른 풀밭에 누이시며 쉴 만한 물 가로 인도하시는도다', ref: '시편 23:2' },
+    blue:        { text: '하나님이 우리에게 주신 것은 두려워하는 마음이 아니요 오직 능력과 사랑과 절제하는 마음이니', ref: '디모데후서 1:7' },
+    purple:      { text: '내 영혼아 잠잠히 하나님만 바라라 무릇 나의 소망이 그로부터 나오는도다', ref: '시편 62:5' },
+    neutral:     { text: '수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라', ref: '마태복음 11:28' },
   };
-  const verse = verseMap[family] ?? verseMap['neutral'];
+
+  // 침잠(수 과다): 피로·감정 침잠·무기력 → 소망·새 힘·일어남
+  const drainVerses: Record<string, { text: string; ref: string }> = {
+    warm_active: { text: '오직 여호와를 앙망하는 자는 새 힘을 얻으리니 독수리가 날개치며 올라감 같을 것이요', ref: '이사야 40:31' },
+    warm_social: { text: '사랑하는 자여 네 영혼이 잘됨 같이 네가 범사에 잘되고 강건하기를 내가 간구하노라', ref: '요한삼서 1:2' },
+    yellow:      { text: '내가 산을 향하여 눈을 들리라 나의 도움이 어디서 올까 나의 도움은 천지를 지으신 여호와에게서로다', ref: '시편 121:1-2' },
+    green:       { text: '여호와는 나의 목자시니 내게 부족함이 없으리로다 그가 나를 푸른 풀밭에 누이시며', ref: '시편 23:1-2' },
+    blue:        { text: '내가 사망의 음침한 골짜기로 다닐지라도 해를 두려워하지 않을 것은 주께서 나와 함께 하심이라', ref: '시편 23:4' },
+    purple:      { text: '주의 말씀은 내 발에 등이요 내 길에 빛이니이다', ref: '시편 119:105' },
+    neutral:     { text: '여호와여 내가 주께 부르짖으오니 나의 반석이여 내게 귀를 막지 마소서', ref: '시편 28:1' },
+  };
+
+  // 정체(토 과다): 무거움·답답함·감정 정체 → 새 시작·변화·움직임
+  const stagnantVerses: Record<string, { text: string; ref: string }> = {
+    warm_active: { text: '보라 내가 새 일을 행하리니 이제 나타낼 것이라 너희가 그것을 알지 못하겠느냐', ref: '이사야 43:19' },
+    warm_social: { text: '그런즉 누구든지 그리스도 안에 있으면 새로운 피조물이라 이전 것은 지나갔으니 보라 새 것이 되었도다', ref: '고린도후서 5:17' },
+    yellow:      { text: '너는 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라 너는 범사에 그를 인정하라 그리하면 네 길을 지도하시리라', ref: '잠언 3:5-6' },
+    green:       { text: '내가 너희에게 평안을 끼치노니 곧 나의 평안을 너희에게 주노라', ref: '요한복음 14:27' },
+    blue:        { text: '내가 네 갈 길을 가르쳐 보이고 너를 주목하여 훈계하리로다', ref: '시편 32:8' },
+    purple:      { text: '지혜가 부족한 자가 있으면 모든 사람에게 후히 주시고 꾸짖지 아니하시는 하나님께 구하라', ref: '야고보서 1:5' },
+    neutral:     { text: '여호와의 말씀이니라 너희를 향한 나의 생각을 내가 아나니 평안이요 재앙이 아니니라', ref: '예레미야 29:11' },
+  };
+
+  // 예민(금 과다): 예민·정리 욕구·경계 민감 → 평안·지혜·내려놓음
+  const sensitiveVerses: Record<string, { text: string; ref: string }> = {
+    warm_active: { text: '모든 지킬 만한 것 중에 더욱 네 마음을 지키라 생명의 근원이 이에서 남이니라', ref: '잠언 4:23' },
+    warm_social: { text: '사랑 안에 두려움이 없고 온전한 사랑이 두려움을 내쫓나니', ref: '요한일서 4:18' },
+    yellow:      { text: '평강의 하나님이 친히 너희와 함께 하시리라', ref: '빌립보서 4:9' },
+    green:       { text: '주의 인자하심이 하늘에 있고 주의 진실하심이 공중에 사무쳤으며', ref: '시편 36:5' },
+    blue:        { text: '하나님은 어지러움의 하나님이 아니시요 오직 화평의 하나님이시니라', ref: '고린도전서 14:33' },
+    purple:      { text: '오직 위로부터 난 지혜는 첫째 성결하고 다음에 화평하고 관용하고 양순하며', ref: '야고보서 3:17' },
+    neutral:     { text: '범사에 감사하라 이것이 그리스도 예수 안에서 너희를 향하신 하나님의 뜻이니라', ref: '데살로니가전서 5:18' },
+  };
+
+  // 성장(목 과다): 성장·추진·의미 탐색 → 인도하심·지혜·방향성
+  const growthVerses: Record<string, { text: string; ref: string }> = {
+    warm_active: { text: '강하고 담대하라 두려워하지 말며 놀라지 말라 네가 어디로 가든지 네 하나님 여호와가 너와 함께 하느니라', ref: '여호수아 1:9' },
+    warm_social: { text: '사랑은 오래 참고 사랑은 온유하며 투기하는 자가 되지 아니하며', ref: '고린도전서 13:4' },
+    yellow:      { text: '너는 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라', ref: '잠언 3:5' },
+    green:       { text: '내가 너희를 향하여 가지고 있는 생각들을 내가 아나니 재앙이 아니라 평안이요 미래와 희망을 주는 것이니라', ref: '예레미야 29:11' },
+    blue:        { text: '주의 말씀은 내 발에 등이요 내 길에 빛이니이다', ref: '시편 119:105' },
+    purple:      { text: '지혜가 부족한 자가 있으면 모든 사람에게 후히 주시고 꾸짖지 아니하시는 하나님께 구하라', ref: '야고보서 1:5' },
+    neutral:     { text: '내가 네 갈 길을 가르쳐 보이고 너를 주목하여 훈계하리로다', ref: '시편 32:8' },
+  };
+
+  // 균형: 감사·평안·충만 → 돌봄·사랑·안식
+  const balancedVerses: Record<string, { text: string; ref: string }> = {
+    warm_active: { text: '하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니', ref: '요한복음 3:16' },
+    warm_social: { text: '사랑은 오래 참고 사랑은 온유하며 투기하는 자가 되지 아니하며', ref: '고린도전서 13:4' },
+    yellow:      { text: '범사에 감사하라 이것이 그리스도 예수 안에서 너희를 향하신 하나님의 뜻이니라', ref: '데살로니가전서 5:18' },
+    green:       { text: '여호와는 나의 목자시니 내게 부족함이 없으리로다', ref: '시편 23:1' },
+    blue:        { text: '평강의 하나님이 친히 너희와 함께 하시리라', ref: '빌립보서 4:9' },
+    purple:      { text: '내 멍에는 쉽고 내 짐은 가벼움이라', ref: '마태복음 11:30' },
+    lavender:    { text: '사랑 안에 두려움이 없고 온전한 사랑이 두려움을 내쫓나니', ref: '요한일서 4:18' },
+    cool:        { text: '하나님은 어지러움의 하나님이 아니시요 오직 화평의 하나님이시니라', ref: '고린도전서 14:33' },
+    black:       { text: '주의 말씀은 내 발에 등이요 내 길에 빛이니이다', ref: '시편 119:105' },
+    neutral:     { text: '여호와의 말씀이니라 너희를 향한 나의 생각을 내가 아나니 평안이요 재앙이 아니니라', ref: '예레미야 29:11' },
+  };
+
+  // Archetype별 보조 구절 (flowType이 균형일 때 Archetype으로 세분화)
+  const archetypeVerses: Record<string, { text: string; ref: string }> = {
+    connector: { text: '사람이 친구를 위하여 자기 목숨을 버리면 이보다 더 큰 사랑이 없나니', ref: '요한복음 15:13' },
+    healer:    { text: '마음이 상한 자를 고치시며 그들의 상처를 싸매시는도다', ref: '시편 147:3' },
+    analyst:   { text: '오직 위로부터 난 지혜는 첫째 성결하고 다음에 화평하고 관용하고 양순하며', ref: '야고보서 3:17' },
+    leader:    { text: '강하고 담대하라 두려워하지 말며 놀라지 말라 네가 어디로 가든지 네 하나님 여호와가 너와 함께 하느니라', ref: '여호수아 1:9' },
+    artist:    { text: '하나님이 지으신 모든 것을 보시니 보시기에 심히 좋았더라', ref: '창세기 1:31' },
+    expert:    { text: '지혜가 부족한 자가 있으면 모든 사람에게 후히 주시고 꾸짖지 아니하시는 하나님께 구하라', ref: '야고보서 1:5' },
+  };
+
+  // 흐름 유형 → 구절 풀 선택
+  let pool: Record<string, { text: string; ref: string }>;
+  if (flowType === '진장') pool = tensionVerses;
+  else if (flowType === '침잠') pool = drainVerses;
+  else if (flowType === '정체') pool = stagnantVerses;
+  else if (flowType === '예민') pool = sensitiveVerses;
+  else if (flowType === '성장') pool = growthVerses;
+  else pool = balancedVerses; // 균형 또는 미정
+
+  // 컬러 패밀리로 구절 선택, 없으면 Archetype 보조 구절, 없으면 neutral
+  let verse = pool[family];
+  if (!verse && archetypeKey) verse = archetypeVerses[archetypeKey];
+  if (!verse) verse = pool['neutral'] ?? { text: '수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라', ref: '마태복음 11:28' };
+
   return { ...verse, label };
 }
 
-function getJobCoaching(job: string, faith: string, colorId?: string, concerns?: string[]): JobCoaching {
+function getJobCoaching(job: string, faith: string, colorId?: string, concerns?: string[], flowType?: string, archetypeKey?: string): JobCoaching {
   // 신앙별 추가 문구
   const faithNote =
     faith === "기독교"
@@ -243,7 +330,7 @@ function getJobCoaching(job: string, faith: string, colorId?: string, concerns?:
 
   // 조건부 위로 문구/성경구절 (타종교 제외 전체 표시)
   const showScripture = faith !== '타종교' && colorId !== undefined;
-  const scriptureVerse = (showScripture && colorId) ? getScriptureVerse(colorId, faith) : undefined;
+  const scriptureVerse = (showScripture && colorId) ? getScriptureVerse(colorId, faith, flowType, archetypeKey) : undefined;
 
   return { routineNote: colorRoutineNote, coachingNote, scriptureVerse };
 }
@@ -444,18 +531,22 @@ export default function PremiumResultScreen() {
 
   const [card1, card2, card3] = cards;
 
+  // 삶의 역할 Archetype + 오행 기반 에너지 흐름 해석 (jobCoaching보다 먼저 계산)
+  const lifeEnergyResult: LifeEnergyResult = buildLifeEnergyResult(
+    prevColors.length >= 3 ? prevColors.map((c) => c.id) : [card1.color, card2.color, card3.color],
+    [card1, card2, card3].map((c) => ({ color: c.color, shape: c.shape })),
+  );
+  // 오행 흐름 유형 및 메인 Archetype 키 추출 (성경구절 매칭용)
+  const _lifeFlowType = lifeEnergyResult.flowType;
+  const _archetypeKey = lifeEnergyResult.archetypes[0]?.key ?? '';
+
   // 직업별 맞춤 문구 (3번 카드 콜러 기준 성경구절)
-  const jobCoaching = profile ? getJobCoaching(profile.job, profile.faith, card3?.color, profile.concerns) : null;
+  const jobCoaching = profile ? getJobCoaching(profile.job, profile.faith, card3?.color, profile.concerns, _lifeFlowType, _archetypeKey) : null;
 
   // 3카드 조합 종합 코칭 메시지 생성 (감정 공감 중심)
   const combinedCoaching = generateCombinedCoaching(card1, card2, card3, prevColors.length >= 3 ? prevColors : undefined);
   // 하단 여운 문장: 3번 카드(회복 방향) 기준
   const closingLine = card3.closingLine;
-  // 삶의 역할 Archetype + 오행 기반 에너지 흐름 해석
-  const lifeEnergyResult: LifeEnergyResult = buildLifeEnergyResult(
-    prevColors.length >= 3 ? prevColors.map((c) => c.id) : [card1.color, card2.color, card3.color],
-    [card1, card2, card3].map((c) => ({ color: c.color, shape: c.shape })),
-  );
 
   const handleShare = async () => {
     // 보완 루틴 텍스트 구성 (card3 wellness 기준)
