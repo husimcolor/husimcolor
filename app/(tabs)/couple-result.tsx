@@ -229,10 +229,21 @@ export default function CoupleResultScreen() {
   const rawAccentB = colorsB[0]?.hex ?? colors.sage;
   // hex를 RGB로 변환하여 밝기 계산 (luminance < 0.6이면 그대로, 아니면 진한 색으로 대체)
   const hexLuminance = (hex: string) => {
+    if (!hex || hex.length < 7) return 0.5;
     const r = parseInt(hex.slice(1,3),16)/255;
     const g = parseInt(hex.slice(3,5),16)/255;
     const b = parseInt(hex.slice(5,7),16)/255;
     return 0.299*r + 0.587*g + 0.114*b;
+  };
+  // 배경 hex + 알파값(예: '28')을 받아 텍스트 색상 결정
+  // 어두운 배경(luminance < 0.45) → 밝은 아이보리, 밝은 배경 → 어두운 브라운
+  const getTextOnBg = (bgHex: string): string => {
+    const lum = hexLuminance(bgHex);
+    return lum < 0.45 ? '#F8F3EA' : '#3A2A1A';
+  };
+  const getMutedOnBg = (bgHex: string): string => {
+    const lum = hexLuminance(bgHex);
+    return lum < 0.45 ? '#E8DED2' : '#6B5344';
   };
   const accentA = hexLuminance(rawAccentA) > 0.75 ? '#7B5E3A' : rawAccentA;
   const accentB = hexLuminance(rawAccentB) > 0.75 ? '#7B5E3A' : rawAccentB;
@@ -362,19 +373,21 @@ export default function CoupleResultScreen() {
                     <SectionCard accentColor='#F5A623' label='생활 패턴' title={archetypeResult.lifestyleSections.finance.title} colors={colors}>
                       <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.finance.description}</Text>
                       <View style={{ gap: 8, marginTop: 8 }}>
-                        <View style={[{ backgroundColor: accentCouple + '18', borderRadius: 10, padding: 12 }]}>
-                          <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                        <View style={{ backgroundColor: '#4A3A2A', borderRadius: 10, padding: 14 }}>
+                          <Text style={{ color: '#F0E8DC', fontSize: 15, lineHeight: 26 }}>
                             첫 번째 사람: {archetypeResult.lifestyleSections.finance.personA}
                           </Text>
                         </View>
-                        <View style={[{ backgroundColor: accentCouple + '18', borderRadius: 10, padding: 12 }]}>
-                          <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                        <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
+                          <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26 }}>
                             두 번째 사람: {archetypeResult.lifestyleSections.finance.personB}
                           </Text>
                         </View>
-                        <Text style={[styles.bodyText, { color: colors.muted, marginBottom: 0, fontSize: 13 }]}>
-                          {archetypeResult.lifestyleSections.finance.tension}
-                        </Text>
+                        <View style={{ backgroundColor: '#FFF3DC', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#D4820A' }}>
+                          <Text style={{ color: '#5A3000', fontSize: 14, lineHeight: 24 }}>
+                            {archetypeResult.lifestyleSections.finance.tension}
+                          </Text>
+                        </View>
                       </View>
                     </SectionCard>
                   )}
@@ -382,19 +395,21 @@ export default function CoupleResultScreen() {
                     <SectionCard accentColor='#7EC8A4' label='생활 패턴' title={archetypeResult.lifestyleSections.cleaning.title} colors={colors}>
                       <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.cleaning.description}</Text>
                       <View style={{ gap: 8, marginTop: 8 }}>
-                        <View style={[{ backgroundColor: accentCouple + '18', borderRadius: 10, padding: 12 }]}>
-                          <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                        <View style={{ backgroundColor: '#2A3A2A', borderRadius: 10, padding: 14 }}>
+                          <Text style={{ color: '#E0F0E4', fontSize: 15, lineHeight: 26 }}>
                             첫 번째 사람: {archetypeResult.lifestyleSections.cleaning.personA}
                           </Text>
                         </View>
-                        <View style={[{ backgroundColor: accentCouple + '18', borderRadius: 10, padding: 12 }]}>
-                          <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                        <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
+                          <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26 }}>
                             두 번째 사람: {archetypeResult.lifestyleSections.cleaning.personB}
                           </Text>
                         </View>
-                        <Text style={[styles.bodyText, { color: colors.muted, marginBottom: 0, fontSize: 13 }]}>
-                          {archetypeResult.lifestyleSections.cleaning.tension}
-                        </Text>
+                        <View style={{ backgroundColor: '#D8F5E8', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#3A9A6A' }}>
+                          <Text style={{ color: '#1A4A2A', fontSize: 14, lineHeight: 24 }}>
+                            {archetypeResult.lifestyleSections.cleaning.tension}
+                          </Text>
+                        </View>
                       </View>
                     </SectionCard>
                   )}
@@ -402,19 +417,21 @@ export default function CoupleResultScreen() {
                     <SectionCard accentColor='#8BB8E8' label='생활 패턴' title={archetypeResult.lifestyleSections.rest.title} colors={colors}>
                       <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.rest.description}</Text>
                       <View style={{ gap: 8, marginTop: 8 }}>
-                        <View style={[{ backgroundColor: accentCouple + '18', borderRadius: 10, padding: 12 }]}>
-                          <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                        <View style={{ backgroundColor: '#2A3040', borderRadius: 10, padding: 14 }}>
+                          <Text style={{ color: '#DCE8F8', fontSize: 15, lineHeight: 26 }}>
                             첫 번째 사람: {archetypeResult.lifestyleSections.rest.personA}
                           </Text>
                         </View>
-                        <View style={[{ backgroundColor: accentCouple + '18', borderRadius: 10, padding: 12 }]}>
-                          <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                        <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
+                          <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26 }}>
                             두 번째 사람: {archetypeResult.lifestyleSections.rest.personB}
                           </Text>
                         </View>
-                        <Text style={[styles.bodyText, { color: colors.muted, marginBottom: 0, fontSize: 13 }]}>
-                          {archetypeResult.lifestyleSections.rest.tension}
-                        </Text>
+                        <View style={{ backgroundColor: '#D8EEFF', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#5080C0' }}>
+                          <Text style={{ color: '#1A3060', fontSize: 14, lineHeight: 24 }}>
+                            {archetypeResult.lifestyleSections.rest.tension}
+                          </Text>
+                        </View>
                       </View>
                     </SectionCard>
                   )}
@@ -422,19 +439,21 @@ export default function CoupleResultScreen() {
                     <SectionCard accentColor='#E8A0B4' label='생활 패턴' title={archetypeResult.lifestyleSections.affection.title} colors={colors}>
                       <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.affection.description}</Text>
                       <View style={{ gap: 8, marginTop: 8 }}>
-                        <View style={[{ backgroundColor: accentCouple + '18', borderRadius: 10, padding: 12 }]}>
-                          <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                        <View style={{ backgroundColor: '#3A2030', borderRadius: 10, padding: 14 }}>
+                          <Text style={{ color: '#F8DCE8', fontSize: 15, lineHeight: 26 }}>
                             첫 번째 사람: {archetypeResult.lifestyleSections.affection.personA}
                           </Text>
                         </View>
-                        <View style={[{ backgroundColor: accentCouple + '18', borderRadius: 10, padding: 12 }]}>
-                          <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                        <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
+                          <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26 }}>
                             두 번째 사람: {archetypeResult.lifestyleSections.affection.personB}
                           </Text>
                         </View>
-                        <Text style={[styles.bodyText, { color: colors.muted, marginBottom: 0, fontSize: 13 }]}>
-                          💡 {archetypeResult.lifestyleSections.affection.tip}
-                        </Text>
+                        <View style={{ backgroundColor: '#FFE0EC', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#C05080' }}>
+                          <Text style={{ color: '#5A1030', fontSize: 14, lineHeight: 24 }}>
+                            💡 {archetypeResult.lifestyleSections.affection.tip}
+                          </Text>
+                        </View>
                       </View>
                     </SectionCard>
                   )}
@@ -442,19 +461,21 @@ export default function CoupleResultScreen() {
                     <SectionCard accentColor='#C47E8A' label='생활 패턴' title={archetypeResult.lifestyleSections.conflict.title} colors={colors}>
                       <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.conflict.description}</Text>
                       <View style={{ gap: 8, marginTop: 8 }}>
-                        <View style={[{ backgroundColor: accentCouple + '18', borderRadius: 10, padding: 12 }]}>
-                          <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                        <View style={{ backgroundColor: '#3A2A2A', borderRadius: 10, padding: 14 }}>
+                          <Text style={{ color: '#F8E8E0', fontSize: 15, lineHeight: 26 }}>
                             첫 번째 사람: {archetypeResult.lifestyleSections.conflict.personA}
                           </Text>
                         </View>
-                        <View style={[{ backgroundColor: accentCouple + '18', borderRadius: 10, padding: 12 }]}>
-                          <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                        <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
+                          <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26 }}>
                             두 번째 사람: {archetypeResult.lifestyleSections.conflict.personB}
                           </Text>
                         </View>
-                        <Text style={[styles.bodyText, { color: colors.muted, marginBottom: 0, fontSize: 13 }]}>
-                          💡 {archetypeResult.lifestyleSections.conflict.tip}
-                        </Text>
+                        <View style={{ backgroundColor: '#F5E8D0', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#B08050' }}>
+                          <Text style={{ color: '#4A2800', fontSize: 14, lineHeight: 24 }}>
+                            💡 {archetypeResult.lifestyleSections.conflict.tip}
+                          </Text>
+                        </View>
                       </View>
                     </SectionCard>
                   )}
@@ -479,15 +500,22 @@ export default function CoupleResultScreen() {
               {/* 경량 archetype 보완 컬러 */}
               {lightArchetypeResult.recommendedColors && lightArchetypeResult.recommendedColors.length > 0 && (
                 <SectionCard accentColor={accentCouple} title="이 관계에 어울리는 컬러" colors={colors}>
-                  {lightArchetypeResult.recommendedColors.map(rc => (
-                    <View key={rc.id} style={[styles.complementRow, { backgroundColor: rc.hex + '28', borderColor: rc.hex + '60' }]}>
-                      <View style={[styles.complementDot, { backgroundColor: rc.hex }]} />
-                      <View style={styles.complementText}>
-                        <Text style={[styles.complementName, { color: hexLuminance(rc.hex) < 0.2 ? '#A0C8B0' : rc.hex }]}>{rc.korName}</Text>
-                        <Text style={[styles.complementMeaning, { color: colors.foreground }]}>{rc.reason}</Text>
+                  {lightArchetypeResult.recommendedColors.map(rc => {
+                    const bgLum = hexLuminance(rc.hex);
+                    const isDarkBg = bgLum < 0.45;
+                    const cardBg = isDarkBg ? rc.hex + 'CC' : rc.hex + '22';
+                    const nameColor = isDarkBg ? '#FFFFFF' : (bgLum > 0.75 ? '#5A3A1A' : rc.hex);
+                    const descColor = isDarkBg ? '#F8F3EA' : '#3A2A1A';
+                    return (
+                      <View key={rc.id} style={[styles.complementRow, { backgroundColor: cardBg, borderColor: rc.hex + '80' }]}>
+                        <View style={[styles.complementDot, { backgroundColor: rc.hex, borderWidth: isDarkBg ? 2 : 0, borderColor: 'rgba(255,255,255,0.4)' }]} />
+                        <View style={styles.complementText}>
+                          <Text style={[styles.complementName, { color: nameColor }]}>{rc.korName}</Text>
+                          <Text style={[styles.complementMeaning, { color: descColor, fontSize: 14, lineHeight: 24 }]}>{rc.reason}</Text>
+                        </View>
                       </View>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </SectionCard>
               )}
             </>
@@ -763,16 +791,18 @@ export default function CoupleResultScreen() {
           <SectionCard accentColor={accentA} label="첫 번째 사람" title="보완 컬러" colors={colors}>
             {(() => {
               const cc = personAAnalysis.complementColor;
+              const ccLum = hexLuminance(cc.hex);
+              const isDarkCc = ccLum < 0.45;
               return (
-                <View style={[styles.complementRow, { backgroundColor: cc.hex + '18', borderColor: cc.hex + '40' }]}>
-                  <View style={[styles.complementDot, { backgroundColor: cc.hex }]} />
+                <View style={[styles.complementRow, { backgroundColor: isDarkCc ? cc.hex + 'CC' : cc.hex + '22', borderColor: cc.hex + '80' }]}>
+                  <View style={[styles.complementDot, { backgroundColor: cc.hex, borderWidth: isDarkCc ? 2 : 0, borderColor: 'rgba(255,255,255,0.4)' }]} />
                   <View style={styles.complementText}>
-                    <Text style={[styles.complementName, { color: cc.hex }]}>{cc.korName}</Text>
-                <Text style={[styles.complementMeaning, { color: colors.foreground }]}>{cc.meaning}</Text>
-              </View>
-            </View>
-          );
-        })()}
+                    <Text style={[styles.complementName, { color: isDarkCc ? '#FFFFFF' : (ccLum > 0.75 ? '#5A3A1A' : cc.hex) }]}>{cc.korName}</Text>
+                    <Text style={[styles.complementMeaning, { color: isDarkCc ? '#F8F3EA' : '#3A2A1A', fontSize: 14, lineHeight: 24 }]}>{cc.meaning}</Text>
+                  </View>
+                </View>
+              );
+            })()}
             <Text style={[styles.coachingMessage, { color: colors.foreground, borderLeftColor: accentA + '80' }]}>
               {personAAnalysis.coachingMessage}
             </Text>
@@ -791,16 +821,18 @@ export default function CoupleResultScreen() {
           <SectionCard accentColor={accentB} label="두 번째 사람" title="보완 컬러" colors={colors}>
             {(() => {
               const cc = personBAnalysis.complementColor;
+              const ccLum = hexLuminance(cc.hex);
+              const isDarkCc = ccLum < 0.45;
               return (
-                <View style={[styles.complementRow, { backgroundColor: cc.hex + '18', borderColor: cc.hex + '40' }]}>
-                  <View style={[styles.complementDot, { backgroundColor: cc.hex }]} />
+                <View style={[styles.complementRow, { backgroundColor: isDarkCc ? cc.hex + 'CC' : cc.hex + '22', borderColor: cc.hex + '80' }]}>
+                  <View style={[styles.complementDot, { backgroundColor: cc.hex, borderWidth: isDarkCc ? 2 : 0, borderColor: 'rgba(255,255,255,0.4)' }]} />
                   <View style={styles.complementText}>
-                    <Text style={[styles.complementName, { color: cc.hex }]}>{cc.korName}</Text>
-                <Text style={[styles.complementMeaning, { color: colors.foreground }]}>{cc.meaning}</Text>
-              </View>
-            </View>
-          );
-        })()}
+                    <Text style={[styles.complementName, { color: isDarkCc ? '#FFFFFF' : (ccLum > 0.75 ? '#5A3A1A' : cc.hex) }]}>{cc.korName}</Text>
+                    <Text style={[styles.complementMeaning, { color: isDarkCc ? '#F8F3EA' : '#3A2A1A', fontSize: 14, lineHeight: 24 }]}>{cc.meaning}</Text>
+                  </View>
+                </View>
+              );
+            })()}
             <Text style={[styles.coachingMessage, { color: colors.foreground, borderLeftColor: accentB + '80' }]}>
               {personBAnalysis.coachingMessage}
             </Text>
@@ -1118,24 +1150,32 @@ export default function CoupleResultScreen() {
           )}
           {/* 추천 컬러 - archetype 기반 우선, 없으면 기존 컬러 사용 */}
           <SectionCard accentColor={accentCouple} title="두 사람에게 권하는 컬러" colors={colors}>
-            {(archetypeResult.recommendedColors ?? coupleAnalysis.coupleRoutine.recommendedColors).map(rc => (
-              <View key={rc.id} style={[styles.complementRow, { backgroundColor: rc.hex + '28', borderColor: rc.hex + '60' }]}>
-                <View style={[styles.complementDot, { backgroundColor: rc.hex }]} />
-                <View style={styles.complementText}>
-                  <Text style={[styles.complementName, { color: hexLuminance(rc.hex) < 0.2 ? '#A0C8B0' : rc.hex }]}>{rc.korName}</Text>
-                  <Text style={[styles.complementMeaning, { color: colors.foreground }]}>{rc.reason}</Text>
+            {(archetypeResult.recommendedColors ?? coupleAnalysis.coupleRoutine.recommendedColors).map(rc => {
+              // 배경 밝기에 따라 텍스트 색상 자동 결정
+              const bgLum = hexLuminance(rc.hex);
+              const isDarkBg = bgLum < 0.45;
+              const cardBg = isDarkBg ? rc.hex + 'CC' : rc.hex + '22';
+              const nameColor = isDarkBg ? '#FFFFFF' : (bgLum > 0.75 ? '#5A3A1A' : rc.hex);
+              const descColor = isDarkBg ? '#F8F3EA' : '#3A2A1A';
+              return (
+                <View key={rc.id} style={[styles.complementRow, { backgroundColor: cardBg, borderColor: rc.hex + '80' }]}>
+                  <View style={[styles.complementDot, { backgroundColor: rc.hex, borderWidth: isDarkBg ? 2 : 0, borderColor: 'rgba(255,255,255,0.4)' }]} />
+                  <View style={styles.complementText}>
+                    <Text style={[styles.complementName, { color: nameColor }]}>{rc.korName}</Text>
+                    <Text style={[styles.complementMeaning, { color: descColor, fontSize: 14, lineHeight: 24 }]}>{rc.reason}</Text>
+                  </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </SectionCard>
           {/* 연인/부부 전용 풀 archetype 블록 닫기 */}
           </>)}
           {/* ═══════════════════════════════════════════════════════
               마무리 코칭 메시지
           ═══════════════════════════════════════════════════════ */}
-          <View style={[styles.closingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.closingCard, { backgroundColor: '#2A2420', borderColor: accentCouple + '60' }]}>
             <Text style={[styles.closingLabel, { color: accentCouple }]}>마무리 코칭 메시지</Text>
-            <Text style={[styles.closingMessage, { color: colors.foreground }]}>
+            <Text style={[styles.closingMessage, { color: '#F8F3EA' }]}>
               {lightArchetypeResult
                 ? lightArchetypeResult.closingMessage
                 : (archetypeResult.closingMessage ?? coupleAnalysis.closingMessage)}
@@ -1254,12 +1294,12 @@ const styles = StyleSheet.create({
   bullet: { fontSize: 16, lineHeight: 22, fontWeight: '700' },
   bulletText: { flex: 1, fontSize: 15, lineHeight: 26 },
   closingCard: {
-    borderRadius: 16, borderWidth: 1, padding: 24, marginBottom: 20, gap: 12,
+    borderRadius: 16, borderWidth: 1.5, padding: 24, marginBottom: 20, gap: 12,
     alignItems: 'center',
   },
-  closingLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
+  closingLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8 },
   closingMessage: {
-    fontSize: 16, lineHeight: 30, textAlign: 'center', fontStyle: 'italic',
+    fontSize: 16, lineHeight: 32, textAlign: 'center', fontStyle: 'italic',
   },
   restartBtn: {
     paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginBottom: 12,

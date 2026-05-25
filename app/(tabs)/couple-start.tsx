@@ -113,15 +113,15 @@ export default function CoupleStartScreen() {
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: isSelected ? colors.primary : colors.surface,
-          borderColor: isSelected ? colors.primary : colors.border,
+          backgroundColor: isSelected ? colors.primary : 'rgba(255,255,255,0.12)',
+          borderColor: isSelected ? colors.primary : 'rgba(255,255,255,0.25)',
         },
         pressed && { opacity: 0.8 },
       ]}
       onPress={onPress}
     >
       {emoji && <Text style={styles.chipEmoji}>{emoji}</Text>}
-      <Text style={[styles.chipText, { color: isSelected ? '#fff' : colors.foreground }]}>
+      <Text style={[styles.chipText, { color: isSelected ? '#fff' : '#F0E8DC' }]}>
         {label}
       </Text>
     </Pressable>
@@ -154,8 +154,8 @@ export default function CoupleStartScreen() {
           </View>
 
           {/* 안내 문구 */}
-          <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.infoText, { color: colors.muted }]}>
+          <View style={[styles.infoCard, { backgroundColor: '#2A2420', borderColor: '#4A3A30' }]}>
+            <Text style={[styles.infoText, { color: '#F0E8DC' }]}>
               두 사람이 각자 컬러를 선택하고,{'\n'}
               서로의 마음 흐름과 관계 패턴을 함께 살펴봅니다.{'\n'}
               누가 맞고 틀린 것이 아닌,{'\n'}
@@ -165,7 +165,7 @@ export default function CoupleStartScreen() {
 
           {/* 관계 유형 */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>관계 유형</Text>
+            <Text style={[styles.sectionTitle, { color: '#2D2420' }]}>관계 유형</Text>
             <View style={styles.chipRow}>
               {RELATION_TYPES.map(r =>
                 renderChip(r.label, relationType === r.value, () => handleRelationTypeSelect(r.value), r.emoji)
@@ -188,19 +188,19 @@ export default function CoupleStartScreen() {
           )}
 
           {/* A 정보 */}
-          <View style={[styles.personSection, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-            <View style={[styles.personBadge, { backgroundColor: colors.primary + '20' }]}>
+          <View style={[styles.personSection, { borderColor: '#4A3A30', backgroundColor: '#2A2420' }]}>
+            <View style={[styles.personBadge, { backgroundColor: colors.primary + '30' }]}>
               <Text style={[styles.personBadgeText, { color: colors.primary }]}>첫 번째 사람</Text>
             </View>
 
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>성별</Text>
+            <Text style={[styles.sectionTitle, { color: '#F0E8DC' }]}>성별</Text>
             <View style={styles.chipRow}>
               {GENDERS.map(g =>
                 renderChip(g.label, genderA === g.value, () => setGenderA(g.value))
               )}
             </View>
 
-            <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 16 }]}>종교</Text>
+            <Text style={[styles.sectionTitle, { color: '#F0E8DC', marginTop: 16 }]}>종교</Text>
             <View style={styles.chipRow}>
               {FAITHS.map(f =>
                 renderChip(f.label, faithA === f.value, () => setFaithA(f.value))
@@ -209,19 +209,19 @@ export default function CoupleStartScreen() {
           </View>
 
           {/* B 정보 */}
-          <View style={[styles.personSection, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-            <View style={[styles.personBadge, { backgroundColor: colors.sage + '30' }]}>
-              <Text style={[styles.personBadgeText, { color: colors.sage }]}>두 번째 사람</Text>
+          <View style={[styles.personSection, { borderColor: '#3A4A3A', backgroundColor: '#222A22' }]}>
+            <View style={[styles.personBadge, { backgroundColor: '#7EC8A430' }]}>
+              <Text style={[styles.personBadgeText, { color: '#7EC8A4' }]}>두 번째 사람</Text>
             </View>
 
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>성별</Text>
+            <Text style={[styles.sectionTitle, { color: '#E0F0E4' }]}>성별</Text>
             <View style={styles.chipRow}>
               {GENDERS.map(g =>
                 renderChip(g.label, genderB === g.value, () => setGenderB(g.value))
               )}
             </View>
 
-            <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 16 }]}>종교</Text>
+            <Text style={[styles.sectionTitle, { color: '#E0F0E4', marginTop: 16 }]}>종교</Text>
             <View style={styles.chipRow}>
               {FAITHS.map(f =>
                 renderChip(f.label, faithB === f.value, () => setFaithB(f.value))
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   infoCard: {
     borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 24,
   },
-  infoText: { fontSize: 13, lineHeight: 22, textAlign: 'center' },
+  infoText: { fontSize: 15, lineHeight: 26, textAlign: 'center' },
   section: { marginBottom: 24 },
   subSection: {
     borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 20, marginTop: -12,
