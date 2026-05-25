@@ -1171,6 +1171,36 @@ export default function CoupleResultScreen() {
           {/* 연인/부부 전용 풀 archetype 블록 닫기 */}
           </>)}
           {/* ═══════════════════════════════════════════════════════
+              함께하면 좋은 회복 루틴
+          ═══════════════════════════════════════════════════════ */}
+          {archetypeResult.togetherRoutine && (() => {
+            const tr = archetypeResult.togetherRoutine;
+            const hasFaith = sessionData?.personA.info.faith === '기독교' || sessionData?.personB.info.faith === '기독교';
+            return (
+              <View style={[styles.togetherRoutineCard, { borderColor: accentCouple + '50' }]}>
+                <Text style={[styles.togetherRoutineTitle, { color: accentCouple }]}>🌿 함께하면 좋은 회복 루틴</Text>
+                <View style={styles.togetherRoutineList}>
+                  {tr.routines.map((routine: string, i: number) => (
+                    <View key={i} style={styles.togetherRoutineItem}>
+                      <View style={[styles.togetherRoutineDot, { backgroundColor: accentCouple }]} />
+                      <Text style={[styles.togetherRoutineText, { color: '#F0E8DC' }]}>{routine}</Text>
+                    </View>
+                  ))}
+                  {hasFaith && tr.faithRoutine && (
+                    <View style={styles.togetherRoutineItem}>
+                      <View style={[styles.togetherRoutineDot, { backgroundColor: '#D4AF37' }]} />
+                      <Text style={[styles.togetherRoutineText, { color: '#F0E8DC' }]}>{tr.faithRoutine}</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={[styles.togetherEnergyBox, { borderColor: accentCouple + '40' }]}>
+                  <Text style={[styles.togetherEnergyLabel, { color: accentCouple }]}>✨ 함께하면 살아나는 에너지</Text>
+                  <Text style={styles.togetherEnergyText}>{tr.energyNote}</Text>
+                </View>
+              </View>
+            );
+          })()}
+          {/* ═══════════════════════════════════════════════════════
               마무리 코칭 메시지
           ═══════════════════════════════════════════════════════ */}
           <View style={[styles.closingCard, { backgroundColor: '#2A2420', borderColor: accentCouple + '60' }]}>
@@ -1272,7 +1302,7 @@ const styles = StyleSheet.create({
 
   // ─── 섹션 공통 ───────────────────────────────────────────────
   sectionGroupTitle: {
-    fontSize: 12, fontWeight: '700', letterSpacing: 0.8,
+    fontSize: 13, fontWeight: '700', letterSpacing: 0.8,
     textTransform: 'uppercase', marginBottom: 12, marginTop: 4,
   },
   bodyText: { fontSize: 15, lineHeight: 28 },
@@ -1282,8 +1312,8 @@ const styles = StyleSheet.create({
   },
   complementDot: { width: 32, height: 32, borderRadius: 16 },
   complementText: { flex: 1, gap: 2 },
-  complementName: { fontSize: 14, fontWeight: '700' },
-  complementMeaning: { fontSize: 13, lineHeight: 22 },
+  complementName: { fontSize: 15, fontWeight: '700' },
+  complementMeaning: { fontSize: 14, lineHeight: 24 },
   coachingMessage: {
     fontSize: 15, lineHeight: 28, fontStyle: 'italic',
     borderLeftWidth: 3, paddingLeft: 14, marginTop: 8,
@@ -1297,7 +1327,7 @@ const styles = StyleSheet.create({
     borderRadius: 16, borderWidth: 1.5, padding: 24, marginBottom: 20, gap: 12,
     alignItems: 'center',
   },
-  closingLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8 },
+  closingLabel: { fontSize: 13, fontWeight: '700', letterSpacing: 0.8 },
   closingMessage: {
     fontSize: 16, lineHeight: 32, textAlign: 'center', fontStyle: 'italic',
   },
@@ -1315,6 +1345,37 @@ const styles = StyleSheet.create({
     borderWidth: 1, marginBottom: 12, marginTop: 4,
   },
   shareBtnText: { fontSize: 14, fontWeight: '600' },
+
+  // ─── 함께하면 좋은 회복 루틴 ────────────────────────────────────
+  togetherRoutineCard: {
+    borderRadius: 16, borderWidth: 1.5, padding: 22, marginBottom: 20,
+    backgroundColor: '#2A2420',
+    gap: 14,
+  },
+  togetherRoutineTitle: {
+    fontSize: 17, fontWeight: '700', marginBottom: 4,
+  },
+  togetherRoutineList: { gap: 10 },
+  togetherRoutineItem: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+  },
+  togetherRoutineDot: {
+    width: 7, height: 7, borderRadius: 4, marginTop: 8, flexShrink: 0,
+  },
+  togetherRoutineText: {
+    fontSize: 15, lineHeight: 26, flex: 1,
+  },
+  togetherEnergyBox: {
+    borderRadius: 12, borderWidth: 1, padding: 16, gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    marginTop: 4,
+  },
+  togetherEnergyLabel: {
+    fontSize: 13, fontWeight: '700', letterSpacing: 0.5,
+  },
+  togetherEnergyText: {
+    fontSize: 15, lineHeight: 26, color: '#E8DED2',
+  },
 });
 
 const shareCardStyles = StyleSheet.create({
