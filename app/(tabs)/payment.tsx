@@ -172,8 +172,16 @@ export default function PaymentScreen() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    // 이름/연락처 입력 단계 먼저 표시
-    setTrialInfoStep(true);
+    // 이름/연락처 입력 단계 제거 — 바로 프로필 단계로 이동
+    const saved = await AsyncStorage.getItem("userProfile");
+    if (saved) {
+      const p = JSON.parse(saved);
+      if (p.age) setProfileAge(p.age);
+      if (p.job) setProfileJob(p.job);
+      if (p.faith) setProfileFaith(p.faith);
+      if (p.concerns) setProfileConcerns(p.concerns);
+    }
+    setProfileStep(true);
   };
   const handleTrialInfoNext = async () => {
     if (!trialName || !trialContact) return;
@@ -208,8 +216,16 @@ export default function PaymentScreen() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // 이름/연락처 입력 단계 먼저 표시 (이전 체험 기록이 있어도 매번 입력 받기)
-    setTrialInfoStep(true);
+    // 이름/연락처 입력 단계 제거 — 바로 프로필 단계로 이동
+    const saved = await AsyncStorage.getItem("userProfile");
+    if (saved) {
+      const p = JSON.parse(saved);
+      if (p.age) setProfileAge(p.age);
+      if (p.job) setProfileJob(p.job);
+      if (p.faith) setProfileFaith(p.faith);
+      if (p.concerns) setProfileConcerns(p.concerns);
+    }
+    setProfileStep(true);
   };
   const handleProfileNext = async () => {
     if (!profileAge || !profileJob || !profileFaith) {
@@ -565,85 +581,7 @@ export default function PaymentScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* 무료체험 이름/연락처 입력 오버레이 (Modal 대체 - 웹 호환) */}
-      {trialInfoStep && (
-        <View style={styles.overlayContainer}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1 }}
-          >
-          <View style={styles.profileOverlay}>
-            <View style={[styles.profileSheet, { backgroundColor: colors.background }]}>
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-                <View style={styles.profileHeader}>
-                  <Text style={[styles.profileTitle, { color: colors.foreground }]}>
-                    무료체험 시작하기
-                  </Text>
-                  <Text style={[styles.profileSubtitle, { color: colors.muted }]}>
-                    간단한 정보를 입력해 주세요{"\n"}운영자 확인용으로만 사용됩니다
-                  </Text>
-                </View>
-
-                {/* 이름/닉네임 */}
-                <View style={styles.profileSection}>
-                  <Text style={[styles.profileLabel, { color: colors.foreground }]}>이름 또는 닉네임</Text>
-                  <TextInput
-                    style={[styles.profileAgeInput, {
-                      borderColor: trialName ? "#8BAF8B" : colors.border,
-                      color: colors.foreground,
-                      backgroundColor: colors.surface,
-                    }]}
-                    placeholder="이름 또는 닉네임을 입력해 주세요"
-                    placeholderTextColor={colors.muted}
-                    value={trialName}
-                    onChangeText={setTrialName}
-                    maxLength={50}
-                    returnKeyType="next"
-                    autoFocus
-                  />
-                </View>
-
-                {/* 연락처 */}
-                <View style={styles.profileSection}>
-                  <Text style={[styles.profileLabel, { color: colors.foreground }]}>연락처</Text>
-                  <TextInput
-                    style={[styles.profileAgeInput, {
-                      borderColor: trialContact ? "#8BAF8B" : colors.border,
-                      color: colors.foreground,
-                      backgroundColor: colors.surface,
-                    }]}
-                    placeholder="연락처를 입력해 주세요 (예: 010-1234-5678)"
-                    placeholderTextColor={colors.muted}
-                    keyboardType="phone-pad"
-                    value={trialContact}
-                    onChangeText={setTrialContact}
-                    maxLength={20}
-                    returnKeyType="done"
-                    onSubmitEditing={handleTrialInfoNext}
-                  />
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.profileNextBtn, {
-                    backgroundColor: (trialName && trialContact) ? "#8BAF8B" : colors.border,
-                  }]}
-                  onPress={handleTrialInfoNext}
-                  disabled={!trialName || !trialContact || trialInfoSubmitting}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.profileNextBtnText}>
-                    {trialInfoSubmitting ? "저장 중..." : "다음 단계 · 코칭 정보 입력하기 →"}
-                  </Text>
-                </TouchableOpacity>
-                <Text style={[styles.profilePrivacy, { color: colors.muted }]}>
-                  입력하신 정보는 운영자 확인용으로만 사용됩니다
-                </Text>
-              </ScrollView>
-            </View>
-          </View>
-          </KeyboardAvoidingView>
-        </View>
-      )}
+      {/* 무료체험 이름/연락처 입력 오버레이 제거됨 — 바로 프로필 단계로 이동 */}
 
       {/* 입금 정보 입력 오버레이 (Modal 대체 - 웹 호환) */}
       {depositorStep && (
