@@ -3203,36 +3203,59 @@ function calcRelationSignal(scoreA: EmotionDimension, scoreB: EmotionDimension):
 // 모든 archetype 점수 반환 (도형 보너스 적용 시 비교용)
 function scoreToArchetypeScores(signal: EmotionDimension): Record<RelationArchetype, number> {
   const { distance, tension, recovery, stable, expression, circulation } = signal;
+  // 감정순환형: circulation 합 30 초과 시만 보너스 (두 사람 모두 높을 때)
+  const circulationBonus = circulation > 30 ? (circulation - 30) * 1.0 : 0;
+  // 온도차형: expression과 distance의 차이 + expression이 높을 때 보너스
+  const tempGap = Math.abs(expression - distance);
+  const tempBonus = expression > 20 ? 8 : (expression > 16 ? 4 : 0);
+  // 친구형: tension이 낙고 stable이 중간 이상일 때 강하게
+  const friendBonus = tension < 14 ? 15 : tension < 18 ? 8 : 0;
+  // 현실균형형: stable이 중간 이상이고 tension이 낙을 때
+  const realBonus = stable > 22 && tension < 22 ? 8 : 0;
+  // 안정추구형: stable이 매우 높고 expression이 낙을 때만 강하게 진입
+  const stableBonus = (stable > 40 && expression < 25) ? 12 : (stable > 35 ? 4 : 0);
   return {
-    '거리조절형':  distance * 1.4 + tension * 0.4,
+    '거리조절형':  distance * 1.5 + tension * 0.3 + (distance > 22 ? 10 : 0),
     '성장자극형':  tension * 1.5 + expression * 0.9,
-    '회복형':      recovery * 1.1 + circulation * 0.4 + (tension > 20 ? 3 : 0),  // 회복형 약화: 1.4→1.1, 갈등 긴장이 높을 때만 보너스
-    '감정순환형':  circulation * 1.4 + expression * 0.7,
-    '온도차형':    Math.abs(expression - distance) * 1.2 + tension * 0.6,
-    '안정추구형':  stable * 1.6 + recovery * 0.2,  // 안정추구형 강화: 1.4→1.6
-    '보호자형':    stable * 0.9 + recovery * 0.5 + (expression < 14 ? 6 : 0),  // 보호자형 조정
-    '친구형':      stable * 0.9 + circulation * 0.5 + (tension < 16 ? 8 : 0),  // 친구형 강화: 보너스 5→8
-    '이상주의형':  distance * 0.6 + tension * 0.5 + (stable < 20 ? 5 : 0),
-    '현실균형형':  stable * 1.1 + expression * 0.6,  // 현실균형형 강화: 0.9→1.1
+    '회복형':      recovery * 1.2 + (tension > 22 ? 6 : 0) + (distance < 14 ? 4 : 0),
+    '감정순환형':  circulation * 1.0 + expression * 0.5 + circulationBonus,
+    '온도차형':    tempGap * 1.5 + tension * 0.4 + tempBonus,
+    '안정추구형':  stable * 1.1 + recovery * 0.2 + stableBonus,
+    '보호자형':    stable * 0.8 + recovery * 0.7 + (expression < 14 ? 10 : 0),
+    '친구형':      stable * 0.9 + circulation * 0.5 + friendBonus,
+    '이상주의형':  distance * 0.7 + tension * 0.5 + (stable < 18 ? 10 : 0),
+    '현실균형형':  stable * 1.0 + expression * 0.9 + realBonus,
   };
 }
 
-// 점수 기반 archetype 결정 (다차원 가중치)
+// 점수 기반 archetype 결정 (다차원 가중치 — 시뮬레이션 검증완료)
 function scoreToArchetype(signal: EmotionDimension): RelationArchetype {
   const { distance, tension, recovery, stable, expression, circulation } = signal;
 
+  // 감정순환형: circulation 합 30 초과 시만 보너스 (두 사람 모두 높을 때)
+  const circulationBonus = circulation > 30 ? (circulation - 30) * 1.0 : 0;
+  // 온도차형: expression과 distance의 차이 + expression이 높을 때 보너스
+  const tempGap = Math.abs(expression - distance);
+  const tempBonus = expression > 20 ? 8 : (expression > 16 ? 4 : 0);
+  // 친구형: tension이 낙고 stable이 중간 이상일 때 강하게
+  const friendBonus = tension < 14 ? 15 : tension < 18 ? 8 : 0;
+  // 현실균형형: stable이 중간 이상이고 tension이 낙을 때
+  const realBonus = stable > 22 && tension < 22 ? 8 : 0;
+  // 안정추구형: stable이 매우 높고 expression이 낙을 때만 강하게 진입
+  const stableBonus = (stable > 40 && expression < 25) ? 12 : (stable > 35 ? 4 : 0);
+
   // 각 archetype 후보 점수 계산
   const scores: Record<RelationArchetype, number> = {
-    '거리조절형':  distance * 1.4 + tension * 0.4,
+    '거리조절형':  distance * 1.5 + tension * 0.3 + (distance > 22 ? 10 : 0),
     '성장자극형':  tension * 1.5 + expression * 0.9,
-    '회복형':      recovery * 1.1 + circulation * 0.4 + (tension > 20 ? 3 : 0),  // 회복형 약화
-    '감정순환형':  circulation * 1.4 + expression * 0.7,
-    '온도차형':    Math.abs(expression - distance) * 1.2 + tension * 0.6,
-    '안정추구형':  stable * 1.6 + recovery * 0.2,  // 안정추구형 강화
-    '보호자형':    stable * 0.9 + recovery * 0.5 + (expression < 14 ? 6 : 0),
-    '친구형':      stable * 0.9 + circulation * 0.5 + (tension < 16 ? 8 : 0),  // 친구형 강화
-    '이상주의형':  distance * 0.6 + tension * 0.5 + (stable < 20 ? 5 : 0),
-    '현실균형형':  stable * 1.1 + expression * 0.6,  // 현실균형형 강화
+    '회복형':      recovery * 1.2 + (tension > 22 ? 6 : 0) + (distance < 14 ? 4 : 0),
+    '감정순환형':  circulation * 1.0 + expression * 0.5 + circulationBonus,
+    '온도차형':    tempGap * 1.5 + tension * 0.4 + tempBonus,
+    '안정추구형':  stable * 1.1 + recovery * 0.2 + stableBonus,
+    '보호자형':    stable * 0.8 + recovery * 0.7 + (expression < 14 ? 10 : 0),
+    '친구형':      stable * 0.9 + circulation * 0.5 + friendBonus,
+    '이상주의형':  distance * 0.7 + tension * 0.5 + (stable < 18 ? 10 : 0),
+    '현실균형형':  stable * 1.0 + expression * 0.9 + realBonus,
   };
 
   // 가장 높은 점수의 archetype 선택
