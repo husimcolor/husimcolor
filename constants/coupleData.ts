@@ -584,7 +584,8 @@ function extractDominantShape(cardIds: string[]): ShapeType | undefined {
 
 function getDominantFamily(families: EnergyFamily[]): EnergyFamily {
   const count: Partial<Record<EnergyFamily, number>> = {};
-  for (const f of families) count[f] = (count[f] ?? 0) + 1;
+  // 첫 번째 컬러(무의식 카드)에 가중치 2배 부여 — 가장 핵심 에너지를 정확히 반영
+  families.forEach((f, i) => { count[f] = (count[f] ?? 0) + (i === 0 ? 2 : 1); });
   return (Object.entries(count).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'neutral') as EnergyFamily;
 }
 

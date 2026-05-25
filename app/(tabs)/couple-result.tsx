@@ -206,13 +206,15 @@ export default function CoupleResultScreen() {
   const _domFamA = (() => {
     const fams = personA.colors.map(id => _EFMAP[id] ?? 'neutral');
     const cnt: Record<string,number> = {};
-    fams.forEach(f => { cnt[f] = (cnt[f]??0)+1; });
+    // 첫 번째 컬러(무의식 카드)에 가중치 2배 부여
+    fams.forEach((f, i) => { cnt[f] = (cnt[f]??0) + (i === 0 ? 2 : 1); });
     return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0]?.[0] ?? 'neutral';
   })();
   const _domFamB = (() => {
     const fams = personB.colors.map(id => _EFMAP[id] ?? 'neutral');
     const cnt: Record<string,number> = {};
-    fams.forEach(f => { cnt[f] = (cnt[f]??0)+1; });
+    // 첫 번째 컬러(무의식 카드)에 가중치 2배 부여
+    fams.forEach((f, i) => { cnt[f] = (cnt[f]??0) + (i === 0 ? 2 : 1); });
     return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0]?.[0] ?? 'neutral';
   })();
   const isSimilarRelation = _domFamA === _domFamB;
@@ -478,11 +480,11 @@ export default function CoupleResultScreen() {
               {lightArchetypeResult.recommendedColors && lightArchetypeResult.recommendedColors.length > 0 && (
                 <SectionCard accentColor={accentCouple} title="이 관계에 어울리는 컬러" colors={colors}>
                   {lightArchetypeResult.recommendedColors.map(rc => (
-                    <View key={rc.id} style={[styles.complementRow, { backgroundColor: rc.hex + '18', borderColor: rc.hex + '40' }]}>
+                    <View key={rc.id} style={[styles.complementRow, { backgroundColor: rc.hex + '28', borderColor: rc.hex + '60' }]}>
                       <View style={[styles.complementDot, { backgroundColor: rc.hex }]} />
                       <View style={styles.complementText}>
-                        <Text style={[styles.complementName, { color: rc.hex }]}>{rc.korName}</Text>
-                        <Text style={[styles.complementMeaning, { color: '#4A3A2A' }]}>{rc.reason}</Text>
+                        <Text style={[styles.complementName, { color: hexLuminance(rc.hex) < 0.2 ? '#A0C8B0' : rc.hex }]}>{rc.korName}</Text>
+                        <Text style={[styles.complementMeaning, { color: colors.foreground }]}>{rc.reason}</Text>
                       </View>
                     </View>
                   ))}
@@ -1117,11 +1119,11 @@ export default function CoupleResultScreen() {
           {/* 추천 컬러 - archetype 기반 우선, 없으면 기존 컬러 사용 */}
           <SectionCard accentColor={accentCouple} title="두 사람에게 권하는 컬러" colors={colors}>
             {(archetypeResult.recommendedColors ?? coupleAnalysis.coupleRoutine.recommendedColors).map(rc => (
-              <View key={rc.id} style={[styles.complementRow, { backgroundColor: rc.hex + '18', borderColor: rc.hex + '40' }]}>
+              <View key={rc.id} style={[styles.complementRow, { backgroundColor: rc.hex + '28', borderColor: rc.hex + '60' }]}>
                 <View style={[styles.complementDot, { backgroundColor: rc.hex }]} />
                 <View style={styles.complementText}>
-                  <Text style={[styles.complementName, { color: rc.hex }]}>{rc.korName}</Text>
-                  <Text style={[styles.complementMeaning, { color: '#4A3A2A' }]}>{rc.reason}</Text>
+                  <Text style={[styles.complementName, { color: hexLuminance(rc.hex) < 0.2 ? '#A0C8B0' : rc.hex }]}>{rc.korName}</Text>
+                  <Text style={[styles.complementMeaning, { color: colors.foreground }]}>{rc.reason}</Text>
                 </View>
               </View>
             ))}
