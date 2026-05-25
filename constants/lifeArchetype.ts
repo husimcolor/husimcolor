@@ -279,26 +279,31 @@ export function interpretEnergyFlow(score: OhangScore): EnergyFlowResult {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. 삶의 역할 Archetype 정의
+// 5. 삶의 역할 Archetype 정의 — 6개 유형 (역할 에너지 차이 명확화)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * 6개 Archetype 유형:
+ * - connector  : 관계·커뮤니티·사람 사이 연결 (caregiver/connector/guardian 통합)
+ * - healer     : 감정·상처·정서 안정 (healer 강화)
+ * - analyst    : 구조·정리·질서·패턴 이해 (analyst/expert 통합)
+ * - leader     : 방향성·추진·영향력 (leader 강화)
+ * - artist     : 감수성·표현·창작 (artist 강화)
+ * - expert     : 깊이·신뢰·전문성 (expert/servant 통합)
+ */
 export type LifeArchetypeKey =
-  | 'caregiver'       // 사람돌봄형
-  | 'healer'          // 마음돌봄형
-  | 'analyst'         // 논리분석형
-  | 'leader'          // 리더형
-  | 'expert'          // 전문가형
-  | 'artist'          // 예술가형
-  | 'servant'         // 사역자형
-  | 'connector'       // 연결자형
-  | 'guardian'        // 수호자형
-  | 'explorer';       // 탐구자형
+  | 'connector'   // 연결형 — 관계·커뮤니티·사람 사이 연결
+  | 'healer'      // 회복형 — 감정·상처·정서 안정
+  | 'analyst'     // 분석형 — 구조·정리·질서·패턴 이해
+  | 'leader'      // 리더형 — 방향성·추진·영향력
+  | 'artist'      // 예술가형 — 감수성·표현·창작
+  | 'expert';     // 전문가형 — 깊이·신뢰·전문성
 
 export interface LifeArchetype {
   key: LifeArchetypeKey;
   /** 사용자에게 보여줄 역할 이름 */
   label: string;
-  /** 핵심 에너지 설명 (1문장) */
+  /** 핵심 에너지 설명 (1~2문장) */
   coreEnergy: string;
   /** 살아나는 환경 (1문장) */
   thriveIn: string;
@@ -311,95 +316,59 @@ export interface LifeArchetype {
 }
 
 const ARCHETYPE_MAP: Record<LifeArchetypeKey, LifeArchetype> = {
-  caregiver: {
-    key: 'caregiver',
-    label: '사람을 돌보는 역할',
-    coreEnergy: '사람의 필요를 먼저 알아채고 채워주는 역할에서 에너지가 살아납니다.',
-    thriveIn: '누군가가 나를 필요로 하는 환경, 관계 중심의 공간에서 가장 빛납니다.',
-    drainPattern: '자신의 필요보다 타인의 필요를 먼저 채우다가 소진되는 패턴이 반복될 수 있습니다.',
-    lifeDirection: '돌봄과 연결 중심의 삶이 자연스럽게 맞습니다. 자신도 돌봄받는 시간이 함께 있어야 오래 지속됩니다.',
-    connectionStyle: '먼저 다가가고, 상대의 감정 상태를 먼저 확인하는 방식으로 연결됩니다.',
+  connector: {
+    key: 'connector',
+    label: '연결형 — 사람과 사람을 잇는 역할',
+    coreEnergy: '사람들 사이를 자연스럽게 이어주고, 관계와 커뮤니티를 만들어가는 역할에서 에너지가 살아납니다.',
+    thriveIn: '다양한 사람들이 모이는 환경, 소통과 관계가 중심이 되는 공간에서 가장 빛납니다.',
+    drainPattern: '관계 사이에서 중간 역할을 하다가 자신의 감정을 뒤로 미루고 소진되는 패턴이 생길 수 있습니다.',
+    lifeDirection: '관계와 공동체 중심의 삶이 자연스럽게 맞습니다. 자신의 필요도 함께 표현하는 것이 오래 연결할 수 있는 힘이 됩니다.',
+    connectionStyle: '자연스럽게 먼저 다가가고, 상대가 편안하게 느끼도록 분위기를 만드는 방식으로 연결됩니다.',
   },
   healer: {
     key: 'healer',
-    label: '마음을 회복시키는 역할',
-    coreEnergy: '사람의 감정과 내면을 읽고 회복시키는 역할에서 에너지가 살아납니다.',
-    thriveIn: '깊은 대화가 가능한 환경, 감정적 안전감이 있는 공간에서 가장 빛납니다.',
-    drainPattern: '타인의 감정을 너무 깊이 흡수하다가 자신이 지치는 패턴이 생길 수 있습니다.',
-    lifeDirection: '의미와 회복 중심의 삶이 자연스럽게 맞습니다. 경계를 지키면서 돌보는 방식을 찾는 것이 중요합니다.',
-    connectionStyle: '상대의 감정 흐름을 먼저 읽고, 말보다 존재감으로 연결되는 방식입니다.',
+    label: '회복형 — 감정과 정서를 안정시키는 역할',
+    coreEnergy: '사람의 감정적 상처와 내면의 흐름을 읽고, 정서적 안정과 회복을 돕는 역할에서 에너지가 살아납니다.',
+    thriveIn: '깊은 공감과 신뢰가 있는 환경, 감정적 안전감이 있는 공간에서 가장 빛납니다.',
+    drainPattern: '타인의 감정을 너무 깊이 흡수하다가 자신이 지치는 패턴이 반복될 수 있습니다.',
+    lifeDirection: '감정 회복과 정서 안정 중심의 삶이 자연스럽게 맞습니다. 자신의 감정도 돌보는 루틴이 있을 때 더 오래 빛납니다.',
+    connectionStyle: '상대의 감정을 먼저 읽고 조용히 공감하는 방식으로 깊이 연결됩니다.',
   },
   analyst: {
     key: 'analyst',
-    label: '분석하고 정리하는 역할',
-    coreEnergy: '복잡한 것을 명료하게 정리하고 본질을 찾아내는 역할에서 에너지가 살아납니다.',
-    thriveIn: '논리적 사고가 필요한 환경, 깊이 있는 문제를 다루는 공간에서 가장 빛납니다.',
-    drainPattern: '감정적 상황에서 논리를 먼저 꺼내다가 관계가 멀어지는 패턴이 생길 수 있습니다.',
-    lifeDirection: '깊이와 신뢰 기반의 역할이 자연스럽게 맞습니다. 감정적 연결을 함께 유지하는 것이 균형을 만들어줍니다.',
-    connectionStyle: '신뢰를 쌓은 후 깊이 연결되는 방식, 말보다 행동으로 관계를 증명합니다.',
+    label: '분석형 — 구조와 패턴을 읽는 역할',
+    coreEnergy: '복잡한 상황을 논리적으로 분석하고 구조화하는 역할에서 에너지가 살아납니다. 패턴을 읽고 질서를 만드는 것이 자연스럽습니다.',
+    thriveIn: '명확한 기준과 논리가 필요한 환경, 데이터나 정보를 다루는 공간에서 가장 빛납니다.',
+    drainPattern: '감정보다 논리를 우선하다가 관계에서 오해가 생기거나, 완벽한 분석을 추구하다가 실행이 늦어지는 패턴이 생길 수 있습니다.',
+    lifeDirection: '분석과 구조화 중심의 삶이 자연스럽게 맞습니다. 감정적 연결도 함께 챙기는 것이 균형을 만들어줍니다.',
+    connectionStyle: '논리적 대화와 정보 교환을 통해 연결되며, 명확한 소통을 선호합니다.',
   },
   leader: {
     key: 'leader',
-    label: '방향을 이끄는 역할',
-    coreEnergy: '사람들을 모으고 방향을 제시하는 역할에서 에너지가 살아납니다.',
+    label: '리더형 — 방향성과 추진력의 역할',
+    coreEnergy: '사람들을 모으고 방향을 제시하며 추진하는 역할에서 에너지가 살아납니다. 영향력을 통해 변화를 만드는 것이 자연스럽습니다.',
     thriveIn: '결정이 필요한 환경, 팀이나 공동체를 이끄는 공간에서 가장 빛납니다.',
-    drainPattern: '혼자 모든 것을 책임지려다가 소진되는 패턴이 반복될 수 있습니다.',
+    drainPattern: '혼자 모든 것을 책임지려다가 소진되거나, 속도가 다른 사람들을 기다리는 것이 힘들게 느껴지는 패턴이 생길 수 있습니다.',
     lifeDirection: '영향력과 책임 중심의 삶이 자연스럽게 맞습니다. 위임하고 쉬는 것도 리더십의 일부입니다.',
     connectionStyle: '먼저 비전을 제시하고, 사람들이 자연스럽게 따라오는 방식으로 연결됩니다.',
   },
-  expert: {
-    key: 'expert',
-    label: '전문성을 쌓는 역할',
-    coreEnergy: '한 분야를 깊이 파고들어 전문성을 쌓는 역할에서 에너지가 살아납니다.',
-    thriveIn: '집중할 수 있는 환경, 깊이 있는 연구나 작업이 가능한 공간에서 가장 빛납니다.',
-    drainPattern: '완벽함을 추구하다가 시작을 미루거나 자신을 지나치게 평가하는 패턴이 생길 수 있습니다.',
-    lifeDirection: '깊이와 전문성 중심의 삶이 자연스럽게 맞습니다. 완성보다 성장의 과정을 즐기는 것이 중요합니다.',
-    connectionStyle: '공통 관심사나 전문 영역을 통해 연결되며, 신뢰가 쌓인 관계를 소중히 합니다.',
-  },
   artist: {
     key: 'artist',
-    label: '감정과 분위기를 표현하는 역할',
-    coreEnergy: '감정과 분위기를 읽고 창의적으로 표현하는 역할에서 에너지가 살아납니다.',
+    label: '예술가형 — 감수성과 창작의 역할',
+    coreEnergy: '감정과 분위기를 읽고 창의적으로 표현하는 역할에서 에너지가 살아납니다. 아름다움과 의미를 만드는 것이 자연스럽습니다.',
     thriveIn: '자유롭게 표현할 수 있는 환경, 창의성이 존중받는 공간에서 가장 빛납니다.',
     drainPattern: '감정이 너무 강하게 올라오거나 표현이 막힐 때 내면에서 압박감이 쌓이는 패턴이 생길 수 있습니다.',
     lifeDirection: '감성과 표현 중심의 삶이 자연스럽게 맞습니다. 감정을 표현하는 루틴이 있을 때 가장 안정적입니다.',
     connectionStyle: '감정과 분위기로 먼저 연결되며, 공감이 깊은 관계에서 에너지가 살아납니다.',
   },
-  servant: {
-    key: 'servant',
-    label: '의미와 사명 중심의 역할',
-    coreEnergy: '삶의 의미와 사명을 중심으로 움직이는 역할에서 에너지가 살아납니다.',
-    thriveIn: '가치 있는 일을 하는 환경, 공동체나 사명 중심의 공간에서 가장 빛납니다.',
-    drainPattern: '의미 없는 일을 반복할 때 빠르게 소진되고, 방향을 잃은 느낌이 드는 패턴이 생길 수 있습니다.',
-    lifeDirection: '의미와 연결 중심의 삶이 자연스럽게 맞습니다. 자신의 사명과 일상의 균형을 찾는 것이 중요합니다.',
-    connectionStyle: '공통된 가치와 방향성을 통해 깊이 연결되며, 의미 있는 관계를 소중히 합니다.',
-  },
-  connector: {
-    key: 'connector',
-    label: '사람과 사람을 연결하는 역할',
-    coreEnergy: '사람과 사람 사이를 자연스럽게 연결하고 관계를 만들어가는 역할에서 에너지가 살아납니다.',
-    thriveIn: '다양한 사람들이 모이는 환경, 관계와 소통이 활발한 공간에서 가장 빛납니다.',
-    drainPattern: '관계 사이에서 중간 역할을 하다가 자신의 감정을 뒤로 미루는 패턴이 생길 수 있습니다.',
-    lifeDirection: '관계와 공동체 중심의 삶이 자연스럽게 맞습니다. 자신의 필요도 함께 표현하는 것이 균형을 만들어줍니다.',
-    connectionStyle: '자연스럽게 먼저 다가가고, 상대가 편안하게 느끼도록 분위기를 만드는 방식으로 연결됩니다.',
-  },
-  guardian: {
-    key: 'guardian',
-    label: '안정과 신뢰를 지키는 역할',
-    coreEnergy: '안정적인 환경을 만들고 신뢰를 지키는 역할에서 에너지가 살아납니다.',
-    thriveIn: '책임감이 요구되는 환경, 신뢰와 안정이 중요한 공간에서 가장 빛납니다.',
-    drainPattern: '변화가 많거나 불확실한 상황에서 에너지가 빠르게 소진되는 패턴이 생길 수 있습니다.',
-    lifeDirection: '신뢰와 안정 중심의 삶이 자연스럽게 맞습니다. 변화를 조금씩 받아들이는 연습이 성장을 만들어줍니다.',
-    connectionStyle: '천천히 신뢰를 쌓아가며, 한번 연결된 관계를 오래 유지하는 방식입니다.',
-  },
-  explorer: {
-    key: 'explorer',
-    label: '탐구하고 확장하는 역할',
-    coreEnergy: '새로운 것을 탐구하고 지식과 경험을 확장하는 역할에서 에너지가 살아납니다.',
-    thriveIn: '새로운 자극이 있는 환경, 배움과 탐구가 가능한 공간에서 가장 빛납니다.',
-    drainPattern: '너무 많은 방향으로 관심이 분산되어 한 가지에 집중하기 어려운 패턴이 생길 수 있습니다.',
-    lifeDirection: '성장과 확장 중심의 삶이 자연스럽게 맞습니다. 방향을 하나씩 정해가는 것이 에너지를 모아줍니다.',
-    connectionStyle: '공통 관심사나 새로운 경험을 통해 자연스럽게 연결되며, 지적 교류를 즐깁니다.',
+  expert: {
+    key: 'expert',
+    label: '전문가형 — 깊이와 신뢰 기반의 역할',
+    coreEnergy: '한 분야를 깊이 파고들어 전문성을 쌓고, 신뢰를 바탕으로 영향을 미치는 역할에서 에너지가 살아납니다.',
+    thriveIn: '집중할 수 있는 환경, 깊이 있는 연구나 작업이 가능한 공간에서 가장 빛납니다.',
+    drainPattern: '완벽함을 추구하다가 시작을 미루거나, 자신의 전문성을 스스로 낮게 평가하는 패턴이 생길 수 있습니다.',
+    lifeDirection: '깊이와 전문성 중심의 삶이 자연스럽게 맞습니다. 완성보다 성장의 과정을 즐기는 것이 중요합니다.',
+    connectionStyle: '공통 관심사나 전문 영역을 통해 연결되며, 신뢰가 쌓인 관계를 소중히 합니다.',
   },
 };
 
@@ -408,113 +377,119 @@ const ARCHETYPE_MAP: Record<LifeArchetypeKey, LifeArchetype> = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * 컬러 ID → 1차 Archetype 후보 목록
- * (한 컬러가 여러 archetype과 연결될 수 있음)
+ * 컬러 ID → Archetype 후보 목록
+ * 6개 유형으로 통합: connector / healer / analyst / leader / artist / expert
  */
 const COLOR_TO_ARCHETYPES: Record<string, LifeArchetypeKey[]> = {
-  red:        ['leader', 'explorer'],
-  orange:     ['connector', 'caregiver'],
-  yellow:     ['analyst', 'explorer'],
-  green:      ['caregiver', 'guardian'],
-  blue:       ['analyst', 'guardian'],
+  red:        ['leader', 'artist'],
+  orange:     ['connector', 'leader'],
+  yellow:     ['analyst', 'expert'],
+  green:      ['healer', 'connector'],
+  blue:       ['analyst', 'expert'],
   indigo:     ['healer', 'expert'],
-  violet:     ['healer', 'servant'],
-  pink:       ['caregiver', 'connector'],
+  violet:     ['healer', 'artist'],
+  pink:       ['healer', 'connector'],
   magenta:    ['healer', 'artist'],
   coral:      ['connector', 'artist'],
-  gold:       ['leader', 'guardian'],
-  brown:      ['guardian', 'expert'],
-  beige:      ['caregiver', 'guardian'],
-  white:      ['expert', 'healer'],
+  gold:       ['leader', 'expert'],
+  brown:      ['expert', 'analyst'],
+  beige:      ['connector', 'healer'],
+  white:      ['expert', 'analyst'],
   black:      ['analyst', 'expert'],
-  silver:     ['analyst', 'guardian'],
-  olive:      ['guardian', 'servant'],
-  mint:       ['healer', 'caregiver'],
-  skyblue:    ['connector', 'explorer'],
+  silver:     ['analyst', 'expert'],
+  olive:      ['expert', 'healer'],
+  mint:       ['healer', 'connector'],
+  skyblue:    ['connector', 'healer'],
   lavender:   ['healer', 'artist'],
-  peach:      ['caregiver', 'connector'],
-  terracotta: ['guardian', 'servant'],
-  sage:       ['healer', 'guardian'],
+  peach:      ['connector', 'healer'],
+  terracotta: ['expert', 'connector'],
+  sage:       ['healer', 'analyst'],
   teal:       ['healer', 'analyst'],
-  cream:      ['caregiver', 'guardian'],
+  cream:      ['connector', 'healer'],
 };
 
 /** 심리카드 컬러 → Archetype 후보 */
 const CARD_COLOR_TO_ARCHETYPES: Record<CardColorType, LifeArchetypeKey[]> = {
-  red:    ['leader', 'explorer'],
-  orange: ['connector', 'caregiver'],
-  yellow: ['analyst', 'explorer'],
-  green:  ['caregiver', 'guardian'],
-  blue:   ['analyst', 'guardian'],
-  navy:   ['expert', 'guardian'],
-  purple: ['healer', 'servant'],
-  white:  ['expert', 'healer'],
+  red:    ['leader', 'artist'],
+  orange: ['connector', 'leader'],
+  yellow: ['analyst', 'expert'],
+  green:  ['healer', 'connector'],
+  blue:   ['analyst', 'expert'],
+  navy:   ['expert', 'analyst'],
+  purple: ['healer', 'artist'],
+  white:  ['expert', 'analyst'],
   black:  ['analyst', 'expert'],
 };
 
 /** 도형 → Archetype 강화 키 */
 const SHAPE_TO_ARCHETYPE_BOOST: Record<string, LifeArchetypeKey[]> = {
-  circle:            ['connector', 'caregiver'],
+  circle:            ['connector', 'healer'],
   triangle:          ['leader', 'analyst'],
   inverted_triangle: ['healer', 'artist'],
-  square:            ['guardian', 'expert'],
+  square:            ['expert', 'analyst'],
   diamond:           ['healer', 'analyst'],
-  pentagon:          ['explorer', 'servant'],
-  hexagon:           ['connector', 'servant'],
+  pentagon:          ['leader', 'expert'],
+  hexagon:           ['connector', 'healer'],
 };
 
 /**
- * 컬러 3장 + 심리카드 3장 기반으로 상위 2~3개 Archetype 도출
+ * 컬러 3장 + 심리카드 3장 기반으로 메인 1개 + 보조 1개 Archetype 도출
+ *
+ * - 메인: 가장 높은 점수의 Archetype
+ * - 보조: 2위 Archetype (1위 점수의 50% 이상일 때만 포함)
+ * - 1위와 2위가 너무 가까우면(점수 차 0.3 이하) 보조 포함
+ * - 1위와 2위 차이가 크면(1위의 50% 미만) 메인만 표시
  */
 export function deriveLifeArchetypes(
   colorIds: string[],
   cards: { color: CardColorType; shape: string }[],
 ): LifeArchetype[] {
   const scoreMap: Partial<Record<LifeArchetypeKey, number>> = {};
-
   const addScore = (key: LifeArchetypeKey, weight: number) => {
     scoreMap[key] = (scoreMap[key] ?? 0) + weight;
   };
 
-  // 컬러 3장 점수 (1번 컬러: 1.2, 2번: 1.0, 3번: 0.9)
-  const colorWeights = [1.2, 1.0, 0.9];
+  // 컬러 3장 점수 (1번 컬러: 1.3, 2번: 1.0, 3번: 0.8)
+  const colorWeights = [1.3, 1.0, 0.8];
   colorIds.forEach((id, idx) => {
     const archetypes = COLOR_TO_ARCHETYPES[id] ?? [];
-    archetypes.forEach((a) => addScore(a, colorWeights[idx] ?? 1.0));
+    // 각 컬러의 1순위 Archetype에 더 높은 가중치
+    archetypes.forEach((a, aIdx) => addScore(a, (colorWeights[idx] ?? 1.0) * (aIdx === 0 ? 1.0 : 0.6)));
   });
 
-  // 심리카드 3장 점수 (1번 카드: 1.3, 2번: 1.0, 3번: 0.8)
-  const cardWeights = [1.3, 1.0, 0.8];
+  // 심리카드 3장 점수 (1번 카드: 1.4, 2번: 1.0, 3번: 0.7)
+  const cardWeights = [1.4, 1.0, 0.7];
   cards.forEach((card, idx) => {
     const archetypes = CARD_COLOR_TO_ARCHETYPES[card.color] ?? [];
-    archetypes.forEach((a) => addScore(a, cardWeights[idx] ?? 1.0));
+    archetypes.forEach((a, aIdx) => addScore(a, (cardWeights[idx] ?? 1.0) * (aIdx === 0 ? 1.0 : 0.6)));
     // 도형 강화
     const shapeBoosts = SHAPE_TO_ARCHETYPE_BOOST[card.shape] ?? [];
-    shapeBoosts.forEach((a) => addScore(a, 0.5));
+    shapeBoosts.forEach((a) => addScore(a, 0.4));
   });
 
-  // 점수 내림차순 정렬 후 상위 2~3개 반환
+  // 점수 내림차순 정렬
   const sorted = (Object.entries(scoreMap) as [LifeArchetypeKey, number][])
     .sort((a, b) => b[1] - a[1]);
 
-  // 상위 3개 또는 점수 차이가 0.5 이내인 것까지 포함 (최대 3개)
-  const top = sorted.slice(0, 3);
+  if (sorted.length === 0) return [];
+
+  const [topKey, topScore] = sorted[0];
   const result: LifeArchetype[] = [];
 
-  top.forEach(([key, score], idx) => {
-    // 1위와 점수 차이가 너무 크면 제외 (1위 점수의 40% 미만)
-    if (idx > 0 && score < (top[0][1] * 0.4)) return;
-    const archetype = ARCHETYPE_MAP[key];
-    if (archetype) result.push(archetype);
-  });
+  // 메인 Archetype 추가
+  const mainArchetype = ARCHETYPE_MAP[topKey];
+  if (mainArchetype) result.push(mainArchetype);
 
-  // 최소 1개는 반환
-  if (result.length === 0 && sorted.length > 0) {
-    const archetype = ARCHETYPE_MAP[sorted[0][0]];
-    if (archetype) result.push(archetype);
+  // 보조 Archetype: 2위 점수가 1위의 50% 이상일 때만 포함
+  if (sorted.length >= 2) {
+    const [secondKey, secondScore] = sorted[1];
+    if (secondScore >= topScore * 0.5) {
+      const secondArchetype = ARCHETYPE_MAP[secondKey];
+      if (secondArchetype) result.push(secondArchetype);
+    }
   }
 
-  return result.slice(0, 3);
+  return result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -523,38 +498,22 @@ export function deriveLifeArchetypes(
 
 /**
  * 도출된 Archetype 목록 기반으로 종합 코칭 문장 생성
- * (2~3개 archetype이 함께 있을 때의 복합 해석)
+ * 메인 1개 또는 메인+보조 2개 구조
  */
 export function buildArchetypeCoaching(archetypes: LifeArchetype[]): string {
   if (archetypes.length === 0) return '';
 
   if (archetypes.length === 1) {
     const a = archetypes[0];
-    return (
-      `${a.coreEnergy} ` +
-      `${a.thriveIn} ` +
-      `${a.lifeDirection}`
-    );
+    return `${a.coreEnergy} ${a.thriveIn} ${a.lifeDirection}`;
   }
 
-  if (archetypes.length === 2) {
-    const [a, b] = archetypes;
-    return (
-      `${a.coreEnergy} ` +
-      `동시에 ${b.coreEnergy.replace(/^[가-힣]+의 /, '')} ` +
-      `${a.thriveIn} ` +
-      `${a.drainPattern} ` +
-      `${a.lifeDirection}`
-    );
-  }
-
-  // 3개
-  const [a, b, c] = archetypes;
+  // 메인 + 보조 2개
+  const [a, b] = archetypes;
   return (
     `${a.coreEnergy} ` +
-    `${b.coreEnergy.replace(/^[가-힣]+의 /, '')} ` +
-    `이 두 흐름이 함께 살아있으면서, ${c.coreEnergy.replace(/^[가-힣]+의 /, '')} ` +
-    `${a.thriveIn} ` +
+    `여기에 ${b.coreEnergy.replace(/^[가-힣\s]+에서 /, '').replace(/^[가-힣\s]+을 /, '').replace(/^[가-힣\s]+와 /, '')} ` +
+    `이 두 흐름이 함께 살아있을 때 가장 자연스럽습니다. ` +
     `${a.drainPattern} ` +
     `${a.lifeDirection}`
   );
@@ -565,7 +524,7 @@ export function buildArchetypeCoaching(archetypes: LifeArchetype[]): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface LifeEnergyResult {
-  /** 삶의 역할 Archetype 목록 (2~3개) */
+  /** 삶의 역할 Archetype 목록 (메인 1개 + 보조 최대 1개) */
   archetypes: LifeArchetype[];
   /** 종합 Archetype 코칭 문장 */
   archetypeCoaching: string;
@@ -586,6 +545,5 @@ export function buildLifeEnergyResult(
   const archetypes = deriveLifeArchetypes(colorIds, cards);
   const archetypeCoaching = buildArchetypeCoaching(archetypes);
   const energyFlow = interpretEnergyFlow(ohangScore);
-
   return { archetypes, archetypeCoaching, energyFlow };
 }
