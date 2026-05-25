@@ -847,10 +847,10 @@ export default function PremiumResultScreen() {
             컬러와 카드가 보여주는 나만의 역할 흐름
           </Text>
           {lifeEnergyResult.archetypes.map((arch, idx) => (
-            <View key={arch.key} style={[styles.archetypeCard, { borderLeftColor: idx === 0 ? '#8B5CF6' : idx === 1 ? '#A78BFA' : '#C4B5FD' }]}>
+            <View key={arch.key} style={[styles.archetypeCard, { borderLeftColor: idx === 0 ? '#8B5CF6' : '#A78BFA' }]}>
               <View style={styles.archetypeCardHeader}>
-                <View style={[styles.archetypeIndexBadge, { backgroundColor: idx === 0 ? '#8B5CF6' : idx === 1 ? '#A78BFA' : '#C4B5FD' }]}>
-                  <Text style={styles.archetypeIndexText}>{idx + 1}</Text>
+                <View style={[styles.archetypeIndexBadge, { backgroundColor: idx === 0 ? '#8B5CF6' : '#A78BFA' }]}>
+                  <Text style={styles.archetypeIndexText}>{idx === 0 ? '메인' : '보조'}</Text>
                 </View>
                 <Text style={[styles.archetypeLabel, { color: '#3D1F6E' }]}>{arch.label}</Text>
               </View>
