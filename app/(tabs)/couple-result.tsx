@@ -941,21 +941,134 @@ export default function CoupleResultScreen() {
             </>
           )}
 
-          {/* ─── 관계 심층 분석 ─── */}
-          <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 심층 분석</Text>
+          {/* ─── 관계 심층 분석 (unifiedSections 우선) ─── */}
+          {archetypeResult.unifiedSections ? (
+            <>
+              {/* ══ 1. 관계 핵심 ══ */}
+              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 핵심</Text>
+              <SectionCard accentColor={accentCouple} label={archetypeResult.typeName} title={archetypeResult.unifiedSections.coreEnergy.headline} colors={colors}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                  {archetypeResult.unifiedSections.coreEnergy.keywords.map((kw: string, i: number) => (
+                    <View key={i} style={{ backgroundColor: accentCouple + '18', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: accentCouple + '40' }}>
+                      <Text style={{ color: accentCouple, fontSize: 12, fontWeight: '600' }}>{kw}</Text>
+                    </View>
+                  ))}
+                </View>
+                <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.unifiedSections.coreEnergy.description}</Text>
+              </SectionCard>
 
-          {/* 갈등 순간 반응 패턴 — conflictReactionPattern 우선, 없으면 misunderstandingPattern */}
-          <SectionCard accentColor='#9B7FD4' label={archetypeResult.typeName} title="갈등 순간 반응 패턴" colors={colors}>
+              {/* ══ 2. 생활 관계 패턴 ══ */}
+              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>생활 속 관계 패턴</Text>
+              <SectionCard accentColor="#B8A898" label={archetypeResult.typeName} title={archetypeResult.unifiedSections.lifePattern.headline} colors={colors}>
+                {archetypeResult.unifiedSections.lifePattern.items.map((item: { icon: string; label: string; personA: string; personB: string; tension: string }, idx: number) => (
+                  <View key={idx}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                      <Text style={{ fontSize: 16, marginRight: 6 }}>{item.icon}</Text>
+                      <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '700' }}>{item.label}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 8, marginBottom: 6 }}>
+                      <View style={{ flex: 1, backgroundColor: accentA + '15', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: accentA + '30' }}>
+                        <Text style={{ color: accentA, fontSize: 10, fontWeight: '700', marginBottom: 3 }}>A</Text>
+                        <Text style={{ color: colors.foreground, fontSize: 12, lineHeight: 18 }}>{item.personA}</Text>
+                      </View>
+                      <View style={{ flex: 1, backgroundColor: accentB + '15', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: accentB + '30' }}>
+                        <Text style={{ color: accentB, fontSize: 10, fontWeight: '700', marginBottom: 3 }}>B</Text>
+                        <Text style={{ color: colors.foreground, fontSize: 12, lineHeight: 18 }}>{item.personB}</Text>
+                      </View>
+                    </View>
+                    {item.tension ? (
+                      <View style={{ backgroundColor: '#FFF3E0', borderRadius: 8, padding: 8, borderLeftWidth: 3, borderLeftColor: '#F5A623', marginBottom: 4 }}>
+                        <Text style={{ color: '#8B6020', fontSize: 11, lineHeight: 16 }}>⚡ {item.tension}</Text>
+                      </View>
+                    ) : null}
+                    {idx < archetypeResult.unifiedSections!.lifePattern.items.length - 1 && (
+                      <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 12 }} />
+                    )}
+                  </View>
+                ))}
+              </SectionCard>
+
+              {/* ══ 3. 싸움 패턴 ══ */}
+              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>싸움 패턴</Text>
+              <SectionCard accentColor="#C47E8A" label={archetypeResult.typeName} title="이 관계의 갈등 흐름" colors={colors}>
+                <View style={{ marginBottom: 10 }}>
+                  <Text style={{ color: '#C47E8A', fontSize: 11, fontWeight: '700', marginBottom: 4, letterSpacing: 0.5 }}>싸움이 시작되는 순간</Text>
+                  <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.unifiedSections.conflictFlow.trigger}</Text>
+                </View>
+                <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 10 }} />
+                <View style={{ marginBottom: 10 }}>
+                  <Text style={{ color: '#C47E8A', fontSize: 11, fontWeight: '700', marginBottom: 4, letterSpacing: 0.5 }}>갈등 직후 반응</Text>
+                  <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.unifiedSections.conflictFlow.reaction}</Text>
+                </View>
+                <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 10 }} />
+                <View style={{ backgroundColor: '#FFF0F0', borderRadius: 8, padding: 10, borderLeftWidth: 3, borderLeftColor: '#E05C5C', marginBottom: 10 }}>
+                  <Text style={{ color: '#A03030', fontSize: 11, fontWeight: '700', marginBottom: 4 }}>⚠ 반복 위험 패턴</Text>
+                  <Text style={{ color: colors.foreground, fontSize: 13, lineHeight: 20 }}>{archetypeResult.unifiedSections.conflictFlow.danger}</Text>
+                </View>
+                <View>
+                  <Text style={{ color: '#C47E8A', fontSize: 11, fontWeight: '700', marginBottom: 6, letterSpacing: 0.5 }}>싸울 때 하면 안 되는 말</Text>
+                  {archetypeResult.unifiedSections.conflictFlow.forbiddenWords.map((word: string, i: number) => (
+                    <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 }}>
+                      <Text style={{ color: '#E05C5C', fontSize: 13, marginRight: 6, lineHeight: 20 }}>✗</Text>
+                      <Text style={{ color: colors.foreground, fontSize: 13, lineHeight: 20, flex: 1 }}>{word}</Text>
+                    </View>
+                  ))}
+                </View>
+              </SectionCard>
+
+              {/* ══ 4. 연결 방식 ══ */}
+              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>연결 방식</Text>
+              <SectionCard accentColor="#E8A0B4" label={archetypeResult.typeName} title={archetypeResult.unifiedSections.connectionFlow.headline} colors={colors}>
+                <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 12 }]}>{archetypeResult.unifiedSections.connectionFlow.description}</Text>
+                <View style={{ marginBottom: 12 }}>
+                  {archetypeResult.unifiedSections.connectionFlow.actions.map((action: string, i: number) => (
+                    <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 }}>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#E8A0B4', marginTop: 7, marginRight: 8 }} />
+                      <Text style={{ color: colors.foreground, fontSize: 13, lineHeight: 20, flex: 1 }}>{action}</Text>
+                    </View>
+                  ))}
+                </View>
+                {archetypeResult.unifiedSections.connectionFlow.skinshipNote ? (
+                  <View style={{ backgroundColor: '#FFF0F5', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#E8A0B440' }}>
+                    <Text style={{ color: '#C47A94', fontSize: 11, fontWeight: '700', marginBottom: 4 }}>스킨십 · 친밀감</Text>
+                    <Text style={{ color: colors.foreground, fontSize: 13, lineHeight: 20 }}>{archetypeResult.unifiedSections.connectionFlow.skinshipNote}</Text>
+                  </View>
+                ) : null}
+              </SectionCard>
+
+              {/* ══ 5. 성장 포인트 ══ */}
+              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 성장 포인트</Text>
+              <SectionCard accentColor="#5BC4A0" label={archetypeResult.typeName} title="이 관계가 오래가는 이유 & 성장 방향" colors={colors}>
+                <View style={{ backgroundColor: '#F0FBF5', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#5BC4A0', marginBottom: 10 }}>
+                  <Text style={{ color: '#2A7A5A', fontSize: 11, fontWeight: '700', marginBottom: 6, letterSpacing: 0.5 }}>이 관계의 강점</Text>
+                  <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0, fontSize: 13 }]}>{archetypeResult.unifiedSections.growthPoint.strength}</Text>
+                </View>
+                <View style={{ backgroundColor: '#FFF8F0', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#D4B896', marginBottom: 10 }}>
+                  <Text style={{ color: '#8B6E52', fontSize: 11, fontWeight: '700', marginBottom: 6, letterSpacing: 0.5 }}>조금 더 의식하면</Text>
+                  <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0, fontSize: 13 }]}>{archetypeResult.unifiedSections.growthPoint.blindSpot}</Text>
+                </View>
+                <View style={{ backgroundColor: '#F5F0FF', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#9B7FD4', marginBottom: 10 }}>
+                  <Text style={{ color: '#6A4A9A', fontSize: 11, fontWeight: '700', marginBottom: 6, letterSpacing: 0.5 }}>함께 성장해야 할 방향</Text>
+                  <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0, fontSize: 13 }]}>{archetypeResult.unifiedSections.growthPoint.growthDirection}</Text>
+                </View>
+                <View style={{ backgroundColor: accentCouple + '12', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: accentCouple + '30' }}>
+                  <Text style={{ color: accentCouple, fontSize: 12, fontWeight: '700', marginBottom: 2 }}>💡 오늘 해볼 수 있는 것</Text>
+                  <Text style={{ color: colors.foreground, fontSize: 13, lineHeight: 20 }}>{archetypeResult.unifiedSections.growthPoint.tip}</Text>
+                </View>
+              </SectionCard>
+            </>
+          ) : (
+            <>
+          {/* ─── 기존 관계 심층 분석 (unifiedSections 없을 때 폴백) ─── */}
+          <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 심층 분석</Text>
+          <SectionCard accentColor="#9B7FD4" label={archetypeResult.typeName} title="갈등 순간 반응 패턴" colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>
               {archetypeResult.conflictReactionPattern ?? archetypeResult.misunderstandingPattern}
             </Text>
           </SectionCard>
-
           <SectionCard accentColor={accentCouple} label="관계 흐름" title="두 사람의 관계 패턴" colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.relationFlow ?? coupleAnalysis.relationFlow}</Text>
           </SectionCard>
-
-          {/* 표현 방식 + 오해 지점 통합 */}
           <SectionCard accentColor={accentCouple} label="표현 & 오해" title={isSimilarRelation ? '두 사람의 표현 방식과 오해 지점' : '서로 다른 표현 방식'} colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 4 }]}>
               {archetypeResult?.profileContrastOverride?.expressionDifference ?? coupleAnalysis.expressionDifference}
@@ -966,197 +1079,42 @@ export default function CoupleResultScreen() {
               {archetypeResult?.profileContrastOverride?.conflictPattern ?? coupleAnalysis.conflictPattern}
             </Text>
           </SectionCard>
-
-          {/* archetype 기반 필요한 말 + 추천 활동 */}
-          <SectionCard accentColor='#9B7FD4' label={archetypeResult.typeName} title="지금 이 말이 필요합니다" colors={colors}>
+          <SectionCard accentColor="#9B7FD4" label={archetypeResult.typeName} title="지금 이 말이 필요합니다" colors={colors}>
             <View style={[styles.neededRow, { backgroundColor: '#9B7FD415', borderColor: '#9B7FD440' }]}>
               <Text style={[styles.neededText, { color: colors.foreground }]}>{archetypeResult.neededWords}</Text>
             </View>
-            <View style={[sectionStyles.divider, { backgroundColor: '#9B7FD430', marginTop: 8 }]} />
-            <Text style={[styles.bodyText, { color: colors.muted, fontSize: 13 }]}>
-              <Text style={{ fontWeight: '700', color: colors.foreground }}>추천 활동  </Text>
-              {archetypeResult.recommendedActivity}
-            </Text>
           </SectionCard>
-
-          {/* 서로에게 필요한 표현 */}
-          <SectionCard accentColor='#B8A9C9' label="서로에게 필요한 말" title="두 사람의 표현 언어" colors={colors}>
-            <View style={[styles.neededRow, { backgroundColor: accentA + '12', borderColor: accentA + '30' }]}>
-              <Text style={[styles.neededText, { color: colors.foreground }]}>
-                {coupleAnalysis.neededExpression.forA}
-              </Text>
-            </View>
-            <View style={[styles.neededRow, { backgroundColor: accentB + '12', borderColor: accentB + '30', marginTop: 8 }]}>
-              <Text style={[styles.neededText, { color: colors.foreground }]}>
-                {coupleAnalysis.neededExpression.forB}
-              </Text>
-            </View>
+          <SectionCard accentColor="#B8A9C9" label="서로에게 필요한 말" title="두 사람의 표현 언어" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.expressionDifference ?? coupleAnalysis.expressionDifference}</Text>
           </SectionCard>
-
-          {/* ═══════════════════════════════════════════════════════
-              커플 보완 루틴 (축소: 핵심만)
-          ═══════════════════════════════════════════════════════ */}
-          <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>{getRoutineSectionLabel()}</Text>
-
-          {/* archetype 기반 회복 루틴 + 감정 회복 방식 — 통합 */}
-          <SectionCard accentColor='#9B7FD4' label={archetypeResult.typeName} title="이 관계의 회복 루틴" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.recoveryRoutine}</Text>
-            <View style={[sectionStyles.divider, { backgroundColor: '#9B7FD430', marginTop: 4 }]} />
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>
-              <Text style={{ fontWeight: '700' }}>감정 회복 방식  </Text>
-              {archetypeResult.emotionRecoveryStyle}
-            </Text>
+          <SectionCard accentColor="#9B7FD4" label={archetypeResult.typeName} title="이 관계의 회복 루틴" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.affectionRoutine}</Text>
           </SectionCard>
-
-          <SectionCard accentColor={accentCouple} title="함께하기 좋은 활동" colors={colors}>
-            {coupleAnalysis.coupleRoutine.activities.map((act, i) => (
-              <View key={i} style={styles.bulletRow}>
-                <Text style={[styles.bullet, { color: accentCouple }]}>·</Text>
-                <Text style={[styles.bulletText, { color: colors.foreground }]}>{act}</Text>
-              </View>
-            ))}
-          </SectionCard>
-
-          {/* 대화 루틴 + 정서 연결 루틴 — 통합 카드 */}
           <SectionCard accentColor={accentCouple} title="대화 & 연결 루틴" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 4 }]}>
-              <Text style={{ fontWeight: '700' }}>대화 루틴  </Text>
-              {archetypeResult.conversationRoutine ?? coupleAnalysis.coupleRoutine.conversationRoutine}
-            </Text>
-            <View style={[sectionStyles.divider, { backgroundColor: accentCouple + '30', marginVertical: 4 }]} />
-            <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>
-              <Text style={{ fontWeight: '700' }}>정서 연결  </Text>
-              {archetypeResult.connectionRoutine ?? coupleAnalysis.coupleRoutine.connectionRoutine}
-            </Text>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.relationFlow ?? coupleAnalysis.relationFlow}</Text>
           </SectionCard>
-
-          {/* 사랑과 연결 방식 통합 — loveConnectionStyle 우선, 없으면 affectionRoutine */}
-          <SectionCard accentColor='#F4A882' label={archetypeResult.typeName} title="사랑과 연결 방식" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 4 }]}>
-              {archetypeResult.loveConnectionStyle ?? archetypeResult.affectionRoutine ?? coupleAnalysis.coupleRoutine.affectionRoutine ?? ''}
-            </Text>
-            {archetypeResult.intimacyConnection && isRomanticRel && (
-              <>
-                <View style={[sectionStyles.divider, { backgroundColor: '#F4A88230', marginVertical: 6 }]} />
-                <View style={{ gap: 6 }}>
-                  {archetypeResult.intimacyConnection.actions.map((action, i) => (
-                    <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#F4A882' }} />
-                      <Text style={[styles.bodyText, { color: colors.foreground, flex: 1, marginBottom: 0 }]}>{action}</Text>
-                    </View>
-                  ))}
-                </View>
-              </>
-            )}
+          <SectionCard accentColor="#F4A882" label={archetypeResult.typeName} title="사랑과 연결 방식" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.loveConnectionStyle ?? archetypeResult.connectionStyle}</Text>
           </SectionCard>
-
-          {/* ═══════════════════════════════════════════════════════
-              반복되기 쉬운 감정 패턴 + 위험 패턴 통합
-          ═══════════════════════════════════════════════════════ */}
-          <SectionCard accentColor='#9B6EA8' label={archetypeResult.typeName} title="반복되기 쉬운 감정 패턴" colors={colors}>
-            {archetypeResult.realEmotions && (
-              <View style={{ gap: 6, marginBottom: 10 }}>
-                {archetypeResult.realEmotions.feelings.map((feeling, i) => (
-                  <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-                    <Text style={{ color: '#9B6EA8', fontSize: 14, lineHeight: 22, marginTop: 1 }}>•</Text>
-                    <Text style={[styles.bodyText, { color: colors.foreground, flex: 1, marginBottom: 0 }]}>{feeling}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-            <View style={[sectionStyles.divider, { backgroundColor: '#9B6EA830', marginVertical: 6 }]} />
-            <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 4, fontWeight: '600', fontSize: 13 }]}>이 관계의 위험 패턴</Text>
-            {archetypeResult.dangerPattern.includes('\n') ? (
-              archetypeResult.dangerPattern.split('\n').filter(Boolean).map((line, i) => (
-                <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
-                  <Text style={{ color: '#E05C5C', fontSize: 13, lineHeight: 22, marginTop: 1, fontWeight: '700' }}>⚠</Text>
-                  <Text style={[styles.bodyText, { color: colors.foreground, flex: 1, fontSize: 13 }]}>{line.trim()}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={[styles.bodyText, { color: colors.foreground, fontSize: 13 }]}>{archetypeResult.dangerPattern}</Text>
-            )}
-            {archetypeResult.realEmotions?.recoveryBridge && (
-              <View style={{ backgroundColor: '#9B6EA818', borderLeftWidth: 3, borderLeftColor: '#9B6EA8', borderRadius: 6, padding: 12, marginTop: 8 }}>
-                <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0, lineHeight: 22, fontSize: 13 }]}>
-                  {archetypeResult.realEmotions.recoveryBridge}
-                </Text>
-              </View>
-            )}
+          <SectionCard accentColor="#9B6EA8" label={archetypeResult.typeName} title="반복되기 쉬운 감정 패턴" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.dangerPattern}</Text>
           </SectionCard>
-
-          <SectionCard accentColor='#E05C5C' label={archetypeResult.typeName} title="싸울 때 하면 안 되는 말" colors={colors}>
-            {archetypeResult.forbiddenWords.map((word, i) => (
-              <View key={i} style={styles.bulletRow}>
-                <Text style={[styles.bullet, { color: '#E05C5C' }]}>✕</Text>
-                <Text style={[styles.bulletText, { color: colors.foreground }]}>{word}</Text>
+          <SectionCard accentColor="#E05C5C" label={archetypeResult.typeName} title="싸울 때 하면 안 되는 말" colors={colors}>
+            {archetypeResult.forbiddenWords.map((word: string, i: number) => (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 }}>
+                <Text style={{ color: '#E05C5C', fontSize: 13, marginRight: 6, lineHeight: 20 }}>✗</Text>
+                <Text style={{ color: colors.foreground, fontSize: 13, lineHeight: 20, flex: 1 }}>{word}</Text>
               </View>
             ))}
           </SectionCard>
-
-          <SectionCard accentColor='#5BC4A0' label={archetypeResult.typeName} title="이 관계가 오래가는 이유" colors={colors}>
-            <View style={{ backgroundColor: '#5BC4A015', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#5BC4A0' }}>
-              <Text style={[styles.bodyText, { color: colors.foreground, fontStyle: 'italic' }]}>{archetypeResult.relationStrength}</Text>
-            </View>
+          <SectionCard accentColor="#5BC4A0" label={archetypeResult.typeName} title="이 관계가 오래가는 이유" colors={colors}>
+            <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.relationStrength}</Text>
           </SectionCard>
-
-          {/* 친밀감 연결 노트 — 연인/부부 전용 (애정 표현 루틴 통합 후 이미 액션 표시됨, 여기서는 노트만) */}
-          {isRomanticRel && archetypeResult.intimacyConnection && (
-            <SectionCard accentColor='#E8A0B4' label='관계 회복 언어' title="두 사람에게 필요한 연결 언어" colors={colors}>
-              <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>
-                {relationType === '부부'
-                  ? archetypeResult.intimacyConnection.marriageNote
-                  : archetypeResult.intimacyConnection.loverNote}
-              </Text>
+          {archetypeResult.intimacyConnection && (
+            <SectionCard accentColor="#E8A0B4" label="관계 회복 언어" title="두 사람에게 필요한 연결 언어" colors={colors}>
+              <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.intimacyConnection.marriageNote ?? archetypeResult.intimacyConnection.loverNote}</Text>
             </SectionCard>
           )}
-          {/* ═══ 관계 성장 코칭 섹션 ═══ */}
-          {archetypeResult.growthCoaching && (
-            <>
-              {/* 이 관계의 강점 */}
-              <SectionCard accentColor='#5BC4A0' label={archetypeResult.typeName} title="이 관계의 강점" colors={colors}>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                  {archetypeResult.growthCoaching.strengths.keywords.map((kw: string, i: number) => (
-                    <View key={i} style={{ backgroundColor: '#5BC4A018', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: '#5BC4A040' }}>
-                      <Text style={{ color: '#5BC4A0', fontSize: 12, fontWeight: '600' }}>{kw}</Text>
-                    </View>
-                  ))}
-                </View>
-                <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.growthCoaching.strengths.description}</Text>
-              </SectionCard>
-              {/* 이 관계가 사랑하는 방식 */}
-              <SectionCard accentColor='#E8A0B4' label={archetypeResult.typeName} title="이 관계가 사랑하는 방식" colors={colors}>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                  {archetypeResult.growthCoaching.loveStyle.keywords.map((kw: string, i: number) => (
-                    <View key={i} style={{ backgroundColor: '#E8A0B418', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: '#E8A0B440' }}>
-                      <Text style={{ color: '#C47A94', fontSize: 12, fontWeight: '600' }}>{kw}</Text>
-                    </View>
-                  ))}
-                </View>
-                <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.growthCoaching.loveStyle.description}</Text>
-              </SectionCard>
-              {/* 서로 살아나는 방식 */}
-              <SectionCard accentColor='#7BBDE0' label={archetypeResult.typeName} title="서로 살아나는 방식" colors={colors}>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                  {archetypeResult.growthCoaching.alivePattern.keywords.map((kw: string, i: number) => (
-                    <View key={i} style={{ backgroundColor: '#7BBDE018', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: '#7BBDE040' }}>
-                      <Text style={{ color: '#4A9DC4', fontSize: 12, fontWeight: '600' }}>{kw}</Text>
-                    </View>
-                  ))}
-                </View>
-                <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.growthCoaching.alivePattern.description}</Text>
-              </SectionCard>
-              {/* 부족해지기 쉬운 부분 + 건강하게 오래 가기 위한 균형 */}
-              <SectionCard accentColor='#B8A898' label={archetypeResult.typeName} title="건강하게 오래 가기 위해" colors={colors}>
-                <View style={{ backgroundColor: '#FFF8F0', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#D4B896', marginBottom: 10 }}>
-                  <Text style={{ color: '#8B6E52', fontSize: 11, fontWeight: '700', marginBottom: 6, letterSpacing: 0.5 }}>조금 더 의식하면</Text>
-                  <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0, fontSize: 13 }]}>{archetypeResult.growthCoaching.blindSpot.description}</Text>
-                </View>
-                <View style={{ backgroundColor: '#F0F8F4', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#5BC4A0' }}>
-                  <Text style={{ color: '#3A8A6A', fontSize: 11, fontWeight: '700', marginBottom: 6, letterSpacing: 0.5 }}>이 관계의 성장 방향</Text>
-                  <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0, fontSize: 13 }]}>{archetypeResult.growthCoaching.growthBalance.description}</Text>
-                </View>
-              </SectionCard>
             </>
           )}
           {/* 추천 컬러 - archetype 기반 우선, 없으면 기존 컬러 사용 */}
