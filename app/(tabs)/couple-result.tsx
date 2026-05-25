@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import {
-  View, Text, ScrollView, StyleSheet, Pressable, Animated, Platform, Alert, TouchableOpacity,
+  View, Text, ScrollView, StyleSheet, Pressable, Platform, Alert, TouchableOpacity,
 } from 'react-native';
 import ViewShot, { captureRef, type ViewShotRef } from 'react-native-view-shot';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -52,8 +52,6 @@ function SectionCard({
 export default function CoupleResultScreen() {
   const router = useRouter();
   const colors = useColors();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
   const [sessionData, setSessionData] = useState<CoupleSessionData | null>(null);
   const [personAAnalysis, setPersonAAnalysis] = useState<PersonAnalysis | null>(null);
   const [personBAnalysis, setPersonBAnalysis] = useState<PersonAnalysis | null>(null);
@@ -117,7 +115,6 @@ export default function CoupleResultScreen() {
       setArchetypeResult(archRes);
       setLightArchetypeResult(lightRes);
       setLoading(false);
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
       // 커플 결과 도달 추적
       try {
         const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
@@ -253,7 +250,7 @@ export default function CoupleResultScreen() {
   return (
     <ScreenContainer>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Animated.View style={{ opacity: fadeAnim, paddingTop: topPad }}>
+        <View style={{ paddingTop: topPad }}>
 
           {/* 헤더 */}
           <View style={styles.header}>
@@ -769,12 +766,12 @@ export default function CoupleResultScreen() {
                   <View style={[styles.complementDot, { backgroundColor: cc.hex }]} />
                   <View style={styles.complementText}>
                     <Text style={[styles.complementName, { color: cc.hex }]}>{cc.korName}</Text>
-                <Text style={[styles.complementMeaning, { color: '#4A3A2A' }]}>{cc.meaning}</Text>
+                <Text style={[styles.complementMeaning, { color: colors.foreground }]}>{cc.meaning}</Text>
               </View>
             </View>
           );
         })()}
-            <Text style={[styles.coachingMessage, { color: '#3A2A1A', borderLeftColor: accentA + '80' }]}>
+            <Text style={[styles.coachingMessage, { color: colors.foreground, borderLeftColor: accentA + '80' }]}>
               {personAAnalysis.coachingMessage}
             </Text>
           </SectionCard>
@@ -797,12 +794,12 @@ export default function CoupleResultScreen() {
                   <View style={[styles.complementDot, { backgroundColor: cc.hex }]} />
                   <View style={styles.complementText}>
                     <Text style={[styles.complementName, { color: cc.hex }]}>{cc.korName}</Text>
-                <Text style={[styles.complementMeaning, { color: '#4A3A2A' }]}>{cc.meaning}</Text>
+                <Text style={[styles.complementMeaning, { color: colors.foreground }]}>{cc.meaning}</Text>
               </View>
             </View>
           );
         })()}
-            <Text style={[styles.coachingMessage, { color: '#3A2A1A', borderLeftColor: accentB + '80' }]}>
+            <Text style={[styles.coachingMessage, { color: colors.foreground, borderLeftColor: accentB + '80' }]}>
               {personBAnalysis.coachingMessage}
             </Text>
           </SectionCard>
@@ -828,13 +825,13 @@ export default function CoupleResultScreen() {
                 <SectionCard accentColor='#F5A623' label='생활 패턴' title={archetypeResult.lifestyleSections.finance.title} colors={colors}>
                   <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.finance.description}</Text>
                   <View style={{ gap: 8, marginTop: 8 }}>
-                    <View style={{ backgroundColor: accentCouple + '25', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: accentCouple + '50' }}>
-                      <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
+                    <View style={{ backgroundColor: '#4A3A2A', borderRadius: 10, padding: 14 }}>
+                      <Text style={{ color: '#F0E8DC', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
                         첫 번째 사람: {archetypeResult.lifestyleSections.finance.personA}
                       </Text>
                     </View>
-                    <View style={{ backgroundColor: '#E8A0B440', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#E8A0B470' }}>
-                      <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
+                    <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
+                      <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
                         두 번째 사람: {archetypeResult.lifestyleSections.finance.personB}
                       </Text>
                     </View>
@@ -851,13 +848,13 @@ export default function CoupleResultScreen() {
                 <SectionCard accentColor='#7EC8A4' label='생활 패턴' title={archetypeResult.lifestyleSections.cleaning.title} colors={colors}>
                   <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.cleaning.description}</Text>
                   <View style={{ gap: 8, marginTop: 8 }}>
-                    <View style={{ backgroundColor: accentCouple + '25', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: accentCouple + '50' }}>
-                      <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
+                    <View style={{ backgroundColor: '#2A3A2A', borderRadius: 10, padding: 14 }}>
+                      <Text style={{ color: '#E0F0E4', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
                         첫 번째 사람: {archetypeResult.lifestyleSections.cleaning.personA}
                       </Text>
                     </View>
-                    <View style={{ backgroundColor: '#E8A0B440', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#E8A0B470' }}>
-                      <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
+                    <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
+                      <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
                         두 번째 사람: {archetypeResult.lifestyleSections.cleaning.personB}
                       </Text>
                     </View>
@@ -874,13 +871,13 @@ export default function CoupleResultScreen() {
                 <SectionCard accentColor='#8BB8E8' label='생활 패턴' title={archetypeResult.lifestyleSections.rest.title} colors={colors}>
                   <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.rest.description}</Text>
                   <View style={{ gap: 10, marginTop: 10 }}>
-                    <View style={{ backgroundColor: accentCouple + '25', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: accentCouple + '50' }}>
-                      <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
+                    <View style={{ backgroundColor: '#2A3040', borderRadius: 10, padding: 14 }}>
+                      <Text style={{ color: '#DCE8F8', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
                         첫 번째 사람: {archetypeResult.lifestyleSections.rest.personA}
                       </Text>
                     </View>
-                    <View style={{ backgroundColor: '#E8A0B440', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#E8A0B470' }}>
-                      <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
+                    <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
+                      <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
                         두 번째 사람: {archetypeResult.lifestyleSections.rest.personB}
                       </Text>
                     </View>
@@ -897,13 +894,13 @@ export default function CoupleResultScreen() {
                 <SectionCard accentColor='#E8A0B4' label='생활 패턴' title={archetypeResult.lifestyleSections.affection.title} colors={colors}>
                   <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.affection.description}</Text>
                   <View style={{ gap: 10, marginTop: 10 }}>
-                    <View style={{ backgroundColor: accentCouple + '25', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: accentCouple + '50' }}>
-                      <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
+                    <View style={{ backgroundColor: '#3A2030', borderRadius: 10, padding: 14 }}>
+                      <Text style={{ color: '#F8DCE8', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
                         첫 번째 사람: {archetypeResult.lifestyleSections.affection.personA}
                       </Text>
                     </View>
-                    <View style={{ backgroundColor: '#E8A0B440', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#E8A0B470' }}>
-                      <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
+                    <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
+                      <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
                         두 번째 사람: {archetypeResult.lifestyleSections.affection.personB}
                       </Text>
                     </View>
@@ -920,13 +917,13 @@ export default function CoupleResultScreen() {
                 <SectionCard accentColor='#C47E8A' label='생활 패턴' title={archetypeResult.lifestyleSections.conflict.title} colors={colors}>
                   <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.conflict.description}</Text>
                   <View style={{ gap: 10, marginTop: 10 }}>
-                    <View style={{ backgroundColor: accentCouple + '25', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: accentCouple + '50' }}>
-                      <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
+                    <View style={{ backgroundColor: '#3A2A2A', borderRadius: 10, padding: 14 }}>
+                      <Text style={{ color: '#F8E8E0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
                         첫 번째 사람: {archetypeResult.lifestyleSections.conflict.personA}
                       </Text>
                     </View>
-                    <View style={{ backgroundColor: '#E8A0B440', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#E8A0B470' }}>
-                      <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
+                    <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
+                      <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
                         두 번째 사람: {archetypeResult.lifestyleSections.conflict.personB}
                       </Text>
                     </View>
@@ -964,16 +961,16 @@ export default function CoupleResultScreen() {
                   <View key={idx}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                       <Text style={{ fontSize: 18, marginRight: 8 }}>{item.icon}</Text>
-                      <Text style={{ color: '#1A1A1A', fontSize: 15, fontWeight: '700' }}>{item.label}</Text>
+                      <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '700' }}>{item.label}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-                      <View style={{ flex: 1, backgroundColor: accentA + '20', borderRadius: 8, padding: 12, borderWidth: 1, borderColor: accentA + '40' }}>
+                      <View style={{ flex: 1, backgroundColor: '#4A3020', borderRadius: 8, padding: 12 }}>
                         <Text style={{ color: accentA, fontSize: 11, fontWeight: '700', marginBottom: 4 }}>첫 번째 사람</Text>
-                        <Text style={{ color: '#2A2A2A', fontSize: 14, lineHeight: 22 }}>{item.personA}</Text>
+                        <Text style={{ color: '#F0E8DC', fontSize: 14, lineHeight: 22 }}>{item.personA}</Text>
                       </View>
-                      <View style={{ flex: 1, backgroundColor: accentB + '20', borderRadius: 8, padding: 12, borderWidth: 1, borderColor: accentB + '40' }}>
+                      <View style={{ flex: 1, backgroundColor: '#2A2040', borderRadius: 8, padding: 12 }}>
                         <Text style={{ color: accentB, fontSize: 11, fontWeight: '700', marginBottom: 4 }}>두 번째 사람</Text>
-                        <Text style={{ color: '#2A2A2A', fontSize: 14, lineHeight: 22 }}>{item.personB}</Text>
+                        <Text style={{ color: '#E8E0F8', fontSize: 14, lineHeight: 22 }}>{item.personB}</Text>
                       </View>
                     </View>
                     {item.tension ? (
@@ -1010,7 +1007,7 @@ export default function CoupleResultScreen() {
                   {archetypeResult.unifiedSections.conflictFlow.forbiddenWords.map((word: string, i: number) => (
                     <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 }}>
                       <Text style={{ color: '#C03030', fontSize: 14, marginRight: 8, lineHeight: 24, fontWeight: '700' }}>✗</Text>
-                      <Text style={{ color: '#2A2A2A', fontSize: 14, lineHeight: 24, flex: 1 }}>{word}</Text>
+                      <Text style={{ color: colors.foreground, fontSize: 14, lineHeight: 24, flex: 1 }}>{word}</Text>
                     </View>
                   ))}
                 </View>
@@ -1024,7 +1021,7 @@ export default function CoupleResultScreen() {
                   {archetypeResult.unifiedSections.connectionFlow.actions.map((action: string, i: number) => (
                     <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 }}>
                       <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#C47E8A', marginTop: 9, marginRight: 10 }} />
-                      <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26, flex: 1 }}>{action}</Text>
+                      <Text style={{ color: colors.foreground, fontSize: 15, lineHeight: 26, flex: 1 }}>{action}</Text>
                     </View>
                   ))}
                 </View>
@@ -1051,9 +1048,9 @@ export default function CoupleResultScreen() {
                   <Text style={{ color: '#4A2A7A', fontSize: 12, fontWeight: '700', marginBottom: 8, letterSpacing: 0.5 }}>함께 성장해야 할 방향</Text>
                   <Text style={{ color: '#2A1050', fontSize: 15, lineHeight: 26 }}>{archetypeResult.unifiedSections.growthPoint.growthDirection}</Text>
                 </View>
-                <View style={{ backgroundColor: accentCouple + '25', borderRadius: 10, padding: 16, borderWidth: 1.5, borderColor: accentCouple + '60' }}>
+                <View style={{ backgroundColor: '#2A3A2A', borderRadius: 10, padding: 16, borderWidth: 1.5, borderColor: accentCouple + '60' }}>
                   <Text style={{ color: accentCouple, fontSize: 13, fontWeight: '700', marginBottom: 6 }}>💡 오늘 해볼 수 있는 것</Text>
-                  <Text style={{ color: '#2A2A2A', fontSize: 15, lineHeight: 26 }}>{archetypeResult.unifiedSections.growthPoint.tip}</Text>
+                  <Text style={{ color: '#E8F4EC', fontSize: 15, lineHeight: 26 }}>{archetypeResult.unifiedSections.growthPoint.tip}</Text>
                 </View>
               </SectionCard>
             </>
@@ -1143,7 +1140,7 @@ export default function CoupleResultScreen() {
             </Text>
           </View>
 
-        </Animated.View>
+        </View>
 
         {/* 하단 버튼 */}
         <Pressable
