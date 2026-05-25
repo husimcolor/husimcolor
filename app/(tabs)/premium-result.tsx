@@ -40,6 +40,51 @@ function getLightColorBorder(hex: string): { borderWidth: number; borderColor: s
   return {};
 }
 
+// 보완 컬러 칩용 한글명 → hex 매핑 (colorData.ts 기준)
+const COLOR_KOR_HEX: Record<string, { hex: string; isLight: boolean }> = {
+  '레드':       { hex: '#CC1A1A', isLight: false },
+  '오렌지':     { hex: '#F0874A', isLight: false },
+  '옐로우':     { hex: '#F0C040', isLight: true  },
+  '그린':       { hex: '#6BAF7A', isLight: false },
+  '블루':       { hex: '#5A7EC4', isLight: false },
+  '인디고':     { hex: '#4A5A9A', isLight: false },
+  '퍼플':       { hex: '#8A5AC4', isLight: false },
+  '핑크':       { hex: '#E8849A', isLight: false },
+  '마젠타':     { hex: '#C2478A', isLight: false },
+  '코랄':       { hex: '#E8735A', isLight: false },
+  '골드':       { hex: '#C4A832', isLight: false },
+  '브라운':     { hex: '#8B6355', isLight: false },
+  '베이지':     { hex: '#D4B896', isLight: true  },
+  '화이트':     { hex: '#F0EDE8', isLight: true  },
+  '블랙':       { hex: '#3A3A3A', isLight: false },
+  '실버':       { hex: '#A8B0B8', isLight: false },
+  '올리브':     { hex: '#8A9A5B', isLight: false },
+  '민트':       { hex: '#7EC8C0', isLight: false },
+  '스카이블루': { hex: '#87CEEB', isLight: true  },
+  '라벤더':     { hex: '#B8A8D0', isLight: true  },
+  '피치':       { hex: '#FFBE9F', isLight: true  },
+  '테라코타':   { hex: '#C4704A', isLight: false },
+  '세이지그린': { hex: '#8FA68E', isLight: false },
+  '틸':         { hex: '#4A9A9A', isLight: false },
+  '크림':       { hex: '#F5F0E8', isLight: true  },
+  '아이보리':   { hex: '#F5F0E8', isLight: true  },
+  '네이비':     { hex: '#283593', isLight: false },
+  '터콰이즈':   { hex: '#4A9A9A', isLight: false },
+  '라일락':     { hex: '#B8A8D0', isLight: true  },
+};
+
+/** 컬러명으로 hex와 텍스트 대비 색상 반환 */
+function getColorChipStyle(korName: string): { chipBg: string; chipBorder: string; textColor: string; tagBg: string } {
+  const entry = COLOR_KOR_HEX[korName];
+  if (!entry) return { chipBg: '#C4956A', chipBorder: '#C4956A88', textColor: '#5C3D00', tagBg: '#C4956A12' };
+  const { hex, isLight } = entry;
+  // 태그 배경: hex를 매우 연하게 (10% 불투명도)
+  const tagBg = hex + '18';
+  const chipBorder = hex + '99';
+  const textColor = isLight ? '#4A3A2A' : '#3A2A1A';
+  return { chipBg: hex, chipBorder, textColor, tagBg };
+}
+
 const POSITION_LABELS = [
   { label: "1번 카드", sub: "무의식 · 내면 에너지", color: "#4A7A4A" },
   { label: "2번 카드", sub: "현재 현실 에너지", color: "#7A5CA8" },
@@ -852,19 +897,50 @@ export default function PremiumResultScreen() {
                   return [...filtered, ...extra].slice(0, 3);
                 }
                 return filtered.slice(0, 3); // 최대 3개까지만 표시
-              })().map((c) => (
-                <View
-                  key={c.name}
-                  style={[styles.tag, { backgroundColor: '#C4956A22', borderColor: '#C4956A55', flexDirection: 'column', alignItems: 'flex-start', paddingVertical: 6, paddingHorizontal: 10, minWidth: 100 }]}
-                >
-                  <Text style={[styles.tagText, { color: '#C4956A', fontWeight: '700' }]}>
-                    {c.name}
-                  </Text>
-                  <Text style={{ color: '#C4956A', fontSize: 11, marginTop: 2, lineHeight: 15 }}>
-                    {c.meaning}
-                  </Text>
-                </View>
-              ))}
+              })().map((c) => {
+                const chipStyle = getColorChipStyle(c.name);
+                return (
+                  <View
+                    key={c.name}
+                    style={[
+                      styles.tag,
+                      {
+                        backgroundColor: chipStyle.tagBg,
+                        borderColor: chipStyle.chipBorder,
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        minWidth: 110,
+                        flex: 1,
+                      }
+                    ]}
+                  >
+                    {/* 컨러칩 + 컨러명 행 */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+                      <View
+                        style={[
+                          {
+                            width: 14,
+                            height: 14,
+                            borderRadius: 7,
+                            backgroundColor: chipStyle.chipBg,
+                            marginRight: 6,
+                          },
+                          getLightColorBorder(chipStyle.chipBg),
+                        ]}
+                      />
+                      <Text style={{ color: chipStyle.textColor, fontSize: 13, fontWeight: '700', letterSpacing: 0.2 }}>
+                        {c.name}
+                      </Text>
+                    </View>
+                    {/* 의미 텍스트 */}
+                    <Text style={{ color: chipStyle.textColor, fontSize: 11, lineHeight: 16, opacity: 0.85 }}>
+                      {c.meaning}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           </View>
         </SectionCard>
@@ -1701,7 +1777,7 @@ const styles = StyleSheet.create({
   tag: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 20,
+    borderRadius: 12,
     borderWidth: 1,
   },
   tagText: {
