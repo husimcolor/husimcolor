@@ -20,6 +20,7 @@ import { type CardData, CARD_DATA } from "@/constants/cardData";
 import { type ColorData } from "@/constants/colorData";
 import { type UserProfile } from "./profile";
 import { trpc } from "@/lib/trpc";
+import { buildLifeEnergyResult, type LifeEnergyResult } from "@/constants/lifeArchetype";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -449,6 +450,11 @@ export default function PremiumResultScreen() {
   const combinedCoaching = generateCombinedCoaching(card1, card2, card3, prevColors.length >= 3 ? prevColors : undefined);
   // 하단 여운 문장: 3번 카드(회복 방향) 기준
   const closingLine = card3.closingLine;
+  // 삶의 역할 Archetype + 오행 기반 에너지 흐름 해석
+  const lifeEnergyResult: LifeEnergyResult = buildLifeEnergyResult(
+    prevColors.length >= 3 ? prevColors.map((c) => c.id) : [card1.color, card2.color, card3.color],
+    [card1, card2, card3].map((c) => ({ color: c.color, shape: c.shape })),
+  );
 
   const handleShare = async () => {
     // 보완 루틴 텍스트 구성 (card3 wellness 기준)
@@ -832,6 +838,74 @@ export default function PremiumResultScreen() {
           </View>
         ) : null}
 
+        {/* ── 삶의 역할 에너지 Archetype 섹션 ── */}
+        <View style={[styles.archetypeSection, { backgroundColor: '#F5F0FF', borderColor: '#C8B8E8' }]}>
+          <Text style={[styles.archetypeSectionTitle, { color: '#5B3A8A' }]}>
+            ✨ 나의 삶의 역할 에너지
+          </Text>
+          <Text style={[styles.archetypeSectionSub, { color: '#7A5CAA' }]}>
+            컬러와 카드가 보여주는 나만의 역할 흐름
+          </Text>
+          {lifeEnergyResult.archetypes.map((arch, idx) => (
+            <View key={arch.key} style={[styles.archetypeCard, { borderLeftColor: idx === 0 ? '#8B5CF6' : idx === 1 ? '#A78BFA' : '#C4B5FD' }]}>
+              <View style={styles.archetypeCardHeader}>
+                <View style={[styles.archetypeIndexBadge, { backgroundColor: idx === 0 ? '#8B5CF6' : idx === 1 ? '#A78BFA' : '#C4B5FD' }]}>
+                  <Text style={styles.archetypeIndexText}>{idx + 1}</Text>
+                </View>
+                <Text style={[styles.archetypeLabel, { color: '#3D1F6E' }]}>{arch.label}</Text>
+              </View>
+              <Text style={[styles.archetypeCoreEnergy, { color: '#4A2E7A' }]}>{arch.coreEnergy}</Text>
+              <Text style={[styles.archetypeDetail, { color: '#6B4E9A' }]}>
+                <Text style={{ fontWeight: '600' }}>살아나는 환경  </Text>
+                {arch.thriveIn}
+              </Text>
+              <Text style={[styles.archetypeDetail, { color: '#6B4E9A' }]}>
+                <Text style={{ fontWeight: '600' }}>지치는 패턴  </Text>
+                {arch.drainPattern}
+              </Text>
+              <Text style={[styles.archetypeDirection, { color: '#5B3A8A' }]}>{arch.lifeDirection}</Text>
+            </View>
+          ))}
+          {lifeEnergyResult.archetypes.length >= 2 && (
+            <View style={[styles.archetypeCoachingBox, { backgroundColor: '#EDE9FF', borderColor: '#C4B5FD' }]}>
+              <Text style={[styles.archetypeCoachingText, { color: '#3D1F6E' }]}>
+                {lifeEnergyResult.archetypeCoaching}
+              </Text>
+            </View>
+          )}
+        </View>
+        {/* ── 몸·감정 에너지 흐름 섹션 ── */}
+        <View style={[styles.energyFlowSection, { backgroundColor: '#F0F7F4', borderColor: '#A8D5C2' }]}>
+          <Text style={[styles.energyFlowTitle, { color: '#2D6A4F' }]}>
+            🌊 지금 몸과 마음의 흐름
+          </Text>
+          <Text style={[styles.energyFlowSub, { color: '#4A8C70' }]}>
+            선택한 컬러와 카드가 읽어주는 현재 에너지
+          </Text>
+          <View style={[styles.energyFlowTitleBadge, { backgroundColor: '#D8F0E8', borderColor: '#A8D5C2' }]}>
+            <Text style={[styles.energyFlowTitleBadgeText, { color: '#1B5E3B' }]}>
+              {lifeEnergyResult.energyFlow.title}
+            </Text>
+          </View>
+          <Text style={[styles.energyFlowDesc, { color: '#2D4A3E' }]}>
+            {lifeEnergyResult.energyFlow.description}
+          </Text>
+          <View style={[styles.energyFlowRecoveryBox, { backgroundColor: '#E8F5EE', borderColor: '#A8D5C2' }]}>
+            <Text style={[styles.energyFlowRecoveryLabel, { color: '#1B5E3B' }]}>
+              💚 지금 필요한 것
+            </Text>
+            <Text style={[styles.energyFlowRecoveryText, { color: '#2D4A3E' }]}>
+              {lifeEnergyResult.energyFlow.recovery}
+            </Text>
+          </View>
+          <View style={styles.energyFlowKeywords}>
+            {lifeEnergyResult.energyFlow.balanceKeywords.map((kw) => (
+              <View key={kw} style={[styles.energyFlowKeywordTag, { backgroundColor: '#C8EAD8', borderColor: '#8BBFA8' }]}>
+                <Text style={[styles.energyFlowKeywordText, { color: '#1B5E3B' }]}>{kw}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
         {/* 보완 루틴 섹션 */}
         <View style={[styles.wellnessSection, { backgroundColor: '#FFF8F0', borderColor: '#E8D5B0' }]}>
           <Text style={[styles.wellnessSectionTitle, { color: '#8B6914' }]}>
@@ -1648,6 +1722,141 @@ const styles = StyleSheet.create({
   retryButtonText: {
     fontSize: 14,
     color: '#888',
+  },
+  archetypeSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+  },
+  archetypeSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  archetypeSectionSub: {
+    fontSize: 13,
+    marginBottom: 16,
+  },
+  archetypeCard: {
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    padding: 14,
+    marginBottom: 12,
+  },
+  archetypeCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  archetypeIndexBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  archetypeIndexText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  archetypeLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  archetypeCoreEnergy: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  archetypeDetail: {
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  archetypeDirection: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    marginTop: 6,
+    lineHeight: 20,
+  },
+  archetypeCoachingBox: {
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 14,
+    marginTop: 4,
+  },
+  archetypeCoachingText: {
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  energyFlowSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+  },
+  energyFlowTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  energyFlowSub: {
+    fontSize: 13,
+    marginBottom: 14,
+  },
+  energyFlowTitleBadge: {
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  energyFlowTitleBadgeText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  energyFlowDesc: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 14,
+  },
+  energyFlowRecoveryBox: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 14,
+  },
+  energyFlowRecoveryLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  energyFlowRecoveryText: {
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  energyFlowKeywords: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  energyFlowKeywordTag: {
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  energyFlowKeywordText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   wellnessSection: {
     borderRadius: 16,
