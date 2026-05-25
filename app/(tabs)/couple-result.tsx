@@ -1068,7 +1068,16 @@ export default function CoupleResultScreen() {
               위험 패턴 / 금지 표현 / 관계 강점
           ═══════════════════════════════════════════════════════ */}
           <SectionCard accentColor='#E05C5C' label={archetypeResult.typeName} title="이 관계의 위험 패턴" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.dangerPattern}</Text>
+            {archetypeResult.dangerPattern.includes('\n') ? (
+              archetypeResult.dangerPattern.split('\n').filter(Boolean).map((line, i) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+                  <Text style={{ color: '#E05C5C', fontSize: 14, lineHeight: 22, marginTop: 1, fontWeight: '700' }}>⚠</Text>
+                  <Text style={[styles.bodyText, { color: colors.foreground, flex: 1 }]}>{line.trim()}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.dangerPattern}</Text>
+            )}
           </SectionCard>
 
           <SectionCard accentColor='#E05C5C' label={archetypeResult.typeName} title="싸울 때 하면 안 되는 말" colors={colors}>
@@ -1081,7 +1090,9 @@ export default function CoupleResultScreen() {
           </SectionCard>
 
           <SectionCard accentColor='#5BC4A0' label={archetypeResult.typeName} title="이 관계가 오래가는 이유" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.relationStrength}</Text>
+            <View style={{ backgroundColor: '#5BC4A015', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#5BC4A0' }}>
+              <Text style={[styles.bodyText, { color: colors.foreground, fontStyle: 'italic' }]}>{archetypeResult.relationStrength}</Text>
+            </View>
           </SectionCard>
 
           {/* 친밀감 연결 — 연인/부부 전용 */}
@@ -1221,7 +1232,7 @@ const styles = StyleSheet.create({
     fontSize: 12, fontWeight: '600', letterSpacing: 0.8,
     textTransform: 'uppercase', marginBottom: 12, marginTop: 4,
   },
-  bodyText: { fontSize: 14, lineHeight: 26, minHeight: 48 },
+  bodyText: { fontSize: 14, lineHeight: 26 },
   complementRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     borderRadius: 12, borderWidth: 1, padding: 12, marginTop: 8,
