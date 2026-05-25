@@ -1110,6 +1110,55 @@ export default function CoupleResultScreen() {
               </Text>
             </SectionCard>
           )}
+          {/* ═══ 관계 성장 코칭 섹션 ═══ */}
+          {archetypeResult.growthCoaching && (
+            <>
+              {/* 이 관계의 강점 */}
+              <SectionCard accentColor='#5BC4A0' label={archetypeResult.typeName} title="이 관계의 강점" colors={colors}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                  {archetypeResult.growthCoaching.strengths.keywords.map((kw: string, i: number) => (
+                    <View key={i} style={{ backgroundColor: '#5BC4A018', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: '#5BC4A040' }}>
+                      <Text style={{ color: '#5BC4A0', fontSize: 12, fontWeight: '600' }}>{kw}</Text>
+                    </View>
+                  ))}
+                </View>
+                <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.growthCoaching.strengths.description}</Text>
+              </SectionCard>
+              {/* 이 관계가 사랑하는 방식 */}
+              <SectionCard accentColor='#E8A0B4' label={archetypeResult.typeName} title="이 관계가 사랑하는 방식" colors={colors}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                  {archetypeResult.growthCoaching.loveStyle.keywords.map((kw: string, i: number) => (
+                    <View key={i} style={{ backgroundColor: '#E8A0B418', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: '#E8A0B440' }}>
+                      <Text style={{ color: '#C47A94', fontSize: 12, fontWeight: '600' }}>{kw}</Text>
+                    </View>
+                  ))}
+                </View>
+                <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.growthCoaching.loveStyle.description}</Text>
+              </SectionCard>
+              {/* 서로 살아나는 방식 */}
+              <SectionCard accentColor='#7BBDE0' label={archetypeResult.typeName} title="서로 살아나는 방식" colors={colors}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                  {archetypeResult.growthCoaching.alivePattern.keywords.map((kw: string, i: number) => (
+                    <View key={i} style={{ backgroundColor: '#7BBDE018', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: '#7BBDE040' }}>
+                      <Text style={{ color: '#4A9DC4', fontSize: 12, fontWeight: '600' }}>{kw}</Text>
+                    </View>
+                  ))}
+                </View>
+                <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.growthCoaching.alivePattern.description}</Text>
+              </SectionCard>
+              {/* 부족해지기 쉬운 부분 + 건강하게 오래 가기 위한 균형 */}
+              <SectionCard accentColor='#B8A898' label={archetypeResult.typeName} title="건강하게 오래 가기 위해" colors={colors}>
+                <View style={{ backgroundColor: '#FFF8F0', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#D4B896', marginBottom: 10 }}>
+                  <Text style={{ color: '#8B6E52', fontSize: 11, fontWeight: '700', marginBottom: 6, letterSpacing: 0.5 }}>조금 더 의식하면</Text>
+                  <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0, fontSize: 13 }]}>{archetypeResult.growthCoaching.blindSpot.description}</Text>
+                </View>
+                <View style={{ backgroundColor: '#F0F8F4', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#5BC4A0' }}>
+                  <Text style={{ color: '#3A8A6A', fontSize: 11, fontWeight: '700', marginBottom: 6, letterSpacing: 0.5 }}>이 관계의 성장 방향</Text>
+                  <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0, fontSize: 13 }]}>{archetypeResult.growthCoaching.growthBalance.description}</Text>
+                </View>
+              </SectionCard>
+            </>
+          )}
           {/* 추천 컬러 - archetype 기반 우선, 없으면 기존 컬러 사용 */}
           <SectionCard accentColor={accentCouple} title="두 사람에게 권하는 컬러" colors={colors}>
             {(archetypeResult.recommendedColors ?? coupleAnalysis.coupleRoutine.recommendedColors).map(rc => (
