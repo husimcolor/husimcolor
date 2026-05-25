@@ -141,14 +141,16 @@ function WebCard({ card, isFlipped, isSelected, onPress, entryDelay, isShuffle }
     flipEl.addEventListener('animationend', onFlipOutEnd);
   }, [isFlipped]);
 
-  // 선택 강조: 모든 카드 공통 soft sage outline (카드 고유 컬러와 분리)
+  // 선택 강조: 모든 카드 공통 soft gold outline
+  // 뒷면 상태: 카드 컬러와 무관하게 동일한 베이지 테두리
+  // 선택 시: 모든 카드(블랙 포함) 동일한 soft gold
   const borderStyle = isSelected
-    ? { borderWidth: 2, borderColor: '#B8A898', borderStyle: 'solid' as const }
-    : card.colorKor === '화이트'
-    ? { borderWidth: 1.5, borderColor: '#D8C7A5', borderStyle: 'solid' as const }
-    : card.colorKor === '블랙'
-    ? { borderWidth: 1.5, borderColor: '#5A5A5A', borderStyle: 'solid' as const }
-    : {};
+    ? { borderWidth: 2.5, borderColor: '#C8A96E', borderStyle: 'solid' as const }
+    : showFront
+    ? (card.colorKor === '화이트'
+      ? { borderWidth: 1, borderColor: '#D8C7A5', borderStyle: 'solid' as const }
+      : {})
+    : { borderWidth: 1, borderColor: '#C4B49A', borderStyle: 'solid' as const };
 
   return (
     <div
@@ -166,7 +168,7 @@ function WebCard({ card, isFlipped, isSelected, onPress, entryDelay, isShuffle }
           backgroundColor: showFront ? card.colorHex : CARD_BACK_COLOR,
           ...borderStyle,
           boxShadow: isSelected
-            ? '0 0 10px rgba(184,168,152,0.45)'
+            ? '0 0 0 2.5px #C8A96E, 0 0 12px rgba(200,169,110,0.40)'
             : '0 2px 6px rgba(0,0,0,0.18)',
         }}
       >
@@ -264,6 +266,15 @@ function NativeCard({
                 position: 'absolute',
                 backfaceVisibility: 'hidden',
                 transform: [{ rotateY: backRotate }],
+                ...(isSelected ? {
+                  borderWidth: 2.5,
+                  borderColor: '#C8A96E',
+                  shadowColor: '#C8A96E',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.45,
+                  shadowRadius: 6,
+                  elevation: 5,
+                } : {}),
               },
             ]}
           >
@@ -283,13 +294,13 @@ function NativeCard({
                 backgroundColor: card.colorHex,
                 transform: [{ rotateY: frontRotate }],
                 ...(isSelected ? {
-                  borderWidth: 2,
-                  borderColor: '#B8A898',
-                  shadowColor: '#B8A898',
+                  borderWidth: 2.5,
+                  borderColor: '#C8A96E',
+                  shadowColor: '#C8A96E',
                   shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: 0.5,
+                  shadowOpacity: 0.45,
                   shadowRadius: 6,
-                  elevation: 6,
+                  elevation: 5,
                 } : {}),
               },
             ]}

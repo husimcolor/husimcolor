@@ -486,11 +486,11 @@ const styles = StyleSheet.create({
   },
   swatchSelected: {
     borderWidth: 2.5,
-    borderColor: '#B8A898',
-    shadowColor: '#B8A898',
+    borderColor: '#C8A96E',
+    shadowColor: '#C8A96E',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 5,
+    shadowOpacity: 0.45,
+    shadowRadius: 6,
     elevation: 5,
   },
   swatchBadge: {
