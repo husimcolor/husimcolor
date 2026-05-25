@@ -21,6 +21,7 @@ import { type ColorData } from "@/constants/colorData";
 import { type UserProfile } from "./profile";
 import { trpc } from "@/lib/trpc";
 import { buildLifeEnergyResult, type LifeEnergyResult, type ContextualRoutine } from "@/constants/lifeArchetype";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -852,7 +853,13 @@ export default function PremiumResultScreen() {
                 <View style={[styles.archetypeIndexBadge, { backgroundColor: idx === 0 ? '#8B5CF6' : '#A78BFA' }]}>
                   <Text style={styles.archetypeIndexText}>{idx === 0 ? '메인' : '보조'}</Text>
                 </View>
-                <Text style={[styles.archetypeLabel, { color: '#3D1F6E' }]}>{arch.label}</Text>
+                <MaterialIcons
+                  name={arch.iconName as any}
+                  size={20}
+                  color={idx === 0 ? '#7C3AED' : '#9B72CF'}
+                  style={{ marginRight: 6, marginTop: 1 }}
+                />
+                <Text style={[styles.archetypeLabel, { color: '#3D1F6E', flex: 1 }]}>{arch.label}</Text>
               </View>
               <Text style={[styles.archetypeCoreEnergy, { color: '#4A2E7A' }]}>{arch.coreEnergy}</Text>
               <Text style={[styles.archetypeDetail, { color: '#6B4E9A' }]}>
@@ -870,6 +877,18 @@ export default function PremiumResultScreen() {
             <View style={[styles.archetypeCoachingBox, { backgroundColor: '#EDE9FF', borderColor: '#C4B5FD' }]}>
               <Text style={[styles.archetypeCoachingText, { color: '#3D1F6E' }]}>
                 {lifeEnergyResult.archetypeCoaching}
+              </Text>
+            </View>
+          )}
+          {/* 메인 Archetype 오늘의 실천 카드 */}
+          {lifeEnergyResult.archetypes.length > 0 && lifeEnergyResult.archetypes[0].dailyPractice && (
+            <View style={[styles.dailyPracticeCard, { backgroundColor: '#FAF5FF', borderColor: '#DDD6FE' }]}>
+              <View style={styles.dailyPracticeHeader}>
+                <MaterialIcons name="wb-twilight" size={16} color="#7C3AED" style={{ marginRight: 6 }} />
+                <Text style={[styles.dailyPracticeLabel, { color: '#5B3A8A' }]}>오늘의 작은 실천</Text>
+              </View>
+              <Text style={[styles.dailyPracticeText, { color: '#3D1F6E' }]}>
+                {lifeEnergyResult.archetypes[0].dailyPractice}
               </Text>
             </View>
           )}
@@ -1815,6 +1834,27 @@ const styles = StyleSheet.create({
   archetypeCoachingText: {
     fontSize: 14,
     lineHeight: 22,
+  },
+  dailyPracticeCard: {
+    marginTop: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+  },
+  dailyPracticeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  dailyPracticeLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  dailyPracticeText: {
+    fontSize: 14,
+    lineHeight: 22,
+    fontStyle: 'italic',
   },
   energyFlowSection: {
     marginHorizontal: 16,
