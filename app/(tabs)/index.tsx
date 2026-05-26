@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
@@ -15,6 +16,9 @@ export default function HomeScreen() {
   const { resetColors } = useColorContext();
   useAdmin(); // 관리자 컨텍스트 유지 (admin 탭에서 사용)
   const colors = useColors();
+  const insets = useSafeAreaInsets();
+  // 인앱브라우저 하단 safe area + 여유 padding
+  const bottomPad = Math.max(insets.bottom, 20) + 24;
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -126,8 +130,14 @@ export default function HomeScreen() {
   return (
     <ScreenContainer
       containerClassName="bg-background"
-      edges={['top', 'bottom', 'left', 'right']}
+      edges={['top', 'left', 'right']}
     >
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPad }]}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+        overScrollMode="always"
+      >
       <View style={styles.container}>
         {/* 배경 장식 원 */}
         <View style={[styles.decorCircle1, { backgroundColor: colors.sage + '20' }]} />
@@ -255,17 +265,22 @@ export default function HomeScreen() {
       >
         <Text style={[styles.adminLinkText, { color: colors.muted }]}>관리자</Text>
       </TouchableOpacity>
+      </ScrollView>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    flexGrow: 1,
+    // 스크롤 콘테이너: 콘텐츠가 짧을 때도 코너에서 시작하도록
+  },
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingTop: 24,
+    paddingBottom: 8,
     gap: 20,
   },
   decorCircle1: {
