@@ -2,7 +2,7 @@
   "outputDirectory": "dist",
   "functions": {
     "api/trpc/[...trpc].js": {
-      "runtime": "nodejs20.x",
+      "runtime": "@vercel/node@3",
       "maxDuration": 30
     }
   },
