@@ -5893,47 +5893,217 @@ function buildDefaultLifestyleSections(
 
   const archetypeOverride = archetype ? ARCHETYPE_LIFESTYLE_OVERRIDE[archetype] : undefined;
 
-  // 도형별 재정 수식어 보정
-  const shapeFinanceNote = (shape?: string): string => {
+  // 도형별 재정 수식어 보정 - 컬러 family 성향과 충돌하지 않는 의사결정 스타일만 반영
+  const shapeFinanceNote = (family: EnergyFamily, shape?: string): string => {
     if (!shape) return '';
-    const m: Record<string, string> = {
-      hexagon: ' 주로 생활에 필요한 것을 안정적으로 구비하는 패턴입니다.',
-      inverted_triangle: ' 필요하다고 느끼면 신중하게 결정하는 편입니다.',
-      pentagon: ' 자신만의 기준으로 소비하며 타협이 어렵습니다.',
-      triangle: ' 직관적으로 소비하며 나중에 후회하는 패턴이 있습니다.',
-      circle: ' 기분에 따라 소비가 달라지는 편입니다.',
-      square: ' 예산을 정하고 계획적으로 소비하는 패턴입니다.',
-      diamond: ' 주변의 분위기나 관계에 따라 소비가 달라지는 편입니다.',
+    // 컬러 family별로 도형이 어떻게 그 성향을 표현하는지 설명 (성향 자체를 뒤집지 않음)
+    const m: Record<string, Partial<Record<EnergyFamily, string>>> = {
+      triangle: {
+        warm_active: ' 결정이 빠르고 행동으로 바로 이어집니다.',
+        warm_soft: ' 감정이 올라오면 바로 표현하는 편입니다.',
+        warm_grounded: ' 필요하다고 판단하면 즉각 행동합니다.',
+        cool_clear: ' 논리적으로 판단하고 빠르게 결정합니다.',
+        cool_deep: ' 내면 기준이 서면 바로 실행합니다.',
+        nature: ' 흐름이 맞으면 바로 움직이는 편입니다.',
+        neutral: ' 필요한 것은 군더더기 없이 바로 처리합니다.',
+      },
+      circle: {
+        warm_active: ' 에너지가 오를 때 소비가 늘어나는 패턴입니다.',
+        warm_soft: ' 감정 상태에 따라 소비 흐름이 달라집니다.',
+        warm_grounded: ' 감정이 안정될 때 더 균형 있는 소비를 합니다.',
+        cool_clear: ' 감정이 정돈된 상태에서 합리적으로 결정합니다.',
+        cool_deep: ' 내면이 정리되면 소비 결정도 명확해집니다.',
+        nature: ' 자연스러운 흐름 속에서 소비가 이루어집니다.',
+        neutral: ' 감정이 안정될 때 절제가 더 잘 됩니다.',
+      },
+      square: {
+        warm_active: ' 계획보다 현재 필요에 반응하지만 기준이 있습니다.',
+        warm_soft: ' 감정 소비이지만 나름의 기준 안에서 이루어집니다.',
+        warm_grounded: ' 현실적인 기준과 계획 안에서 소비합니다.',
+        cool_clear: ' 체계적인 기준으로 소비를 관리합니다.',
+        cool_deep: ' 가치 기준을 세우고 그 안에서 소비합니다.',
+        nature: ' 생활 루틴 안에서 자연스럽게 소비가 이루어집니다.',
+        neutral: ' 필요한 것만 목록화하여 소비하는 편입니다.',
+      },
+      pentagon: {
+        warm_active: ' 자신만의 기준으로 빠르게 결정합니다.',
+        warm_soft: ' 자신에게 의미 있는 것에 감정적으로 투자합니다.',
+        warm_grounded: ' 자신의 안정 기준에 맞는 것에만 씁니다.',
+        cool_clear: ' 자신만의 효율 기준이 명확합니다.',
+        cool_deep: ' 자신의 가치 기준에 맞는 것에 집중합니다.',
+        nature: ' 자신의 페이스에 맞게 소비합니다.',
+        neutral: ' 자신의 기준에서 벗어나는 소비는 잘 하지 않습니다.',
+      },
+      hexagon: {
+        warm_active: ' 관계와 공동 생활을 위한 소비를 중요하게 여깁니다.',
+        warm_soft: ' 함께하는 것에 기꺼이 씁니다.',
+        warm_grounded: ' 공동 생활의 안정을 위한 소비를 우선합니다.',
+        cool_clear: ' 공동 생활에 필요한 것을 효율적으로 구비합니다.',
+        cool_deep: ' 공동체에 의미 있는 것에 투자합니다.',
+        nature: ' 함께하는 생활 루틴을 위한 소비를 선호합니다.',
+        neutral: ' 공동 생활에 꼭 필요한 것만 구비합니다.',
+      },
+      inverted_triangle: {
+        warm_active: ' 내면에서 필요하다는 확신이 서면 결정합니다.',
+        warm_soft: ' 감정을 충분히 느낀 후 소비를 결정합니다.',
+        warm_grounded: ' 충분히 생각한 후 안정적으로 결정합니다.',
+        cool_clear: ' 내면에서 논리적으로 정리된 후 결정합니다.',
+        cool_deep: ' 깊이 성찰한 후 의미 있는 것에 씁니다.',
+        nature: ' 자연스럽게 필요하다는 느낌이 올 때 결정합니다.',
+        neutral: ' 충분히 비운 후 꼭 필요한 것만 채웁니다.',
+      },
+      diamond: {
+        warm_active: ' 관계와 분위기에 따라 소비 결정이 달라집니다.',
+        warm_soft: ' 감성적인 분위기에서 소비 의욕이 높아집니다.',
+        warm_grounded: ' 관계 안정감이 있을 때 균형 있는 소비를 합니다.',
+        cool_clear: ' 분위기보다 실용성을 우선하는 균형을 유지합니다.',
+        cool_deep: ' 감수성 있는 것에 의미 있는 투자를 합니다.',
+        nature: ' 자연스러운 관계 흐름 안에서 소비합니다.',
+        neutral: ' 분위기에 흔들리지 않고 절제를 유지합니다.',
+      },
     };
-    return m[shape] ?? '';
+    return m[shape]?.[family] ?? '';
   };
   // 도형별 휴식 수식어 보정
-  const shapeRestNote = (shape?: string): string => {
+  const shapeRestNote = (family: EnergyFamily, shape?: string): string => {
     if (!shape) return '';
-    const m: Record<string, string> = {
-      hexagon: ' 루틴이 있는 휴식이 안정감을 줍니다.',
-      inverted_triangle: ' 혼자만의 조용한 시간이 진정한 충전입니다.',
-      pentagon: ' 자신만의 방식으로 충전하는 것을 선호합니다.',
-      triangle: ' 활동적으로 에너지를 풀어야 충전된다고 느낍니다.',
-      circle: ' 사람과 함께 있을 때 자연스럽게 충전됩니다.',
-      square: ' 계획된 휴식 스케줄이 있어야 편안합니다.',
-      diamond: ' 분위기 좋은 공간에서 충전하는 것을 선호합니다.',
+    // 컬러 family 성향을 강화하는 방향으로 도형의 휴식 스타일 표현
+    const m: Record<string, Partial<Record<EnergyFamily, string>>> = {
+      triangle: {
+        warm_active: ' 몸을 움직이며 에너지를 발산하면 빠르게 회복됩니다.',
+        warm_soft: ' 감정을 바로 표현하고 나면 충전이 됩니다.',
+        warm_grounded: ' 필요한 것을 빠르게 해결하고 쉬는 편입니다.',
+        cool_clear: ' 정리가 끝나면 바로 재충전 모드로 전환합니다.',
+        cool_deep: ' 내면 정리가 되면 빠르게 회복됩니다.',
+        nature: ' 자연 속에서 빠르게 에너지를 회복합니다.',
+        neutral: ' 불필요한 것을 정리하면 바로 충전됩니다.',
+      },
+      circle: {
+        warm_active: ' 사람과 함께 활동하며 에너지를 충전합니다.',
+        warm_soft: ' 연결감이 있을 때 자연스럽게 회복됩니다.',
+        warm_grounded: ' 안정된 관계 안에서 루틴대로 쉬면 충전됩니다.',
+        cool_clear: ' 혼자만의 시간과 연결을 균형 있게 가져야 충전됩니다.',
+        cool_deep: ' 조용한 연결 속에서 내면이 회복됩니다.',
+        nature: ' 자연스러운 흐름 속에서 사람과 함께 충전됩니다.',
+        neutral: ' 고요한 공간에서 혼자 쉬는 것이 진정한 충전입니다.',
+      },
+      square: {
+        warm_active: ' 계획된 활동 안에서 에너지를 발산합니다.',
+        warm_soft: ' 정해진 루틴 안에서 감정을 회복합니다.',
+        warm_grounded: ' 계획된 루틴대로 쉬어야 안정감이 생깁니다.',
+        cool_clear: ' 체계적인 휴식 스케줄이 있어야 효율적으로 충전됩니다.',
+        cool_deep: ' 구조화된 고독 시간이 깊은 충전을 만듭니다.',
+        nature: ' 정해진 루틴 안에서 자연스럽게 회복됩니다.',
+        neutral: ' 계획된 정적인 시간이 최고의 충전입니다.',
+      },
+      pentagon: {
+        warm_active: ' 자신만의 방식으로 활동하며 충전합니다.',
+        warm_soft: ' 자신에게 맞는 감정 회복 방식이 있습니다.',
+        warm_grounded: ' 자신의 루틴대로 쉬는 것이 가장 편안합니다.',
+        cool_clear: ' 자신만의 효율적인 충전 방식을 선호합니다.',
+        cool_deep: ' 자신만의 깊은 회복 시간이 필요합니다.',
+        nature: ' 자신의 페이스에 맞는 회복 방식을 선호합니다.',
+        neutral: ' 자신만의 고요한 충전 방식이 있습니다.',
+      },
+      hexagon: {
+        warm_active: ' 함께 활동하며 에너지를 나누는 것이 충전입니다.',
+        warm_soft: ' 함께 있는 것 자체가 회복이 됩니다.',
+        warm_grounded: ' 공동 루틴 안에서 안정감을 얻습니다.',
+        cool_clear: ' 함께하는 효율적인 휴식 루틴을 선호합니다.',
+        cool_deep: ' 함께하는 조용한 시간이 깊은 충전이 됩니다.',
+        nature: ' 함께하는 자연스러운 생활 루틴이 회복입니다.',
+        neutral: ' 함께하는 고요한 시간이 최고의 충전입니다.',
+      },
+      inverted_triangle: {
+        warm_active: ' 내면이 정리되면 에너지가 다시 올라옵니다.',
+        warm_soft: ' 감정을 충분히 느끼고 나면 회복됩니다.',
+        warm_grounded: ' 내면이 안정되면 루틴으로 돌아옵니다.',
+        cool_clear: ' 혼자 논리적으로 정리하면 충전됩니다.',
+        cool_deep: ' 혼자만의 깊은 내면 시간이 진정한 충전입니다.',
+        nature: ' 조용한 자연 속에서 내면이 회복됩니다.',
+        neutral: ' 완전히 비우는 고요한 시간이 충전입니다.',
+      },
+      diamond: {
+        warm_active: ' 분위기 좋은 공간에서 활동하며 충전합니다.',
+        warm_soft: ' 감성적인 분위기에서 감정이 회복됩니다.',
+        warm_grounded: ' 안정적인 분위기 속에서 루틴대로 충전합니다.',
+        cool_clear: ' 쾌적한 환경에서 효율적으로 충전합니다.',
+        cool_deep: ' 감수성 있는 공간에서 깊이 회복됩니다.',
+        nature: ' 자연스러운 분위기 속에서 충전됩니다.',
+        neutral: ' 정돈된 공간에서 고요하게 충전합니다.',
+      },
     };
-    return m[shape] ?? '';
+    return m[shape]?.[family] ?? '';
   };
-  // 도형별 갈등 수식어 보정
-  const shapeConflictNote = (shape?: string): string => {
+  // 도형별 갈등 수식어 보정 - 컬러 family 성향과 일관성 유지
+  const shapeConflictNote = (family: EnergyFamily, shape?: string): string => {
     if (!shape) return '';
-    const m: Record<string, string> = {
-      hexagon: ' 관계 유지를 위해 스스로 조율하는 편입니다.',
-      inverted_triangle: ' 내면에서 먼저 정리하고 나서 표현하는 패턴입니다.',
-      pentagon: ' 자신의 페이스를 지키면서 해결하려는 편입니다.',
-      triangle: ' 바로 말하고 싶어하며 늘어지면 더 힘들어합니다.',
-      circle: ' 감정이 수습되면 자연스럽게 화해하는 편입니다.',
-      square: ' 논리적으로 정리하고 해결하려는 편입니다.',
-      diamond: ' 상대의 감정에 섬세하게 반응하는 편입니다.',
+    const m: Record<string, Partial<Record<EnergyFamily, string>>> = {
+      triangle: {
+        warm_active: ' 바로 말하고 즉각 해결하려는 성향이 강합니다.',
+        warm_soft: ' 감정이 올라오면 바로 표현하고 싶어합니다.',
+        warm_grounded: ' 필요하다고 판단하면 바로 대화를 시작합니다.',
+        cool_clear: ' 논리적으로 정리하고 빠르게 해결하려 합니다.',
+        cool_deep: ' 내면 정리가 되면 바로 표현합니다.',
+        nature: ' 자연스럽게 흐르면 빠르게 해결하려 합니다.',
+        neutral: ' 불필요한 감정 없이 바로 정리하려 합니다.',
+      },
+      circle: {
+        warm_active: ' 감정이 수습되면 빠르게 화해하는 편입니다.',
+        warm_soft: ' 감정이 수습되면 자연스럽게 연결을 회복합니다.',
+        warm_grounded: ' 감정이 안정되면 루틴으로 돌아오며 회복합니다.',
+        cool_clear: ' 감정이 정돈되면 논리적으로 화해합니다.',
+        cool_deep: ' 내면이 정리되면 조용히 화해합니다.',
+        nature: ' 자연스럽게 감정이 흐르면 회복됩니다.',
+        neutral: ' 감정이 가라앉으면 고요하게 화해합니다.',
+      },
+      square: {
+        warm_active: ' 계획적으로 해결하되 행동으로 표현합니다.',
+        warm_soft: ' 감정을 정리하고 순서대로 표현합니다.',
+        warm_grounded: ' 논리적으로 정리하고 신중하게 해결합니다.',
+        cool_clear: ' 체계적으로 논리를 정리하고 해결합니다.',
+        cool_deep: ' 구조적으로 내면을 정리하고 표현합니다.',
+        nature: ' 루틴 안에서 자연스럽게 해결합니다.',
+        neutral: ' 감정 없이 사실만 정리하여 해결합니다.',
+      },
+      pentagon: {
+        warm_active: ' 자신의 페이스로 빠르게 해결하려 합니다.',
+        warm_soft: ' 자신의 방식으로 감정을 표현합니다.',
+        warm_grounded: ' 자신의 페이스를 지키며 신중하게 해결합니다.',
+        cool_clear: ' 자신의 논리 기준으로 해결합니다.',
+        cool_deep: ' 자신의 내면 기준으로 정리하고 표현합니다.',
+        nature: ' 자신의 페이스를 유지하며 자연스럽게 해결합니다.',
+        neutral: ' 자신의 기준으로 조용히 정리합니다.',
+      },
+      hexagon: {
+        warm_active: ' 관계를 위해 적극적으로 조율합니다.',
+        warm_soft: ' 관계 유지를 위해 감정적으로 조율합니다.',
+        warm_grounded: ' 관계 안정을 위해 신중하게 조율합니다.',
+        cool_clear: ' 관계를 위해 논리적으로 조율합니다.',
+        cool_deep: ' 관계 깊이를 위해 내면에서 먼저 정리합니다.',
+        nature: ' 관계를 위해 자연스럽게 조율합니다.',
+        neutral: ' 관계 유지를 위해 조용히 조율합니다.',
+      },
+      inverted_triangle: {
+        warm_active: ' 내면에서 정리된 후 빠르게 표현합니다.',
+        warm_soft: ' 감정을 충분히 느끼고 나서 표현합니다.',
+        warm_grounded: ' 내면에서 충분히 정리한 후 신중하게 표현합니다.',
+        cool_clear: ' 내면에서 논리적으로 정리한 후 표현합니다.',
+        cool_deep: ' 깊이 성찰한 후 의미 있는 방식으로 표현합니다.',
+        nature: ' 자연스럽게 내면이 정리되면 표현합니다.',
+        neutral: ' 완전히 정리된 후 조용히 표현합니다.',
+      },
+      diamond: {
+        warm_active: ' 상대의 감정에 반응하며 빠르게 해결하려 합니다.',
+        warm_soft: ' 상대의 감정에 섬세하게 반응하며 공감합니다.',
+        warm_grounded: ' 상대의 감정을 살피며 신중하게 해결합니다.',
+        cool_clear: ' 상대의 감정을 고려하면서도 논리적으로 해결합니다.',
+        cool_deep: ' 상대의 감정에 깊이 공명하며 내면에서 정리합니다.',
+        nature: ' 상대의 감정 흐름에 맞춰 자연스럽게 해결합니다.',
+        neutral: ' 상대의 감정을 살피며 조용히 정리합니다.',
+      },
     };
-    return m[shape] ?? '';
+    return m[shape]?.[family] ?? '';
   };
 
   // 도형 조합에 따른 생활 리듬 설명 생성
@@ -6025,8 +6195,8 @@ function buildDefaultLifestyleSections(
       description: isSameFamily
         ? '두 사람의 소비 방식이 비슷합니다. 같은 성향이 만나면 서로의 소비 패턴이 강화되는 순간이 생길 수 있습니다.'
         : '두 사람의 소비 기준과 재정 관리 방식이 다릅니다.',
-      personA: financePersonMap[fA] + shapeFinanceNote(shapeA),
-      personB: financePersonMap[fB] + shapeFinanceNote(shapeB),
+      personA: financePersonMap[fA] + shapeFinanceNote(fA, shapeA),
+      personB: financePersonMap[fB] + shapeFinanceNote(fB, shapeB),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 소비 성향이 있어, 서로의 패턴이 강화되는 순간을 주의하세요. 함께 기준을 정하는 것이 도움이 됩니다.'
         : '소비 기준이 달라 "왜 이걸 샰어?"가 반복될 수 있습니다. 함께 기준을 정하는 것이 도움이 됩니다.',
@@ -6034,8 +6204,8 @@ function buildDefaultLifestyleSections(
     rest: {
       title: '휴식·회복 방식',
       description: restDesc,
-      personA: effectiveRestMap[fA] + shapeRestNote(shapeA),
-      personB: effectiveRestMap[fB] + shapeRestNote(shapeB),
+      personA: effectiveRestMap[fA] + shapeRestNote(fA, shapeA),
+      personB: effectiveRestMap[fB] + shapeRestNote(fB, shapeB),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 휴식 패턴이 있어 서로의 성향이 강화되는 순간을 주의하세요. 가끔 다른 방식으로 함께 충전하는 시간을 만들어보세요.'
         : '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
@@ -6043,8 +6213,8 @@ function buildDefaultLifestyleSections(
     conflict: {
       title: '갈등 직후 반응',
       description: conflictDesc,
-      personA: effectiveConflictMap[fA] + shapeConflictNote(shapeA),
-      personB: effectiveConflictMap[fB] + shapeConflictNote(shapeB),
+      personA: effectiveConflictMap[fA] + shapeConflictNote(fA, shapeA),
+      personB: effectiveConflictMap[fB] + shapeConflictNote(fB, shapeB),
       tip: isSameFamily
         ? '두 사람의 갈등 반응 방식이 비슷하기 때문에 서로의 패턴이 강화될 수 있습니다. 한 사람이 먼저 다른 방식으로 다가가는 것이 중요합니다.'
         : '서로의 갈등 반응 방식이 다름을 인정하는 것이 첫 번째 단계입니다.',
