@@ -223,7 +223,24 @@ export default function HomeScreen() {
           <Text style={[styles.hint, { color: colors.muted }]}>
             직관적으로 끌리는 색을 선택해 주세요
           </Text>
-          {/* 유료 버전 버튼 */}
+          {/* 커플 세션 버튼 - 일반 사용자 무료 테스트 오픈 (콜러+도형 위로 이동, 시각적 강조) */}
+          <TouchableOpacity
+            style={[styles.coupleButtonWrapper]}
+            onPress={() => router.push('/(tabs)/couple-start' as any)}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.coupleButton, styles.coupleButtonActive]}>
+              <View style={styles.coupleButtonInner}>
+                <View style={[styles.comingBadge, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
+                  <Text style={[styles.comingBadgeText, { color: '#FFFFFF' }]}>무료 테스트</Text>
+                </View>
+                <Text style={[styles.coupleButtonText, { color: '#FFFFFF' }]}>💑 커플 세션</Text>
+              </View>
+              <Text style={[styles.coupleButtonSub, { color: 'rgba(255,255,255,0.85)' }]}>서로를 이해하는 감성 심리코칭 · 지금 무료로 체험하세요</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* 콜러+도형 심층 해석 버튼 */}
           <Pressable
             style={({ pressed }) => [
               styles.premiumButton,
@@ -233,27 +250,10 @@ export default function HomeScreen() {
           >
             <View style={styles.premiumButtonInner}>
               <Text style={styles.premiumButtonBadge}>NEW</Text>
-              <Text style={styles.premiumButtonText}>🎨 컬러+도형 심층 해석</Text>
+              <Text style={styles.premiumButtonText}>🎨 콜러+도형 심층 해석</Text>
             </View>
             <Text style={styles.premiumButtonSub}>63장 카드 · 초기 오픈 무료체험중 · 정식 오픈 후 유료 전환 예정</Text>
           </Pressable>
-
-          {/* 커플 세션 버튼 - 일반 사용자 무료 테스트 오픈 */}
-          <TouchableOpacity
-            style={[styles.coupleButtonWrapper]}
-            onPress={() => router.push('/(tabs)/couple-start' as any)}
-            activeOpacity={0.85}
-          >
-            <View style={[styles.coupleButton, styles.coupleButtonActive]}>
-              <View style={styles.coupleButtonInner}>
-                <View style={[styles.comingBadge, { backgroundColor: '#8FA68E30' }]}>
-                  <Text style={[styles.comingBadgeText, { color: '#5A8A5A' }]}>무료 테스트</Text>
-                </View>
-                <Text style={[styles.coupleButtonText, { color: '#5A8A5A' }]}>💑 커플 세션</Text>
-              </View>
-              <Text style={[styles.coupleButtonSub, { color: '#5A8A5A' }]}>서로를 이해하는 감성 심리코칭 · 지금 무료로 체험하세요</Text>
-            </View>
-          </TouchableOpacity>
          </Animated.View>
       </View>
 
@@ -450,10 +450,10 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   coupleButtonActive: {
-    borderColor: '#8FA68E',
+    borderColor: '#6B8F6A',
+    backgroundColor: '#7A9E79',
     borderStyle: 'solid',
     opacity: 1,
-    backgroundColor: '#F4F8F4',
   },
   coupleButtonInner: {
     flexDirection: 'row',

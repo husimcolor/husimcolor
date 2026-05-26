@@ -13,7 +13,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, shrink-to-fit=no"
+          content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
         />
 
         {/* 기본 메타 */}
@@ -86,6 +86,19 @@ export default function Root({ children }: PropsWithChildren) {
           }
           body { margin: 0; }
           * { -webkit-text-fill-color: inherit; }
+          /* 인앱브라우저(카카오톡/네이버) 스크롤 강제 활성화 */
+          /* Expo 웹 빌드에서 #root가 overflow:hidden으로 설정되어 콘텐츠가 잘리는 문제 해결 */
+          #root > div {
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+          /* 스크롤 컴테이너가 최소 화면 높이를 채우도록 */
+          #root {
+            min-height: 100vh !important;
+            height: auto !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
         `}} />
 
         <ScrollViewStyleReset />
