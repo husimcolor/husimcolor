@@ -23,15 +23,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Expo web app
-        run: npx expo export --platform web --output-dir dist
-        env:
-          NODE_ENV: production
-
       - name: Prepare Vercel output structure
         run: |
           mkdir -p .vercel/output/static
-          cp -r dist/. .vercel/output/static/
+          # dist/ 폴더가 있으면 static으로 복사 (없으면 이미 커밋된 static 사용)
+          if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
+            cp -r dist/. .vercel/output/static/
+          fi
           mkdir -p ".vercel/output/functions/api/trpc/[...trpc].func"
 
       - name: Build tRPC API function (with mysql2 bundled)
