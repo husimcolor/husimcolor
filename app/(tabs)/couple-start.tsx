@@ -113,15 +113,15 @@ export default function CoupleStartScreen() {
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: isSelected ? colors.primary : 'rgba(255,255,255,0.12)',
-          borderColor: isSelected ? colors.primary : 'rgba(255,255,255,0.25)',
+          backgroundColor: isSelected ? colors.primary : '#F0EAE0',
+          borderColor: isSelected ? colors.primary : '#C4A882',
         },
         pressed && { opacity: 0.8 },
       ]}
       onPress={onPress}
     >
       {emoji && <Text style={styles.chipEmoji}>{emoji}</Text>}
-      <Text style={[styles.chipText, { color: isSelected ? '#fff' : '#F0E8DC' }]}>
+      <Text style={[styles.chipText, { color: isSelected ? '#fff' : '#4A3020' }]}>
         {label}
       </Text>
     </Pressable>

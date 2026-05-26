@@ -500,22 +500,15 @@ export default function CoupleResultScreen() {
               {/* 경량 archetype 보완 컬러 */}
               {lightArchetypeResult.recommendedColors && lightArchetypeResult.recommendedColors.length > 0 && (
                 <SectionCard accentColor={accentCouple} title="이 관계에 어울리는 컬러" colors={colors}>
-                  {lightArchetypeResult.recommendedColors.map(rc => {
-                    const bgLum = hexLuminance(rc.hex);
-                    const isDarkBg = bgLum < 0.45;
-                    const cardBg = isDarkBg ? rc.hex + 'CC' : rc.hex + '22';
-                    const nameColor = isDarkBg ? '#FFFFFF' : (bgLum > 0.75 ? '#5A3A1A' : rc.hex);
-                    const descColor = isDarkBg ? '#F8F3EA' : '#3A2A1A';
-                    return (
-                      <View key={rc.id} style={[styles.complementRow, { backgroundColor: cardBg, borderColor: rc.hex + '80' }]}>
-                        <View style={[styles.complementDot, { backgroundColor: rc.hex, borderWidth: isDarkBg ? 2 : 0, borderColor: 'rgba(255,255,255,0.4)' }]} />
-                        <View style={styles.complementText}>
-                          <Text style={[styles.complementName, { color: nameColor }]}>{rc.korName}</Text>
-                          <Text style={[styles.complementMeaning, { color: descColor, fontSize: 14, lineHeight: 24 }]}>{rc.reason}</Text>
-                        </View>
+                  {lightArchetypeResult.recommendedColors.map(rc => (
+                    <View key={rc.id} style={[styles.complementRow, { backgroundColor: '#FBF7F2', borderColor: rc.hex + '60' }]}>
+                      <View style={[styles.complementDot, { backgroundColor: rc.hex, shadowColor: rc.hex }]} />
+                      <View style={styles.complementText}>
+                        <Text style={[styles.complementName, { color: rc.hex }]}>{rc.korName}</Text>
+                        <Text style={[styles.complementMeaning, { color: '#4A3728', fontSize: 14, lineHeight: 24 }]}>{rc.reason}</Text>
                       </View>
-                    );
-                  })}
+                    </View>
+                  ))}
                 </SectionCard>
               )}
             </>
@@ -791,14 +784,15 @@ export default function CoupleResultScreen() {
           <SectionCard accentColor={accentA} label="첫 번째 사람" title="보완 컬러" colors={colors}>
             {(() => {
               const cc = personAAnalysis.complementColor;
-              const ccLum = hexLuminance(cc.hex);
-              const isDarkCc = ccLum < 0.45;
+              // ivory/cream 기반: 항상 밝은 배경, 컬러 tint만 은은하게
+              const cardBg = '#FBF7F2'; // warm ivory base
+              const borderCol = cc.hex + '60';
               return (
-                <View style={[styles.complementRow, { backgroundColor: isDarkCc ? cc.hex + 'CC' : cc.hex + '22', borderColor: cc.hex + '80' }]}>
-                  <View style={[styles.complementDot, { backgroundColor: cc.hex, borderWidth: isDarkCc ? 2 : 0, borderColor: 'rgba(255,255,255,0.4)' }]} />
+                <View style={[styles.complementRow, { backgroundColor: cardBg, borderColor: borderCol }]}>
+                  <View style={[styles.complementDot, { backgroundColor: cc.hex, shadowColor: cc.hex }]} />
                   <View style={styles.complementText}>
-                    <Text style={[styles.complementName, { color: isDarkCc ? '#FFFFFF' : (ccLum > 0.75 ? '#5A3A1A' : cc.hex) }]}>{cc.korName}</Text>
-                    <Text style={[styles.complementMeaning, { color: isDarkCc ? '#F8F3EA' : '#3A2A1A', fontSize: 14, lineHeight: 24 }]}>{cc.meaning}</Text>
+                    <Text style={[styles.complementName, { color: cc.hex }]}>{cc.korName}</Text>
+                    <Text style={[styles.complementMeaning, { color: '#4A3728', fontSize: 14, lineHeight: 24 }]}>{cc.meaning}</Text>
                   </View>
                 </View>
               );
@@ -821,14 +815,15 @@ export default function CoupleResultScreen() {
           <SectionCard accentColor={accentB} label="두 번째 사람" title="보완 컬러" colors={colors}>
             {(() => {
               const cc = personBAnalysis.complementColor;
-              const ccLum = hexLuminance(cc.hex);
-              const isDarkCc = ccLum < 0.45;
+              // ivory/cream 기반: 항상 밝은 배경
+              const cardBg = '#FBF7F2';
+              const borderCol = cc.hex + '60';
               return (
-                <View style={[styles.complementRow, { backgroundColor: isDarkCc ? cc.hex + 'CC' : cc.hex + '22', borderColor: cc.hex + '80' }]}>
-                  <View style={[styles.complementDot, { backgroundColor: cc.hex, borderWidth: isDarkCc ? 2 : 0, borderColor: 'rgba(255,255,255,0.4)' }]} />
+                <View style={[styles.complementRow, { backgroundColor: cardBg, borderColor: borderCol }]}>
+                  <View style={[styles.complementDot, { backgroundColor: cc.hex, shadowColor: cc.hex }]} />
                   <View style={styles.complementText}>
-                    <Text style={[styles.complementName, { color: isDarkCc ? '#FFFFFF' : (ccLum > 0.75 ? '#5A3A1A' : cc.hex) }]}>{cc.korName}</Text>
-                    <Text style={[styles.complementMeaning, { color: isDarkCc ? '#F8F3EA' : '#3A2A1A', fontSize: 14, lineHeight: 24 }]}>{cc.meaning}</Text>
+                    <Text style={[styles.complementName, { color: cc.hex }]}>{cc.korName}</Text>
+                    <Text style={[styles.complementMeaning, { color: '#4A3728', fontSize: 14, lineHeight: 24 }]}>{cc.meaning}</Text>
                   </View>
                 </View>
               );
@@ -1151,18 +1146,13 @@ export default function CoupleResultScreen() {
           {/* 추천 컬러 - archetype 기반 우선, 없으면 기존 컬러 사용 */}
           <SectionCard accentColor={accentCouple} title="두 사람에게 권하는 컬러" colors={colors}>
             {(archetypeResult.recommendedColors ?? coupleAnalysis.coupleRoutine.recommendedColors).map(rc => {
-              // 배경 밝기에 따라 텍스트 색상 자동 결정
-              const bgLum = hexLuminance(rc.hex);
-              const isDarkBg = bgLum < 0.45;
-              const cardBg = isDarkBg ? rc.hex + 'CC' : rc.hex + '22';
-              const nameColor = isDarkBg ? '#FFFFFF' : (bgLum > 0.75 ? '#5A3A1A' : rc.hex);
-              const descColor = isDarkBg ? '#F8F3EA' : '#3A2A1A';
+              // ivory/cream 기반: 항상 밝은 배경, 컬러만 선명하게
               return (
-                <View key={rc.id} style={[styles.complementRow, { backgroundColor: cardBg, borderColor: rc.hex + '80' }]}>
-                  <View style={[styles.complementDot, { backgroundColor: rc.hex, borderWidth: isDarkBg ? 2 : 0, borderColor: 'rgba(255,255,255,0.4)' }]} />
+                <View key={rc.id} style={[styles.complementRow, { backgroundColor: '#FBF7F2', borderColor: rc.hex + '60' }]}>
+                  <View style={[styles.complementDot, { backgroundColor: rc.hex, shadowColor: rc.hex }]} />
                   <View style={styles.complementText}>
-                    <Text style={[styles.complementName, { color: nameColor }]}>{rc.korName}</Text>
-                    <Text style={[styles.complementMeaning, { color: descColor, fontSize: 14, lineHeight: 24 }]}>{rc.reason}</Text>
+                    <Text style={[styles.complementName, { color: rc.hex }]}>{rc.korName}</Text>
+                    <Text style={[styles.complementMeaning, { color: '#4A3728', fontSize: 14, lineHeight: 24 }]}>{rc.reason}</Text>
                   </View>
                 </View>
               );
@@ -1223,7 +1213,7 @@ export default function CoupleResultScreen() {
         </Pressable>
 
         <Pressable
-          style={[styles.shareBtn, { borderColor: colors.border }]}
+          style={[styles.shareBtn, { borderColor: accentCouple + '80', backgroundColor: accentCouple + '15' }]}
           onPress={async () => {
             try {
               const { Share } = await import('react-native');
@@ -1231,7 +1221,7 @@ export default function CoupleResultScreen() {
             } catch {}
           }}
         >
-          <Text style={[styles.shareBtnText, { color: colors.foreground }]}>결과 공유하기</Text>
+          <Text style={[styles.shareBtnText, { color: accentCouple }]}>결과 공유하기</Text>
         </Pressable>
 
         <Pressable
@@ -1307,12 +1297,25 @@ const styles = StyleSheet.create({
   },
   bodyText: { fontSize: 15, lineHeight: 28 },
   complementRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderRadius: 12, borderWidth: 1, padding: 12, marginTop: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    borderRadius: 16, borderWidth: 1.5, padding: 16, marginTop: 10,
+    // soft shadow for card depth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  complementDot: { width: 32, height: 32, borderRadius: 16 },
-  complementText: { flex: 1, gap: 2 },
-  complementName: { fontSize: 15, fontWeight: '700' },
+  complementDot: {
+    width: 52, height: 52, borderRadius: 26,
+    marginRight: 0,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  complementText: { flex: 1, gap: 4 },
+  complementName: { fontSize: 16, fontWeight: '800', letterSpacing: 0.2 },
   complementMeaning: { fontSize: 14, lineHeight: 24 },
   coachingMessage: {
     fontSize: 15, lineHeight: 28, fontStyle: 'italic',
