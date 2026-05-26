@@ -506,58 +506,65 @@ function buildShapeContext(shape: ShapeType | undefined): {
 } {
   switch (shape) {
     case 'triangle':
+      // 삼각형: 경계/버틸/긴장/보호 — 감정을 직접 표현하지 않고 내부에서 정리한 후 표현
       return {
-        modifier: '경계를 중시하고 자신을 지키려는',
-        conflictTrait: '경계를 지키려는 태도가 상대에게 차갑게 느껴질 수 있습니다',
-        recoveryTrait: '경계 회복과 혼자만의 시간이 필요합니다',
-        affectionStyle: '신뢰가 쌓인 후 천천히 마음을 여는 방식으로',
+        modifier: '감정을 내부에서 정리한 후 직접적으로 표현하는',
+        conflictTrait: '갈등 직후에 말이 없어지고 경계가 생길 수 있습니다. 상대는 이를 거절로 읽기 쉬운 패턴입니다',
+        recoveryTrait: '혼자 정리하는 시간이 선행되어야 합니다. 이후 짧고 명확한 연결이 회복을 돕습니다',
+        affectionStyle: '신뢰가 쌓인 후 직접적으로 표현하는 방식으로',
         conversationStyle: '경계를 존중하는 짧고 명확한 대화가',
       };
     case 'inverted_triangle':
+      // 역삼각형: 감정 침잠형 — 감정이 안으로 하강하여 스스로 소화하는 패턴
       return {
-        modifier: '감정이 깊이 내려앉고 예민하게 반응하는',
-        conflictTrait: '감정이 안으로 침잠할 때 상대가 원인을 알기 어렵습니다',
-        recoveryTrait: '감정을 천천히 꺼내는 시간과 조용한 공간이 필요합니다',
+        modifier: '감정이 안으로 침잠하며 내면에서 먼저 소화하는',
+        conflictTrait: '갈등 직후 조용해지거나 말이 없어집니다. 상대는 원인을 모르고 기다리는 상황이 되고, 이 침묵이 거리감으로 번지는 패턴이 있습니다',
+        recoveryTrait: '감정을 천천히 꺼내는 조용한 공간과 시간이 필요합니다. 서두르지 않는 연결이 마음을 엽어줍니다',
         affectionStyle: '감정을 충분히 소화한 후 진심으로 표현하는 방식으로',
-        conversationStyle: '감정을 먼저 인정하는 부드러운 대화가',
+        conversationStyle: '감정을 먼저 인정하고 기다려주는 부드러운 대화가',
       };
     case 'circle':
+      // 원: 순환/관계 흐름형 — 감정이 순환하며 부드럽게 연결되는 패턴
       return {
-        modifier: '감정이 순환하고 부드럽게 연결되는',
-        conflictTrait: '감정이 빠르게 순환하여 상대가 현재 상태를 파악하기 어려울 수 있습니다',
-        recoveryTrait: '감정 순환을 돕는 부드러운 연결과 공감이 필요합니다',
+        modifier: '감정이 순환하며 관계를 중심으로 연결되는',
+        conflictTrait: '갈등 후에도 연결을 원하지만, 감정이 빠르게 변하여 상대가 현재 상태를 파악하기 어려울 수 있습니다',
+        recoveryTrait: '관계 안에서 감정을 나누는 것 자체가 회복입니다. 연결이 끝나지 않는다는 신호가 필요합니다',
         affectionStyle: '자연스럽게 감정을 나누고 연결되는 방식으로',
-        conversationStyle: '감정의 흐름을 따라가는 부드러운 대화가',
+        conversationStyle: '감정의 흐름을 따라가며 연결을 유지하는 부드러운 대화가',
       };
     case 'square':
+      // 네모: 기준/질서형 — 현실적 구조와 책임감으로 관계를 이어가는 패턴
       return {
-        modifier: '현실적이고 구조적으로 안정을 추구하는',
-        conflictTrait: '구조와 책임을 중시하는 태도가 상대에게 딱딱하게 느껴질 수 있습니다',
-        recoveryTrait: '일상의 안정된 구조와 책임감 있는 루틴이 회복을 돕습니다',
-        affectionStyle: '꾸준하고 안정적인 행동으로 신뢰를 쌓는 방식으로',
-        conversationStyle: '구체적이고 현실적인 주제의 대화가',
+        modifier: '현실적 기준과 질서를 중시하며 안정적으로 관계를 이어가는',
+        conflictTrait: '갈등 직후 원인과 해결책을 먼저 찾는 패턴이 있습니다. 감정보다 상황 정리가 앞서면 상대는 공감받지 못한다고 느낄 수 있습니다',
+        recoveryTrait: '일상의 안정된 루틴과 현실적 해결 후 관계 회복이 자연스럽습니다',
+        affectionStyle: '꼼준한 행동과 신뢰할 수 있는 안정감으로',
+        conversationStyle: '구체적 상황과 현실적 해결에 집중하는 대화가',
       };
     case 'diamond':
+      // 마름모: 긴장/변화 반응형 — 관계 감수성이 높고 작은 변화에도 민감하게 반응
       return {
-        modifier: '관계 감수성이 높고 섬세하게 균형을 맞추는',
-        conflictTrait: '섬세한 감수성으로 인해 작은 변화에도 민감하게 반응할 수 있습니다',
-        recoveryTrait: '감수성을 존중하는 섬세한 공감과 균형 회복이 필요합니다',
-        affectionStyle: '세심한 배려와 균형 잡힌 표현으로',
-        conversationStyle: '섬세한 감정 교류와 균형 잡힌 대화가',
+        modifier: '관계의 작은 변화에도 민감하게 반응하며 균형을 조율하는',
+        conflictTrait: '갈등 직후 긴장이 오래 지속되고 작은 말 한마디가 마음에 오래 남는 패턴이 있습니다',
+        recoveryTrait: '섬세한 공감과 관계의 안정성을 확인하는 신호가 회복을 돕습니다',
+        affectionStyle: '세심한 배려와 작은 표현에도 민감하게 반응하는 방식으로',
+        conversationStyle: '작은 변화도 알아채주는 섬세한 연결 대화가',
       };
     case 'pentagon':
+      // 오각형: 자기 방향성/성장 추구형 — 자신의 방향성을 중시하며 관계에서도 성장을 원함
       return {
-        modifier: '자기 방향성이 뚜렷하고 성장을 추구하는',
-        conflictTrait: '자기 방향성이 강해 상대의 속도와 맞지 않을 때 갈등이 생길 수 있습니다',
-        recoveryTrait: '자기 성장과 방향성을 존중하는 공간이 필요합니다',
+        modifier: '자기 방향성이 명확하고 관계 안에서도 성장을 추구하는',
+        conflictTrait: '갈등 직후 자신의 방향성을 지키려는 태도가 상대에게 밀어내는 느낙으로 읽힐 수 있습니다',
+        recoveryTrait: '각자의 방향성을 존중하는 공간이 선행되어야 합니다. 그 후 함께 나아갈 방향을 이야기하는 연결이 필요합니다',
         affectionStyle: '서로의 성장을 응원하고 방향을 함께 나누는 방식으로',
-        conversationStyle: '각자의 방향과 성장을 나누는 대화가',
+        conversationStyle: '각자의 방향과 성장을 서로 인정하는 대화가',
       };
     case 'hexagon':
+      // 육각형: 연결/공동체 흐름형 — 관계 조화를 위해 자신의 감정을 뒤로 미루는 패턴
       return {
-        modifier: '연결과 공동체를 중시하고 조화를 추구하는',
-        conflictTrait: '관계 조화를 중시하다 보니 자신의 감정을 뒤로 미룰 수 있습니다',
-        recoveryTrait: '관계 연결과 공동체 안에서의 따뜻한 소속감이 회복을 돕습니다',
+        modifier: '관계의 조화를 위해 자신의 감정을 조율하며 연결을 유지하는',
+        conflictTrait: '갈등 직후 관계를 지키려는 마음에 자신의 감정을 숨기는 패턴이 있습니다. 상대는 실제 상태를 모를 수 있습니다',
+        recoveryTrait: '관계의 연결이 유지된다는 확인과 소속감이 회복을 돕습니다',
         affectionStyle: '함께하는 활동과 공동체적 연결로',
         conversationStyle: '관계와 연결을 중심으로 한 따뜻한 대화가',
       };
@@ -2462,9 +2469,10 @@ function buildProfileContrast(
   shapeCtxA?: ReturnType<typeof buildShapeContext>,
   shapeCtxB?: ReturnType<typeof buildShapeContext>
 ): string {
-  // 도형별 관계 특성 보완 문장
+  // 컬러 에너지 + 도형 반응 구조 통합 표현
+  // 컬러 = 감정 에너지 방향, 도형 = 갈등 직후 반응 구조
   const shapeProfileNote = (shapeCtxA && shapeCtxB)
-    ? `\n\n도형이 말해주는 표현 구조: 첫 번째 사람은 ${shapeCtxA.modifier} 방식으로 관계를 이어갑니다. 두 번째 사람은 ${shapeCtxB.modifier} 방식으로 연결됩니다. 같은 컬러 에너지라도 도형에 따라 표현 방식이 달라집니다.`
+    ? `\n\n도형이 말해주는 표현 구조: 첫 번째 사람은 ${shapeCtxA.modifier} 방식으로 관계를 이어갑니다. 두 번째 사람은 ${shapeCtxB.modifier} 방식으로 연결됩니다. 컬러는 감정 에너지의 방향을, 도형은 갈등 직후 반응 구조를 말해줍니다.`
     : shapeCtxA
       ? `\n\n도형이 말해주는 표현 구조: ${shapeCtxA.modifier} 방식으로 관계를 이어가는 특성이 있습니다.`
       : '';
@@ -4802,13 +4810,16 @@ export function getRelationArchetype(
     ? { personA: baseData.expressionSpeed.personA, personB: baseData.expressionSpeed.personB, description: sameExprDescMap[dominantA] }
     : baseData.expressionSpeed;
   if (!isSameEnergyFamily && Math.abs(exprScoreA - exprScoreB) >= 2) {
-    // 두 스타일 레이블 결정
+    // ── 표현 점수 임계값: 3컬러 가중치 합산 기준 (최대 ~31.5, 최소 ~3.5) ──
+    // 단일 컬러 기준(0-10)이 아닌 합산 점수 기준으로 수정
+    // 예: 그린·옐로우·바이올렛 = 3*1.5+5+3 = 12.5 → '상황에 따라 표현'
+    //     레드·블루·옐로우 = 9*1.5+6+5 = 24.5 → '즉각적 표현'
     const getExprLabel = (score: number): string => {
-      if (score >= 8) return '즉각적 표현';
-      if (score >= 6) return '직접적 표현';
-      if (score >= 4) return '상황에 따라 표현';
-      if (score >= 2) return '내면 처리 후 표현';
-      return '조용한 표현';
+      if (score >= 22) return '즉각적 표현';     // 레드·오렌지 계열 주도
+      if (score >= 16) return '직접적 표현';     // 옐로우·블루 계열 주도
+      if (score >= 11) return '상황에 따라 표현'; // 그린·핑크 계열
+      if (score >= 7)  return '내면 처리 후 표현'; // 바이올렛·인디고 계열
+      return '조용한 표현';                      // 화이트·블랙 계열
     };
     const labelA = getExprLabel(exprScoreA);
     const labelB = getExprLabel(exprScoreB);
@@ -5799,14 +5810,15 @@ function buildDefaultLifestyleSections(
   // 도형별 생활 특성 키워드
   const getShapeLifestyleNote = (shape?: string): string => {
     if (!shape) return '';
+    // 도형 = 갈등 직후 반응 구조 + 생활 패턴
     const notes: Record<string, string> = {
-      hexagon: '생활 구조와 루틴을 중시하는 성향이 있습니다.',
-      inverted_triangle: '내면에서 먼저 처리하고 표현하는 패턴입니다.',
-      pentagon: '자기만의 방식과 페이스를 중요하게 여깁니다.',
-      triangle: '바로 반응하고 즉각 표현하는 특성이 있습니다.',
-      circle: '감정이 순환하며 부드러운 연결을 선호합니다.',
-      square: '현실적이고 체계적인 생활 구조를 선호합니다.',
-      diamond: '관계 감수성이 높고 섬세한 분위기를 선호합니다.',
+      triangle: '갈등 직후 말이 없어지고 경계가 생길 수 있습니다. 혼자 정리하는 시간이 선행되어야 합니다.',
+      inverted_triangle: '갈등 직후 조용해지거나 말이 없어집니다. 이 침묵이 거리감으로 번지지 않도록 서두르지 않는 연결이 필요합니다.',
+      circle: '갈등 후에도 연결을 원하는 패턴입니다. 관계가 끝나지 않는다는 신호가 회복을 돕습니다.',
+      square: '갈등 직후 원인과 해결책을 먼저 찾는 패턴입니다. 감정 공감이 먼저 이루어지면 회복이 빠릅니다.',
+      diamond: '갈등 직후 긴장이 오래 지속되고 작은 말 한마디가 마음에 오래 남는 패턴입니다. 섬세한 공감이 회복을 돕습니다.',
+      pentagon: '갈등 직후 자신의 방향성을 지키려는 태도가 상대에게 밀어내는 느낙으로 읽힐 수 있습니다.',
+      hexagon: '갈등 직후 관계를 지키려는 마음에 자신의 감정을 숨기는 패턴이 있습니다. 상대는 실제 상태를 모를 수 있습니다.',
     };
     return notes[shape] ?? '';
   };
