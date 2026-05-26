@@ -2,15 +2,39 @@
   "version": 3,
   "routes": [
     {
+      "src": "/api/trpc/(.*)",
+      "dest": "/api/trpc/[...trpc]"
+    },
+    {
+      "src": "/_expo/static/js/(.*)",
+      "headers": { "Cache-Control": "public, max-age=31536000, immutable" },
+      "continue": true
+    },
+    {
+      "src": "/_expo/static/css/(.*)",
+      "headers": { "Cache-Control": "public, max-age=31536000, immutable" },
+      "continue": true
+    },
+    {
       "src": "/_expo/static/(.*)",
-      "headers": { "cache-control": "public, max-age=31536000, immutable" },
+      "headers": { "Cache-Control": "public, max-age=31536000, immutable" },
+      "continue": true
+    },
+    {
+      "src": "/assets/(.*)",
+      "headers": { "Cache-Control": "public, max-age=31536000, immutable" },
+      "continue": true
+    },
+    {
+      "src": "/index.html",
+      "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" },
       "continue": true
     },
     {
       "handle": "filesystem"
     },
     {
-      "src": "/(.*)",
+      "src": "/((?!_expo/|assets/).*)",
       "dest": "/index.html"
     }
   ]
