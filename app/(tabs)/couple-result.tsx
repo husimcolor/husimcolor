@@ -467,136 +467,38 @@ export default function CoupleResultScreen() {
                   <Text style={[shareCardStyles.btnText, { color: '#3A1D1D' }]}>💬 카카오 공유</Text>
                 </TouchableOpacity>
               </View>
-              {/* ─── 생활 관계 섹션 (컬러+도형 조합 기반) — 왜 끌리는데 왜 힘든지 바로 다음 ─── */}
-              {archetypeResult.lifestyleSections && (
-                <>
-                  <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 4 }]}>생활 속 관계 패턴</Text>
-                  {archetypeResult.lifestyleSections.finance && (
-                    <SectionCard accentColor='#F5A623' label='생활 패턴' title={archetypeResult.lifestyleSections.finance.title} colors={colors}>
-                      <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.finance.description}</Text>
-                      <View style={{ gap: 8, marginTop: 8 }}>
-                        <View style={{ backgroundColor: '#4A3A2A', borderRadius: 10, padding: 14 }}>
-                          <Text style={{ color: '#F0E8DC', fontSize: 15, lineHeight: 26 }}>
-                            첫 번째 사람: {archetypeResult.lifestyleSections.finance.personA}
-                          </Text>
-                        </View>
-                        <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
-                          <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26 }}>
-                            두 번째 사람: {archetypeResult.lifestyleSections.finance.personB}
-                          </Text>
-                        </View>
-                        <View style={{ backgroundColor: '#FFF3DC', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#D4820A' }}>
-                          <Text style={{ color: '#5A3000', fontSize: 14, lineHeight: 24 }}>
-                            {archetypeResult.lifestyleSections.finance.tension}
-                          </Text>
-                        </View>
-                      </View>
-                    </SectionCard>
-                  )}
-                  {archetypeResult.lifestyleSections.cleaning && (
-                    <SectionCard accentColor='#7EC8A4' label='생활 패턴' title={archetypeResult.lifestyleSections.cleaning.title} colors={colors}>
-                      <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.cleaning.description}</Text>
-                      <View style={{ gap: 8, marginTop: 8 }}>
-                        <View style={{ backgroundColor: '#2A3A2A', borderRadius: 10, padding: 14 }}>
-                          <Text style={{ color: '#E0F0E4', fontSize: 15, lineHeight: 26 }}>
-                            첫 번째 사람: {archetypeResult.lifestyleSections.cleaning.personA}
-                          </Text>
-                        </View>
-                        <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
-                          <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26 }}>
-                            두 번째 사람: {archetypeResult.lifestyleSections.cleaning.personB}
-                          </Text>
-                        </View>
-                        <View style={{ backgroundColor: '#D8F5E8', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#3A9A6A' }}>
-                          <Text style={{ color: '#1A4A2A', fontSize: 14, lineHeight: 24 }}>
-                            {archetypeResult.lifestyleSections.cleaning.tension}
-                          </Text>
-                        </View>
-                      </View>
-                    </SectionCard>
-                  )}
-                  {archetypeResult.lifestyleSections.rest && (
-                    <SectionCard accentColor='#8BB8E8' label='생활 패턴' title={archetypeResult.lifestyleSections.rest.title} colors={colors}>
-                      <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.rest.description}</Text>
-                      <View style={{ gap: 8, marginTop: 8 }}>
-                        <View style={{ backgroundColor: '#2A3040', borderRadius: 10, padding: 14 }}>
-                          <Text style={{ color: '#DCE8F8', fontSize: 15, lineHeight: 26 }}>
-                            첫 번째 사람: {archetypeResult.lifestyleSections.rest.personA}
-                          </Text>
-                        </View>
-                        <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
-                          <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26 }}>
-                            두 번째 사람: {archetypeResult.lifestyleSections.rest.personB}
-                          </Text>
-                        </View>
-                        <View style={{ backgroundColor: '#D8EEFF', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#5080C0' }}>
-                          <Text style={{ color: '#1A3060', fontSize: 14, lineHeight: 24 }}>
-                            {archetypeResult.lifestyleSections.rest.tension}
-                          </Text>
-                        </View>
-                      </View>
-                    </SectionCard>
-                  )}
-                  {archetypeResult.lifestyleSections.affection && (
-                    <SectionCard accentColor='#E8A0B4' label='생활 패턴' title={archetypeResult.lifestyleSections.affection.title} colors={colors}>
-                      <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.affection.description}</Text>
-                      <View style={{ gap: 8, marginTop: 8 }}>
-                        <View style={{ backgroundColor: '#3A2030', borderRadius: 10, padding: 14 }}>
-                          <Text style={{ color: '#F8DCE8', fontSize: 15, lineHeight: 26 }}>
-                            첫 번째 사람: {archetypeResult.lifestyleSections.affection.personA}
-                          </Text>
-                        </View>
-                        <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
-                          <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26 }}>
-                            두 번째 사람: {archetypeResult.lifestyleSections.affection.personB}
-                          </Text>
-                        </View>
-                        <View style={{ backgroundColor: '#FFE0EC', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#C05080' }}>
-                          <Text style={{ color: '#5A1030', fontSize: 14, lineHeight: 24 }}>
-                            💡 {archetypeResult.lifestyleSections.affection.tip}
-                          </Text>
-                        </View>
-                      </View>
-                    </SectionCard>
-                  )}
-                  {archetypeResult.lifestyleSections.conflict && (
-                    <SectionCard accentColor='#C47E8A' label='생활 패턴' title={archetypeResult.lifestyleSections.conflict.title} colors={colors}>
-                      <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.lifestyleSections.conflict.description}</Text>
-                      <View style={{ gap: 8, marginTop: 8 }}>
-                        <View style={{ backgroundColor: '#3A2A2A', borderRadius: 10, padding: 14 }}>
-                          <Text style={{ color: '#F8E8E0', fontSize: 15, lineHeight: 26 }}>
-                            첫 번째 사람: {archetypeResult.lifestyleSections.conflict.personA}
-                          </Text>
-                        </View>
-                        <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
-                          <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26 }}>
-                            두 번째 사람: {archetypeResult.lifestyleSections.conflict.personB}
-                          </Text>
-                        </View>
-                        <View style={{ backgroundColor: '#F5E8D0', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#B08050' }}>
-                          <Text style={{ color: '#4A2800', fontSize: 14, lineHeight: 24 }}>
-                            💡 {archetypeResult.lifestyleSections.conflict.tip}
-                          </Text>
-                        </View>
-                      </View>
-                    </SectionCard>
-                  )}
-                </>
-              )}
-              {/* ─── archetype 섹션 (오해 패턴, 연결 방식, 루틴) ─── */}
-              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title="이 관계의 오해 패턴" colors={colors}>
+              {/* ─── 개인 마음 흐름 (lightArchetype 경로 전용) ─── */}
+              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 4 }]}>개인 마음 흐름</Text>
+              <SectionCard accentColor={accentA} label="첫 번째 사람" title="현재 마음 흐름" colors={colors}>
+                <Text style={[styles.bodyText, { color: colors.foreground }]}>{personAAnalysis.currentFlow}</Text>
+                <View style={[sectionStyles.divider, { backgroundColor: accentA + '25', marginTop: 4 }]} />
+                <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                  <Text style={{ fontWeight: '700' }}>관계 성향 </Text>
+                  {personAAnalysis.relationshipStyle}
+                </Text>
+              </SectionCard>
+              <SectionCard accentColor={accentB} label="두 번째 사람" title="현재 마음 흐름" colors={colors}>
+                <Text style={[styles.bodyText, { color: colors.foreground }]}>{personBAnalysis.currentFlow}</Text>
+                <View style={[sectionStyles.divider, { backgroundColor: accentB + '25', marginTop: 4 }]} />
+                <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                  <Text style={{ fontWeight: '700' }}>관계 성향 </Text>
+                  {personBAnalysis.relationshipStyle}
+                </Text>
+              </SectionCard>
+              {/* ─── archetype 섹션 (오해 패턴, 연결 방식, 루틴) — 관계 유형별 제목 분기 ─── */}
+              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title={isParentChildRel ? '서로 이해하는 방식' : isFriendRel ? '편안함 속 오해 패턴' : isColleagueRel ? '함께 일하며 생기는 오해' : '이 관계의 오해 패턴'} colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.misunderstandingPattern}</Text>
               </SectionCard>
-              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title="연결 방식" colors={colors}>
+              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title={isParentChildRel ? '안정감을 느끼는 연결 방식' : isFriendRel ? '편안하게 연결되는 방식' : isColleagueRel ? '협업 연결 방식' : '연결 방식'} colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.connectionStyle}</Text>
               </SectionCard>
-              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title="대화 루틴" colors={colors}>
+              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title={isParentChildRel ? '대화 흐름' : isFriendRel ? '대화 패턴' : isColleagueRel ? '소통 루틴' : '대화 루틴'} colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.conversationRoutine}</Text>
               </SectionCard>
-              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title="관계 회복 루틴" colors={colors}>
+              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title={isParentChildRel ? '갈등 후 회복 방식' : isFriendRel ? '거리감 후 회복 방식' : isColleagueRel ? '갈등 후 관계 회복' : '관계 회복 루틴'} colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.recoveryRoutine}</Text>
               </SectionCard>
-              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title="이 관계가 오래가는 이유" colors={colors}>
+              <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title={isParentChildRel ? '이 관계가 오래 이어지는 이유' : isFriendRel ? '이 우정이 오래가는 이유' : isColleagueRel ? '이 관계가 잘 맞는 이유' : '이 관계가 오래가는 이유'} colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.relationStrength}</Text>
               </SectionCard>
               {/* 경량 archetype 보완 컬러 */}
@@ -768,9 +670,9 @@ export default function CoupleResultScreen() {
           )}
 
 
-          {/* ═══════════════════════════════════════════════════════
-              개인 분석 (40%) — 간결하게
-          ═══════════════════════════════════════════════════════ */}
+          {/* 개인 마음 흐름 — 연인/부부 전용 (기타 관계는 lightArchetype 경로 안에서 이미 렌더링됨) */}
+          {!lightArchetypeResult && (
+            <>
           <Text style={[styles.sectionGroupTitle, { color: colors.muted }]}>개인 마음 흐름</Text>
 
           {/* 첫 번째 사람 */}
@@ -786,8 +688,7 @@ export default function CoupleResultScreen() {
           <SectionCard accentColor={accentA} label="첫 번째 사람" title="보완 컬러" colors={colors}>
             {(() => {
               const cc = personAAnalysis.complementColor;
-              // ivory/cream 기반: 항상 밝은 배경, 컬러 tint만 은은하게
-              const cardBg = '#FBF7F2'; // warm ivory base
+              const cardBg = '#FBF7F2';
               const borderCol = cc.hex + '60';
               return (
                 <View style={[styles.complementRow, { backgroundColor: cardBg, borderColor: borderCol }]}>
@@ -817,7 +718,6 @@ export default function CoupleResultScreen() {
           <SectionCard accentColor={accentB} label="두 번째 사람" title="보완 컬러" colors={colors}>
             {(() => {
               const cc = personBAnalysis.complementColor;
-              // ivory/cream 기반: 항상 밝은 배경
               const cardBg = '#FBF7F2';
               const borderCol = cc.hex + '60';
               return (
@@ -834,6 +734,8 @@ export default function CoupleResultScreen() {
               {personBAnalysis.coachingMessage}
             </Text>
           </SectionCard>
+            </>
+          )}
 
           {/* ═══════════════════════════════════════════════════════
               관계 통합 분석 (60%)
