@@ -280,6 +280,108 @@ export default function CoupleResultScreen() {
           </View>
 
           {/* ═══════════════════════════════════════════════════════
+              상단 요약 카드 — 컬러 행 + 심리카드 행
+          ═══════════════════════════════════════════════════════ */}
+          <View style={[styles.colorSummary, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+
+            {/* 컬러 구슬 행 */}
+            <View style={styles.colorSummaryRow}>
+              <View style={styles.colorSummaryPerson}>
+                <View style={[styles.personBadge, { backgroundColor: accentA + '25' }]}>
+                  <Text style={[styles.personBadgeText, { color: accentA }]}>첫 번째 사람</Text>
+                </View>
+                <View style={styles.colorDots}>
+                  {colorsA.map(c => c && (
+                    <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }]} />
+                  ))}
+                </View>
+                <Text style={[styles.colorNames, { color: '#5F4B3B' }]}>
+                  {colorsA.map(c => c?.korName).join(' · ')}
+                </Text>
+              </View>
+              <View style={[styles.colorSummaryDividerV, { backgroundColor: colors.border }]} />
+              <View style={styles.colorSummaryPerson}>
+                <View style={[styles.personBadge, { backgroundColor: accentB + '25' }]}>
+                  <Text style={[styles.personBadgeText, { color: accentB }]}>두 번째 사람</Text>
+                </View>
+                <View style={styles.colorDots}>
+                  {colorsB.map(c => c && (
+                    <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }]} />
+                  ))}
+                </View>
+                <Text style={[styles.colorNames, { color: '#5F4B3B' }]}>
+                  {colorsB.map(c => c?.korName).join(' · ')}
+                </Text>
+              </View>
+            </View>
+
+            {/* 가로 구분선 */}
+            <View style={[styles.colorSummaryDividerH, { backgroundColor: colors.border }]} />
+
+            {/* 심리카드 행 */}
+            <View style={styles.colorSummaryRow}>
+              {/* 첫 번째 사람 카드 */}
+              <View style={styles.colorSummaryPerson}>
+                <Text style={[styles.cardSectionLabel, { color: accentA }]}>심리카드 흐름</Text>
+                {cardsA.length > 0 && (
+                  <View style={styles.miniCardRow}>
+                    {cardsA.map((card, i) => card && (
+                      <View key={card.id} style={styles.miniCardItem}>
+                        <View style={[
+                          styles.miniCardFace,
+                          { backgroundColor: card.colorHex },
+                          card.colorKor === '화이트' && styles.miniCardWhiteBorder,
+                        ]}>
+                          <View style={styles.miniCardInnerGlow} />
+                          <Text style={[
+                            styles.miniCardShape,
+                            { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.92)' },
+                          ]}>{card.shapeSymbol}</Text>
+                          <Text style={[
+                            styles.miniCardColorText,
+                            { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.9)' },
+                          ]}>{card.colorKor}</Text>
+                        </View>
+                        <Text style={[styles.miniCardLabel, { color: '#6B5344' }]}>{cardLabels[i]}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+              <View style={[styles.colorSummaryDividerV, { backgroundColor: colors.border }]} />
+              {/* 두 번째 사람 카드 */}
+              <View style={styles.colorSummaryPerson}>
+                <Text style={[styles.cardSectionLabel, { color: accentB }]}>심리카드 흐름</Text>
+                {cardsB.length > 0 && (
+                  <View style={styles.miniCardRow}>
+                    {cardsB.map((card, i) => card && (
+                      <View key={card.id} style={styles.miniCardItem}>
+                        <View style={[
+                          styles.miniCardFace,
+                          { backgroundColor: card.colorHex },
+                          card.colorKor === '화이트' && styles.miniCardWhiteBorder,
+                        ]}>
+                          <View style={styles.miniCardInnerGlow} />
+                          <Text style={[
+                            styles.miniCardShape,
+                            { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.92)' },
+                          ]}>{card.shapeSymbol}</Text>
+                          <Text style={[
+                            styles.miniCardColorText,
+                            { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.9)' },
+                          ]}>{card.colorKor}</Text>
+                        </View>
+                        <Text style={[styles.miniCardLabel, { color: '#6B5344' }]}>{cardLabels[i]}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            </View>
+
+          </View>
+
+          {/* ═══════════════════════════════════════════════════════
               관계 유형 핵심 요약 카드 (archetype)
           ═══════════════════════════════════════════════════════ */}
           {/* 경량 archetype (친구/부모자녀/형제자매/동료) */}
@@ -664,107 +766,7 @@ export default function CoupleResultScreen() {
                     </View>
             </>
           )}
-          {/* ═══════════════════════════════════════════════════════
-              상단 요약 카드 — 컬러 행 + 심리카드 행
-          ═══════════════════════════════════════════════════════ */}
-          <View style={[styles.colorSummary, { backgroundColor: colors.surface, borderColor: colors.border }]}>
 
-            {/* 컬러 구슬 행 */}
-            <View style={styles.colorSummaryRow}>
-              <View style={styles.colorSummaryPerson}>
-                <View style={[styles.personBadge, { backgroundColor: accentA + '25' }]}>
-                  <Text style={[styles.personBadgeText, { color: accentA }]}>첫 번째 사람</Text>
-                </View>
-                <View style={styles.colorDots}>
-                  {colorsA.map(c => c && (
-                    <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }]} />
-                  ))}
-                </View>
-                <Text style={[styles.colorNames, { color: '#5F4B3B' }]}>
-                  {colorsA.map(c => c?.korName).join(' · ')}
-                </Text>
-              </View>
-              <View style={[styles.colorSummaryDividerV, { backgroundColor: colors.border }]} />
-              <View style={styles.colorSummaryPerson}>
-                <View style={[styles.personBadge, { backgroundColor: accentB + '25' }]}>
-                  <Text style={[styles.personBadgeText, { color: accentB }]}>두 번째 사람</Text>
-                </View>
-                <View style={styles.colorDots}>
-                  {colorsB.map(c => c && (
-                    <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }]} />
-                  ))}
-                </View>
-                <Text style={[styles.colorNames, { color: '#5F4B3B' }]}>
-                  {colorsB.map(c => c?.korName).join(' · ')}
-                </Text>
-              </View>
-            </View>
-
-            {/* 가로 구분선 */}
-            <View style={[styles.colorSummaryDividerH, { backgroundColor: colors.border }]} />
-
-            {/* 심리카드 행 */}
-            <View style={styles.colorSummaryRow}>
-              {/* 첫 번째 사람 카드 */}
-              <View style={styles.colorSummaryPerson}>
-                <Text style={[styles.cardSectionLabel, { color: accentA }]}>심리카드 흐름</Text>
-                {cardsA.length > 0 && (
-                  <View style={styles.miniCardRow}>
-                    {cardsA.map((card, i) => card && (
-                      <View key={card.id} style={styles.miniCardItem}>
-                        <View style={[
-                          styles.miniCardFace,
-                          { backgroundColor: card.colorHex },
-                          card.colorKor === '화이트' && styles.miniCardWhiteBorder,
-                        ]}>
-                          <View style={styles.miniCardInnerGlow} />
-                          <Text style={[
-                            styles.miniCardShape,
-                            { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.92)' },
-                          ]}>{card.shapeSymbol}</Text>
-                          <Text style={[
-                            styles.miniCardColorText,
-                            { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.9)' },
-                          ]}>{card.colorKor}</Text>
-                        </View>
-                        <Text style={[styles.miniCardLabel, { color: '#6B5344' }]}>{cardLabels[i]}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-              <View style={[styles.colorSummaryDividerV, { backgroundColor: colors.border }]} />
-              {/* 두 번째 사람 카드 */}
-              <View style={styles.colorSummaryPerson}>
-                <Text style={[styles.cardSectionLabel, { color: accentB }]}>심리카드 흐름</Text>
-                {cardsB.length > 0 && (
-                  <View style={styles.miniCardRow}>
-                    {cardsB.map((card, i) => card && (
-                      <View key={card.id} style={styles.miniCardItem}>
-                        <View style={[
-                          styles.miniCardFace,
-                          { backgroundColor: card.colorHex },
-                          card.colorKor === '화이트' && styles.miniCardWhiteBorder,
-                        ]}>
-                          <View style={styles.miniCardInnerGlow} />
-                          <Text style={[
-                            styles.miniCardShape,
-                            { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.92)' },
-                          ]}>{card.shapeSymbol}</Text>
-                          <Text style={[
-                            styles.miniCardColorText,
-                            { color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.9)' },
-                          ]}>{card.colorKor}</Text>
-                        </View>
-                        <Text style={[styles.miniCardLabel, { color: '#6B5344' }]}>{cardLabels[i]}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            </View>
-
-          </View>
 
           {/* ═══════════════════════════════════════════════════════
               개인 분석 (40%) — 간결하게
@@ -1163,8 +1165,8 @@ export default function CoupleResultScreen() {
           {/* ═══════════════════════════════════════════════════════
               함께하면 좋은 회복 루틴
           ═══════════════════════════════════════════════════════ */}
-          {archetypeResult.togetherRoutine && (() => {
-            const tr = archetypeResult.togetherRoutine;
+          {(lightArchetypeResult?.togetherRoutine ?? archetypeResult.togetherRoutine) && (() => {
+            const tr = lightArchetypeResult?.togetherRoutine ?? archetypeResult.togetherRoutine;
             const hasFaith = sessionData?.personA.info.faith === '기독교' || sessionData?.personB.info.faith === '기독교';
             return (
               <View style={[styles.togetherRoutineCard, { borderColor: accentCouple + '50' }]}>
