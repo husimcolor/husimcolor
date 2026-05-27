@@ -223,7 +223,7 @@ export default function HomeScreen() {
           <Text style={[styles.hint, { color: colors.muted }]}>
             직관적으로 끌리는 색을 선택해 주세요
           </Text>
-          {/* 커플 세션 버튼 - 일반 사용자 무료 테스트 오픈 (콜러+도형 위로 이동, 시각적 강조) */}
+          {/* 커플 세션 버튼 - 일반 사용자 무료 테스트 오픈 (컬러+도형 위로 이동, 시각적 강조) */}
           <TouchableOpacity
             style={[styles.coupleButtonWrapper]}
             onPress={() => router.push('/(tabs)/couple-start' as any)}
@@ -240,7 +240,7 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* 콜러+도형 심층 해석 버튼 */}
+          {/* 컬러+도형 심층 해석 버튼 */}
           <Pressable
             style={({ pressed }) => [
               styles.premiumButton,
@@ -250,7 +250,7 @@ export default function HomeScreen() {
           >
             <View style={styles.premiumButtonInner}>
               <Text style={styles.premiumButtonBadge}>NEW</Text>
-              <Text style={styles.premiumButtonText}>🎨 콜러+도형 심층 해석</Text>
+              <Text style={styles.premiumButtonText}>🎨 컬러+도형 심층 해석</Text>
             </View>
             <Text style={styles.premiumButtonSub}>63장 카드 · 초기 오픈 무료체험중 · 정식 오픈 후 유료 전환 예정</Text>
           </Pressable>
