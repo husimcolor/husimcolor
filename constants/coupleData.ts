@@ -6515,6 +6515,16 @@ const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeRe
     recoveryRoutine: '거리가 생기면 "나는 네가 잘 됐으면 해서 그랬어"라고 솔직하게 말하기',
     relationStrength: '깊은 사랑이 이 관계의 뿌리입니다. 표현 방식을 조금씩 조율하면 이 관계는 더 따뜻해집니다.',
     closingMessage: '사랑의 방식이 달라도, 마음의 방향은 같습니다. 그것이 이 관계의 가장 큰 힘입니다.',
+    togetherRoutine: {
+      routines: [
+        '걱정 대신 "어떻게 하고 싶어?" 먼저 묻기',
+        '결과보다 과정과 노력 인정해주기',
+        '함께 식사하며 가볍게 근황 나누기',
+        '힘든 일 생기면 먼저 연락하기',
+        '서로의 선택을 존중하며 응원하기',
+      ],
+      energyNote: '보호하는 마음을 응원의 언어로 바꿀 때, 이 관계는 더 따뜻해집니다.',
+    },
   },
   기대압박형: {
     typeName: '기대 압박형 관계',
@@ -6531,6 +6541,16 @@ const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeRe
     recoveryRoutine: '압박감이 생기면 솔직하게 "조금 힘들어"라고 말하기 / 기대를 줄이고 응원으로 바꾸기',
     relationStrength: '기대의 뿌리는 사랑입니다. 그 사랑을 더 부드러운 방식으로 표현하면 이 관계는 더 가까워집니다.',
     closingMessage: '기대보다 응원이, 평가보다 인정이 이 관계를 더 따뜻하게 만듭니다.',
+    togetherRoutine: {
+      routines: [
+        '"잘 해야 해" 대신 "네가 원하는 게 뭐야?" 먼저 묻기',
+        '결과가 아닌 노력과 시도를 인정해주기',
+        '함께 산책하며 부담 없이 이야기 나누기',
+        '서로의 감정 먼저 듣고 조언은 나중에',
+        '작은 성취도 함께 기뻐하기',
+      ],
+      energyNote: '기대를 내려놓고 "지금 이대로도 충분해"라는 말 한마디가 이 관계를 회복시킵니다.',
+    },
   },
   정서연결형: {
     typeName: '정서 연결형 관계',
@@ -6547,6 +6567,16 @@ const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeRe
     recoveryRoutine: '감정이 상하면 시간을 두고 "그때 내 마음은 이랬어"라고 차분하게 이야기하기',
     relationStrength: '감정을 나눌 수 있는 부모자녀 관계는 드뭅니다. 이 관계의 정서적 연결이 가장 큰 자산입니다.',
     closingMessage: '세대가 달라도 마음이 통하는 관계, 그것이 이 관계의 가장 특별한 부분입니다.',
+    togetherRoutine: {
+      routines: [
+        '"오늘 기분 어땠어?" 한 마디로 하루 시작하기',
+        '감정 먼저 공감하고 조언은 나중에',
+        '함께 좋아하는 음식 먹으며 이야기 나누기',
+        '서로의 관심사 공유하고 반응해주기',
+        '힘든 일 생기면 판단 없이 들어주기',
+      ],
+      energyNote: '감정을 자연스럽게 나눌 수 있는 관계는 드뭅니다. 이 연결이 이 관계의 가장 큰 선물입니다.',
+    },
   },
   성장지원형: {
     typeName: '성장 지원형 관계',
@@ -6563,6 +6593,16 @@ const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeRe
     recoveryRoutine: '거리가 생기면 "나는 네 편이야"라고 먼저 표현하기',
     relationStrength: '진심 어린 응원이 이 관계의 가장 큰 힘입니다. 방향보다 존재가 더 중요한 관계입니다.',
     closingMessage: '곁에서 응원해주는 사람이 있다는 것만으로도 더 멀리 나아갈 수 있습니다.',
+    togetherRoutine: {
+      routines: [
+        '새로운 도전을 함께 응원하기',
+        '잘 됐을 때 진심으로 기뻐해주기',
+        '힘들 때 "어떻게 도와줄까?" 먼저 묻기',
+        '각자의 성장 이야기 나누는 시간 갖기',
+        '방향을 제시하되 선택은 존중하기',
+      ],
+      energyNote: '응원하는 사람이 곁에 있다는 것만으로도 더 멀리 나아갈 수 있습니다.',
+    },
   },
   표현서툼형: {
     typeName: '표현 서툰 관계',
@@ -6579,6 +6619,16 @@ const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeRe
     recoveryRoutine: '어색함이 쌓이면 함께 식사하거나 드라이브하며 자연스럽게 대화하기',
     relationStrength: '표현이 서툴어도 마음이 깊은 관계입니다. 조금씩 표현을 연습하면 이 관계는 더 따뜻해집니다.',
     closingMessage: '말하지 않아도 알 것 같지만, 말로 표현할 때 관계는 더 깊어집니다.',
+    togetherRoutine: {
+      routines: [
+        '짧아도 좋으니 "잘 지내?" 먼저 연락하기',
+        '함께 식사하며 자연스럽게 이야기 나누기',
+        '말 대신 행동으로 마음 전하기 (음식 챙기기, 필요한 것 해주기)',
+        '서운한 일은 쌓기 전에 가볍게 표현하기',
+        '"고마워", "수고했어" 한 마디 연습하기',
+      ],
+      energyNote: '표현이 서툴러도 마음은 통합니다. 작은 말 한마디가 이 관계를 더 따뜻하게 만듭니다.',
+    },
   },
   거리조율형: {
     typeName: '거리 조율형 관계',
@@ -6595,6 +6645,16 @@ const PARENT_CHILD_ARCHETYPE_DATA: Record<ParentChildArchetype, LightArchetypeRe
     recoveryRoutine: '거리가 너무 멀어지면 먼저 연락하기 / 너무 가까워지면 "나 오늘은 혼자 있고 싶어"라고 솔직하게 말하기',
     relationStrength: '서로의 공간을 존중하면서도 연결을 유지하는 것이 이 관계의 가장 성숙한 부분입니다.',
     closingMessage: '적당한 거리가 관계를 더 오래 유지하게 합니다. 이 관계는 그 균형을 찾아가고 있습니다.',
+    togetherRoutine: {
+      routines: [
+        '서로의 공간을 인정하면서 가끔 연락하기',
+        '너무 멀어지면 먼저 가볍게 안부 묻기',
+        '함께하는 시간은 짧아도 집중해서 연결하기',
+        '"나 오늘 혼자 있고 싶어"라고 솔직하게 말하기',
+        '각자의 리듬을 존중하며 무리하지 않기',
+      ],
+      energyNote: '적당한 거리가 이 관계를 더 오래, 더 건강하게 유지하게 합니다.',
+    },
   },
 };
 
