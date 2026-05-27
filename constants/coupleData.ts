@@ -6261,6 +6261,12 @@ export interface LightArchetypeResult {
   relationStrength: string;
   /** 마무리 메시지 */
   closingMessage: string;
+  /** 함께하면 좋은 루틴 (관계 유형별 분리) */
+  togetherRoutine?: {
+    routines: string[];
+    energyNote: string;
+    faithRoutine?: string;
+  };
 }
 
 // ─── 친구 5유형 ─────────────────────────────────────────────────────────────
@@ -6269,7 +6275,10 @@ type FriendArchetype =
   | '거리존중형'
   | '감정교류형'
   | '오래가는안정형'
-  | '자극성장형';
+  | '자극성장형'
+  | '장난티키타카형'
+  | '프로젝트동반형'
+  | '온도차형';
 
 const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
   편안한공감형: {
@@ -6287,6 +6296,16 @@ const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
     recoveryRoutine: '어색해지면 평소처럼 연락하기 / 굳이 설명하지 않아도 다시 연결되는 흐름 믿기',
     relationStrength: '서로를 판단하지 않는 편안함이 이 우정의 가장 큰 자산입니다. 오래 함께할수록 더 자연스러워지는 관계입니다.',
     closingMessage: '이 우정은 말이 많지 않아도 따뜻합니다. 편안함이 진심이라는 것을 두 사람 모두 알고 있습니다.',
+    togetherRoutine: {
+      routines: [
+        '산책하면서 요즘 이야기 나누기',
+        '카페에서 근황 채우기',
+        '좋아하는 음악이나 책 공유하기',
+        '힘든 일 생기면 먼저 연락하기',
+        '각자의 휴식 시간 존중하기',
+      ],
+      energyNote: '말하지 않아도 편안한 사이일수록, 조용히 함께 있는 시간이 이 우정의 에너지를 살려줍니다.',
+    },
   },
   거리존중형: {
     typeName: '거리 존중형 우정',
@@ -6303,6 +6322,15 @@ const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
     recoveryRoutine: '거리가 생겨도 먼저 "잘 지내?" 한 마디로 다시 연결하기',
     relationStrength: '서로의 공간을 존중하면서도 다시 연결될 수 있다는 신뢰가 이 우정의 힘입니다.',
     closingMessage: '자주 만나지 않아도 마음속에 있는 관계가 있습니다. 이 우정이 그런 관계입니다.',
+    togetherRoutine: {
+      routines: [
+        '생각날 때 먼저 연락하기',
+        '만나면 바로 연결되는 장소 찾기',
+        '각자의 시간을 충분히 지낸 후 다시 만나기',
+        '연락 없어도 멀어진 게 아니라는 것 서로 알기',
+      ],
+      energyNote: '자주 연락하지 않아도 다시 만나면 바로 연결되는 것, 그것이 이 우정의 가장 큰 에너지입니다.',
+    },
   },
   감정교류형: {
     typeName: '감정 교류형 우정',
@@ -6319,6 +6347,16 @@ const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
     recoveryRoutine: '서운한 감정이 생기면 바로 이야기하기 / 공감 먼저, 해결은 나중에',
     relationStrength: '감정을 숨기지 않아도 되는 관계, 그것이 이 우정의 가장 큰 선물입니다.',
     closingMessage: '서로의 감정을 진심으로 받아주는 사람이 있다는 것, 그것만으로도 충분합니다.',
+    togetherRoutine: {
+      routines: [
+        '오늘 기분 어때? 한 마디로 시작하기',
+        '힘든 일 생기면 먼저 연락하기',
+        '감정 오래 쌓기 전에 말하기',
+        '공감 먼저, 해결은 나중에',
+        '서로의 휴식이 필요할 때 알려주기',
+      ],
+      energyNote: '감정을 숨기지 않아도 되는 사이일수록, 서로에게 에너지를 주는 시간이 이 우정을 살려줍니다.',
+    },
   },
   오래가는안정형: {
     typeName: '오래가는 안정형 우정',
@@ -6335,6 +6373,16 @@ const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
     recoveryRoutine: '멀어진 느낌이 들면 함께했던 장소 다시 가보기 / 예전처럼 연락하기',
     relationStrength: '세월이 쌓인 관계는 쉽게 흔들리지 않습니다. 이 우정은 시간이 증명한 관계입니다.',
     closingMessage: '오래된 우정은 새로운 설렘은 없어도, 어떤 관계보다 깊은 안정감을 줍니다.',
+    togetherRoutine: {
+      routines: [
+        '오래된 장소에 다시 가보기',
+        '예전 이야기 꺼내며 웃기',
+        '서로의 변화를 진심으로 인정해주기',
+        '오래된 습관으로 연락하기',
+        '서로의 삶을 응원하기',
+      ],
+      energyNote: '시간이 쌓인 우정일수록, 작은 연락이나 오래된 장소에서의 만남이 이 관계의 에너지를 유지합니다.',
+    },
   },
   자극성장형: {
     typeName: '자극 성장형 우정',
@@ -6351,6 +6399,94 @@ const FRIEND_ARCHETYPE_DATA: Record<FriendArchetype, LightArchetypeResult> = {
     recoveryRoutine: '경쟁 느낌이 생기면 "나는 네가 잘 됐으면 좋겠어"라고 솔직하게 말하기',
     relationStrength: '서로를 더 나은 방향으로 이끄는 우정은 드뭅니다. 이 관계가 그런 우정입니다.',
     closingMessage: '함께 성장하는 친구가 있다는 것은 삶에서 가장 큰 선물 중 하나입니다.',
+    togetherRoutine: {
+      routines: [
+        '요즘 하고 있는 것 나누기',
+        '서로의 꿈과 목표 이야기하기',
+        '새로운 것 함께 시도해보기',
+        '서로의 성장을 진심으로 응원하기',
+        '경쟁 느낌이 생기면 솔직하게 말하기',
+      ],
+      energyNote: '서로를 더 나은 방향으로 이끄는 대화가 이 우정의 에너지입니다.',
+    },
+  },
+  장난티키타카형: {
+    typeName: '장난 티키타카형 우정',
+    accentColor: '#F5A623',
+    recommendedColors: [
+      { id: 'yellow', korName: '옐로우', hex: '#F5C842', reason: '유쾌하고 활기찬 에너지를 담은 컬러입니다.' },
+      { id: 'coral', korName: '코랄', hex: '#D4603A', reason: '장난기와 활력을 살려주는 컬러입니다.' },
+    ],
+    coreSummary: '말이 오가는 것 자체가 즐거운, 리듬이 있는 우정입니다.',
+    description: '두 사람은 대화 자체가 에너지가 되는 흐름이 있습니다. 장난을 주고받고, 말이 빠르게 오가며, 함께 있으면 자연스럽게 웃음이 나옵니다. 진지한 이야기도 가볍게 풀어내는 능력이 이 우정의 강점입니다.',
+    misunderstandingPattern: '장난이 선을 넘거나, 한쪽이 진지할 때 상대가 장난으로 받아치면 상처가 될 수 있습니다.',
+    connectionStyle: '유머와 장난으로 연결되지만, 진지한 순간에는 진지하게 받아주는 것이 이 우정의 균형입니다.',
+    conversationRoutine: '오늘 웃긴 일 하나씩 나누기 / 서로 놀리면서도 응원하기',
+    recoveryRoutine: '장난이 선을 넘었다면 "그건 좀 심했어"라고 솔직하게 말하기 / 바로 사과하고 다시 웃기',
+    relationStrength: '함께 있으면 자연스럽게 에너지가 올라가는 관계입니다. 이 유쾌함이 이 우정의 가장 큰 자산입니다.',
+    closingMessage: '웃음이 많은 우정은 삶을 가볍게 만들어줍니다. 이 관계가 그런 선물입니다.',
+    togetherRoutine: {
+      routines: [
+        '오늘 웃긴 일 하나씩 나누기',
+        '서로 놀리면서도 응원하기',
+        '새로운 장소나 경험 함께 시도하기',
+        '진지한 순간엔 진지하게 받아주기',
+        '장난이 선 넘으면 바로 말하기',
+      ],
+      energyNote: '함께 있으면 자연스럽게 웃음이 나오는 것, 그것이 이 우정의 에너지를 살려줍니다.',
+    },
+  },
+  프로젝트동반형: {
+    typeName: '프로젝트 동반형 우정',
+    accentColor: '#4A7C59',
+    recommendedColors: [
+      { id: 'green', korName: '그린', hex: '#4A7C59', reason: '함께 무언가를 만들어가는 성장의 컬러입니다.' },
+      { id: 'deep_navy', korName: '딥네이비', hex: '#2C3E6A', reason: '집중과 신뢰를 담은 컬러입니다.' },
+    ],
+    coreSummary: '함께 무언가를 만들어갈 때 가장 빛나는 우정입니다.',
+    description: '두 사람은 공통의 목표나 관심사가 있을 때 가장 잘 연결됩니다. 함께 프로젝트를 진행하거나, 같은 것을 배우거나, 공통의 관심사를 나눌 때 이 우정이 가장 생동감 있습니다. 일상적인 감정 교류보다 함께 하는 활동이 연결의 언어입니다.',
+    misunderstandingPattern: '공통 활동이 없어지면 연결이 약해지는 느낌이 들 수 있습니다. 활동 외의 연결도 만들어가는 것이 필요합니다.',
+    connectionStyle: '공통의 관심사나 목표를 함께 추구하는 것이 이 우정의 연결 방식입니다.',
+    conversationRoutine: '요즘 관심 있는 것 나누기 / 함께 해보고 싶은 것 이야기하기',
+    recoveryRoutine: '멀어진 느낌이 들면 함께 할 수 있는 것 하나 제안하기',
+    relationStrength: '공통의 관심사로 연결된 우정은 서로를 성장시킵니다. 이 관계가 그런 힘을 가지고 있습니다.',
+    closingMessage: '함께 무언가를 만들어가는 친구가 있다는 것은 삶을 더 풍요롭게 만듭니다.',
+    togetherRoutine: {
+      routines: [
+        '요즘 관심 있는 것 나누기',
+        '함께 해보고 싶은 것 하나 정하기',
+        '서로의 작업이나 프로젝트 응원하기',
+        '새로운 것 함께 배워보기',
+        '공통 관심사로 정기적으로 만나기',
+      ],
+      energyNote: '함께 무언가를 만들거나 배우는 시간이 이 우정의 에너지를 가장 크게 살려줍니다.',
+    },
+  },
+  온도차형: {
+    typeName: '온도차형 우정',
+    accentColor: '#7B8FA1',
+    recommendedColors: [
+      { id: 'blue', korName: '블루', hex: '#4A7FA8', reason: '서로 다른 온도를 조율하는 차분한 컬러입니다.' },
+      { id: 'warm_beige', korName: '웜베이지', hex: '#C8B89A', reason: '온도 차이를 부드럽게 연결해주는 컬러입니다.' },
+    ],
+    coreSummary: '온도가 다르지만, 그 차이가 오히려 균형을 만드는 우정입니다.',
+    description: '한 사람은 더 적극적으로 연결을 원하고, 다른 사람은 더 조용히 있고 싶어하는 흐름이 있습니다. 이 온도 차이가 때로는 한쪽이 더 많이 노력하는 느낌을 만들 수 있습니다. 서로의 리듬을 이해하고 맞춰가는 것이 이 우정의 과제입니다.',
+    misunderstandingPattern: '적극적인 쪽은 "왜 나만 연락해?"라고 느끼고, 조용한 쪽은 "왜 이렇게 부담스럽게 하지?"라고 느낄 수 있습니다.',
+    connectionStyle: '서로의 연결 방식이 다르다는 것을 인정하고, 중간 지점을 찾아가는 것이 이 우정의 연결 방식입니다.',
+    conversationRoutine: '"나는 자주 연락하는 게 좋아" / "나는 각자 시간이 필요해" 솔직하게 말하기',
+    recoveryRoutine: '한쪽이 지쳤다면 솔직하게 "요즘 좀 힘들어서 연락이 줄었어"라고 말하기',
+    relationStrength: '온도가 다른 두 사람이 만나면 서로에게 없는 것을 채워줄 수 있습니다. 이 차이가 이 우정의 강점입니다.',
+    closingMessage: '완벽히 같은 온도의 친구는 없습니다. 서로의 온도를 이해하는 것이 이 우정을 오래가게 합니다.',
+    togetherRoutine: {
+      routines: [
+        '연락 빈도에 대해 솔직하게 이야기하기',
+        '만날 때 서로의 리듬 존중하기',
+        '한쪽이 지쳤다면 솔직하게 말하기',
+        '서로의 연결 방식이 다르다는 것 인정하기',
+        '중간 지점 찾아가기',
+      ],
+      energyNote: '서로의 온도 차이를 이해하고 중간 지점을 찾아가는 것, 그것이 이 우정을 오래 유지하는 에너지입니다.',
+    },
   },
 };
 
@@ -6632,12 +6768,22 @@ const COLLEAGUE_ARCHETYPE_DATA: Record<ColleagueArchetype, LightArchetypeResult>
 function getFriendArchetype(familiesA: EnergyFamily[], familiesB: EnergyFamily[]): FriendArchetype {
   const domA = getDominantFamily(familiesA);
   const domB = getDominantFamily(familiesB);
-  // 에너지 조합 기반 분류
+  // 같은 warm_active 두 명 → 장난/티키타카형 (domA===domB 앞에 먼저 체크)
+  if (domA === 'warm_active' && domB === 'warm_active') return '장난티키타카형';
+  // 같은 에너지 → 편안한공감형
   if (domA === domB) return '편안한공감형';
+  // warm_active ↔ cool_deep → 자극성장형
   if ((domA === 'warm_active' && domB === 'cool_deep') || (domA === 'cool_deep' && domB === 'warm_active')) return '자극성장형';
-  if ((domA === 'cool_deep' || domB === 'cool_deep') && (domA === 'neutral' || domB === 'neutral')) return '거리존중형';
-  if ((domA === 'warm_soft' || domB === 'warm_soft') || (domA === 'nature' || domB === 'nature')) return '감정교류형';
-  if ((domA === 'warm_grounded' || domB === 'warm_grounded') || (domA === 'cool_clear' || domB === 'cool_clear')) return '오래가는안정형';
+  // warm_active ↔ neutral → 프로젝트동반형 (cool_deep 분기 전에 체크)
+  if ((domA === 'warm_active' && domB === 'neutral') || (domA === 'neutral' && domB === 'warm_active')) return '프로젝트동반형';
+  // warm_active ↔ cool_clear → 온도차형
+  if ((domA === 'warm_active' && domB === 'cool_clear') || (domA === 'cool_clear' && domB === 'warm_active')) return '온도차형';
+  // cool_deep ↔ neutral → 거리존중형
+  if ((domA === 'cool_deep' && domB === 'neutral') || (domA === 'neutral' && domB === 'cool_deep')) return '거리존중형';
+  // warm_soft / nature 포함 → 감정교류형
+  if (domA === 'warm_soft' || domB === 'warm_soft' || domA === 'nature' || domB === 'nature') return '감정교류형';
+  // warm_grounded / cool_clear 포함 → 오래가는안정형
+  if (domA === 'warm_grounded' || domB === 'warm_grounded' || domA === 'cool_clear' || domB === 'cool_clear') return '오래가는안정형';
   return '편안한공감형';
 }
 
