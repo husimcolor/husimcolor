@@ -4809,7 +4809,30 @@ export function getRelationArchetype(
   let dynamicExpressionSpeed = isSameEnergyFamily
     ? { personA: baseData.expressionSpeed.personA, personB: baseData.expressionSpeed.personB, description: sameExprDescMap[dominantA] }
     : baseData.expressionSpeed;
-  if (!isSameEnergyFamily && Math.abs(exprScoreA - exprScoreB) >= 2) {
+  // ── 내면 처리형 컬러 페널티 적용 ──
+  // 블랙/인디고/네이비/화이트/실버 등 '내면 처리·경계·침잠' 컬러가 포함되면
+  // expression 점수에서 페널티를 적용하여 실제 표현 성향을 더 정확히 반영
+  const INNER_PROCESS_COLORS = new Set(['black', 'indigo', 'navy', 'white', 'silver', 'sage', 'olive']);
+  const DIRECT_BOOST_COLORS  = new Set(['red', 'coral', 'orange', 'magenta', 'yellow']);
+  function calcAdjustedExprScore(colorIds: string[], rawScore: number): number {
+    let adj = rawScore;
+    colorIds.forEach((id, idx) => {
+      const w = idx === 0 ? 1.5 : 1.0;
+      if (INNER_PROCESS_COLORS.has(id)) {
+        // 내면 처리형 컬러: 점수 하향 (1번 컬러면 더 강하게)
+        adj -= (idx === 0 ? 4.5 : 3.0);
+      }
+      if (DIRECT_BOOST_COLORS.has(id) && idx === 0) {
+        // 직접 표현형 컬러가 1번(핵심 기질)이면 소폭 상향
+        adj += 1.5;
+      }
+    });
+    return adj;
+  }
+  const adjScoreA = calcAdjustedExprScore(colorIdsA ?? [], exprScoreA);
+  const adjScoreB = calcAdjustedExprScore(colorIdsB ?? [], exprScoreB);
+
+  if (!isSameEnergyFamily && Math.abs(adjScoreA - adjScoreB) >= 2) {
     // ── 표현 점수 임계값: 3컬러 가중치 합산 기준 (최대 ~31.5, 최소 ~3.5) ──
     // 단일 컬러 기준(0-10)이 아닌 합산 점수 기준으로 수정
     // 예: 그린·옐로우·바이올렛 = 3*1.5+5+3 = 12.5 → '상황에 따라 표현'
@@ -4821,8 +4844,8 @@ export function getRelationArchetype(
       if (score >= 7)  return '내면 처리 후 표현'; // 바이올렛·인디고 계열
       return '조용한 표현';                      // 화이트·블랙 계열
     };
-    const labelA = getExprLabel(exprScoreA);
-    const labelB = getExprLabel(exprScoreB);
+    const labelA = getExprLabel(adjScoreA);
+    const labelB = getExprLabel(adjScoreB);
     // 두 레이블이 다를 때만 교체 (같으면 archetype 기본값 유지)
     if (labelA !== labelB) {
       dynamicExpressionSpeed = {
