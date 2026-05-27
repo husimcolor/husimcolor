@@ -1140,7 +1140,11 @@ export default function CoupleResultScreen() {
           </SectionCard>
           {archetypeResult.intimacyConnection && (
             <SectionCard accentColor="#E8A0B4" label="관계 회복 언어" title="두 사람에게 필요한 연결 언어" colors={colors}>
-              <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.intimacyConnection.marriageNote ?? archetypeResult.intimacyConnection.loverNote}</Text>
+              <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                {relationType === '부부'
+                  ? archetypeResult.intimacyConnection.marriageNote
+                  : archetypeResult.intimacyConnection.loverNote}
+              </Text>
             </SectionCard>
           )}
             </>
