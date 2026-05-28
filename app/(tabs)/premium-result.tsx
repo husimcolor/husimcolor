@@ -1051,7 +1051,7 @@ export default function PremiumResultScreen() {
           {lifeEnergyResult.archetypes.length > 0 && lifeEnergyResult.archetypes[0].dailyPractice && (
             <View style={[styles.dailyPracticeCard, { backgroundColor: '#FAF5FF', borderColor: '#DDD6FE' }]}>
               <View style={styles.dailyPracticeHeader}>
-                <MaterialIcons name="wb-twilight" size={16} color="#7C3AED" style={{ marginRight: 6 }} />
+                <MaterialIcons name="spa" size={16} color="#7C3AED" style={{ marginRight: 6 }} />
                 <Text style={[styles.dailyPracticeLabel, { color: '#5B3A8A' }]}>오늘의 작은 실천</Text>
               </View>
               <Text style={[styles.dailyPracticeText, { color: '#3D1F6E' }]}>
