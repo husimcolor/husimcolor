@@ -6859,6 +6859,16 @@ const COLLEAGUE_ARCHETYPE_DATA: Record<ColleagueArchetype, LightArchetypeResult>
     recoveryRoutine: '불균형이 느껴지면 솔직하게 이야기하고 역할 재조정하기',
     relationStrength: '서로의 강점을 인정하고 균형 있게 협업하는 능력이 이 관계의 가장 큰 자산입니다.',
     closingMessage: '좋은 협업 관계는 업무를 넘어 서로에 대한 신뢰를 만들어냅니다.',
+    togetherRoutine: {
+      routines: [
+        '업무 시작 전 역할과 목표 짧게 확인하기',
+        '서로의 기여를 인정하는 짧은 말 한마디',
+        '점심이나 커피 함께하며 업무 외 이야기 나누기',
+        '마무리 후 서로의 수고 인정하기',
+        '어려운 일 생기면 먼저 이야기하기',
+      ],
+      energyNote: '서로의 강점을 인정하는 작은 말 한마디가, 협업의 에너지를 살려줍니다.',
+    },
   },
   역할분리형: {
     typeName: '역할 분리형 관계',
@@ -6875,6 +6885,16 @@ const COLLEAGUE_ARCHETYPE_DATA: Record<ColleagueArchetype, LightArchetypeResult>
     recoveryRoutine: '갈등이 생기면 역할과 감정을 분리해서 이야기하기',
     relationStrength: '명확한 역할 분리가 효율적인 협업을 만들고, 그 신뢰가 관계의 기반이 됩니다.',
     closingMessage: '역할이 명확한 관계는 신뢰를 만들고, 그 신뢰가 더 좋은 협업으로 이어집니다.',
+    togetherRoutine: {
+      routines: [
+        '업무 외 가벼운 대화로 관계 유지하기',
+        '서로의 강점 인정하고 역할 조율하기',
+        '점심이나 커피 함께하기',
+        '프로젝트 목표와 진행 상황 함께 확인하기',
+        '피드백은 업무 중심으로, 감정은 분리해서 이야기하기',
+      ],
+      energyNote: '역할이 명확한 관계일수록, 업무 외의 작은 연결이 신뢰를 더 단단하게 만들어줍니다.',
+    },
   },
   소통중심형: {
     typeName: '소통 중심형 관계',
