@@ -340,7 +340,7 @@ const ARCHETYPE_MAP: Record<LifeArchetypeKey, LifeArchetype> = {
     drainPattern: '타인의 감정을 너무 깊이 흥수하다가 자신이 지치는 패턴이 반복될 수 있습니다.',
     lifeDirection: '감정 회복과 정서 안정 중심의 삶이 자연스럽게 맞습니다. 자신의 감정도 돌보는 루틴이 있을 때 더 오래 빛납니다.',
     connectionStyle: '상대의 감정을 먼저 읽고 조용히 공감하는 방식으로 깊이 연결됩니다.',
-    dailyPractice: '오늘 나의 감정을 한 줄로 적어보세요. 좋은 말이어도, 힘들었던 말이어도 관다어요.',
+    dailyPractice: '오늘 나의 감정을 한 줄로 적어보세요. 좋은 말이어도, 힘들었던 말이어도 괜찮아요.',
   },
   analyst: {
     key: 'analyst',
@@ -373,7 +373,7 @@ const ARCHETYPE_MAP: Record<LifeArchetypeKey, LifeArchetype> = {
     drainPattern: '감정이 너무 강하게 올라오거나 표현이 막힐 때 내면에서 압박감이 쌓이는 패턴이 생길 수 있습니다.',
     lifeDirection: '감성과 표현 중심의 삶이 자연스럽게 맞습니다. 감정을 표현하는 루틴이 있을 때 가장 안정적입니다.',
     connectionStyle: '감정과 분위기로 먼저 연결되며, 공감이 깊은 관계에서 에너지가 살아납니다.',
-    dailyPractice: '오늘 마음에 떠오르는 감정이나 색감을 짧게 메모해두세요. 완성하지 않아도 관다어요.',
+    dailyPractice: '오늘 마음에 떠오르는 감정이나 색감을 짧게 메모해두세요. 완성하지 않아도 괜찮아요.',
   },
   expert: {
     key: 'expert',
