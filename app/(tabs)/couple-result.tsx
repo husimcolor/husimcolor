@@ -274,7 +274,7 @@ export default function CoupleResultScreen() {
               <Text style={[styles.backBtnText, { color: colors.foreground }]}>←</Text>
             </Pressable>
             <View style={styles.headerText}>
-              <Text style={[styles.headerTitle, { color: '#2D2420' }]}>커플 세션 결과</Text>
+              <Text style={[styles.headerTitle, { color: '#2D2420' }]}>{isRomanticRel ? '커플 세션 결과' : '관계 세션 결과'}</Text>
               <Text style={[styles.headerSub, { color: '#5F4B3B' }]}>{relationType} · 감성 심리코칭</Text>
             </View>
           </View>
