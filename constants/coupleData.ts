@@ -4829,14 +4829,19 @@ export function getRelationArchetype(
   // 블랙/인디고/네이비/화이트/실버 등 '내면 처리·경계·침잠' 컬러가 포함되면
   // expression 점수에서 페널티를 적용하여 실제 표현 성향을 더 정확히 반영
   const INNER_PROCESS_COLORS = new Set(['black', 'indigo', 'navy', 'white', 'silver', 'sage', 'olive']);
+  // 블루: 논리 정리 후 표현 성향 → 강한 페널티 아닌 소프트 보정
+  const INNER_SOFT_COLORS = new Set(['blue']);
   const DIRECT_BOOST_COLORS  = new Set(['red', 'coral', 'orange', 'magenta', 'yellow']);
   function calcAdjustedExprScore(colorIds: string[], rawScore: number): number {
     let adj = rawScore;
     colorIds.forEach((id, idx) => {
-      const w = idx === 0 ? 1.5 : 1.0;
       if (INNER_PROCESS_COLORS.has(id)) {
         // 내면 처리형 컬러: 점수 하향 (1번 컬러면 더 강하게)
         adj -= (idx === 0 ? 4.5 : 3.0);
+      }
+      if (INNER_SOFT_COLORS.has(id)) {
+        // 블루: 소프트 페널티 (1번이면 -3.0, 2~3번이면 -2.0)
+        adj -= (idx === 0 ? 3.0 : 2.0);
       }
       if (DIRECT_BOOST_COLORS.has(id) && idx === 0) {
         // 직접 표현형 컬러가 1번(핵심 기질)이면 소폭 상향
@@ -4848,26 +4853,38 @@ export function getRelationArchetype(
   const adjScoreA = calcAdjustedExprScore(colorIdsA ?? [], exprScoreA);
   const adjScoreB = calcAdjustedExprScore(colorIdsB ?? [], exprScoreB);
 
-  if (!isSameEnergyFamily && Math.abs(adjScoreA - adjScoreB) >= 2) {
-    // ── 표현 점수 임계값: 3컬러 가중치 합산 기준 (최대 ~31.5, 최소 ~3.5) ──
-    // 단일 컬러 기준(0-10)이 아닌 합산 점수 기준으로 수정
-    // 예: 그린·옐로우·바이올렛 = 3*1.5+5+3 = 12.5 → '상황에 따라 표현'
-    //     레드·블루·옐로우 = 9*1.5+6+5 = 24.5 → '즉각적 표현'
-    const getExprLabel = (score: number): string => {
-      if (score >= 22) return '즉각적 표현';     // 레드·오렌지 계열 주도
-      if (score >= 16) return '직접적 표현';     // 옐로우·블루 계열 주도
-      if (score >= 11) return '상황에 따라 표현'; // 그린·핑크 계열
-      if (score >= 7)  return '내면 처리 후 표현'; // 바이올렛·인디고 계열
-      return '조용한 표현';                      // 화이트·블랙 계열
-    };
+  // ── 표현 점수 임계값: 3컬러 가중치 합산 기준 (최대 ~31.5, 최소 ~3.5) ──
+  const getExprLabel = (score: number): string => {
+    if (score >= 22) return '즉각적 표현';     // 레드·오렌지 계열 주도
+    if (score >= 16) return '직접적 표현';     // 옐로우·블루 계열 주도
+    if (score >= 11) return '상황에 따라 표현'; // 그린·핑크 계열
+    if (score >= 7)  return '내면 처리 후 표현'; // 바이올렛·인디고 계열
+    return '조용한 표현';                      // 화이트·블랙 계열
+  };
+  // 동일 레이블 조합에서 사용할 설명문 맵
+  const sameExprLabelDescMap: Record<string, string> = {
+    '즉각적 표현': '두 사람 모두 감정을 빠르게 표현하는 편입니다. 같은 속도로 반응하지만 둘 다 흥분하면 감정 강도가 함께 올라가는 순간이 생길 수 있습니다.',
+    '직접적 표현': '두 사람 모두 감정을 직접적으로 표현하는 편이지만, 표현의 강도나 방식에 차이가 있을 수 있습니다. 서로의 표현 방식을 이해하는 것이 중요합니다.',
+    '상황에 따라 표현': '두 사람 모두 상황에 따라 표현 방식을 조율하는 편입니다. 서로 눈치를 보다 정작 하고 싶은 말을 미루는 패턴이 생길 수 있습니다.',
+    '내면 처리 후 표현': '두 사람 모두 내면에서 먼저 정리한 후 표현하는 편입니다. 서로의 침묵을 이해하지만 둘 다 기다리다 연결이 늦어지는 패턴이 반복될 수 있습니다.',
+    '조용한 표현': '두 사람 모두 감정을 조용히 담아두는 편입니다. 서로 이해하지만 감정을 꺼내는 데 시간이 걸려 연결이 느려질 수 있습니다.',
+  };
+  if (!isSameEnergyFamily) {
     const labelA = getExprLabel(adjScoreA);
     const labelB = getExprLabel(adjScoreB);
-    // 두 레이블이 다를 때만 교체 (같으면 archetype 기본값 유지)
     if (labelA !== labelB) {
+      // 레이블이 다를 때: 두 레이블 조합 기반 동적 할당
       dynamicExpressionSpeed = {
         personA: labelA,
         personB: labelB,
         description: baseData.expressionSpeed.description,
+      };
+    } else {
+      // 레이블이 같을 때: 동일 레이블 설명문 사용
+      dynamicExpressionSpeed = {
+        personA: labelA,
+        personB: labelB,
+        description: sameExprLabelDescMap[labelA] ?? baseData.expressionSpeed.description,
       };
     }
   }
