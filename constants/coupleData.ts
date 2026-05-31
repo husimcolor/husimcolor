@@ -3237,65 +3237,86 @@ function calcRelationSignal(scoreA: EmotionDimension, scoreB: EmotionDimension):
   };
 }
 
-// 모든 archetype 점수 반환 (도형 보너스 적용 시 비교용)
+// 모든 archetype 점수 반환 (도형 보너스 적용 시 비교용) — V4 균형 공식
 function scoreToArchetypeScores(signal: EmotionDimension): Record<RelationArchetype, number> {
   const { distance, tension, recovery, stable, expression, circulation } = signal;
-  // 감정순환형: circulation 합 30 초과 시만 보너스 (두 사람 모두 높을 때)
-  const circulationBonus = circulation > 30 ? (circulation - 30) * 1.0 : 0;
-  // 온도차형: expression과 distance의 차이 + expression이 높을 때 보너스
+
+  // 거리조절형: distance가 지배적일 때만 강하게
+  const distScore = distance > 30 ? distance * 1.8 + tension * 0.2 + 20
+                  : distance > 24 ? distance * 1.4 + tension * 0.2 + 8
+                  : distance > 18 ? distance * 1.0 + tension * 0.2
+                  : distance * 0.6;
+
+  // 성장자극형: tension이 지배적일 때만 강하게
+  const growthScore = tension > 38 ? tension * 1.6 + expression * 0.4
+                    : tension > 30 ? tension * 1.3 + expression * 0.4
+                    : tension > 24 ? tension * 1.0 + expression * 0.3
+                    : tension * 0.6 + expression * 0.2;
+
+  // 회복형: recovery가 지배적일 때 강하게
+  const recoveryScore = recovery > 45 ? recovery * 1.6 + (tension < 20 ? 12 : 0)
+                      : recovery > 36 ? recovery * 1.3 + (tension < 24 ? 8 : 0)
+                      : recovery > 28 ? recovery * 1.0 + (tension < 28 ? 4 : 0)
+                      : recovery * 0.7;
+
+  // 감정순환형: circulation이 지배적일 때 강하게
+  const circBonus = circulation > 38 ? (circulation - 30) * 1.8
+                  : circulation > 30 ? (circulation - 26) * 1.2 : 0;
+  const circScore = circulation > 35 ? circulation * 1.2 + expression * 0.3 + circBonus
+                  : circulation > 28 ? circulation * 0.9 + expression * 0.3 + circBonus
+                  : circulation * 0.6 + expression * 0.2;
+
+  // 온도차형: expression이 높으면서 distance도 있을 때 (한 사람은 표현적, 다른 사람은 거리형)
   const tempGap = Math.abs(expression - distance);
-  const tempBonus = expression > 20 ? 8 : (expression > 16 ? 4 : 0);
-  // 친구형: tension이 낙고 stable이 중간 이상일 때 강하게
-  const friendBonus = tension < 14 ? 15 : tension < 18 ? 8 : 0;
-  // 현실균형형: stable이 중간 이상이고 tension이 낙을 때
-  const realBonus = stable > 22 && tension < 22 ? 8 : 0;
-  // 안정추구형: stable이 매우 높고 expression이 낙을 때만 강하게 진입
-  const stableBonus = (stable > 40 && expression < 25) ? 12 : (stable > 35 ? 4 : 0);
+  const tempScore = (expression > 35 && distance > 18) ? tempGap * 1.8 + expression * 0.4 + 15
+                  : (expression > 28 && distance > 14) ? tempGap * 1.4 + expression * 0.3 + 8
+                  : (expression > 22 && distance > 10) ? tempGap * 1.0 + expression * 0.2
+                  : tempGap * 0.6;
+
+  // 안정추구형: stable이 매우 높고 tension·expression 모두 낮을 때
+  const stableBonus = (stable > 50 && expression < 22 && tension < 18) ? 25
+                    : (stable > 42 && expression < 26) ? 15
+                    : (stable > 35 && expression < 30) ? 6 : 0;
+  const stableScore = stable * 0.9 + recovery * 0.2 + stableBonus;
+
+  // 보호자형: stable이 높고 expression이 낮고 recovery도 있을 때
+  const protScore = (stable > 30 && expression < 20 && recovery > 28) ? stable * 0.9 + recovery * 0.9 + 18
+                  : (stable > 24 && expression < 24 && recovery > 22) ? stable * 0.7 + recovery * 0.7 + 8
+                  : stable * 0.5 + recovery * 0.5 + (expression < 16 ? 6 : 0);
+
+  // 친구형: tension이 낮을 때 강하게
+  const friendBonus = tension < 14 ? 22 : tension < 18 ? 15 : tension < 22 ? 8 : tension < 26 ? 2 : 0;
+  const friendScore = (tension < 22 && stable > 24) ? stable * 0.8 + circulation * 0.5 + friendBonus
+                    : stable * 0.6 + circulation * 0.4 + friendBonus;
+
+  // 이상주의형: distance가 높고 stable이 낮을 때 (거리+불안정)
+  const idealScore = (distance > 24 && stable < 24) ? distance * 1.1 + tension * 0.5 + 20
+                   : (distance > 18 && stable < 28) ? distance * 0.8 + tension * 0.4 + 10
+                   : distance * 0.5 + tension * 0.3 + (stable < 20 ? 6 : 0);
+
+  // 현실균형형: stable이 높고 expression도 있을 때 (안정+소통)
+  const realScore = (stable > 36 && expression > 26 && tension < 24) ? stable * 1.0 + expression * 0.7 + 15
+                  : (stable > 28 && expression > 22 && tension < 28) ? stable * 0.8 + expression * 0.6 + 8
+                  : (stable > 22 && expression > 18) ? stable * 0.6 + expression * 0.5
+                  : stable * 0.4 + expression * 0.3;
+
   return {
-    '거리조절형':  distance * 1.5 + tension * 0.3 + (distance > 22 ? 10 : 0),
-    '성장자극형':  tension * 1.5 + expression * 0.9,
-    '회복형':      recovery * 1.2 + (tension > 22 ? 6 : 0) + (distance < 14 ? 4 : 0),
-    '감정순환형':  circulation * 1.0 + expression * 0.5 + circulationBonus,
-    '온도차형':    tempGap * 1.5 + tension * 0.4 + tempBonus,
-    '안정추구형':  stable * 1.1 + recovery * 0.2 + stableBonus,
-    '보호자형':    stable * 0.8 + recovery * 0.7 + (expression < 14 ? 10 : 0),
-    '친구형':      stable * 0.9 + circulation * 0.5 + friendBonus,
-    '이상주의형':  distance * 0.7 + tension * 0.5 + (stable < 18 ? 10 : 0),
-    '현실균형형':  stable * 1.0 + expression * 0.9 + realBonus,
+    '거리조절형': distScore,
+    '성장자극형': growthScore,
+    '회복형':     recoveryScore,
+    '감정순환형': circScore,
+    '온도차형':   tempScore,
+    '안정추구형': stableScore,
+    '보호자형':   protScore,
+    '친구형':     friendScore,
+    '이상주의형': idealScore,
+    '현실균형형': realScore,
   };
 }
 
-// 점수 기반 archetype 결정 (다차원 가중치 — 시뮬레이션 검증완료)
+// 점수 기반 archetype 결정 — V4 균형 공식 (scoreToArchetypeScores 재사용)
 function scoreToArchetype(signal: EmotionDimension): RelationArchetype {
-  const { distance, tension, recovery, stable, expression, circulation } = signal;
-
-  // 감정순환형: circulation 합 30 초과 시만 보너스 (두 사람 모두 높을 때)
-  const circulationBonus = circulation > 30 ? (circulation - 30) * 1.0 : 0;
-  // 온도차형: expression과 distance의 차이 + expression이 높을 때 보너스
-  const tempGap = Math.abs(expression - distance);
-  const tempBonus = expression > 20 ? 8 : (expression > 16 ? 4 : 0);
-  // 친구형: tension이 낙고 stable이 중간 이상일 때 강하게
-  const friendBonus = tension < 14 ? 15 : tension < 18 ? 8 : 0;
-  // 현실균형형: stable이 중간 이상이고 tension이 낙을 때
-  const realBonus = stable > 22 && tension < 22 ? 8 : 0;
-  // 안정추구형: stable이 매우 높고 expression이 낙을 때만 강하게 진입
-  const stableBonus = (stable > 40 && expression < 25) ? 12 : (stable > 35 ? 4 : 0);
-
-  // 각 archetype 후보 점수 계산
-  const scores: Record<RelationArchetype, number> = {
-    '거리조절형':  distance * 1.5 + tension * 0.3 + (distance > 22 ? 10 : 0),
-    '성장자극형':  tension * 1.5 + expression * 0.9,
-    '회복형':      recovery * 1.2 + (tension > 22 ? 6 : 0) + (distance < 14 ? 4 : 0),
-    '감정순환형':  circulation * 1.0 + expression * 0.5 + circulationBonus,
-    '온도차형':    tempGap * 1.5 + tension * 0.4 + tempBonus,
-    '안정추구형':  stable * 1.1 + recovery * 0.2 + stableBonus,
-    '보호자형':    stable * 0.8 + recovery * 0.7 + (expression < 14 ? 10 : 0),
-    '친구형':      stable * 0.9 + circulation * 0.5 + friendBonus,
-    '이상주의형':  distance * 0.7 + tension * 0.5 + (stable < 18 ? 10 : 0),
-    '현실균형형':  stable * 1.0 + expression * 0.9 + realBonus,
-  };
-
-  // 가장 높은 점수의 archetype 선택
+  const scores = scoreToArchetypeScores(signal);
   let best: RelationArchetype = '온도차형';
   let bestScore = -1;
   for (const [arch, score] of Object.entries(scores) as [RelationArchetype, number][]) {
