@@ -203,6 +203,26 @@ export default function CoupleResultScreen() {
     if (label === '조용한 표현') return '🤫';
     return '💭';
   };
+  // 표현 속도 레이블 조합에 따른 설명문 반환
+  const getExprDescription = (labelA: string, labelB: string): string => {
+    const key = [labelA, labelB].sort().join('↔');
+    const map: Record<string, string> = {
+      '직접적 표현↔즉각적 표현': '두 사람 모두 감정을 비교적 빠르게 표현하는 편이지만, 한 사람은 분명하고 직접적으로 말하고, 다른 사람은 순간의 감정 반응이 빠르게 드러나는 차이가 있습니다.',
+      '즉각적 표현↔직접적 표현': '두 사람 모두 감정을 비교적 빠르게 표현하는 편이지만, 한 사람은 분명하고 직접적으로 말하고, 다른 사람은 순간의 감정 반응이 빠르게 드러나는 차이가 있습니다.',
+      '내면 처리 후 표현↔직접적 표현': '한 사람은 감정을 비교적 바로 표현하고, 다른 사람은 내면에서 정리한 후 표현합니다.',
+      '내면 처리 후 표현↔즉각적 표현': '한 사람은 감정을 내면에서 정리한 후 표현하고, 다른 사람은 감정을 비교적 빠르게 드러내는 편입니다.',
+      '내면 처리 후 표현↔상황에 따라 표현': '한 사람은 감정을 내면에서 충분히 정리한 후 표현하고, 다른 사람은 상황과 상대에 따라 표현 방식을 조율합니다.',
+      '내면 처리 후 표현↔조용한 표현': '두 사람 모두 감정을 내면에서 먼저 정리하는 편이지만, 한 사람은 정리 후 표현하고 다른 사람은 조용히 담아두는 경향이 있습니다.',
+      '직접적 표현↔상황에 따라 표현': '한 사람은 감정을 분명하고 직접적으로 표현하고, 다른 사람은 상황에 따라 표현 방식을 달리합니다.',
+      '즉각적 표현↔상황에 따라 표현': '한 사람은 감정이 빠르게 드러나는 편이고, 다른 사람은 상황과 상대에 따라 표현 방식을 조율합니다.',
+      '직접적 표현↔조용한 표현': '한 사람은 감정을 분명하게 표현하는 편이고, 다른 사람은 감정을 말보다 행동이나 분위기로 전달하는 경향이 있습니다.',
+      '즉각적 표현↔조용한 표현': '한 사람은 감정이 빠르게 드러나는 편이고, 다른 사람은 감정을 조용히 담아두는 경향이 있어 서로의 속도 차이가 느껴질 수 있습니다.',
+      '상황에 따라 표현↔조용한 표현': '한 사람은 상황에 따라 표현 방식을 조율하고, 다른 사람은 감정을 조용히 담아두는 편입니다.',
+    };
+    // 정렬된 키로 먼저 조회, 없으면 원래 순서로 조회
+    return map[key] ?? map[`${labelA}↔${labelB}`] ?? map[`${labelB}↔${labelA}`] ?? archetypeResult?.expressionSpeed?.description ?? '';
+  };
+
   // 유사형/차이형 관계 판별 (중간 설명부 타이틀 동적 변경용)
   const _EFMAP: Record<string, string> = {
     red:'warm_active',orange:'warm_active',coral:'warm_active',magenta:'warm_active',
@@ -657,7 +677,7 @@ export default function CoupleResultScreen() {
                 <Text style={archetypeStyles.speedValue}>{archetypeResult.expressionSpeed.personB}</Text>
               </View>
             </View>
-            <Text style={archetypeStyles.speedDesc}>{archetypeResult.expressionSpeed.description}</Text>
+            <Text style={archetypeStyles.speedDesc}>{getExprDescription(archetypeResult.expressionSpeed.personA, archetypeResult.expressionSpeed.personB)}</Text>
 
             <View style={archetypeStyles.divider} />
 
