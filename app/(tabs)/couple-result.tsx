@@ -107,7 +107,7 @@ export default function CoupleResultScreen() {
       }) as any[];
       const shapeA3 = data.personA.cards[2] ? CARD_DATA.find((c: any) => c.id === data.personA.cards[2])?.shape : undefined;
       const shapeB3 = data.personB.cards[2] ? CARD_DATA.find((c: any) => c.id === data.personB.cards[2])?.shape : undefined;
-      const archRes = getRelationArchetype(famsA, famsB, shapeA3, shapeB3, data.personA.colors, data.personB.colors);
+      const archRes = getRelationArchetype(famsA, famsB, shapeA3, shapeB3, data.personA.colors, data.personB.colors, data.personA.cards, data.personB.cards);
       const lightRes = getLightArchetype(data.relationType, famsA, famsB);
       setPersonAAnalysis(aAnalysis);
       setPersonBAnalysis(bAnalysis);
@@ -677,7 +677,7 @@ export default function CoupleResultScreen() {
                 <Text style={archetypeStyles.speedValue}>{archetypeResult.expressionSpeed.personB}</Text>
               </View>
             </View>
-            <Text style={archetypeStyles.speedDesc}>{getExprDescription(archetypeResult.expressionSpeed.personA, archetypeResult.expressionSpeed.personB)}</Text>
+            <Text style={archetypeStyles.speedDesc}>{archetypeResult.expressionSpeed.description}</Text>
 
             <View style={archetypeStyles.divider} />
 

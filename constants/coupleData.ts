@@ -4715,7 +4715,9 @@ export function getRelationArchetype(
   shapeA?: string,
   shapeB?: string,
   colorIdsA?: string[],
-  colorIdsB?: string[]
+  colorIdsB?: string[],
+  cardIdsA?: string[],  // 무의식·현재·미래 카드 ID 배열 (cardIdsA[0] = 무의식 카드)
+  cardIdsB?: string[]  // 무의식·현재·미래 카드 ID 배열 (cardIdsB[0] = 무의식 카드)
 ): ArchetypeResult {
   // ── 레이어형 가중치 구조 ──
   // Layer 1: 컬러 조합 (주축 — archetype의 70~80%)
@@ -4724,6 +4726,54 @@ export function getRelationArchetype(
   // Layer 2: 도형 (modifier — 점수 보너스만, archetype 완전교체 금지)
   //   - 같은 컬러 조합이면 도형이 바뀌어도 archetype 유지
   //   - 극단적 조합에서만 인접 archetype으로 이동
+
+  // ── 섹션별 가중치 구조 ──────────────────────────────────────────────────
+  // 1컬러(핵심 기질) + 2컬러(표현 보정) + 3컬러(보조 흐름) + 무의식카드(현재 상태)
+  // 섹션마다 가중치 비율이 다름 (제안: 표현/회복/재정/생활 섹션별 차등)
+  type SectionWeightProfile = { c1: number; c2: number; c3: number; card: number };
+  const SECTION_WEIGHTS: Record<string, SectionWeightProfile> = {
+    expression: { c1: 0.35, c2: 0.35, c3: 0.10, card: 0.20 }, // 표현 방식: 2컬러+무의식카드 영향 큼
+    recovery:   { c1: 0.30, c2: 0.20, c3: 0.10, card: 0.40 }, // 회복 방식: 무의식카드(현재 상태) 영향 가장 큼
+    finance:    { c1: 0.55, c2: 0.25, c3: 0.10, card: 0.10 }, // 재정 스타일: 기본 기질 영향 가장 큼
+    lifestyle:  { c1: 0.60, c2: 0.20, c3: 0.10, card: 0.10 }, // 생활패턴/공간: 기본 기질 영향 가장 큼
+  };
+
+  // 무의식 카드 컬러 ID 추출 (cards[0] = 무의식 카드)
+  // 카드 컬러 키를 COLOR_EMOTION_SCORE 키로 정규화 (purple → violet)
+  const normalizeCardColor = (color: string | null): string | null => {
+    if (!color) return null;
+    const MAP: Record<string, string> = { purple: 'violet', gray: 'neutral', grey: 'neutral' };
+    return MAP[color] ?? color;
+  };
+  const unconsciousCardColorA = normalizeCardColor(
+    cardIdsA?.[0] ? (CARD_DATA.find(c => c.id === cardIdsA![0])?.color ?? null) : null
+  );
+  const unconsciousCardColorB = normalizeCardColor(
+    cardIdsB?.[0] ? (CARD_DATA.find(c => c.id === cardIdsB![0])?.color ?? null) : null
+  );
+
+  // 섹션별 가중치 적용 점수 계산
+  function calcSectionScore(
+    colorIds: string[],
+    unconsciousCardColor: string | null,
+    dimension: keyof EmotionDimension,
+    section: keyof typeof SECTION_WEIGHTS
+  ): number {
+    const w = SECTION_WEIGHTS[section];
+    const c1Score = COLOR_EMOTION_SCORE[colorIds[0]] ?? DEFAULT_EMOTION_SCORE;
+    const c2Score = COLOR_EMOTION_SCORE[colorIds[1]] ?? DEFAULT_EMOTION_SCORE;
+    const c3Score = COLOR_EMOTION_SCORE[colorIds[2]] ?? DEFAULT_EMOTION_SCORE;
+    const cardScore = unconsciousCardColor
+      ? (COLOR_EMOTION_SCORE[unconsciousCardColor] ?? DEFAULT_EMOTION_SCORE)
+      : DEFAULT_EMOTION_SCORE;
+    // 컬러 개수에 따라 가중치 재분배 (없는 컬러는 기본값 사용)
+    return (
+      c1Score[dimension] * w.c1 +
+      c2Score[dimension] * w.c2 +
+      c3Score[dimension] * w.c3 +
+      cardScore[dimension] * w.card
+    ) * 3.5; // 기존 단순합산(3컬러 × 평균 ~5점 = ~15) 수준으로 스케일 맞춤
+  }
 
   // 1. 컬러 점수 계산 — 첫 번째 컬러 1.5배 가중치
   function calcWeightedEmotionScore(colorIds: string[]): EmotionDimension {
@@ -4802,11 +4852,12 @@ export function getRelationArchetype(
   }
 
   // ── 표현 속도 동적 할당 ──
-  // 콜러의 expression 점수를 기반으로 personA/personB 표현 스타일을 실제 입력에 맞게 할당
-  // (archetype의 고정값이 아닌, 실제 두 사람의 콜러 성향 반영)
+  // 섹션별 가중치(expression: c1=35%, c2=35%, c3=10%, card=20%) 기반으로
+  // personA/personB 표현 스타일을 실제 입력에 맞게 할당
   const baseData = ARCHETYPE_DATA[finalArchetype];
-  const exprScoreA = scoreA.expression;
-  const exprScoreB = scoreB.expression;
+  // expression 섹션 가중치 적용 점수 (무의식 카드 포함)
+  const exprScoreA = calcSectionScore(colorIdsA ?? [], unconsciousCardColorA, 'expression', 'expression');
+  const exprScoreB = calcSectionScore(colorIdsB ?? [], unconsciousCardColorB, 'expression', 'expression');
   // ── 유사형 관계 expressionSpeed 오버라이드 ──
   // dominantA === dominantB인 경우 '차이' 중심 description 대신 '유사형 과열' 중심으로 교체
   const dominantA = getDominantFamily(familiesA);
@@ -4869,22 +4920,73 @@ export function getRelationArchetype(
     '내면 처리 후 표현': '두 사람 모두 내면에서 먼저 정리한 후 표현하는 편입니다. 서로의 침묵을 이해하지만 둘 다 기다리다 연결이 늦어지는 패턴이 반복될 수 있습니다.',
     '조용한 표현': '두 사람 모두 감정을 조용히 담아두는 편입니다. 서로 이해하지만 감정을 꺼내는 데 시간이 걸려 연결이 느려질 수 있습니다.',
   };
+  // ── 컬러 조합별 표현 성향 설명 (1컬러 핵심 성향 + 2컬러 보정 흐름) ──
+  // 1컬러(핵심 기질)와 2컬러(표현 보정)를 함께 반영한 입체적 설명 생성
+  function getColorExprTraitDesc(colorIds: string[]): string {
+    const c1 = colorIds[0] ?? '';
+    const c2 = colorIds[1] ?? '';
+    const C1_DESC: Record<string, string> = {
+      blue: '기본적으로는 생각과 감정을 어느 정도 정리한 후 표현하려는 성향이 있습니다',
+      red: '기본적으로는 감정이 올라오면 비교적 빠르고 직접적으로 표현하는 성향이 있습니다',
+      coral: '기본적으로는 감정을 따뜻하고 즉각적으로 표현하는 성향이 있습니다',
+      orange: '기본적으로는 활기차고 빠르게 감정을 표현하는 성향이 있습니다',
+      yellow: '기본적으로는 밝고 가볍게 감정을 표현하는 성향이 있습니다',
+      green: '기본적으로는 상황을 살피며 균형 있게 표현하는 성향이 있습니다',
+      olive: '기본적으로는 내면에서 충분히 정리한 후 표현하는 성향이 있습니다',
+      sage: '기본적으로는 조용하고 신중하게 표현하는 성향이 있습니다',
+      navy: '기본적으로는 책임감 있게 신중하게 표현하는 성향이 있습니다',
+      indigo: '기본적으로는 내면 깊이 정리한 후 표현하는 성향이 있습니다',
+      violet: '기본적으로는 깊은 감정을 천천히 표현하는 성향이 있습니다',
+      black: '기본적으로는 감정을 내면에 담아두다 표현하는 성향이 있습니다',
+      white: '기본적으로는 감정을 정화하고 비운 후 표현하는 성향이 있습니다',
+      pink: '기본적으로는 따뜻하고 감성적으로 표현하는 성향이 있습니다',
+      magenta: '기본적으로는 감정에 몰입하여 깊게 표현하는 성향이 있습니다',
+      gold: '기본적으로는 안정적이고 품격 있게 표현하는 성향이 있습니다',
+      brown: '기본적으로는 신중하고 묵직하게 표현하는 성향이 있습니다',
+      teal: '기본적으로는 감정과 이성을 균형 있게 조율하며 표현하는 성향이 있습니다',
+      skyblue: '기본적으로는 명료하고 시원하게 표현하는 성향이 있습니다',
+      mint: '기본적으로는 부드럽고 가볍게 표현하는 성향이 있습니다',
+      lavender: '기본적으로는 부드럽고 치유적으로 표현하는 성향이 있습니다',
+    };
+    const C2_CORRECTION: Record<string, string> = {
+      red: '하지만 두 번째 컬러인 레드 영향으로 감정이 올라오면 비교적 빠르고 직접적으로 표현되기도 합니다',
+      coral: '하지만 두 번째 컬러인 코랄 영향으로 감정이 올라오면 따뜻하고 즉각적으로 표현되기도 합니다',
+      orange: '하지만 두 번째 컬러인 오렌지 영향으로 활기차게 감정을 꺼내는 순간이 생기기도 합니다',
+      yellow: '하지만 두 번째 컬러인 옐로우 영향으로 밝고 가볍게 감정을 표현하는 순간이 있기도 합니다',
+      blue: '하지만 두 번째 컬러인 블루 영향으로 표현 전에 한 번 더 정리하려는 흐름이 생기기도 합니다',
+      green: '하지만 두 번째 컬러인 그린 영향으로 상황을 살피며 표현을 조율하는 흐름이 있기도 합니다',
+      olive: '하지만 두 번째 컬러인 올리브 영향으로 내면에서 충분히 정리한 후 표현하려는 경향이 있기도 합니다',
+      navy: '하지만 두 번째 컬러인 네이비 영향으로 신중하게 표현을 조율하는 흐름이 있기도 합니다',
+      indigo: '하지만 두 번째 컬러인 인디고 영향으로 깊이 정리한 후 표현하려는 흐름이 있기도 합니다',
+      black: '하지만 두 번째 컬러인 블랙 영향으로 감정을 담아두다 한꺼번에 표현하는 순간이 생기기도 합니다',
+      pink: '하지만 두 번째 컬러인 핑크 영향으로 감성적이고 따뜻하게 표현하는 순간이 있기도 합니다',
+      magenta: '하지만 두 번째 컬러인 마젠타 영향으로 감정에 몰입하여 깊게 표현하는 순간이 있기도 합니다',
+    };
+    const base = C1_DESC[c1] ?? '기본적으로는 자신만의 방식으로 표현하는 성향이 있습니다';
+    const correction = c2 && C2_CORRECTION[c2] ? `. ${C2_CORRECTION[c2]}` : '';
+    return `${base}${correction}.`;
+  }
+
   if (!isSameEnergyFamily) {
     const labelA = getExprLabel(adjScoreA);
     const labelB = getExprLabel(adjScoreB);
+    // 1컬러 핵심 성향 + 2컬러 보정 흐름 설명 생성
+    const traitDescA = getColorExprTraitDesc(colorIdsA ?? []);
+    const traitDescB = getColorExprTraitDesc(colorIdsB ?? []);
     if (labelA !== labelB) {
-      // 레이블이 다를 때: 두 레이블 조합 기반 동적 할당
+      // 레이블이 다를 때: 두 레이블 조합 기반 동적 할당 + 입체적 설명
       dynamicExpressionSpeed = {
         personA: labelA,
         personB: labelB,
-        description: baseData.expressionSpeed.description,
+        description: `첫 번째 사람: ${traitDescA} 두 번째 사람: ${traitDescB}`,
       };
     } else {
-      // 레이블이 같을 때: 동일 레이블 설명문 사용
+      // 레이블이 같을 때: 동일 레이블 설명문 + 입체적 설명
+      const sameDesc = sameExprLabelDescMap[labelA] ?? baseData.expressionSpeed.description;
       dynamicExpressionSpeed = {
         personA: labelA,
         personB: labelB,
-        description: sameExprLabelDescMap[labelA] ?? baseData.expressionSpeed.description,
+        description: `${sameDesc} 첫 번째 사람: ${traitDescA} 두 번째 사람: ${traitDescB}`,
       };
     }
   }
