@@ -1069,6 +1069,78 @@ export default function CoupleResultScreen() {
           {/* 연인/부부 전용 풀 archetype 블록 닫기 */}
           </>)}
           {/* ═══════════════════════════════════════════════════════
+              커플/부부 관계 감성 안내문 (회복 루틴 위)
+          ═══════════════════════════════════════════════════════ */}
+          {isRomanticRel && (
+            <View style={{
+              marginHorizontal: 0,
+              marginBottom: 12,
+              paddingVertical: 24,
+              paddingHorizontal: 22,
+              borderRadius: 18,
+              backgroundColor: relationType === '부부' ? '#1C1A2E' : '#1A1E2C',
+              borderWidth: 1,
+              borderColor: relationType === '부부' ? '#8B7BB0' + '55' : '#7BA8C4' + '55',
+            }}>
+              {relationType === '부부' ? (
+                <>
+                  <Text style={{
+                    fontSize: 15,
+                    lineHeight: 26,
+                    color: '#E8DEFF',
+                    fontWeight: '500',
+                    textAlign: 'center',
+                    marginBottom: 16,
+                  }}>
+                    {'건강한 관계는\n신뢰, 이해, 배려, 존중 위에서 자라갑니다.'}
+                  </Text>
+                  <View style={{ height: 1, backgroundColor: '#8B7BB0' + '40', marginBottom: 16 }} />
+                  <Text style={{
+                    fontSize: 14,
+                    lineHeight: 24,
+                    color: '#C8B8E8',
+                    textAlign: 'center',
+                    marginBottom: 14,
+                  }}>
+                    {'부부관계에서 스킨십은\n서로의 마음을 연결하고\n안정감을 나누는 소통입니다.'}
+                  </Text>
+                  <Text style={{
+                    fontSize: 13,
+                    lineHeight: 22,
+                    color: '#A898C8',
+                    textAlign: 'center',
+                    fontStyle: 'italic',
+                  }}>
+                    {'따뜻한 손길과 자연스러운 스킨십은\n말로 표현되지 않는 감정을 전하고,\n서로에게 안정감과 위로를 전해주기도 합니다.'}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={{
+                    fontSize: 15,
+                    lineHeight: 26,
+                    color: '#DCEEFF',
+                    fontWeight: '500',
+                    textAlign: 'center',
+                    marginBottom: 16,
+                  }}>
+                    {'건강한 관계는\n신뢰, 이해, 배려, 존중 위에서 자라갑니다.'}
+                  </Text>
+                  <View style={{ height: 1, backgroundColor: '#7BA8C4' + '40', marginBottom: 16 }} />
+                  <Text style={{
+                    fontSize: 14,
+                    lineHeight: 24,
+                    color: '#B8D4E8',
+                    textAlign: 'center',
+                    fontStyle: 'italic',
+                  }}>
+                    {'자연스러운 애정표현과 스킨십은\n서로의 마음을 더 깊이 이해하고\n안정감과 친밀감을 나누게 합니다.'}
+                  </Text>
+                </>
+              )}
+            </View>
+          )}
+          {/* ═══════════════════════════════════════════════════════
               함께하면 좋은 회복 루틴
           ═══════════════════════════════════════════════════════ */}
           {(lightArchetypeResult?.togetherRoutine ?? archetypeResult.togetherRoutine) && (() => {
