@@ -5846,10 +5846,101 @@ export function getRelationArchetype(
     ? { ...baseData.profileContrastOverride, ...colorBasedProfileOverride }
     : baseData.profileContrastOverride;
 
+  // ── 공통 성향 축(Personality Axis) 도출 ──────────────────────────────────
+  // 표현 속도 레이블(dynamicExpressionSpeed)을 기반으로
+  // 갈등 반응·회복 방식·profileContrast.expressionDifference를 일관되게 연결
+  const exprLabelA = dynamicExpressionSpeed.personA;
+  const exprLabelB = dynamicExpressionSpeed.personB;
+
+  // 표현 레이블 → 갈등 반응 설명 맵
+  const EXPR_TO_CONFLICT_DESC: Record<string, string> = {
+    '즉각적 표현': '"지금 바로 얘기하자." 즉각 해결형입니다. 내면에서 정리된 후 빠르게 표현합니다.',
+    '직접적 표현': '"감정 빼고 논리적으로 얘기하자." 논리 정리형입니다. 관계를 위해 논리적으로 조율합니다.',
+    '상황에 따라 표현': '"천천히 생각하고 얘기하자." 신중 대화형입니다.',
+    '내면 처리 후 표현': '"조금만 시간 줘. 나 아직 정리가 안 됐어." 내면 정리형입니다.',
+    '조용한 표현': '"일단 각자 정리하고 다시 얘기하자." 공간 회복형입니다.',
+    // archetype 기본값 레이블도 포함
+    '빠른 정리': '"빨리 정리하고 다음으로 넘어가자." 빠른 전환형입니다.',
+    '천천히 소화': '"충분히 소화한 후에야 앞으로 갈 수 있어." 충분 소화형입니다.',
+    '거리 필요': '"잠깐 공간이 필요해." 공간 회복형입니다.',
+    '연결 필요': '"지금 연결이 필요해." 즉각 연결형입니다.',
+    '감정 파도': '"지금 감정이 올라와 있어." 감정 순환형입니다.',
+    '안정적 표현': '"크게 표현하지 않아도 알아줬으면 해." 안정 표현형입니다.',
+    '편안한 표현': '"편안하게 표현할 수 있어." 자연스러운 표현형입니다.',
+    '현실적 판단': '"현실적으로 해결하자." 현실 해결형입니다.',
+    '갈등 후 정리': '"혼자 정리하고 다시 연결하자." 내면 정리형입니다.',
+    '갈등 후 표현': '"표현하면서 회복해." 표현 회복형입니다.',
+    '보호/챙김': '"내가 챙겨줄게." 보호 표현형입니다.',
+    '의존/기댐': '"네가 있어야 안정돼." 연결 의존형입니다.',
+    '감정 표현': '"감정을 크게 표현하는 편이야." 감정 표현형입니다.',
+    '감정 공감': '"네 감정을 먼저 받아줄게." 공감 우선형입니다.',
+  };
+
+  // 표현 레이블 → profileContrast.expressionDifference 동기화 맵
+  const EXPR_LABEL_PAIR_TO_EXPR_DIFF: Record<string, string> = {
+    '즉각적 표현|즉각적 표현': '두 사람 모두 감정을 빠르게 표현하는 편입니다. 같은 속도로 반응하지만 둘 다 흥분하면 감정 강도가 함께 올라가는 순간이 생길 수 있습니다.',
+    '직접적 표현|직접적 표현': '두 사람 모두 감정을 직접적으로 표현하는 편입니다. 표현 방식은 비슷하지만 표현의 강도나 기대하는 반응에 차이가 있을 수 있습니다.',
+    '내면 처리 후 표현|내면 처리 후 표현': '두 사람 모두 내면에서 먼저 정리한 후 표현하는 편입니다. 서로의 침묵을 이해하지만 둘 다 기다리다 연결이 늦어지는 패턴이 반복될 수 있습니다.',
+    '즉각적 표현|직접적 표현': '한 사람은 감정이 올라오면 바로 표현하고, 다른 사람은 생각을 정리한 후 직접적으로 말합니다. 속도는 비슷하지만 표현의 즉흥성과 논리성에 차이가 있습니다.',
+    '직접적 표현|즉각적 표현': '한 사람은 생각을 정리한 후 직접적으로 말하고, 다른 사람은 감정이 올라오면 바로 표현합니다. 속도는 비슷하지만 표현의 논리성과 즉흥성에 차이가 있습니다.',
+    '즉각적 표현|내면 처리 후 표현': '한 사람은 감정을 바로 표현하고, 다른 사람은 내면에서 충분히 정리한 후 표현합니다. "왜 말을 안 해?"보다 "언제쯤 얘기할 수 있어?"가 이 관계에서 더 효과적입니다.',
+    '내면 처리 후 표현|즉각적 표현': '한 사람은 내면에서 충분히 정리한 후 표현하고, 다른 사람은 감정을 바로 표현합니다. "나 지금 정리 중이야"라는 신호가 오해를 줄여줍니다.',
+    '직접적 표현|내면 처리 후 표현': '한 사람은 감정을 비교적 바로 표현하고, 다른 사람은 내면에서 정리한 후 표현합니다. 표현 속도의 차이가 때로는 "왜 말이 없어?"라는 오해로 이어질 수 있습니다.',
+    '내면 처리 후 표현|직접적 표현': '한 사람은 내면에서 정리한 후 표현하고, 다른 사람은 감정을 비교적 바로 표현합니다. 한 사람의 침묵이 다른 사람에게는 거리감으로 느껴질 수 있습니다.',
+    '즉각적 표현|상황에 따라 표현': '한 사람은 감정을 바로 표현하고, 다른 사람은 상황에 따라 표현 방식을 조율합니다. 빠른 사람이 기다려주는 것이 이 관계의 균형입니다.',
+    '상황에 따라 표현|즉각적 표현': '한 사람은 상황에 따라 표현 방식을 조율하고, 다른 사람은 감정을 바로 표현합니다. 빠른 사람이 기다려주는 것이 이 관계의 균형입니다.',
+    '직접적 표현|상황에 따라 표현': '한 사람은 직접적으로 표현하고, 다른 사람은 상황을 살피며 표현합니다. 직접적인 사람이 먼저 말을 꺼내는 것이 이 관계에서 자연스럽습니다.',
+    '상황에 따라 표현|직접적 표현': '한 사람은 상황을 살피며 표현하고, 다른 사람은 직접적으로 표현합니다. 직접적인 사람이 먼저 말을 꺼내는 것이 이 관계에서 자연스럽습니다.',
+    '내면 처리 후 표현|상황에 따라 표현': '한 사람은 내면에서 정리한 후 표현하고, 다른 사람은 상황에 따라 표현 방식을 조율합니다. 두 사람 모두 표현이 느린 편이라 먼저 말을 꺼내는 연습이 필요합니다.',
+    '상황에 따라 표현|내면 처리 후 표현': '한 사람은 상황에 따라 표현 방식을 조율하고, 다른 사람은 내면에서 정리한 후 표현합니다. 두 사람 모두 표현이 느린 편이라 먼저 말을 꺼내는 연습이 필요합니다.',
+    '조용한 표현|내면 처리 후 표현': '두 사람 모두 표현이 적은 편입니다. 서로의 마음을 오해하지 않도록 주기적으로 "요즘 어때?"라고 먼저 연결을 시도하는 것이 중요합니다.',
+    '내면 처리 후 표현|조용한 표현': '두 사람 모두 표현이 적은 편입니다. 서로의 마음을 오해하지 않도록 주기적으로 "요즘 어때?"라고 먼저 연결을 시도하는 것이 중요합니다.',
+  };
+
+  // ── 성향 축 기반 갈등 반응 섹션 보정 ──
+  // LIFESTYLE_MAP/buildDefaultLifestyleSections에서 생성된 갈등 반응 섹션의
+  // personA/B 설명이 표현 속도 레이블과 일치하지 않을 경우 동기화
+  if (lifestyleSections?.conflict && !isSameEnergyFamily) {
+    const conflictDescA = EXPR_TO_CONFLICT_DESC[exprLabelA];
+    const conflictDescB = EXPR_TO_CONFLICT_DESC[exprLabelB];
+    // LIFESTYLE_MAP에서 명시적으로 정의된 섹션은 보정하지 않음
+    // buildDefaultLifestyleSections에서 생성된 경우(EnergyFamily 기반)만 보정
+    // 판별: lifestyleKey/fullComboKey 매칭이 없었으면 buildDefault가 호출됨
+    const hasExplicitLifestyleMap =
+      !!(LIFESTYLE_MAP[lifestyleKey] ?? LIFESTYLE_MAP[lifestyleKeyRev]);
+    if (!hasExplicitLifestyleMap && conflictDescA && conflictDescB) {
+      lifestyleSections = {
+        ...lifestyleSections,
+        conflict: {
+          ...lifestyleSections.conflict,
+          personA: conflictDescA,
+          personB: conflictDescB,
+        },
+      };
+    }
+  }
+
+  // ── profileContrast.expressionDifference 동기화 ──
+  // 컬러 조합 기반 오버라이드가 없는 경우, 표현 속도 레이블 조합으로 동적 생성
+  const exprPairKey = `${exprLabelA}|${exprLabelB}`;
+  const dynamicExprDiff = EXPR_LABEL_PAIR_TO_EXPR_DIFF[exprPairKey];
+  let finalProfileContrast = mergedProfileContrast;
+  if (dynamicExprDiff && finalProfileContrast) {
+    // 컬러 기반 오버라이드가 expressionDifference를 명시적으로 정의하지 않은 경우만 동기화
+    if (!colorBasedProfileOverride?.expressionDifference) {
+      finalProfileContrast = {
+        ...finalProfileContrast,
+        expressionDifference: dynamicExprDiff,
+      };
+    }
+  } else if (dynamicExprDiff && !finalProfileContrast) {
+    finalProfileContrast = { expressionDifference: dynamicExprDiff };
+  }
+
   return {
     archetype: finalArchetype,
     ...baseData,
-    profileContrastOverride: mergedProfileContrast,
+    profileContrastOverride: finalProfileContrast,
     expressionSpeed: dynamicExpressionSpeed,
     lifestyleSections,
   };
