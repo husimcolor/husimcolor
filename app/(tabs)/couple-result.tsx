@@ -193,6 +193,16 @@ export default function CoupleResultScreen() {
     if (isColleagueRel) return '협업 연결 루틴';
     return '관계 보완 루틴';
   };
+
+  // 표현 속도 레이블에 맞는 아이콘 반환
+  const getExprIcon = (label: string): string => {
+    if (label === '즉각적 표현') return '⚡';
+    if (label === '직접적 표현') return '💬';
+    if (label === '상황에 따라 표현') return '🌊';
+    if (label === '내면 처리 후 표현') return '🌙';
+    if (label === '조용한 표현') return '🤫';
+    return '💭';
+  };
   // 유사형/차이형 관계 판별 (중간 설명부 타이틀 동적 변경용)
   const _EFMAP: Record<string, string> = {
     red:'warm_active',orange:'warm_active',coral:'warm_active',magenta:'warm_active',
@@ -636,13 +646,13 @@ export default function CoupleResultScreen() {
             <Text style={archetypeStyles.sectionLabel}>{isSimilarRelation ? '두 사람의 표현 방식' : '표현 속도 차이'}</Text>
             <View style={archetypeStyles.speedRow}>
               <View style={archetypeStyles.speedBox}>
-                <Text style={archetypeStyles.speedIcon}>⚡</Text>
+                <Text style={archetypeStyles.speedIcon}>{getExprIcon(archetypeResult.expressionSpeed.personA)}</Text>
                 <Text style={archetypeStyles.speedPersonLabel}>첫 번째 사람</Text>
                 <Text style={archetypeStyles.speedValue}>{archetypeResult.expressionSpeed.personA}</Text>
               </View>
               <Text style={archetypeStyles.speedArrow}>↔</Text>
               <View style={archetypeStyles.speedBox}>
-                <Text style={archetypeStyles.speedIcon}>🌙</Text>
+                <Text style={archetypeStyles.speedIcon}>{getExprIcon(archetypeResult.expressionSpeed.personB)}</Text>
                 <Text style={archetypeStyles.speedPersonLabel}>두 번째 사람</Text>
                 <Text style={archetypeStyles.speedValue}>{archetypeResult.expressionSpeed.personB}</Text>
               </View>
