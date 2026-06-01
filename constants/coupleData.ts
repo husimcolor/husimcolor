@@ -5975,29 +5975,66 @@ export function getRelationArchetype(
   const exprLabelA = dynamicExpressionSpeed.personA;
   const exprLabelB = dynamicExpressionSpeed.personB;
 
-  // 표현 레이블 → 갈등 반응 설명 맵
-  const EXPR_TO_CONFLICT_DESC: Record<string, string> = {
-    '즉각적 표현': '"지금 바로 얘기하자." 즉각 해결형입니다. 내면에서 정리된 후 빠르게 표현합니다.',
-    '직접적 표현': '"감정 빼고 논리적으로 얘기하자." 논리 정리형입니다. 관계를 위해 논리적으로 조율합니다.',
-    '상황에 따라 표현': '"천천히 생각하고 얘기하자." 신중 대화형입니다.',
-    '내면 처리 후 표현': '"조금만 시간 줘. 나 아직 정리가 안 됐어." 내면 정리형입니다.',
-    '조용한 표현': '"일단 각자 정리하고 다시 얘기하자." 공간 회복형입니다.',
-    // archetype 기본값 레이블도 포함
-    '빠른 정리': '"빨리 정리하고 다음으로 넘어가자." 빠른 전환형입니다.',
-    '천천히 소화': '"충분히 소화한 후에야 앞으로 갈 수 있어." 충분 소화형입니다.',
-    '거리 필요': '"잠깐 공간이 필요해." 공간 회복형입니다.',
-    '연결 필요': '"지금 연결이 필요해." 즉각 연결형입니다.',
-    '감정 파도': '"지금 감정이 올라와 있어." 감정 순환형입니다.',
-    '안정적 표현': '"크게 표현하지 않아도 알아줬으면 해." 안정 표현형입니다.',
-    '편안한 표현': '"편안하게 표현할 수 있어." 자연스러운 표현형입니다.',
-    '현실적 판단': '"현실적으로 해결하자." 현실 해결형입니다.',
-    '갈등 후 정리': '"혼자 정리하고 다시 연결하자." 내면 정리형입니다.',
-    '갈등 후 표현': '"표현하면서 회복해." 표현 회복형입니다.',
-    '보호/챙김': '"내가 챙겨줄게." 보호 표현형입니다.',
-    '의존/기댐': '"네가 있어야 안정돼." 연결 의존형입니다.',
-    '감정 표현': '"감정을 크게 표현하는 편이야." 감정 표현형입니다.',
-    '감정 공감': '"네 감정을 먼저 받아줄게." 공감 우선형입니다.',
-  };
+  // 표현 레이블 + 에너지 패밀리 → 갈등 반응 설명 맵
+  // 같은 '직접적 표현' 레이블이라도 warm 계열(핑크·옐로우·그린)은 감정 중심 문장,
+  // cool 계열(블루·네이비·인디고)은 논리 정리 문장으로 분기
+  function getConflictDesc(exprLabel: string, primaryFamily: EnergyFamily): string {
+    const isWarm = primaryFamily === 'warm_active' || primaryFamily === 'warm_soft' || primaryFamily === 'warm_grounded';
+    const isCool = primaryFamily === 'cool_clear' || primaryFamily === 'cool_deep';
+    const isNature = primaryFamily === 'nature';
+
+    switch (exprLabel) {
+      case '즉각적 표현':
+        if (isWarm) return '"지금 바로 얘기하자. 이 감정 그냥 두면 더 커져." 즉각 해결형입니다.';
+        return '"지금 바로 얘기하자." 즉각 해결형입니다. 내면에서 정리된 후 빠르게 표현합니다.';
+      case '직접적 표현':
+        if (isWarm) return '"지금 바로 얘기하자. 미루면 더 힘들어." 즉각 해결형입니다. 감정을 바로 꺼내야 풀리는 편입니다.';
+        if (isCool) return '"감정 빼고 논리적으로 얘기하자." 논리 정리형입니다. 관계를 위해 논리적으로 조율합니다.';
+        if (isNature) return '"천천히 자연스럽게 풀어가자." 자연 회복형입니다.';
+        return '"직접적으로 얘기하자." 직접 표현형입니다.';
+      case '상황에 따라 표현':
+        if (isWarm) return '"지금 감정이 정리되면 바로 얘기할게." 감정 중심 신중형입니다.';
+        return '"천천히 생각하고 얘기하자." 신중 대화형입니다.';
+      case '내면 처리 후 표현':
+        if (isWarm) return '"먼저 내 마음을 알아줬으면 해. 그 다음에 얘기하자." 공감 먼저형입니다.';
+        return '"조금만 시간 줘. 나 아직 정리가 안 됐어." 내면 정리형입니다.';
+      case '조용한 표현':
+        return '"일단 각자 정리하고 다시 얘기하자." 공간 회복형입니다.';
+      case '빠른 정리':
+        return '"빨리 정리하고 다음으로 넘어가자." 빠른 전환형입니다.';
+      case '천천히 소화':
+        return '"충분히 소화한 후에야 앞으로 갈 수 있어." 충분 소화형입니다.';
+      case '거리 필요':
+        return '"잠깐 공간이 필요해." 공간 회복형입니다.';
+      case '연결 필요':
+        if (isWarm) return '"지금 네가 필요해. 같이 있어줘." 즉각 연결형입니다.';
+        return '"지금 연결이 필요해." 즉각 연결형입니다.';
+      case '감정 파도':
+        return '"지금 감정이 올라와 있어." 감정 순환형입니다.';
+      case '안정적 표현':
+        return '"크게 표현하지 않아도 알아줬으면 해." 안정 표현형입니다.';
+      case '편안한 표현':
+        return '"편안하게 표현할 수 있어." 자연스러운 표현형입니다.';
+      case '현실적 판단':
+        return '"현실적으로 해결하자." 현실 해결형입니다.';
+      case '갈등 후 정리':
+        return '"혼자 정리하고 다시 연결하자." 내면 정리형입니다.';
+      case '갈등 후 표현':
+        if (isWarm) return '"표현하면서 회복해. 말하면 풀려." 표현 회복형입니다.';
+        return '"표현하면서 회복해." 표현 회복형입니다.';
+      case '보호/챙김':
+        return '"내가 챙겨줄게." 보호 표현형입니다.';
+      case '의존/기댐':
+        return '"네가 있어야 안정돼." 연결 의존형입니다.';
+      case '감정 표현':
+        if (isWarm) return '"지금 바로 얘기하자. 이 감정 그냥 넘기면 안 돼." 즉각 표현형입니다.';
+        return '"감정을 크게 표현하는 편이야." 감정 표현형입니다.';
+      case '감정 공감':
+        return '"네 감정을 먼저 받아줄게." 공감 우선형입니다.';
+      default:
+        return `"${exprLabel}" 표현형입니다.`;
+    }
+  }
 
   // 표현 레이블 → profileContrast.expressionDifference 동기화 맵
   const EXPR_LABEL_PAIR_TO_EXPR_DIFF: Record<string, string> = {
@@ -6024,8 +6061,8 @@ export function getRelationArchetype(
   // LIFESTYLE_MAP/buildDefaultLifestyleSections에서 생성된 갈등 반응 섹션의
   // personA/B 설명이 표현 속도 레이블과 일치하지 않을 경우 동기화
   if (lifestyleSections?.conflict && !isSameEnergyFamily) {
-    const conflictDescA = EXPR_TO_CONFLICT_DESC[exprLabelA];
-    const conflictDescB = EXPR_TO_CONFLICT_DESC[exprLabelB];
+    const conflictDescA = getConflictDesc(exprLabelA, familiesA[0] ?? 'neutral');
+    const conflictDescB = getConflictDesc(exprLabelB, familiesB[0] ?? 'neutral');
     // LIFESTYLE_MAP에서 명시적으로 정의된 섹션은 보정하지 않음
     // buildDefaultLifestyleSections에서 생성된 경우(EnergyFamily 기반)만 보정
     // 판별: lifestyleKey/fullComboKey 매칭이 없었으면 buildDefault가 호출됨
