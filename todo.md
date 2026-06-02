@@ -315,3 +315,7 @@
 - [x] coupleData.ts LIFESTYLE_MAP red-pink affection/conflict 공감 성향 반영
 - [x] coupleData.ts LIFESTYLE_MAP pink-indigo affection/conflict 공감 성향 반영
 - [x] Vercel 배포 완료 (husimcolor.vercel.app)
+
+## 생활패턴 역전 버그 수정 및 후기 화면 에러 처리 (2026-06-02)
+- [x] green-red 키 추가 (그린이 첫 번째 사람일 때 올바른 personA/B 방향 정의)
+- [x] reviews.tsx isError 처리 추가 및 에러 UI 개선 (다시 불러오기 버튼)

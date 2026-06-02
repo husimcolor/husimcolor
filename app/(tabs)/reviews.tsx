@@ -42,7 +42,10 @@ export default function ReviewsScreen() {
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState('');
 
-  const { data: reviews, isLoading, refetch } = trpc.reviews.list.useQuery();
+  const { data: reviews, isLoading, isError, refetch } = trpc.reviews.list.useQuery(undefined, {
+    retry: 2,
+    retryDelay: 1500,
+  });
   const createMutation = trpc.reviews.create.useMutation({
     onSuccess: () => {
       refetch();
@@ -92,6 +95,20 @@ export default function ReviewsScreen() {
         <View style={styles.loadingBox}>
           <ActivityIndicator color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>후기를 불러오는 중...</Text>
+        </View>
+      ) : isError ? (
+        <View style={styles.loadingBox}>
+          <Text style={{ fontSize: 36 }}>🌸</Text>
+          <Text style={[styles.loadingText, { color: colors.muted, textAlign: 'center', lineHeight: 22 }]}>
+            {'후기를 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요.'}
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.writeButton, { backgroundColor: colors.primary, marginTop: 8 }]}
+            onPress={() => refetch()}
+          >
+            <Text style={styles.writeButtonText}>다시 불러오기</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
