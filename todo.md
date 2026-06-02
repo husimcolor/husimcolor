@@ -306,3 +306,12 @@
 - [x] affection tip 문장 중복 제거 - 각 조합 특성에 맞게 차별화 (7개 항목)
 - [x] 오타 수정: 즐기운→즐거운, 꼭준한→꾸준한, 안아줘줘→안아줘, 어딘→어딘가
 - [x] Vercel 배포
+
+## 핑크·피치·코랄 정서 공감 성향 보강 (2026-06-02)
+- [x] colorData.ts 핑크 keywords/shadows/reading1/2/3/relStyle 공감 성향 반영 (해결보다 공감 먼저, 리액션 중요)
+- [x] colorData.ts 코랄 keywords/shadows/reading1/2/3/relStyle 공감 성향 반영 (말보다 리액션 먼저)
+- [x] colorData.ts 피치 keywords/shadows/reading1/2/3/relStyle 공감 성향 반영 (공감 우선, 반응 없으면 서운함)
+- [x] couple-card-result.tsx unconsciousIntros/currentBridges/recoveryClosings/coachingIntros 핑크·피치·코랄 공감 성향 반영
+- [x] coupleData.ts LIFESTYLE_MAP red-pink affection/conflict 공감 성향 반영
+- [x] coupleData.ts LIFESTYLE_MAP pink-indigo affection/conflict 공감 성향 반영
+- [x] Vercel 배포 완료 (husimcolor.vercel.app)
