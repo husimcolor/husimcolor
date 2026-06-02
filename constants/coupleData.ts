@@ -6395,9 +6395,41 @@ export function getRelationArchetype(
     finalProfileContrast = { expressionDifference: dynamicExprDiff };
   }
 
+  // ── unifiedSections.lifePattern.items personA/B swap ──
+  // 각 archetype의 lifePattern은 특정 에너지 패밀리가 personA인 기준으로 작성됨
+  // dominantA가 해당 기준 패밀리가 아닌 경우 personA/B를 교환하여 올바른 방향으로 출력
+  const LIFE_PATTERN_BASE_FAMILY: Partial<Record<RelationArchetype, EnergyFamily[]>> = {
+    '회복형':     ['warm_active', 'warm_soft', 'warm_grounded'],
+    '감정순환형': ['warm_active', 'warm_soft', 'warm_grounded'],
+    '거리조절형': ['cool_deep', 'nature', 'neutral', 'cool_clear'],
+    '보호자형':   ['warm_active', 'warm_soft', 'warm_grounded', 'cool_clear'],
+  };
+  let finalBaseData = { ...baseData };
+  const lifePatternBaseFamilies = LIFE_PATTERN_BASE_FAMILY[finalArchetype];
+  if (
+    lifePatternBaseFamilies &&
+    finalBaseData.unifiedSections?.lifePattern?.items &&
+    !lifePatternBaseFamilies.includes(dominantA)
+  ) {
+    finalBaseData = {
+      ...finalBaseData,
+      unifiedSections: {
+        ...finalBaseData.unifiedSections!,
+        lifePattern: {
+          ...finalBaseData.unifiedSections!.lifePattern,
+          items: finalBaseData.unifiedSections!.lifePattern.items.map((item) => ({
+            ...item,
+            personA: item.personB,
+            personB: item.personA,
+          })),
+        },
+      },
+    };
+  }
+
   return {
     archetype: finalArchetype,
-    ...baseData,
+    ...finalBaseData,
     profileContrastOverride: finalProfileContrast,
     expressionSpeed: dynamicExpressionSpeed,
     lifestyleSections,
