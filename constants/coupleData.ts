@@ -5065,6 +5065,197 @@ export function getRelationArchetype(
         tip: '"오늘 저녁에 얘기하자"처럼 시간을 정해두면 두 사람 모두 편합니다.',
       },
     },
+    // ── black + lavender 조합 (내면·강도 vs 감성·회복) ──
+    'black-lavender': {
+      finance: {
+        title: '재정 스타일 차이',
+        description: '한 사람은 원칙과 통제 중심 소비, 다른 사람은 감성과 여유 중심 소비를 합니다.',
+        personA: '"소비는 원칙이 있어야 해. 계획 없이 쓰면 안 돼." 원칙·통제형 소비입니다.',
+        personB: '"이건 사면 마음이 편해질 것 같아. 여유를 위한 소비는 필요해." 감성·여유형 소비입니다.',
+        tension: '"왜 이렇게 눈에 보이는 것에만 쓰야?"와 "왜 이렇게 단단해?"가 반복됩니다.',
+      },
+      cleaning: {
+        title: '청소·정리 스타일',
+        description: '한 사람은 엄격한 정돈 기준, 다른 사람은 부드럽고 편안한 공간을 원합니다.',
+        personA: '"집은 엄격하게 정돈되어야 해. 어수선하면 집중이 안 돼." 엄격한 정돈형입니다.',
+        personB: '"집이 따뜻하고 편안하면 돼. 너무 단단하면 숫막혀." 부드럼·편안형입니다.',
+        tension: '"왜 이렇게 어질러?"와 "왜 이렇게 단단해?"가 반복됩니다.',
+      },
+      rest: {
+        title: '휴식·회복 방식',
+        description: '한 사람은 혼자 강하게 충전하고, 다른 사람은 부드럽고 감성적인 연결로 회복합니다.',
+        personA: '"혼자 조용히 있어야 충전돼. 사람이 많으면 지쳐." 독립 충전형입니다.',
+        personB: '"분위기 좋은 곳에서 조용히 쉬어야 충전돼." 감성 공간 회복형입니다.',
+        tension: '한 사람이 혼자 충전할 때 다른 사람은 "나를 피하는 건가?"라고 느낄 수 있습니다.',
+      },
+      affection: {
+        title: '애정 표현 방식',
+        description: '한 사람은 진지한 행동과 신뢰, 다른 사람은 부드럽고 감성적인 표현으로 사랑을 표현합니다.',
+        personA: '"말보다 행동으로 보여주는 게 진심이야." 진지한 신뢰형입니다.',
+        personB: '"따뜻한 말과 부드러운 스킨십이 사랑의 언어야." 감성·연결형입니다.',
+        tip: '"왜 표현을 안 해?"보다 "이런 방식이 나한테 사랑이야"라고 먼저 알려주세요.',
+      },
+      conflict: {
+        title: '갈등 직후 반응',
+        description: '한 사람은 혼자 강하게 정리하고, 다른 사람은 부드럽게 회복하려 합니다.',
+        personA: '"나 지금 혼자 있어야 해. 정리되면 얘기할게." 독립 정리형입니다.',
+        personB: '"지금 내 마음을 먼저 알아줘줘. 부드럽게 말해줘." 감성 우선형입니다.',
+        tip: '"나 지금 정리 중이야, 조금 있다 다시 연락할게"라는 신호가 오해를 줄입니다.',
+      },
+    },
+    // ── indigo + green 조합 (내면·성찰 vs 조율·회복) ──
+    'indigo-green': {
+      finance: {
+        title: '재정 스타일 차이',
+        description: '한 사람은 의미와 가치 중심 소비, 다른 사람은 관계와 조화 중심 소비를 합니다.',
+        personA: '"이게 정말 가치 있는 건지 먼저 생각해봐야 해." 의미·가치 중심 소비입니다.',
+        personB: '"우리 함께 즐길 수 있는 것에 쓰는 건 아깝지 않아." 관계·함께 중심 소비입니다.',
+        tension: '"왜 이렇게 현실적이야?"와 "왜 이렇게 이상적이야?"가 반복됩니다.',
+      },
+      cleaning: {
+        title: '청소·정리 스타일',
+        description: '한 사람은 조용하고 정돈된 공간, 다른 사람은 자연스러운 조화와 편안함을 원합니다.',
+        personA: '"조용하고 정돈된 공간이어야 생각이 정리돼." 미니멀·정돈형입니다.',
+        personB: '"집이 자연스러운 조화를 이뢨면 돼. 너무 단단하면 숫막혀." 자연·조화형입니다.',
+        tension: '"왜 이렇게 어질러?"와 "왜 이렇게 단순해?"가 반복됩니다.',
+      },
+      rest: {
+        title: '휴식·회복 방식',
+        description: '한 사람은 내면 성찰로, 다른 사람은 자연과 관계 회복으로 충전합니다.',
+        personA: '"혼자 조용히 있어야 충전돼. 생각 정리할 시간이 필요해." 내면 회복형입니다.',
+        personB: '"자연 속에서 걸거나, 사람과 연결되면 기분 풀려." 자연·연결 회복형입니다.',
+        tension: '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
+      },
+      affection: {
+        title: '애정 표현 방식',
+        description: '한 사람은 깊은 대화와 신뢰, 다른 사람은 자연스러운 연결과 조율로 사랑을 표현합니다.',
+        personA: '"네 생각이 궁금해. 깊은 엘기 하고 싶어." 깊은 연결형입니다.',
+        personB: '"같이 있는 시간이 좋아. 자연스러운 연결이 사랑의 언어야." 자연·조화형입니다.',
+        tip: '서로의 사랑 언어가 다릅니다. "나는 이렇게 표현해"라고 먼저 알려주세요.',
+      },
+      conflict: {
+        title: '갈등 직후 반응',
+        description: '한 사람은 내면에서 천천히 정리하고, 다른 사람은 자연스러운 화해를 원합니다.',
+        personA: '"나 아직 정리가 안 돼. 조금만 기다려줘." 내면 정리 후 대화형입니다.',
+        personB: '"시간이 지나면 자연스러운 화해가 돼. 서로 조율하자." 자연 화해형입니다.',
+        tip: '"오늘 저녀에 엘기하자"첫럼 시간을 정해두면 두 사람 모두 편합니다.',
+      },
+    },
+    // ── white + indigo 조합 (정화·비움 vs 내면·성찰) ──
+    'white-indigo': {
+      finance: {
+        title: '재정 스타일 차이',
+        description: '두 사람 모두 신중하고 절제된 소비 성향이 있지만, 기준이 다릅니다.',
+        personA: '"꼭 필요한 것만 사자. 비워야 첨워지는 거야." 절제·정화형 소비입니다.',
+        personB: '"이게 정말 가치 있는 것인지 먼저 생각해봐야 해." 의미·가치 중심 소비입니다.',
+        tension: '두 사람 모두 즉흥 소비는 적지만, "왜 이걸 새로 새로 사?"와 "왜 이걸 아직도 갖고 있어?"가 생길 수 있습니다.',
+      },
+      cleaning: {
+        title: '청소·정리 스타일',
+        description: '두 사람 모두 정돈을 중시하지만, 한 사람은 비움, 다른 사람은 의미 있는 것만 남기는 방식을 선호합니다.',
+        personA: '"물건이 없어야 마음이 편해. 자꼬 비우자." 미니멀·정화형입니다.',
+        personB: '"의미 있는 것만 남기자. 물건 하나하나에 의미가 있어야 해." 의미·선별형입니다.',
+        tension: '"왜 이걸 버려?"와 "왜 이걸 아직도 갖고 있어?"가 반복됩니다.',
+      },
+      rest: {
+        title: '휴식·회복 방식',
+        description: '두 사람 모두 조용한 회복을 선호하지만, 한 사람은 비움, 다른 사람은 성찰로 충전합니다.',
+        personA: '"조용한 공간에서 혼자 비워내야 충전돼." 고요·정화 회복형입니다.',
+        personB: '"혼자 조용히 있으면서 생각을 정리해야 충전돼." 내면 성찰 충전형입니다.',
+        tension: '두 사람 모두 혼자 있으려 하면 "서로 피하는 건가?"라는 오해가 생길 수 있습니다.',
+      },
+      affection: {
+        title: '애정 표현 방식',
+        description: '두 사람 모두 절제된 표현을 선호하지만, 한 사람은 정화된 행동, 다른 사람은 깊은 진심으로 사랑을 표현합니다.',
+        personA: '"말보다 행동으로 보여주는 게 더 진심이야." 정화된 행동형입니다.',
+        personB: '"네 안에 있는 진짜 이야기를 듣고 싶어." 깊은 진심형입니다.',
+        tip: '"왜 표현을 안 해?"보다 "나는 이렇게 표현해"라고 먼저 알려주세요.',
+      },
+      conflict: {
+        title: '갈등 직후 반응',
+        description: '두 사람 모두 시간이 필요하지만, 한 사람은 비움, 다른 사람은 성찰로 정리합니다.',
+        personA: '"지금은 말하기 싫어. 마음을 비워내면 얘기할게." 정화 후 대화형입니다.',
+        personB: '"나 아직 정리가 안 돼. 조금만 기다려줘." 내면 정리 후 대화형입니다.',
+        tip: '"오늘 저녀에 엘기하자"첫럼 시간을 정해두면 두 사람 모두 편합니다.',
+      },
+    },
+    // ── red + green 조합 (활력·실행 vs 조율·회복) ──
+    'red-green': {
+      finance: {
+        title: '재정 스타일 차이',
+        description: '한 사람은 빠른 결정과 즉흥적 소비, 다른 사람은 관계와 조화를 위한 실용적 소비를 합니다.',
+        personA: '"좋으면 사는 거지. 지금 행복이 중요해." 즉흥·활력형 소비입니다.',
+        personB: '"우리 둘 다 편안한 것에 쓰자. 관계를 위한 소비는 아깝지 않아." 조화·실용형 소비입니다.',
+        tension: '"왜 이렇게 충동적이야?"와 "왜 이렇게 늘 조율하려 해?"가 반복됩니다.',
+      },
+      cleaning: {
+        title: '청소·정리 스타일',
+        description: '한 사람은 빠른 실행 우선, 다른 사람은 자연스러운 조화와 편안함을 원합니다.',
+        personA: '"일단 치우자. 나중에 완벽하게 해도 돼." 빠른 실행형입니다.',
+        personB: '"집이 자연스러운 조화를 이뢨면 돼. 너무 빠르게 하면 어지러지는 것 같아." 자연·조화형입니다.',
+        tension: '"왜 이렇게 느리야?"와 "왜 이렇게 서둥러?"가 반복됩니다.',
+      },
+      rest: {
+        title: '휴식·회복 방식',
+        description: '한 사람은 활동하면서 기분 전환, 다른 사람은 자연 속에서 회복합니다.',
+        personA: '"나가서 다이나미한 데 가면 기분 풀려. 집에만 있으면 답답해." 활동 전환형입니다.',
+        personB: '"자연 속에서 걸거나, 조용히 쉬어야 충전돼." 자연·회복형입니다.',
+        tension: '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
+      },
+      affection: {
+        title: '애정 표현 방식',
+        description: '한 사람은 즉각적인 표현, 다른 사람은 자연스러운 연결과 조율로 사랑을 표현합니다.',
+        personA: '"지금 보고 싶어. 바로 만나자. 가자!"입니다. 즉각적이고 직접적인 표현형입니다.',
+        personB: '"같이 있는 시간이 좋아. 자연스러운 연결이 사랑의 언어야." 자연·조화형입니다.',
+        tip: '서로의 사랑 언어가 다릅니다. "나는 이렇게 표현해"라고 먼저 알려주세요.',
+      },
+      conflict: {
+        title: '갈등 직후 반응',
+        description: '한 사람은 즉각 해결하려 하고, 다른 사람은 자연스러운 화해를 원합니다.',
+        personA: '"지금 바로 엘기하자. 이대로 두면 더 커져." 즉각 해결형입니다.',
+        personB: '"시간이 지나면 자연스러운 화해가 돼. 서로 조율하자." 자연 화해형입니다.',
+        tip: '"오늘 저녀에 엘기하자"첫럼 시간을 정해두면 두 사람 모두 편합니다.',
+      },
+    },
+    // ── lavender + black 조합 (감성·회복 vs 내면·강도) ──
+    // 역방향은 swapLifestyleSections()로 자동 처리됨
+    'lavender-black': {
+      finance: {
+        title: '재정 스타일 차이',
+        description: '한 사람은 감성과 여유 중심 소비, 다른 사람은 원칙과 통제 중심 소비를 합니다.',
+        personA: '"이건 사면 마음이 편해질 것 같아. 여유를 위한 소비는 필요해." 감성·여유형 소비입니다.',
+        personB: '"소비는 원칙이 있어야 해. 계획 없이 쓰면 안 돼." 원칙·통제형 소비입니다.',
+        tension: '"왜 이렇게 단단해?"와 "왜 이렇게 눈에 보이는 것에만 쓰야?"가 반복됩니다.',
+      },
+      cleaning: {
+        title: '청소·정리 스타일',
+        description: '한 사람은 부드럽고 편안한 공간, 다른 사람은 엄격한 정돈 기준을 원합니다.',
+        personA: '"집이 따뜻하고 편안하면 돼. 너무 단단하면 숫막혀." 부드럼·편안형입니다.',
+        personB: '"집은 엄격하게 정돈되어야 해. 어수선하면 집중이 안 돼." 엄격한 정돈형입니다.',
+        tension: '"왜 이렇게 단단해?"와 "왜 이렇게 어질러?"가 반복됩니다.',
+      },
+      rest: {
+        title: '휴식·회복 방식',
+        description: '한 사람은 부드럽고 감성적인 연결로, 다른 사람은 혼자 강하게 충전하며 회복합니다.',
+        personA: '"분위기 좋은 곳에서 조용히 쉬어야 충전돼." 감성 공간 회복형입니다.',
+        personB: '"혼자 조용히 있어야 충전돼. 사람이 많으면 지쳐." 독립 충전형입니다.',
+        tension: '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
+      },
+      affection: {
+        title: '애정 표현 방식',
+        description: '한 사람은 부드럽고 감성적인 표현, 다른 사람은 진지한 행동과 신뢰로 사랑을 표현합니다.',
+        personA: '"따뜻한 말과 부드러운 스킨십이 사랑의 언어야." 감성·연결형입니다.',
+        personB: '"말보다 행동으로 보여주는 게 진심이야." 진지한 신뢰형입니다.',
+        tip: '"왜 표현을 안 해?"보다 "이런 방식이 나한테 사랑이야"라고 먼저 알려주세요.',
+      },
+      conflict: {
+        title: '갈등 직후 반응',
+        description: '한 사람은 부드럽게 회복하려 하고, 다른 사람은 혼자 강하게 정리합니다.',
+        personA: '"지금 내 마음을 먼저 알아줘줘. 부드럽게 말해줘." 감성 우선형입니다.',
+        personB: '"나 지금 혼자 있어야 해. 정리되면 얘기할게." 독립 정리형입니다.',
+        tip: '"나 지금 정리 중이야, 조금 있다 다시 연락할게"라는 신호가 오해를 줄입니다.',
+      },
+    },
     // ── white + blue 조합 ──
     'white-blue': {
       finance: {
@@ -5639,6 +5830,47 @@ export function getRelationArchetype(
         tip: '두 사람 모두 조용한 편이라 시간을 주면 자연스럽게 해결됩니다.',
       },
     },
+    // ── white-black-indigo + red-lavender-green 조합 (절제·내면 vs 활력·감성) ──
+    'white-black-indigo|red-lavender-green': {
+      finance: {
+        title: '재정 스타일 차이',
+        description: '한 사람은 신중하고 절제된 소비, 다른 사람은 경험과 감성 중심의 소비를 합니다.',
+        personA: '"꼭 필요한 건지 다시 생각해봐. 비워야 채워지는 거야." 신중 절제형 소비입니다. 충동 소비보다 필요성을 먼저 검토하고, 안정을 우선합니다.',
+        personB: '"기분 좋아지는 것, 경험하는 것에 쓰는 건 아깝지 않아." 즉흥·감성형 소비입니다. 현재의 감정과 경험을 중시하며 반응형 소비를 합니다.',
+        tension: '"왜 이렇게 충동적이야?"와 "왜 이렇게 소극적이야?"가 반복됩니다. 소비 전 간단한 기준 합의가 마찰을 줄입니다.',
+      },
+      cleaning: {
+        title: '청소·정리 스타일',
+        description: '한 사람은 완벽하게 비우고 정리하는 방식, 다른 사람은 분위기와 편안함 중심의 공간을 원합니다.',
+        personA: '"제대로 하려면 다 꺼내서 다시 정리해야 해." 완전 정리·미니멀형입니다. 물건이 줄어야 마음이 가벼워집니다.',
+        personB: '"집이 따뜻하고 편안하면 돼. 완벽하지 않아도 괜찮아." 분위기·편안함 중심입니다. 정돈보다 감성적 공간이 우선입니다.',
+        tension: '한 사람이 치워놓으면 다른 사람이 다시 꺼내놓는 패턴이 반복됩니다.',
+      },
+      rest: {
+        title: '휴식·회복 방식',
+        description: '한 사람은 조용한 공간에서 혼자 비워내며 회복하고, 다른 사람은 활동하거나 감성적 연결로 에너지를 회복합니다.',
+        personA: '"조용한 데서 혼자 있어야 충전돼. 자극이 없어야 쉬어지는 느낌이야." 고요·내면 회복형입니다.',
+        personB: '"나가서 뭔가 하거나, 분위기 좋은 곳에 가면 기분 풀려." 활동·감성 전환형입니다.',
+        tension: '쉬는 방식이 정반대라 "같이 있어도 따로 쉬는 느낌"이 강합니다.',
+      },
+      affection: {
+        title: '애정 표현 방식',
+        description: '한 사람은 절제된 행동과 진심, 다른 사람은 즉각적인 표현과 따뜻한 연결로 사랑을 표현합니다.',
+        personA: '"말보다 행동으로 보여주는 게 더 진심이야." 절제된 진심형입니다. 표현이 적어도 깊이가 있습니다.',
+        personB: '"지금 보고 싶어. 바로 만나자. 안아줘." 즉각적이고 감성적인 표현형입니다.',
+        tip: '"왜 표현을 안 해?"보다 "이런 방식이 나한테 사랑이야"라고 알려주세요.',
+      },
+      conflict: {
+        title: '갈등 직후 반응',
+        description: '한 사람은 완전히 정리될 때까지 거리를 두고, 다른 사람은 빠르게 연결을 회복하려 합니다.',
+        personA: '"지금은 말하기 싫어. 완전히 정리되면 얘기할게." 완전 정리 후 대화형입니다.',
+        personB: '"지금 바로 해결하자. 이대로 두면 더 커져." 즉각 해결·재연결형입니다.',
+        tip: '"언제쯤 얘기할 수 있어?"라고 시간을 정해두면 두 사람 모두 덜 불안합니다.',
+      },
+    },
+    // ── red-lavender-green + white-black-indigo 역방향 (swap 처리됨) ──
+    // 역방향은 swapLifestyleSections()로 자동 처리되므로 별도 항목 불필요
+
     // ── yellow-gold-beige + blue-sky-white 조합 (밝음·자신감 vs 신뢰·표현) ──
     'yellow-gold-beige|blue-sky-white': {
       finance: {
@@ -5682,11 +5914,34 @@ export function getRelationArchetype(
   // 전체 조합 키 매칭 (양방향)
   const fullComboKey1 = `${fullKeyA}|${fullKeyB}`;
   const fullComboKey2 = `${fullKeyB}|${fullKeyA}`;
-  let lifestyleSections: LifestyleSections | undefined =
-    FULL_LIFESTYLE_MAP[fullComboKey1] ??
-    FULL_LIFESTYLE_MAP[fullComboKey2] ??
-    LIFESTYLE_MAP[lifestyleKey] ??
-    LIFESTYLE_MAP[lifestyleKeyRev];
+
+  // personA/B swap 헬퍼: 역방향 키 매칭 시 personA/B를 교환하여 올바른 방향으로 출력
+  function swapLifestyleSections(s: LifestyleSections): LifestyleSections {
+    const swapSection = <T extends { personA: string; personB: string }>(sec: T | undefined): T | undefined => {
+      if (!sec) return undefined;
+      return { ...sec, personA: sec.personB, personB: sec.personA };
+    };
+    return {
+      finance: swapSection(s.finance),
+      cleaning: swapSection(s.cleaning),
+      rest: swapSection(s.rest),
+      affection: swapSection(s.affection),
+      conflict: swapSection(s.conflict),
+    };
+  }
+
+  let lifestyleSections: LifestyleSections | undefined;
+  if (FULL_LIFESTYLE_MAP[fullComboKey1]) {
+    lifestyleSections = FULL_LIFESTYLE_MAP[fullComboKey1];
+  } else if (FULL_LIFESTYLE_MAP[fullComboKey2]) {
+    // 역방향 매칭: personA/B swap
+    lifestyleSections = swapLifestyleSections(FULL_LIFESTYLE_MAP[fullComboKey2]!);
+  } else if (LIFESTYLE_MAP[lifestyleKey]) {
+    lifestyleSections = LIFESTYLE_MAP[lifestyleKey];
+  } else if (LIFESTYLE_MAP[lifestyleKeyRev]) {
+    // 역방향 매칭: personA/B swap
+    lifestyleSections = swapLifestyleSections(LIFESTYLE_MAP[lifestyleKeyRev]!);
+  }
 
   // 생활 섹션이 없으면 에너지 계열 기반 기본 생성
   if (!lifestyleSections) {

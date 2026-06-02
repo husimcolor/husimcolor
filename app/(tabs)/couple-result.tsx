@@ -1113,6 +1113,19 @@ export default function CoupleResultScreen() {
         </View>
 
         {/* 하단 버튼 */}
+        {/* 후기 남기기 CTA */}
+        <Pressable
+          style={[styles.reviewCta, { backgroundColor: accentCouple + '18', borderColor: accentCouple + '60' }]}
+          onPress={() => router.push('/(tabs)/reviews' as any)}
+        >
+          <Text style={[styles.reviewCtaEmoji]}>✍️</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.reviewCtaTitle, { color: accentCouple }]}>후기 남기기</Text>
+            <Text style={[styles.reviewCtaSub, { color: colors.muted }]}>코칭 결과가 도움이 됐다면 한 줄 남겨주세요</Text>
+          </View>
+          <Text style={[styles.reviewCtaArrow, { color: accentCouple }]}>›</Text>
+        </Pressable>
+
         <Pressable
           style={[styles.restartBtn, { backgroundColor: accentCouple }]}
           onPress={() => router.push('/(tabs)/couple-start' as any)}
@@ -1286,6 +1299,32 @@ const styles = StyleSheet.create({
   },
   togetherEnergyText: {
     fontSize: 15, lineHeight: 26, color: '#E8DED2',
+  },
+  reviewCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    padding: 16,
+    marginTop: 24,
+    marginBottom: 4,
+  },
+  reviewCtaEmoji: {
+    fontSize: 22,
+  },
+  reviewCtaTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  reviewCtaSub: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  reviewCtaArrow: {
+    fontSize: 22,
+    fontWeight: '300',
   },
 });
 
