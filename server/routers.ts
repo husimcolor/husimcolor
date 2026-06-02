@@ -116,6 +116,7 @@ export const appRouter = router({
         tags: z.string().max(255).optional(),
         colorCombo: z.string().max(100).optional(),
         sessionType: z.string().max(30).optional(),
+        empathyPoints: z.string().max(255).optional(),
       }))
       .mutation(({ input }) => {
         return db.createReview(input);

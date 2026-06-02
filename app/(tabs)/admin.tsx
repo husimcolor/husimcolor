@@ -90,6 +90,13 @@ export default function AdminScreen() {
   });
 
   const [reviewExpanded, setReviewExpanded] = useState<number | null>(null);
+  const [reviewFilter, setReviewFilter] = useState<string>('all');
+
+  const SESSION_LABELS: Record<string, { label: string; color: string }> = {
+    individual: { label: '개인 코칭', color: '#6B8FA6' },
+    couple: { label: '커플 코칭', color: '#A67B8A' },
+    family: { label: '가족·친구', color: '#7A9A6B' },
+  };
 
   const deleteReview = trpc.reviews.delete.useMutation({
     onSuccess: () => { refetchReviewList(); refetchReviewStats(); },
@@ -417,10 +424,32 @@ export default function AdminScreen() {
 
         {/* 후기 목록 */}
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>후기 목록</Text>
-        {!reviewList || reviewList.length === 0 ? (
+
+        {/* 세션 유형 필터 탭 */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          {[{ key: 'all', label: '전체' }, { key: 'individual', label: '개인' }, { key: 'couple', label: '커플' }, { key: 'family', label: '가족·친구' }].map(({ key, label }) => (
+            <TouchableOpacity
+              key={key}
+              activeOpacity={0.75}
+              style={[{
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+                borderRadius: 20,
+                borderWidth: 1.5,
+                borderColor: reviewFilter === key ? colors.primary : colors.border,
+                backgroundColor: reviewFilter === key ? colors.primary + '20' : 'transparent',
+              }]}
+              onPress={() => setReviewFilter(key)}
+            >
+              <Text style={{ fontSize: 13, fontWeight: reviewFilter === key ? '700' : '500', color: reviewFilter === key ? colors.primary : colors.muted }}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {!reviewList || reviewList.filter((r: any) => reviewFilter === 'all' || r.sessionType === reviewFilter).length === 0 ? (
           <Text style={[styles.emptyText, { color: colors.muted }]}>아직 후기가 없습니다.</Text>
         ) : (
-          reviewList.map((r: any) => {
+          reviewList.filter((r: any) => reviewFilter === 'all' || r.sessionType === reviewFilter).map((r: any) => {
             const isExpanded = reviewExpanded === r.id;
             return (
               <View key={r.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -432,7 +461,14 @@ export default function AdminScreen() {
                   <View style={{ flex: 1 }}>
                     <View style={styles.cardTitleRow}>
                       <Text style={[styles.cardName, { color: colors.foreground }]}>{r.nickname}</Text>
-                      <Text style={{ color: "#C4A35A", fontSize: 13 }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        {r.sessionType && SESSION_LABELS[r.sessionType] && (
+                          <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8, backgroundColor: SESSION_LABELS[r.sessionType].color + '22' }}>
+                            <Text style={{ fontSize: 10, color: SESSION_LABELS[r.sessionType].color, fontWeight: '600' }}>{SESSION_LABELS[r.sessionType].label}</Text>
+                          </View>
+                        )}
+                        <Text style={{ color: "#C4A35A", fontSize: 13 }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</Text>
+                      </View>
                     </View>
                     <Text style={[styles.cardSubtitle, { color: colors.muted }]} numberOfLines={1}>{r.content}</Text>
                   </View>
@@ -442,6 +478,22 @@ export default function AdminScreen() {
                   <View style={styles.cardBody}>
                     <View style={[styles.divider, { backgroundColor: colors.border }]} />
                     <Text style={[{ color: colors.foreground, fontSize: 14, lineHeight: 22, marginBottom: 8 }]}>{r.content}</Text>
+                    {r.sessionType && SESSION_LABELS[r.sessionType] && (
+                      <View style={{ flexDirection: 'row', marginBottom: 6 }}>
+                        <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: SESSION_LABELS[r.sessionType].color + '22', borderWidth: 1, borderColor: SESSION_LABELS[r.sessionType].color + '55' }}>
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: SESSION_LABELS[r.sessionType].color }}>{SESSION_LABELS[r.sessionType].label}</Text>
+                        </View>
+                      </View>
+                    )}
+                    {r.empathyPoints && (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+                        {r.empathyPoints.split(',').filter(Boolean).map((p: string, idx: number) => (
+                          <View key={idx} style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '40' }}>
+                            <Text style={{ fontSize: 11, color: colors.primary }}>✓ {p}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
                     {r.tags && <Text style={[{ color: colors.muted, fontSize: 12, marginBottom: 8 }]}>태그: {r.tags}</Text>}
                     {r.colorCombo && <Text style={[{ color: colors.muted, fontSize: 12, marginBottom: 8 }]}>컬러: {r.colorCombo}</Text>}
                     <Text style={[{ color: colors.muted, fontSize: 11, marginBottom: 12 }]}>{formatDate(r.createdAt)}</Text>
