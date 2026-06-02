@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import {
   View,
   Text,
@@ -37,7 +38,15 @@ function StarRating({ rating, onRate }: { rating: number; onRate?: (r: number) =
 
 export default function ReviewsScreen() {
   const colors = useColors();
+  const params = useLocalSearchParams<{ autoOpen?: string }>();
   const [modalVisible, setModalVisible] = useState(false);
+
+  // 커플 결과 등 외부에서 autoOpen=1 파라미터로 진입 시 자동으로 모달 열기
+  useEffect(() => {
+    if (params.autoOpen === '1') {
+      setModalVisible(true);
+    }
+  }, [params.autoOpen]);
   const [nickname, setNickname] = useState('');
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState('');
