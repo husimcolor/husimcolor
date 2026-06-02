@@ -33,8 +33,6 @@ export const reviews = mysqlTable("reviews", {
   content: text("content").notNull(),
   tags: varchar("tags", { length: 255 }), // 공감 포인트 태그 (콤마 구분)
   colorCombo: varchar("colorCombo", { length: 100 }), // 예: "라벤더 + 인디고 + 세이지"
-  sessionType: varchar("sessionType", { length: 30 }), // 'individual' | 'couple' | 'family' | 'friend'
-  empathyPoints: varchar("empathyPoints", { length: 255 }), // 선택형 공감 포인트 (콤마 구분)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

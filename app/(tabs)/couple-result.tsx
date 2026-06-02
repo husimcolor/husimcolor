@@ -107,7 +107,7 @@ export default function CoupleResultScreen() {
       }) as any[];
       const shapeA3 = data.personA.cards[2] ? CARD_DATA.find((c: any) => c.id === data.personA.cards[2])?.shape : undefined;
       const shapeB3 = data.personB.cards[2] ? CARD_DATA.find((c: any) => c.id === data.personB.cards[2])?.shape : undefined;
-      const archRes = getRelationArchetype(famsA, famsB, shapeA3, shapeB3, data.personA.colors, data.personB.colors);
+      const archRes = getRelationArchetype(famsA, famsB, shapeA3, shapeB3, data.personA.colors, data.personB.colors, data.personA.cards, data.personB.cards);
       const lightRes = getLightArchetype(data.relationType, famsA, famsB);
       setPersonAAnalysis(aAnalysis);
       setPersonBAnalysis(bAnalysis);
@@ -193,6 +193,36 @@ export default function CoupleResultScreen() {
     if (isColleagueRel) return '협업 연결 루틴';
     return '관계 보완 루틴';
   };
+
+  // 표현 속도 레이블에 맞는 아이콘 반환
+  const getExprIcon = (label: string): string => {
+    if (label === '즉각적 표현') return '⚡';
+    if (label === '직접적 표현') return '💬';
+    if (label === '상황에 따라 표현') return '🌊';
+    if (label === '내면 처리 후 표현') return '🌙';
+    if (label === '조용한 표현') return '🤫';
+    return '💭';
+  };
+  // 표현 속도 레이블 조합에 따른 설명문 반환
+  const getExprDescription = (labelA: string, labelB: string): string => {
+    const key = [labelA, labelB].sort().join('↔');
+    const map: Record<string, string> = {
+      '직접적 표현↔즉각적 표현': '두 사람 모두 감정을 비교적 빠르게 표현하는 편이지만, 한 사람은 분명하고 직접적으로 말하고, 다른 사람은 순간의 감정 반응이 빠르게 드러나는 차이가 있습니다.',
+      '즉각적 표현↔직접적 표현': '두 사람 모두 감정을 비교적 빠르게 표현하는 편이지만, 한 사람은 분명하고 직접적으로 말하고, 다른 사람은 순간의 감정 반응이 빠르게 드러나는 차이가 있습니다.',
+      '내면 처리 후 표현↔직접적 표현': '한 사람은 감정을 비교적 바로 표현하고, 다른 사람은 내면에서 정리한 후 표현합니다.',
+      '내면 처리 후 표현↔즉각적 표현': '한 사람은 감정을 내면에서 정리한 후 표현하고, 다른 사람은 감정을 비교적 빠르게 드러내는 편입니다.',
+      '내면 처리 후 표현↔상황에 따라 표현': '한 사람은 감정을 내면에서 충분히 정리한 후 표현하고, 다른 사람은 상황과 상대에 따라 표현 방식을 조율합니다.',
+      '내면 처리 후 표현↔조용한 표현': '두 사람 모두 감정을 내면에서 먼저 정리하는 편이지만, 한 사람은 정리 후 표현하고 다른 사람은 조용히 담아두는 경향이 있습니다.',
+      '직접적 표현↔상황에 따라 표현': '한 사람은 감정을 분명하고 직접적으로 표현하고, 다른 사람은 상황에 따라 표현 방식을 달리합니다.',
+      '즉각적 표현↔상황에 따라 표현': '한 사람은 감정이 빠르게 드러나는 편이고, 다른 사람은 상황과 상대에 따라 표현 방식을 조율합니다.',
+      '직접적 표현↔조용한 표현': '한 사람은 감정을 분명하게 표현하는 편이고, 다른 사람은 감정을 말보다 행동이나 분위기로 전달하는 경향이 있습니다.',
+      '즉각적 표현↔조용한 표현': '한 사람은 감정이 빠르게 드러나는 편이고, 다른 사람은 감정을 조용히 담아두는 경향이 있어 서로의 속도 차이가 느껴질 수 있습니다.',
+      '상황에 따라 표현↔조용한 표현': '한 사람은 상황에 따라 표현 방식을 조율하고, 다른 사람은 감정을 조용히 담아두는 편입니다.',
+    };
+    // 정렬된 키로 먼저 조회, 없으면 원래 순서로 조회
+    return map[key] ?? map[`${labelA}↔${labelB}`] ?? map[`${labelB}↔${labelA}`] ?? archetypeResult?.expressionSpeed?.description ?? '';
+  };
+
   // 유사형/차이형 관계 판별 (중간 설명부 타이틀 동적 변경용)
   const _EFMAP: Record<string, string> = {
     red:'warm_active',orange:'warm_active',coral:'warm_active',magenta:'warm_active',
@@ -274,7 +304,7 @@ export default function CoupleResultScreen() {
               <Text style={[styles.backBtnText, { color: colors.foreground }]}>←</Text>
             </Pressable>
             <View style={styles.headerText}>
-              <Text style={[styles.headerTitle, { color: '#2D2420' }]}>커플 세션 결과</Text>
+              <Text style={[styles.headerTitle, { color: '#2D2420' }]}>{isRomanticRel ? '커플 세션 결과' : '관계 세션 결과'}</Text>
               <Text style={[styles.headerSub, { color: '#5F4B3B' }]}>{relationType} · 감성 심리코칭</Text>
             </View>
           </View>
@@ -636,13 +666,13 @@ export default function CoupleResultScreen() {
             <Text style={archetypeStyles.sectionLabel}>{isSimilarRelation ? '두 사람의 표현 방식' : '표현 속도 차이'}</Text>
             <View style={archetypeStyles.speedRow}>
               <View style={archetypeStyles.speedBox}>
-                <Text style={archetypeStyles.speedIcon}>⚡</Text>
+                <Text style={archetypeStyles.speedIcon}>{getExprIcon(archetypeResult.expressionSpeed.personA)}</Text>
                 <Text style={archetypeStyles.speedPersonLabel}>첫 번째 사람</Text>
                 <Text style={archetypeStyles.speedValue}>{archetypeResult.expressionSpeed.personA}</Text>
               </View>
               <Text style={archetypeStyles.speedArrow}>↔</Text>
               <View style={archetypeStyles.speedBox}>
-                <Text style={archetypeStyles.speedIcon}>🌙</Text>
+                <Text style={archetypeStyles.speedIcon}>{getExprIcon(archetypeResult.expressionSpeed.personB)}</Text>
                 <Text style={archetypeStyles.speedPersonLabel}>두 번째 사람</Text>
                 <Text style={archetypeStyles.speedValue}>{archetypeResult.expressionSpeed.personB}</Text>
               </View>
@@ -1069,6 +1099,78 @@ export default function CoupleResultScreen() {
           {/* 연인/부부 전용 풀 archetype 블록 닫기 */}
           </>)}
           {/* ═══════════════════════════════════════════════════════
+              커플/부부 관계 감성 안내문 (회복 루틴 위)
+          ═══════════════════════════════════════════════════════ */}
+          {isRomanticRel && (
+            <View style={{
+              marginHorizontal: 0,
+              marginBottom: 12,
+              paddingVertical: 24,
+              paddingHorizontal: 22,
+              borderRadius: 18,
+              backgroundColor: relationType === '부부' ? '#1C1A2E' : '#1A1E2C',
+              borderWidth: 1,
+              borderColor: relationType === '부부' ? '#8B7BB0' + '55' : '#7BA8C4' + '55',
+            }}>
+              {relationType === '부부' ? (
+                <>
+                  <Text style={{
+                    fontSize: 15,
+                    lineHeight: 26,
+                    color: '#E8DEFF',
+                    fontWeight: '500',
+                    textAlign: 'center',
+                    marginBottom: 16,
+                  }}>
+                    {'건강한 관계는\n신뢰, 이해, 배려, 존중 위에서 자라갑니다.'}
+                  </Text>
+                  <View style={{ height: 1, backgroundColor: '#8B7BB0' + '40', marginBottom: 16 }} />
+                  <Text style={{
+                    fontSize: 14,
+                    lineHeight: 24,
+                    color: '#C8B8E8',
+                    textAlign: 'center',
+                    marginBottom: 14,
+                  }}>
+                    {'부부관계에서 스킨십은\n서로의 마음을 연결하고\n안정감을 나누는 소통입니다.'}
+                  </Text>
+                  <Text style={{
+                    fontSize: 13,
+                    lineHeight: 22,
+                    color: '#A898C8',
+                    textAlign: 'center',
+                    fontStyle: 'italic',
+                  }}>
+                    {'따뜻한 손길과 자연스러운 스킨십은\n말로 표현되지 않는 감정을 전하고,\n서로에게 안정감과 위로를 전해주기도 합니다.'}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={{
+                    fontSize: 15,
+                    lineHeight: 26,
+                    color: '#DCEEFF',
+                    fontWeight: '500',
+                    textAlign: 'center',
+                    marginBottom: 16,
+                  }}>
+                    {'건강한 관계는\n신뢰, 이해, 배려, 존중 위에서 자라갑니다.'}
+                  </Text>
+                  <View style={{ height: 1, backgroundColor: '#7BA8C4' + '40', marginBottom: 16 }} />
+                  <Text style={{
+                    fontSize: 14,
+                    lineHeight: 24,
+                    color: '#B8D4E8',
+                    textAlign: 'center',
+                    fontStyle: 'italic',
+                  }}>
+                    {'자연스러운 애정표현과 스킨십은\n서로의 마음을 더 깊이 이해하고\n안정감과 친밀감을 나누게 합니다.'}
+                  </Text>
+                </>
+              )}
+            </View>
+          )}
+          {/* ═══════════════════════════════════════════════════════
               함께하면 좋은 회복 루틴
           ═══════════════════════════════════════════════════════ */}
           {(lightArchetypeResult?.togetherRoutine ?? archetypeResult.togetherRoutine) && (() => {
@@ -1113,19 +1215,6 @@ export default function CoupleResultScreen() {
         </View>
 
         {/* 하단 버튼 */}
-        {/* 후기 남기기 CTA */}
-        <Pressable
-          style={[styles.reviewCta, { backgroundColor: accentCouple + '18', borderColor: accentCouple + '60' }]}
-          onPress={() => router.push({ pathname: '/(tabs)/reviews', params: { autoOpen: '1', sessionType: 'couple' } } as any)}
-        >
-          <Text style={[styles.reviewCtaEmoji]}>✍️</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.reviewCtaTitle, { color: accentCouple }]}>후기 남기기</Text>
-            <Text style={[styles.reviewCtaSub, { color: colors.muted }]}>코칭 결과가 도움이 됐다면 한 줄 남겨주세요</Text>
-          </View>
-          <Text style={[styles.reviewCtaArrow, { color: accentCouple }]}>›</Text>
-        </Pressable>
-
         <Pressable
           style={[styles.restartBtn, { backgroundColor: accentCouple }]}
           onPress={() => router.push('/(tabs)/couple-start' as any)}
@@ -1299,32 +1388,6 @@ const styles = StyleSheet.create({
   },
   togetherEnergyText: {
     fontSize: 15, lineHeight: 26, color: '#E8DED2',
-  },
-  reviewCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    padding: 16,
-    marginTop: 24,
-    marginBottom: 4,
-  },
-  reviewCtaEmoji: {
-    fontSize: 22,
-  },
-  reviewCtaTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  reviewCtaSub: {
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  reviewCtaArrow: {
-    fontSize: 22,
-    fontWeight: '300',
   },
 });
 

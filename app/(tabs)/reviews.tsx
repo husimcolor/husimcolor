@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -12,28 +11,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
-  ScrollView,
 } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import { trpc } from '@/lib/trpc';
 
 const STAR_COUNT = 5;
-
-// 세션 유형 레이블 매핑
-const SESSION_LABELS: Record<string, { label: string; color: string }> = {
-  individual: { label: '개인 코칭', color: '#6B8FA6' },
-  couple: { label: '커플 코칭', color: '#A67B8A' },
-  family: { label: '가족·친구', color: '#7A9A6B' },
-};
-
-// 공감 포인트 옵션 4개
-const EMPATHY_OPTIONS = [
-  '성향 분석이 정확했어요',
-  '관계 이해에 도움이 되었어요',
-  '공감받는 느낌이 들었어요',
-  '회복 메시지가 위로가 되었어요',
-];
 
 function StarRating({ rating, onRate }: { rating: number; onRate?: (r: number) => void }) {
   return (
@@ -54,38 +37,12 @@ function StarRating({ rating, onRate }: { rating: number; onRate?: (r: number) =
 
 export default function ReviewsScreen() {
   const colors = useColors();
-  const params = useLocalSearchParams<{ autoOpen?: string; sessionType?: string }>();
-  const router = useRouter();
-
-  // 필터 탭 상태
-  const [filterTab, setFilterTab] = useState<string>('all');
-
-  // 모달 상태
   const [modalVisible, setModalVisible] = useState(false);
   const [nickname, setNickname] = useState('');
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState('');
-  const [sessionType, setSessionType] = useState<string>('');
-  const [selectedEmpathy, setSelectedEmpathy] = useState<string[]>([]);
 
-  // 외부 진입 시 자동 모달 오픈 + 세션 유형 자동 선택
-  useEffect(() => {
-    if (params.autoOpen === '1') {
-      setModalVisible(true);
-    }
-    if (params.sessionType) {
-      setSessionType(params.sessionType);
-    }
-  }, [params.autoOpen, params.sessionType]);
-
-  const { data: allReviews, isLoading, refetch } = trpc.reviews.list.useQuery();
-
-  // 필터링된 후기 목록
-  const filteredReviews = (allReviews ?? []).filter((item) => {
-    if (filterTab === 'all') return true;
-    return item.sessionType === filterTab;
-  });
-
+  const { data: reviews, isLoading, refetch } = trpc.reviews.list.useQuery();
   const createMutation = trpc.reviews.create.useMutation({
     onSuccess: () => {
       refetch();
@@ -93,21 +50,7 @@ export default function ReviewsScreen() {
       setNickname('');
       setRating(5);
       setContent('');
-      setSelectedEmpathy([]);
-      // 이전 화면으로 복귀 (커플/개인 결과 화면)
-      const returnPath = params.sessionType === 'couple'
-        ? '/(tabs)/couple-result'
-        : params.sessionType === 'individual'
-        ? '/(tabs)/result'
-        : null;
-      if (returnPath) {
-        Alert.alert('감사합니다', '후기가 등록되었습니다 🌸', [
-          { text: '결과 화면으로', onPress: () => router.push(returnPath as any) },
-          { text: '후기 목록 보기', style: 'cancel' },
-        ]);
-      } else {
-        Alert.alert('감사합니다', '후기가 등록되었습니다 🌸');
-      }
+      Alert.alert('감사합니다', '후기가 등록되었습니다 🌸');
     },
     onError: () => {
       Alert.alert('오류', '후기 등록에 실패했습니다. 다시 시도해 주세요.');
@@ -123,32 +66,13 @@ export default function ReviewsScreen() {
       Alert.alert('알림', '후기를 5자 이상 입력해 주세요.');
       return;
     }
-    createMutation.mutate({
-      nickname: nickname.trim(),
-      rating,
-      content: content.trim(),
-      sessionType: sessionType || undefined,
-      empathyPoints: selectedEmpathy.length > 0 ? selectedEmpathy.join(',') : undefined,
-    });
-  };
-
-  const toggleEmpathy = (point: string) => {
-    setSelectedEmpathy((prev) =>
-      prev.includes(point) ? prev.filter((p) => p !== point) : [...prev, point]
-    );
+    createMutation.mutate({ nickname: nickname.trim(), rating, content: content.trim() });
   };
 
   const formatDate = (d: Date | string) => {
     const date = new Date(d);
     return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
   };
-
-  const FILTER_TABS = [
-    { key: 'all', label: '전체' },
-    { key: 'individual', label: '개인' },
-    { key: 'couple', label: '커플' },
-    { key: 'family', label: '가족·친구' },
-  ];
 
   return (
     <ScreenContainer containerClassName="bg-background" edges={['top', 'left', 'right']}>
@@ -164,27 +88,6 @@ export default function ReviewsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 세션 유형 필터 탭 */}
-      <View style={[styles.filterTabRow, { borderBottomColor: colors.border }]}>
-        {FILTER_TABS.map(({ key, label }) => (
-          <TouchableOpacity
-            key={key}
-            activeOpacity={0.75}
-            style={[
-              styles.filterTab,
-              filterTab === key && { borderBottomColor: colors.primary, borderBottomWidth: 2 },
-            ]}
-            onPress={() => setFilterTab(key)}
-          >
-            <Text style={[
-              styles.filterTabText,
-              { color: filterTab === key ? colors.primary : colors.muted },
-              filterTab === key && { fontWeight: '700' },
-            ]}>{label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       {isLoading ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator color={colors.primary} />
@@ -192,50 +95,30 @@ export default function ReviewsScreen() {
         </View>
       ) : (
         <FlatList
-          data={filteredReviews}
+          data={reviews ?? []}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyBox}>
               <Text style={styles.emptyIcon}>🌸</Text>
               <Text style={[styles.emptyText, { color: colors.muted }]}>
-                {filterTab === 'all' ? '아직 후기가 없습니다.\n첫 번째 후기를 남겨보세요!' : '해당 유형의 후기가 없습니다.'}
+                아직 후기가 없습니다.{'\n'}첫 번째 후기를 남겨보세요!
               </Text>
             </View>
           }
-          renderItem={({ item }) => {
-            const sessionInfo = item.sessionType ? SESSION_LABELS[item.sessionType] : null;
-            const empathyList = item.empathyPoints ? item.empathyPoints.split(',').filter(Boolean) : [];
-            return (
-              <View style={[styles.reviewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <View style={styles.reviewHeader}>
-                  <View style={styles.reviewHeaderLeft}>
-                    <Text style={[styles.reviewNickname, { color: colors.foreground }]}>{item.nickname}</Text>
-                    {sessionInfo && (
-                      <View style={[styles.sessionBadge, { backgroundColor: sessionInfo.color + '22', borderColor: sessionInfo.color + '55' }]}>
-                        <Text style={[styles.sessionBadgeText, { color: sessionInfo.color }]}>{sessionInfo.label}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={[styles.reviewDate, { color: colors.muted }]}>{formatDate(item.createdAt)}</Text>
-                </View>
-                <StarRating rating={item.rating} />
-                {item.colorCombo ? (
-                  <Text style={[styles.reviewCombo, { color: colors.primary }]}>🎨 {item.colorCombo}</Text>
-                ) : null}
-                {empathyList.length > 0 && (
-                  <View style={styles.empathyChipRow}>
-                    {empathyList.map((p, idx) => (
-                      <View key={idx} style={[styles.empathyChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}>
-                        <Text style={[styles.empathyChipText, { color: colors.primary }]}>{p}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-                <Text style={[styles.reviewContent, { color: colors.foreground }]}>{item.content}</Text>
+          renderItem={({ item }) => (
+            <View style={[styles.reviewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={styles.reviewHeader}>
+                <Text style={[styles.reviewNickname, { color: colors.foreground }]}>{item.nickname}</Text>
+                <Text style={[styles.reviewDate, { color: colors.muted }]}>{formatDate(item.createdAt)}</Text>
               </View>
-            );
-          }}
+              <StarRating rating={item.rating} />
+              {item.colorCombo ? (
+                <Text style={[styles.reviewCombo, { color: colors.primary }]}>🎨 {item.colorCombo}</Text>
+              ) : null}
+              <Text style={[styles.reviewContent, { color: colors.foreground }]}>{item.content}</Text>
+            </View>
+          )}
         />
       )}
 
@@ -250,12 +133,7 @@ export default function ReviewsScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <ScrollView
-            style={[styles.modalBox, { backgroundColor: colors.background, borderColor: colors.border }]}
-            contentContainerStyle={{ gap: 10, paddingBottom: 40 }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={[styles.modalBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.foreground }]}>후기 남기기</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
@@ -274,64 +152,8 @@ export default function ReviewsScreen() {
               returnKeyType="next"
             />
 
-            {/* 세션 유형 태그 선택 */}
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>세션 유형</Text>
-            <View style={styles.tagRow}>
-              {[
-                { key: 'individual', label: '개인 코칭' },
-                { key: 'couple', label: '커플 코칭' },
-                { key: 'family', label: '가족·친구' },
-              ].map(({ key, label }) => (
-                <TouchableOpacity
-                  key={key}
-                  activeOpacity={0.75}
-                  style={[
-                    styles.tagChip,
-                    sessionType === key
-                      ? { backgroundColor: colors.primary, borderColor: colors.primary }
-                      : { backgroundColor: 'transparent', borderColor: colors.border },
-                  ]}
-                  onPress={() => setSessionType((prev) => (prev === key ? '' : key))}
-                >
-                  <Text style={[
-                    styles.tagChipText,
-                    { color: sessionType === key ? '#fff' : colors.muted },
-                  ]}>{label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             <Text style={[styles.inputLabel, { color: colors.muted }]}>별점</Text>
             <StarRating rating={rating} onRate={setRating} />
-
-            {/* 공감 포인트 선택 */}
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>공감 포인트 (선택)</Text>
-            <View style={styles.empathyOptionRow}>
-              {EMPATHY_OPTIONS.map((point) => {
-                const selected = selectedEmpathy.includes(point);
-                return (
-                  <TouchableOpacity
-                    key={point}
-                    activeOpacity={0.75}
-                    style={[
-                      styles.empathyOption,
-                      selected
-                        ? { backgroundColor: colors.primary + '20', borderColor: colors.primary }
-                        : { backgroundColor: 'transparent', borderColor: colors.border },
-                    ]}
-                    onPress={() => toggleEmpathy(point)}
-                  >
-                    <Text style={[
-                      styles.empathyOptionText,
-                      { color: selected ? colors.primary : colors.muted },
-                      selected && { fontWeight: '600' },
-                    ]}>
-                      {selected ? '✓ ' : ''}{point}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
 
             <Text style={[styles.inputLabel, { color: colors.muted }]}>후기</Text>
             <TextInput
@@ -357,7 +179,7 @@ export default function ReviewsScreen() {
                 {createMutation.isPending ? '등록 중...' : '후기 등록하기'}
               </Text>
             </TouchableOpacity>
-          </ScrollView>
+          </View>
         </KeyboardAvoidingView>
       </Modal>
     </ScreenContainer>
@@ -386,22 +208,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '600',
-  },
-  filterTabRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 0.5,
-    paddingHorizontal: 8,
-  },
-  filterTab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  filterTabText: {
-    fontSize: 13,
-    fontWeight: '500',
   },
   loadingBox: {
     flex: 1,
@@ -439,33 +245,14 @@ const styles = StyleSheet.create({
   reviewHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  reviewHeaderLeft: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-    flex: 1,
   },
   reviewNickname: {
     fontSize: 15,
     fontWeight: '700',
   },
-  sessionBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  sessionBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
   reviewDate: {
     fontSize: 12,
-    marginLeft: 8,
-    flexShrink: 0,
   },
   starRow: {
     flexDirection: 'row',
@@ -476,21 +263,6 @@ const styles = StyleSheet.create({
   },
   reviewCombo: {
     fontSize: 12,
-    fontWeight: '500',
-  },
-  empathyChipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  empathyChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  empathyChipText: {
-    fontSize: 11,
     fontWeight: '500',
   },
   reviewContent: {
@@ -506,9 +278,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderWidth: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    maxHeight: '90%',
+    padding: 24,
+    gap: 10,
+    paddingBottom: 40,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -535,36 +307,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-    marginTop: 2,
-  },
-  tagChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1.5,
-  },
-  tagChipText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  empathyOptionRow: {
-    gap: 8,
-    marginTop: 2,
-  },
-  empathyOption: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1.5,
-  },
-  empathyOptionText: {
-    fontSize: 14,
-    lineHeight: 20,
   },
   textArea: {
     borderWidth: 1,

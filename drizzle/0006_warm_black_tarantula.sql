@@ -1,1 +1,0 @@
-ALTER TABLE `reviews` ADD `sessionType` varchar(30);

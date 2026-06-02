@@ -119,7 +119,7 @@ function getPersonEnergyProfile(families: EnergyFamily[]): {
 
   // 심리 흐름 (무의식/내면 흐름) — 조합 기반 차별화 + 감정 흐름 전환 표현 강화
   const psychologyFlowMap: Record<PersonProfile, string> = {
-    expressive: '지금 마음속에는 감정이 생기면 바로 꺼내고 싶은 충동이 있습니다. 표현하지 못하면 담담해지는 유형입니다. 이 결이 관계 안에서 속도차이를 만들고, 심지어 상대가 준비되지 않았을 때 상처가 될 수 있습니다. 앞으로는 표현하기 전에 잠깐 멈춰 묻는 연습이 관계를 한단계 더 따뜻하게 만들어줍니다.',
+    expressive: '지금 마음속에는 감정이 생기면 바로 꺼내고 싶은 충동이 있습니다. 표현하지 못하면 답답해지는 유형입니다. 이 결이 관계 안에서 속도차이를 만들고, 심지어 상대가 준비되지 않았을 때 상처가 될 수 있습니다. 앞으로는 표현하기 전에 잠깐 멈춰 묻는 연습이 관계를 한단계 더 따뜻하게 만들어줍니다.',
     warm_connector: '지금 마음속에는 누군가를 돌보고 싶은 마음이 조용히 흐르고 있습니다. 그 마음이 너무 크면 자신의 감정은 뒤로 미루게 됩니다. 이 결이 관계 안에서 소진으로 이어집니다. 앞으로는 자신에게도 그 따뜻함을 돌려주는 시간이 필요합니다.',
     stable_seeker: '지금 마음속에는 흔들리지 않는 관계를 원하는 마음이 있습니다. 변화보다 익숙한 안정감에서 편안함을 찾는 편입니다. 이 결이 관계 안에서 소통을 늘리는 데 시간이 필요하게 만들고, 상대에게 다가오는 데 시간이 걸릴 수 있습니다. 앞으로는 작은 인정 한 마디가 이 결을 편안하게 열어줍니다.',
     free_spirit: '지금 마음속에는 함께 있어도 자신만의 공간이 필요한 마음이 있습니다. 논리적으로 정리되지 않은 것에 불편함을 느끼는 편입니다. 이 결이 관계 안에서 감정 연결보다 실질적 소통을 앞세우게 만들고, 상대에게 차갑게 느껴지는 순간이 생길 수 있습니다. 앞으로는 먼저 공감하고 정리하는 순서를 연습하면 관계의 온도가 높아집니다.',
@@ -142,7 +142,7 @@ function getPersonEnergyProfile(families: EnergyFamily[]): {
   // 관계 성향 — 조합 기반 차별화 (secondary 반영)
   const relationshipStyleMap: Record<PersonProfile, string> = {
     expressive: '감정을 직접 표현하며 관계를 이끌어가는 성향이 있습니다. 함께 활동하고 표현을 나눌 때 가장 연결된 느낌을 받으며, 관계에서 활기와 공유를 중요하게 여깁니다.',
-    warm_connector: '따뜻하게 배려하며 관계를 이어가는 성향이 있습니다. 상대방의 감정을 먼저 살피며, 온기 있는 말과 스킨십으로 연결되는 것을 소중히 여깁니다.',
+    warm_connector: '따뜻하게 배려하며 관계를 이어가는 성향이 있습니다. 상대방의 감정을 먼저 살피며, 온기 있는 말과 세심한 배려로 연결되는 것을 소중히 여깁니다.',
     stable_seeker: '안정적이고 꾸준하게 관계를 이어가는 성향이 있습니다. 약속을 지키고 일관된 행동으로 신뢰를 쌓으며, 관계에서 편안함과 지속성을 가장 중요하게 여깁니다.',
     free_spirit: '자유롭고 명료한 방식으로 관계를 이어가는 성향이 있습니다. 각자의 공간을 존중하며, 부담 없이 솔직하게 소통할 수 있는 관계를 선호합니다.',
     deep_thinker: '깊이 있는 신뢰를 바탕으로 관계를 이어가는 성향이 있습니다. 말보다 행동으로, 오래 기억하고 진심 어린 방식으로 마음을 전하며, 관계에서 깊이와 진정성을 가장 소중히 여깁니다.',
@@ -457,7 +457,7 @@ export function generateCoupleAnalysis(
   const relationFlow = buildRelationFlow(dominantA, dominantB, relationType, colorsA, colorsB);
 
   // 서로 다른 표현 방식 (감정 차이 + 리듬 차이 통합)
-  const expressionDifference = buildExpressionDifference(dominantA, dominantB, familiesA, familiesB, colorsA, colorsB);
+  const expressionDifference = buildExpressionDifference(dominantA, dominantB, familiesA, familiesB, colorsA, colorsB, relationType);
 
   // 오해가 생기는 지점
   const conflictPattern = buildMisunderstandingPattern(dominantA, dominantB, relationType, shapeCtxA, shapeCtxB, colorsA, colorsB);
@@ -519,7 +519,7 @@ function buildShapeContext(shape: ShapeType | undefined): {
       return {
         modifier: '감정이 안으로 침잠하며 내면에서 먼저 소화하는',
         conflictTrait: '갈등 직후 조용해지거나 말이 없어집니다. 상대는 원인을 모르고 기다리는 상황이 되고, 이 침묵이 거리감으로 번지는 패턴이 있습니다',
-        recoveryTrait: '감정을 천천히 꺼내는 조용한 공간과 시간이 필요합니다. 서두르지 않는 연결이 마음을 엽어줍니다',
+        recoveryTrait: '감정을 천천히 꺼내는 조용한 공간과 시간이 필요합니다. 서두르지 않는 연결이 마음을 열어줍니다',
         affectionStyle: '감정을 충분히 소화한 후 진심으로 표현하는 방식으로',
         conversationStyle: '감정을 먼저 인정하고 기다려주는 부드러운 대화가',
       };
@@ -538,7 +538,7 @@ function buildShapeContext(shape: ShapeType | undefined): {
         modifier: '현실적 기준과 질서를 중시하며 안정적으로 관계를 이어가는',
         conflictTrait: '갈등 직후 원인과 해결책을 먼저 찾는 패턴이 있습니다. 감정보다 상황 정리가 앞서면 상대는 공감받지 못한다고 느낄 수 있습니다',
         recoveryTrait: '일상의 안정된 루틴과 현실적 해결 후 관계 회복이 자연스럽습니다',
-        affectionStyle: '꼼준한 행동과 신뢰할 수 있는 안정감으로',
+        affectionStyle: '꾸준한 행동과 신뢰할 수 있는 안정감으로',
         conversationStyle: '구체적 상황과 현실적 해결에 집중하는 대화가',
       };
     case 'diamond':
@@ -554,7 +554,7 @@ function buildShapeContext(shape: ShapeType | undefined): {
       // 오각형: 자기 방향성/성장 추구형 — 자신의 방향성을 중시하며 관계에서도 성장을 원함
       return {
         modifier: '자기 방향성이 명확하고 관계 안에서도 성장을 추구하는',
-        conflictTrait: '갈등 직후 자신의 방향성을 지키려는 태도가 상대에게 밀어내는 느낙으로 읽힐 수 있습니다',
+        conflictTrait: '갈등 직후 자신의 방향성을 지키려는 태도가 상대에게 밀어내는 느낌으로 읽힐 수 있습니다',
         recoveryTrait: '각자의 방향성을 존중하는 공간이 선행되어야 합니다. 그 후 함께 나아갈 방향을 이야기하는 연결이 필요합니다',
         affectionStyle: '서로의 성장을 응원하고 방향을 함께 나누는 방식으로',
         conversationStyle: '각자의 방향과 성장을 서로 인정하는 대화가',
@@ -692,7 +692,7 @@ function buildRelationFlow(
     // 핑크·인디고·옐로우 조합 — 따뜻한 연결 + 인정 욕구 + 현실 안정 + 책임감
     'pink-indigo': `따뜻한 연결과 표현을 원하는 사람과 깊이 생각하며 신중하게 반응하는 사람이 만났습니다. 한 사람은 지금 당장 따뜻한 반응을 원하고, 다른 사람은 충분히 생각한 후에야 말합니다. "왜 반응이 없어?"와 "나는 생각 중이야"가 반복됩니다. 인정 욕구와 신중함이 균형을 이룰 때 두 사람의 관계는 가장 안정적입니다.`,
     'indigo-yellow': `깊이 생각하며 신중하게 반응하는 사람과 현실적이고 걱정이 많은 사람이 만났습니다. 두 사람 모두 현실 안정을 중요하게 여기지만, 한 사람은 내면 정리 후 표현하고 다른 사람은 현실 계획과 책임감으로 관계를 이어갑니다. 감정 표현이 줄어드는 패턴이 생길 수 있어, 가끔 마음을 나누는 시간이 필요합니다.`,
-    'pink-yellow': `따뜻한 연결을 원하는 사람과 현실적이고 책임감 있는 사람이 만났습니다. 한 사람은 말과 스킨십으로 마음을 확인하고 싶어 하고, 다른 사람은 현실적인 행동으로 마음을 보여줍니다. "말로도 해줘"와 "이미 다 하고 있잖아"가 반복됩니다. 인정 욕구와 현실 안정 욕구가 다른 방향으로 표현되는 패턴입니다.`,
+    'pink-yellow': `따뜻한 연결을 원하는 사람과 현실적이고 책임감 있는 사람이 만났습니다. 한 사람은 따뜻한 말과 직접적인 표현으로 마음을 확인하고 싶어 하고, 다른 사람은 현실적인 행동으로 마음을 보여줍니다. "말로도 해줘"와 "이미 다 하고 있잖아"가 반복됩니다. 인정 욕구와 현실 안정 욕구가 다른 방향으로 표현되는 패턴입니다.`,
     // 오렌지·퍼플·라벤더 조합
     'orange-purple': `즉각적이고 활기찬 사람과 깊이 생각하고 분위기를 중요하게 여기는 사람이 만났습니다. 한 사람의 빠른 속도가 다른 사람에게 부담이 되고, 다른 사람의 느린 반응이 한 사람에게 무관심으로 느껴집니다. 속도 차이를 인정하는 것이 이 관계의 핵심입니다.`,
     'orange-indigo': `즉각적으로 반응하는 사람과 신중하게 생각하는 사람이 만났습니다. 한 사람의 활기찬 에너지가 다른 사람에게 자극이 되고, 다른 사람의 신중함이 한 사람에게 안정감을 줍니다. 표현 속도 차이가 반복적인 긴장 포인트가 될 수 있습니다.`,
@@ -962,7 +962,7 @@ function buildMisunderstandingPattern(
     'black-violet': '"지금 혼자 있어야 해"와 "나랑 얘기하기 싫어?"가 반복됩니다. 한 사람의 회복 공간이 다른 사람에게 단절로 읽힙니다. 조용한 것이 관계가 식은 것이 아님을 서로 확인하는 것이 필요합니다.',
     'black-navy': '두 사람 모두 "괜찮아"라고 말하며 혼자 버팁니다. 서로의 마음을 모르는 상태가 지속됩니다. 어느 순간 "우리 요즘 왜 이렇게 어색해?"라는 말이 나옵니다.',
     'red-yellow': '"지금 당장 반응해줘"와 "지금 그게 중요해?"가 교차합니다. 한 사람은 즉각 반응을 원하고, 다른 사람은 현실 상황 정리가 먼저입니다. 감정 우선과 현실 우선의 충돌입니다.',
-    'pink-violet': '두 사람 모두 감정 표현을 중요하게 여기지만 방식이 다릅니다. 한 사람은 말과 스킨십으로, 다른 사람은 깊은 대화와 분위기로 연결됩니다. "왜 이렇게 표면적이야?"와 "왜 이렇게 무거워?"가 교차합니다.',
+    'pink-violet': '두 사람 모두 감정 표현을 중요하게 여기지만 방식이 다릅니다. 한 사람은 따뜻한 말과 직접적인 표현으로, 다른 사람은 깊은 대화와 분위기로 연결됩니다. "왜 이렇게 표면적이야?"와 "왜 이렇게 무거워?"가 교차합니다.',
     'pink-yellow': '"말로도 해줘"와 "이미 다 하고 있잖아"가 반복됩니다. 사랑의 언어가 달라서 생기는 오해입니다. 행동이 표현이라는 것을 한 사람이 알면 관계가 편안해집니다.',
     'navy-violet': '"이미 다 하고 있잖아"와 "그래도 감정 얘기가 하고 싶어"가 교차합니다. 행동으로 보여주는 것과 말로 나누는 것, 두 사람의 사랑 언어가 다릅니다.',
     'navy-yellow': '두 사람 모두 감정 표현이 적습니다. "우리 요즘 감정 얘기를 안 하는 것 같아"라는 말이 나올 수 있습니다. 현실 대화 속에서도 "오늘 고마웠어" 한 마디가 관계를 따뜻하게 유지해줍니다.',
@@ -1007,7 +1007,7 @@ function buildCoupleRecoveryDirection(fA: EnergyFamily, fB: EnergyFamily, rel: R
 function getRecoveryStyle(family: EnergyFamily): string {
   const map: Record<EnergyFamily, string> = {
     warm_active: '함께 움직이고 즉각 표현하며',
-    warm_soft: '따뜻한 말과 스킨십으로 연결되며',
+    warm_soft: '따뜻한 말과 세심한 배려로 연결되며',
     warm_grounded: '일상의 안정된 루틴 속에서',
     cool_clear: '혼자 생각을 정리하고 명료화하며',
     cool_deep: '조용히 혼자 내면을 정리하며',
@@ -1148,8 +1148,10 @@ function getAffectionStyleShort(family: EnergyFamily, isCouple: boolean): string
 function buildExpressionDifference(
   fA: EnergyFamily, fB: EnergyFamily,
   familiesA: EnergyFamily[], familiesB: EnergyFamily[],
-  colorsA: ColorData[], colorsB: ColorData[]
+  colorsA: ColorData[], colorsB: ColorData[],
+  rel?: RelationType
 ): string {
+  const isCouple = rel === '연인' || rel === '부부';
   // colorId 기반 세분화 맵 — 컬러 고유 표현 방식 차이
   const colorIdExprMap: Partial<Record<string, string>> = {
     'white-pink': `한 사람은 감정이 과부하가 되면 혼자 정리하는 시간이 필요합니다. 다른 사람은 그 순간 더 많은 표현과 확인을 원합니다. 한 사람에게 거리두기는 정화의 시간이지만, 다른 사람에게는 거절처럼 느껴집니다. "지금 혼자 있어야 해"와 "왜 나를 피해?"가 교차하는 패턴입니다.`,
@@ -1158,12 +1160,20 @@ function buildExpressionDifference(
     'white-navy': `두 사람 모두 감정을 안으로 담아두는 편입니다. 한 사람은 정리 후 표현하고, 다른 사람은 행동으로 보여줍니다. 말로 확인하는 순간이 적어 서로 "괜찮아?"를 묻지 않고 지나치는 패턴이 생깁니다.`,
     'black-red': `한 사람은 혼자 회복할 시간이 필요합니다. 말이 많아지면 피로해집니다. 다른 사람은 바로 표현하고 즉각 반응을 원합니다. 답답한 분위기가 힘듭니다.\n한 사람의 침묵이 다른 사람에게 벽처럼 느껴지고, 다른 사람의 빠른 반응이 한 사람에게 침범으로 느껴집니다.`,
     'black-pink': `한 사람은 조용해도 관계가 식은 것이 아닙니다. 혼자 있는 시간이 충전입니다. 다른 사람은 따뜻한 표현과 확인을 자주 원합니다.\n"나는 이미 여기 있잖아"와 "왜 말을 안 해줘?"가 반복됩니다. 조용한 것이 무관심이 아님을 서로 확인하는 것이 필요합니다.`,
-    'navy-pink': `한 사람은 책임감 있는 행동과 꾸준함으로 마음을 보여줍니다. 밥을 차려주고, 먼저 일을 처리하고, 말 없이 곁에 있습니다. 다른 사람은 스킨십과 말로 사랑을 확인하고 싶어 합니다.\n"이미 다 하고 있잖아"와 "그래도 말로 해줘"가 교차하는 패턴입니다.`,
+    'navy-pink': isCouple
+      ? `한 사람은 책임감 있는 행동과 꾸준함으로 마음을 보여줍니다. 밥을 차려주고, 먼저 일을 처리하고, 말 없이 곁에 있습니다. 다른 사람은 스킨십과 말로 사랑을 확인하고 싶어 합니다.\n"이미 다 하고 있잖아"와 "그래도 말로 해줘"가 교차하는 패턴입니다.`
+      : `한 사람은 책임감 있는 행동과 꾸준함으로 마음을 보여줍니다. 말 없이 곁에 있고, 먼저 챙기는 방식입니다. 다른 사람은 따뜻한 말과 직접적인 표현으로 연결감을 확인하고 싶어 합니다.\n"이미 다 하고 있잖아"와 "그래도 말로 해줘"가 교차하는 패턴입니다.`,
     'navy-red': `한 사람은 신중하게 생각한 후 표현합니다. 충분히 정리된 후에야 말합니다. 다른 사람은 감정이 생기면 바로 꺼냅니다. 지금 당장 반응이 없으면 답답합니다.\n한 사람의 신중함이 다른 사람에게 답답함으로, 다른 사람의 빠른 반응이 한 사람에게 충동적으로 느껴집니다.`,
     'navy-magenta': `한 사람은 "괜찮아"라고 말하며 혼자 버팁니다. 감정을 드러내는 것이 불편합니다. 다른 사람은 감정을 깊이 나누고 싶어 합니다. 공감받지 못하면 외로워집니다.\n한 사람의 침묵이 다른 사람에게 거리두기로 읽히고, 다른 사람의 강한 감정이 한 사람에게 부담이 됩니다.`,
-    'red-green': `한 사람은 감정이 생기면 바로 표현합니다. 스킨십과 활동형 연결을 원합니다. 답답한 분위기가 힘듭니다. 다른 사람은 편안한 일상이 중요합니다. 갈등을 피하며 조용히 배려합니다.\n한 사람의 직선적인 표현이 다른 사람에게 공격적으로 느껴지고, 다른 사람의 회피가 한 사람에게 무관심으로 느껴집니다.`,
-    'red-violet': `한 사람은 지금 당장 반응을 원합니다. 즉각적인 표현과 스킨십으로 연결감을 확인합니다. 다른 사람은 감정 공감과 깊은 대화를 원합니다. 분위기와 감성 연결이 중요합니다.\n속도 차이가 반복되면 한 사람은 "왜 반응이 없어?"라고 느끼고, 다른 사람은 "왜 이렇게 빨리 결론 내려?"라고 느낍니다.`,
-    'pink-green': `한 사람은 애정 표현을 자주 원합니다. "사랑해"라는 말, 스킨십, 따뜻한 확인이 필요합니다. 다른 사람은 편안한 일상 속에서 자연스럽게 챙기는 것이 사랑입니다.\n한 사람의 표현 기대가 다른 사람에게 부담이 되고, 다른 사람의 조용한 배려가 한 사람에게 무관심으로 느껴집니다.`,
+    'red-green': isCouple
+      ? `한 사람은 감정이 생기면 바로 표현합니다. 스킨십과 활동형 연결을 원합니다. 답답한 분위기가 힘듭니다. 다른 사람은 편안한 일상이 중요합니다. 갈등을 피하며 조용히 배려합니다.\n한 사람의 직선적인 표현이 다른 사람에게 공격적으로 느껴지고, 다른 사람의 회피가 한 사람에게 무관심으로 느껴집니다.`
+      : `한 사람은 감정이 생기면 바로 표현하고 즉각 반응을 원합니다. 다른 사람은 편안한 일상 속에서 갈등을 피하며 조용히 배려합니다.\n한 사람의 직선적인 표현이 다른 사람에게 부담이 되고, 다른 사람의 회피가 한 사람에게 무관심으로 느껴집니다.`,
+    'red-violet': isCouple
+      ? `한 사람은 지금 당장 반응을 원합니다. 즉각적인 표현과 스킨십으로 연결감을 확인합니다. 다른 사람은 감정 공감과 깊은 대화를 원합니다. 분위기와 감성 연결이 중요합니다.\n속도 차이가 반복되면 한 사람은 "왜 반응이 없어?"라고 느끼고, 다른 사람은 "왜 이렇게 빨리 결론 내려?"라고 느낍니다.`
+      : `한 사람은 지금 당장 반응을 원합니다. 빠른 표현과 즉각적인 연결을 원합니다. 다른 사람은 감정 공감과 깊은 대화를 원합니다.\n속도 차이가 반복되면 한 사람은 "왜 반응이 없어?"라고 느끼고, 다른 사람은 "왜 이렇게 빨리 결론 내려?"라고 느낍니다.`,
+    'pink-green': isCouple
+      ? `한 사람은 애정 표현을 자주 원합니다. "사랑해"라는 말, 스킨십, 따뜻한 확인이 필요합니다. 다른 사람은 편안한 일상 속에서 자연스럽게 챙기는 것이 사랑입니다.\n한 사람의 표현 기대가 다른 사람에게 부담이 되고, 다른 사람의 조용한 배려가 한 사람에게 무관심으로 느껴집니다.`
+      : `한 사람은 따뜻한 말과 직접적인 표현으로 연결감을 확인하고 싶어 합니다. 다른 사람은 편안한 일상 속에서 자연스럽게 챙기는 것이 마음을 전하는 방식입니다.\n한 사람의 표현 기대가 다른 사람에게 부담이 되고, 다른 사람의 조용한 배려가 한 사람에게 무관심으로 느껴집니다.`,
     'magenta-green': `한 사람은 감정에 깊이 몰입합니다. 관계에서 진심 어린 연결을 원하고, 상처도 깊게 받습니다. 다른 사람은 안정감 있는 관계를 선호합니다. 갈등보다 편안한 일상이 중요합니다.\n한 사람의 강한 감정이 다른 사람에게 부담이 되고, 다른 사람의 회피가 한 사람에게 거절로 느껴집니다.`,
     'violet-yellow': `한 사람은 감정 공감과 깊은 대화를 원합니다. 분위기와 감성 연결이 중요합니다. 다른 사람은 현실적인 대화와 생활 패턴이 중요합니다. 책임감과 미래 계획을 중요하게 여깁니다.\n"왜 이렇게 깊이 생각해?"와 "왜 이렇게 가볍게 봐?"가 반복됩니다.`,
     'green-navy': `두 사람 모두 감정을 안으로 담아두는 편입니다. 한 사람은 편안한 일상 속에서 자연스럽게 챙기고, 다른 사람은 책임감 있는 행동으로 관계를 지킵니다.\n서로 "괜찮아"라고 말하면서 실제로는 지쳐가는 패턴이 생깁니다. 가끔 말로 확인하는 시간이 필요합니다.`,
@@ -1171,9 +1181,15 @@ function buildExpressionDifference(
     'white-green': `두 사람 모두 조용하고 안정적인 관계를 선호합니다. 한 사람은 생활 루틴과 청결이 중요하고, 다른 사람은 편안한 일상과 자연스러운 배려가 중요합니다.\n서로 갈등을 피하는 편이라 "괜찮아"라고 말하면서 실제로는 각자 쌓아두는 패턴이 생깁니다. 가끔 "오늘 어때?"라고 먼저 묻는 것이 두 사람 사이를 따뜻하게 유지해줍니다.`,
     'black-violet': `한 사람은 혼자 회복하는 시간이 필요합니다. 말이 많아지면 피로해집니다. 다른 사람은 감정 공감과 깊은 대화를 원합니다. 연결감이 없으면 외로워집니다.\n한 사람의 침묵이 다른 사람에게 단절로 느껴지고, 다른 사람의 깊은 감정 표현이 한 사람에게 부담이 됩니다. "지금 혼자 있어야 해"와 "나랑 얘기하기 싫어?"가 반복됩니다.`,
     'black-navy': `두 사람 모두 감정을 안으로 담아두는 편입니다. 한 사람은 혼자 회복하고, 다른 사람은 혼자 책임을 지며 버팁니다.\n서로 "괜찮아"라고 말하면서 실제로는 지쳐가는 패턴이 생깁니다. 두 사람 모두 표현이 서툴러 거리감이 조용히 쌓입니다. 먼저 "요즘 어때?"라고 묻는 것이 이 관계를 따뜻하게 유지합니다.`,
-    'red-yellow': `한 사람은 감정이 생기면 바로 표현합니다. 즉각적인 반응과 스킨십이 중요합니다. 다른 사람은 현실적인 대화와 미래 계획을 중요하게 여깁니다. 감정보다 상황 정리가 먼저입니다.\n"지금 당장 반응해줘"와 "지금 그게 중요해?"가 교차합니다. 한 사람의 즉각적인 감정 표현이 다른 사람에게 충동적으로 느껴지는 순간이 있습니다.`,
-    'pink-violet': `두 사람 모두 감정 표현과 연결감을 중요하게 여깁니다. 한 사람은 따뜻한 스킨십과 말로 사랑을 확인하고, 다른 사람은 깊은 감정 공감과 분위기 있는 대화를 원합니다.\n표현 방식은 다르지만 두 사람 모두 관계에 깊이 투자합니다. 가끔 "나는 이렇게 표현하는데 왜 충분하지 않아?"라는 서운함이 생길 수 있습니다.`,
-    'pink-yellow': `한 사람은 따뜻한 표현과 스킨십으로 사랑을 확인하고 싶어 합니다. 다른 사람은 현실적인 책임과 꾸준한 행동으로 마음을 보여줍니다.\n"말로도 해줘"와 "이미 다 하고 있잖아"가 반복됩니다. 사랑의 언어가 달라서 생기는 오해입니다. 한 사람의 표현 욕구와 다른 사람의 행동 언어를 서로 알면 관계가 편안해집니다.`,
+    'red-yellow': isCouple
+      ? `한 사람은 감정이 생기면 바로 표현합니다. 즉각적인 반응과 스킨십이 중요합니다. 다른 사람은 현실적인 대화와 미래 계획을 중요하게 여깁니다. 감정보다 상황 정리가 먼저입니다.\n"지금 당장 반응해줘"와 "지금 그게 중요해?"가 교차합니다. 한 사람의 즉각적인 감정 표현이 다른 사람에게 충동적으로 느껴지는 순간이 있습니다.`
+      : `한 사람은 감정이 생기면 바로 표현합니다. 즉각적인 반응과 연결이 중요합니다. 다른 사람은 현실적인 대화와 계획을 중요하게 여깁니다. 감정보다 상황 정리가 먼저입니다.\n"지금 당장 반응해줘"와 "지금 그게 중요해?"가 교차합니다. 한 사람의 즉각적인 감정 표현이 다른 사람에게 충동적으로 느껴지는 순간이 있습니다.`,
+    'pink-violet': isCouple
+      ? `두 사람 모두 감정 표현과 연결감을 중요하게 여깁니다. 한 사람은 따뜻한 스킨십과 말로 사랑을 확인하고, 다른 사람은 깊은 감정 공감과 분위기 있는 대화를 원합니다.\n표현 방식은 다르지만 두 사람 모두 관계에 깊이 투자합니다. 가끔 "나는 이렇게 표현하는데 왜 충분하지 않아?"라는 서운함이 생길 수 있습니다.`
+      : `두 사람 모두 감정 표현과 연결감을 중요하게 여깁니다. 한 사람은 따뜻한 말과 직접적인 표현으로, 다른 사람은 깊은 감정 공감과 분위기 있는 대화로 연결됩니다.\n표현 방식은 다르지만 두 사람 모두 관계에 깊이 투자합니다. 가끔 "나는 이렇게 표현하는데 왜 충분하지 않아?"라는 서운함이 생길 수 있습니다.`,
+    'pink-yellow': isCouple
+      ? `한 사람은 따뜻한 표현과 스킨십으로 사랑을 확인하고 싶어 합니다. 다른 사람은 현실적인 책임과 꾸준한 행동으로 마음을 보여줍니다.\n"말로도 해줘"와 "이미 다 하고 있잖아"가 반복됩니다. 사랑의 언어가 달라서 생기는 오해입니다. 한 사람의 표현 욕구와 다른 사람의 행동 언어를 서로 알면 관계가 편안해집니다.`
+      : `한 사람은 따뜻한 표현과 직접적인 말로 연결감을 확인하고 싶어 합니다. 다른 사람은 현실적인 책임과 꾸준한 행동으로 마음을 보여줍니다.\n"말로도 해줘"와 "이미 다 하고 있잖아"가 반복됩니다. 표현 방식이 달라서 생기는 오해입니다. 한 사람의 표현 욕구와 다른 사람의 행동 언어를 서로 알면 관계가 편안해집니다.`,
     'navy-violet': `한 사람은 책임감 있는 행동과 꾸준함으로 관계를 지킵니다. 말보다 행동이 먼저입니다. 다른 사람은 감정 공감과 깊은 대화를 원합니다. 분위기와 감성 연결이 중요합니다.\n"이미 다 하고 있잖아"와 "그래도 감정 얘기가 하고 싶어"가 교차합니다. 행동 언어와 감성 언어가 달라서 생기는 오해입니다.`,
     'navy-yellow': `두 사람 모두 현실적이고 책임감 있는 방식으로 관계를 이어갑니다. 한 사람은 신뢰와 꾸준함으로, 다른 사람은 현실 계획과 생활 패턴으로 관계를 지킵니다.\n두 사람 모두 감정 표현이 적어 "우리 요즘 감정 얘기를 안 하는 것 같아"라는 말이 나올 수 있습니다. 현실 대화 속에서도 "오늘 고마웠어" 한 마디가 관계를 따뜻하게 유지해줍니다.`,
   };
@@ -2472,7 +2488,9 @@ function buildProfileContrast(
   // 컬러 에너지 + 도형 반응 구조 통합 표현
   // 컬러 = 감정 에너지 방향, 도형 = 갈등 직후 반응 구조
   const shapeProfileNote = (shapeCtxA && shapeCtxB)
-    ? `\n\n도형이 말해주는 표현 구조: 첫 번째 사람은 ${shapeCtxA.modifier} 방식으로 관계를 이어갑니다. 두 번째 사람은 ${shapeCtxB.modifier} 방식으로 연결됩니다. 컬러는 감정 에너지의 방향을, 도형은 갈등 직후 반응 구조를 말해줍니다.`
+    ? shapeCtxA.modifier === shapeCtxB.modifier
+      ? `\n\n도형이 말해주는 표현 구조: 두 사람 모두 ${shapeCtxA.modifier} 방식으로 관계를 이어갑니다. 같은 반응 구조를 가진 두 사람은 서로의 침묵과 거리 조절을 더 잘 이해할 수 있습니다. 컬러는 감정 에너지의 방향을, 도형은 갈등 직후 반응 구조를 말해줍니다.`
+      : `\n\n도형이 말해주는 표현 구조: 첫 번째 사람은 ${shapeCtxA.modifier} 방식으로 관계를 이어갑니다. 두 번째 사람은 ${shapeCtxB.modifier} 방식으로 연결됩니다. 컬러는 감정 에너지의 방향을, 도형은 갈등 직후 반응 구조를 말해줍니다.`
     : shapeCtxA
       ? `\n\n도형이 말해주는 표현 구조: ${shapeCtxA.modifier} 방식으로 관계를 이어가는 특성이 있습니다.`
       : '';
@@ -3221,65 +3239,86 @@ function calcRelationSignal(scoreA: EmotionDimension, scoreB: EmotionDimension):
   };
 }
 
-// 모든 archetype 점수 반환 (도형 보너스 적용 시 비교용)
+// 모든 archetype 점수 반환 (도형 보너스 적용 시 비교용) — V4 균형 공식
 function scoreToArchetypeScores(signal: EmotionDimension): Record<RelationArchetype, number> {
   const { distance, tension, recovery, stable, expression, circulation } = signal;
-  // 감정순환형: circulation 합 30 초과 시만 보너스 (두 사람 모두 높을 때)
-  const circulationBonus = circulation > 30 ? (circulation - 30) * 1.0 : 0;
-  // 온도차형: expression과 distance의 차이 + expression이 높을 때 보너스
+
+  // 거리조절형: distance가 지배적일 때만 강하게
+  const distScore = distance > 30 ? distance * 1.8 + tension * 0.2 + 20
+                  : distance > 24 ? distance * 1.4 + tension * 0.2 + 8
+                  : distance > 18 ? distance * 1.0 + tension * 0.2
+                  : distance * 0.6;
+
+  // 성장자극형: tension이 지배적일 때만 강하게
+  const growthScore = tension > 38 ? tension * 1.6 + expression * 0.4
+                    : tension > 30 ? tension * 1.3 + expression * 0.4
+                    : tension > 24 ? tension * 1.0 + expression * 0.3
+                    : tension * 0.6 + expression * 0.2;
+
+  // 회복형: recovery가 지배적일 때 강하게
+  const recoveryScore = recovery > 45 ? recovery * 1.6 + (tension < 20 ? 12 : 0)
+                      : recovery > 36 ? recovery * 1.3 + (tension < 24 ? 8 : 0)
+                      : recovery > 28 ? recovery * 1.0 + (tension < 28 ? 4 : 0)
+                      : recovery * 0.7;
+
+  // 감정순환형: circulation이 지배적일 때 강하게
+  const circBonus = circulation > 38 ? (circulation - 30) * 1.8
+                  : circulation > 30 ? (circulation - 26) * 1.2 : 0;
+  const circScore = circulation > 35 ? circulation * 1.2 + expression * 0.3 + circBonus
+                  : circulation > 28 ? circulation * 0.9 + expression * 0.3 + circBonus
+                  : circulation * 0.6 + expression * 0.2;
+
+  // 온도차형: expression이 높으면서 distance도 있을 때 (한 사람은 표현적, 다른 사람은 거리형)
   const tempGap = Math.abs(expression - distance);
-  const tempBonus = expression > 20 ? 8 : (expression > 16 ? 4 : 0);
-  // 친구형: tension이 낙고 stable이 중간 이상일 때 강하게
-  const friendBonus = tension < 14 ? 15 : tension < 18 ? 8 : 0;
-  // 현실균형형: stable이 중간 이상이고 tension이 낙을 때
-  const realBonus = stable > 22 && tension < 22 ? 8 : 0;
-  // 안정추구형: stable이 매우 높고 expression이 낙을 때만 강하게 진입
-  const stableBonus = (stable > 40 && expression < 25) ? 12 : (stable > 35 ? 4 : 0);
+  const tempScore = (expression > 35 && distance > 18) ? tempGap * 1.8 + expression * 0.4 + 15
+                  : (expression > 28 && distance > 14) ? tempGap * 1.4 + expression * 0.3 + 8
+                  : (expression > 22 && distance > 10) ? tempGap * 1.0 + expression * 0.2
+                  : tempGap * 0.6;
+
+  // 안정추구형: stable이 매우 높고 tension·expression 모두 낮을 때
+  const stableBonus = (stable > 50 && expression < 22 && tension < 18) ? 25
+                    : (stable > 42 && expression < 26) ? 15
+                    : (stable > 35 && expression < 30) ? 6 : 0;
+  const stableScore = stable * 0.9 + recovery * 0.2 + stableBonus;
+
+  // 보호자형: stable이 높고 expression이 낮고 recovery도 있을 때
+  const protScore = (stable > 30 && expression < 20 && recovery > 28) ? stable * 0.9 + recovery * 0.9 + 18
+                  : (stable > 24 && expression < 24 && recovery > 22) ? stable * 0.7 + recovery * 0.7 + 8
+                  : stable * 0.5 + recovery * 0.5 + (expression < 16 ? 6 : 0);
+
+  // 친구형: tension이 낮을 때 강하게
+  const friendBonus = tension < 14 ? 22 : tension < 18 ? 15 : tension < 22 ? 8 : tension < 26 ? 2 : 0;
+  const friendScore = (tension < 22 && stable > 24) ? stable * 0.8 + circulation * 0.5 + friendBonus
+                    : stable * 0.6 + circulation * 0.4 + friendBonus;
+
+  // 이상주의형: distance가 높고 stable이 낮을 때 (거리+불안정)
+  const idealScore = (distance > 24 && stable < 24) ? distance * 1.1 + tension * 0.5 + 20
+                   : (distance > 18 && stable < 28) ? distance * 0.8 + tension * 0.4 + 10
+                   : distance * 0.5 + tension * 0.3 + (stable < 20 ? 6 : 0);
+
+  // 현실균형형: stable이 높고 expression도 있을 때 (안정+소통)
+  const realScore = (stable > 36 && expression > 26 && tension < 24) ? stable * 1.0 + expression * 0.7 + 15
+                  : (stable > 28 && expression > 22 && tension < 28) ? stable * 0.8 + expression * 0.6 + 8
+                  : (stable > 22 && expression > 18) ? stable * 0.6 + expression * 0.5
+                  : stable * 0.4 + expression * 0.3;
+
   return {
-    '거리조절형':  distance * 1.5 + tension * 0.3 + (distance > 22 ? 10 : 0),
-    '성장자극형':  tension * 1.5 + expression * 0.9,
-    '회복형':      recovery * 1.2 + (tension > 22 ? 6 : 0) + (distance < 14 ? 4 : 0),
-    '감정순환형':  circulation * 1.0 + expression * 0.5 + circulationBonus,
-    '온도차형':    tempGap * 1.5 + tension * 0.4 + tempBonus,
-    '안정추구형':  stable * 1.1 + recovery * 0.2 + stableBonus,
-    '보호자형':    stable * 0.8 + recovery * 0.7 + (expression < 14 ? 10 : 0),
-    '친구형':      stable * 0.9 + circulation * 0.5 + friendBonus,
-    '이상주의형':  distance * 0.7 + tension * 0.5 + (stable < 18 ? 10 : 0),
-    '현실균형형':  stable * 1.0 + expression * 0.9 + realBonus,
+    '거리조절형': distScore,
+    '성장자극형': growthScore,
+    '회복형':     recoveryScore,
+    '감정순환형': circScore,
+    '온도차형':   tempScore,
+    '안정추구형': stableScore,
+    '보호자형':   protScore,
+    '친구형':     friendScore,
+    '이상주의형': idealScore,
+    '현실균형형': realScore,
   };
 }
 
-// 점수 기반 archetype 결정 (다차원 가중치 — 시뮬레이션 검증완료)
+// 점수 기반 archetype 결정 — V4 균형 공식 (scoreToArchetypeScores 재사용)
 function scoreToArchetype(signal: EmotionDimension): RelationArchetype {
-  const { distance, tension, recovery, stable, expression, circulation } = signal;
-
-  // 감정순환형: circulation 합 30 초과 시만 보너스 (두 사람 모두 높을 때)
-  const circulationBonus = circulation > 30 ? (circulation - 30) * 1.0 : 0;
-  // 온도차형: expression과 distance의 차이 + expression이 높을 때 보너스
-  const tempGap = Math.abs(expression - distance);
-  const tempBonus = expression > 20 ? 8 : (expression > 16 ? 4 : 0);
-  // 친구형: tension이 낙고 stable이 중간 이상일 때 강하게
-  const friendBonus = tension < 14 ? 15 : tension < 18 ? 8 : 0;
-  // 현실균형형: stable이 중간 이상이고 tension이 낙을 때
-  const realBonus = stable > 22 && tension < 22 ? 8 : 0;
-  // 안정추구형: stable이 매우 높고 expression이 낙을 때만 강하게 진입
-  const stableBonus = (stable > 40 && expression < 25) ? 12 : (stable > 35 ? 4 : 0);
-
-  // 각 archetype 후보 점수 계산
-  const scores: Record<RelationArchetype, number> = {
-    '거리조절형':  distance * 1.5 + tension * 0.3 + (distance > 22 ? 10 : 0),
-    '성장자극형':  tension * 1.5 + expression * 0.9,
-    '회복형':      recovery * 1.2 + (tension > 22 ? 6 : 0) + (distance < 14 ? 4 : 0),
-    '감정순환형':  circulation * 1.0 + expression * 0.5 + circulationBonus,
-    '온도차형':    tempGap * 1.5 + tension * 0.4 + tempBonus,
-    '안정추구형':  stable * 1.1 + recovery * 0.2 + stableBonus,
-    '보호자형':    stable * 0.8 + recovery * 0.7 + (expression < 14 ? 10 : 0),
-    '친구형':      stable * 0.9 + circulation * 0.5 + friendBonus,
-    '이상주의형':  distance * 0.7 + tension * 0.5 + (stable < 18 ? 10 : 0),
-    '현실균형형':  stable * 1.0 + expression * 0.9 + realBonus,
-  };
-
-  // 가장 높은 점수의 archetype 선택
+  const scores = scoreToArchetypeScores(signal);
   let best: RelationArchetype = '온도차형';
   let bestScore = -1;
   for (const [arch, score] of Object.entries(scores) as [RelationArchetype, number][]) {
@@ -3339,16 +3378,16 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     typeName: '온도차형 관계',
     typeEmoji: '🌡️',
     coreSummary: '같은 상황을 다른 속도로 살아갑니다.',
-    tensionDescription: '싸운 다음 날 아침, 한 사람은 이미 평소체럼 움직입니다. 다른 사람은 아직 어젟밤 안에 머물러 있습니다. "어떻게 아무렇지 않아?"  이 말이 나옵니다. 한 사람은 "이미 끝난 거 아니야?"  라고 답합니다. 이 속도 차이가 반복됩니다. "왜 아직도 그래?" 와 "왜 이미 넘어간 것처럼 해?"가 교차합니다.',
-    misunderstandingPattern: '갈등 다음 날, 한 사람은 평소체럼 행동합니다. 다른 사람은 아직 어젟밤 안에 있습니다. "어떻게 아무렇지 않아?" 라는 말이 나옵니다. 한 사람은 "이미 끝난 거 아니야?" 라고 합니다. 빠른 사람은 느린 사람이 집착한다고 느버고, 느린 사람은 빠른 사람이 무관심하다고 느낄니다. 속도 차이가 오해가 됩니다.',
+    tensionDescription: '싸운 다음 날 아침, 한 사람은 이미 평소처럼 움직입니다. 다른 사람은 아직 어젯밤 안에 머물러 있습니다. "어떻게 아무렇지 않아?"  이 말이 나옵니다. 한 사람은 "이미 끝난 거 아니야?"  라고 답합니다. 이 속도 차이가 반복됩니다. "왜 아직도 그래?" 와 "왜 이미 넘어간 것처럼 해?"가 교차합니다.',
+    misunderstandingPattern: '갈등 다음 날, 한 사람은 평소처럼 행동합니다. 다른 사람은 아직 어젯밤 안에 있습니다. "어떻게 아무렇지 않아?" 라는 말이 나옵니다. 한 사람은 "이미 끝난 거 아니야?" 라고 합니다. 빠른 사람은 느린 사람이 집착한다고 느끼고, 느린 사람은 빠른 사람이 무관심하다고 느낍니다. 속도 차이가 오해가 됩니다.',
     connectionStyle: '한 사람이 "나 아직 정리 중이야" 라고 말하고, 다른 사람이 "알겠어, 기다릴게" 라고 답하는 것. 속도를 맞추려 하지 않고, 서로 다른 속도를 인정하는 것이 연결입니다. 속도 차이를 연결의 장애물이 아니라 서로의 방식으로 인정할 때, 이 관계는 안정됩니다.',
-    recoveryRoutine: '각자 30분 정도 시간을 갖고 다시 만나기. 빠른 사람이 느린 사람 곳에 조용히 앉아 있어주는 것. "다 됐을 때 말해줘" 라고 말하며 기다리는 것이 이 관계의 핸심 패턴입니다.',
+    recoveryRoutine: '각자 30분 정도 시간을 갖고 다시 만나기. 빠른 사람이 느린 사람 곁에 조용히 앉아 있어주는 것. "다 됐을 때 말해줘" 라고 말하며 기다리는 것이 이 관계의 핵심 패턴입니다.',
     neededWords: '"\ub098 아직 속도 조절 중이야. 조금만 기다려줘."',
     recommendedActivity: '각자 좋아하는 것을 하다가 다시 만나는 시간. 함께 있되 각자의 속도를 존중하는 활동.',
     emotionRecoveryStyle: '빠른 사람은 기다리고, 느린 사람은 "나 지금 어디에 있는지" 말해주는 것. 침묵이 거리감이 아닌 속도 조절 중이라는 신호임을 서로 알아야 합니다.',
-    conversationRoutine: '"오늘 가장 빠리 지나간 순간과 가장 오래 머문 순간 이야기해줘." 속도가 다른 두 사람이 같은 하루를 어떻게 다르게 경험했는지 나누는 대화입니다.',
+    conversationRoutine: '"오늘 가장 빨리 지나간 순간과 가장 오래 머문 순간 이야기해줘." 속도가 다른 두 사람이 같은 하루를 어떻게 다르게 경험했는지 나누는 대화입니다.',
     connectionRoutine: '"나는 지금 여기야" 라고 서로 위치를 알려주는 것. 감정의 현재 속도를 공유하는 것이 이 관계의 정서 연결입니다.',
-    affectionRoutine: '말 없이 옆에 앉아 있기. 느린 사람이 속도를 조절하는 동안 곳에 있어주는 것. "다 됐을 때 엘기해줘" 라고 말하며 기다리는 것. 서두르지 않는 것 자체가 이 관계에서 가장 따뜻한 사랑 표현입니다.',
+    affectionRoutine: '말 없이 옆에 앉아 있기. 느린 사람이 속도를 조절하는 동안 그 곁에 있어주는 것. "다 됐을 때 얘기해줘" 라고 말하며 기다리는 것. 서두르지 않는 것 자체가 이 관계에서 가장 따뜻한 사랑 표현입니다.',
     emotionRoutine: '각자의 속도로 감정을 처리하고, 준비가 됐을 때 다시 연결하기. 억지로 맞추려 하지 않는 것이 이 관계의 감정 회복 방식입니다.',
     closingMessage: '속도가 다른 것은 이 관계의 약점이 아닙니다. 한 사람이 먼저 도착해서 기다려주는 것, 그것이 이 관계의 사랑 방식입니다. 속도 차이를 인정하면 두 사람은 결국 같은 곳에 도달합니다.',
     temperatureGraph: { emotionGap: 72, expressionIntensity: 45, recoverySpeed: 40 },
@@ -4281,11 +4320,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
   },
   이상주의형: {
     accentColor: '#5B8FBF',
-    typeName: '감정몰입형 관계',
-    typeEmoji: '🌊',
-    coreSummary: '감정 깊이는 크지만 기복도 큽니다.',
-    tensionDescription: '이 관계는 감정이 큽니다. 기쁠 때는 매우 기쁘고, 서운할 때는 매우 서운합니다. 감정 분위기에 크게 영향받습니다. 상대의 말 한마디, 표정 하나가 하루를 바꿉니다. 감정이 올라올 때는 폭발적이고, 가라앉을 때는 깊이 가라앉습니다. 그러나 이 감정의 깊이가 이 관계의 가장 큰 에너지입니다.',
-    misunderstandingPattern: '"왜 그 말이 그렇게 크게 느껴져?" "왜 그렇게 예민하게 반응해?" — 감정 크기의 차이에서 오는 오해입니다. 한 사람에게는 작은 말이 다른 사람에게는 크게 느껴집니다. 감정이 크다는 것이 약점이 아닙니다. 감정을 표현하는 방식을 함께 찾는 것이 이 관계의 과제입니다.',
+    typeName: '로맨틱형 관계',
+    typeEmoji: '🌹',
+    coreSummary: '서로에게 감정적으로 깊이 몰입하는 관계입니다.',
+    tensionDescription: '이 관계는 감정적으로 깊이 연결됩니다. 함께 있는 순간의 분위기와 감정 연결감을 중요하게 여깁니다. 현실적인 효율보다 서로의 감정을 우선할 때가 있습니다. 상대의 작은 말 한마디, 표정 하나가 마음에 오래 남습니다. 감정이 올라올 때는 깊이 올라오고, 연결될 때는 진하게 연결됩니다. 이 감정의 깊이가 이 관계를 특별하게 만드는 에너지입니다.',
+    misunderstandingPattern: '"왜 그 말이 그렇게 크게 느껴져?" "왜 그렇게 예민하게 반응해?" — 감정 깊이의 차이에서 오는 오해입니다. 한 사람에게는 작은 말이 다른 사람에게는 깊이 남습니다. 감정에 깊이 몰입한다는 것이 약점이 아닙니다. 서로의 감정 언어를 이해하는 것이 이 관계의 과제입니다.',
     connectionStyle: '감정을 깊이 공감해주는 것. "그 감정 이해해"라고 말하는 것이 이 관계의 가장 깊은 연결입니다. 감정을 함께 느끼고 나누는 것이 이 관계를 살아있게 합니다.',
     recoveryRoutine: '감정이 폭발했을 때 바로 대화하지 마세요. 충분히 가라앉힌 후 "그때 내 감정이 이랬어"라고 말하세요. 감정을 설명하는 것이 이 관계의 회복입니다.',
     neededWords: '"내 마음을 알아줬으면 해."',
@@ -4295,7 +4334,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     connectionRoutine: '"그 감정 이해해"라고 말하는 순간. 감정을 판단하지 않고 함께 느끼는 것이 이 관계의 가장 깊은 정서 연결입니다.',
     affectionRoutine: '감정을 공감해주는 것. "힘들었겠다"라고 먼저 말하기, 감정이 클 때 옆에 있어주기, 감정을 판단하지 않고 들어주기.',
     emotionRoutine: '감정이 올라올 때 표현하기. "나 지금 이런 감정이야"라고 말하는 것이 이 관계의 감정 회복 방식입니다.',
-    closingMessage: '감정이 크다는 것은 이 관계를 깊이 느낀다는 것입니다. 감정 기복이 있어도 괜찮습니다. 감정을 함께 나누는 것, 그것이 이 관계의 가장 깊은 연결입니다.',
+    closingMessage: '서로에게 감정적으로 깊이 몰입한다는 것은, 이 관계를 진심으로 소중히 여긴다는 의미입니다. 감정의 깊이가 때로는 기복을 만들기도 하지만, 그 연결감이 이 관계를 오래도록 특별하게 만듭니다.',
     temperatureGraph: { emotionGap: 55, expressionIntensity: 70, recoverySpeed: 55 },
     expressionSpeed: { personA: '감정 표현', personB: '감정 공감', description: '감정을 크게 표현하는 사람과 그 감정을 받아주는 사람. 이 흐름이 이 관계의 패턴입니다.' },
     recoveryStyle: { icon: 'talk' as const, label: '감정 공감 대화형', description: '감정을 판단하지 않고 함께 느끼는 대화가 이 관계의 회복입니다.' },
@@ -4320,28 +4359,28 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
         growthCoaching: {
           strengths: {
             keywords: ['깊은 감정', '강한 정서적 유대', '몰입감', '진심 어린 연결'],
-            description: '감정의 깊이가 크고 정서적 유대가 강합니다. 서로에게 진심으로 몰입하는 에너지가 이 관계의 가장 큰 강점입니다.',
+            description: '서로에게 감정적으로 깊이 몰입하는 에너지가 이 관계의 가장 큰 강점입니다. 함께 있는 순간의 분위기와 감정 연결감을 소중히 여기는 흐름이 이 관계를 특별하게 만듭니다.',
           },
           loveStyle: {
             keywords: ['감정 공유', '깊은 대화', '몰입', '감정 확인'],
-            description: '감정을 깊이 나누고 서로에게 몰입하는 방식으로 사랑합니다. 표면적인 대화보다 깊은 감정 교류가 이 관계의 사랑 언어입니다.',
+            description: '함께 있는 순간의 감정 연결감을 중요하게 여기며 사랑합니다. 현실적인 효율보다 서로의 감정을 우선하는 순간이 이 관계의 사랑 언어입니다.',
           },
           alivePattern: {
             keywords: ['깊은 대화', '감정 몰입', '진심 어린 공감'],
-            description: '서로의 감정에 깊이 공감하고 몰입할 때 가장 살아납니다. 진심 어린 대화와 감정 교류가 이 관계의 에너지원입니다.',
+            description: '서로에게 감정적으로 연결되는 순간, 이 관계는 가장 살아납니다. 함께 있는 분위기와 진심 어린 감정 교류가 두 사람의 에너지원입니다.',
           },
           blindSpot: {
-            description: '감정 기복이 커지면 서로 쉽게 지치거나, 작은 일에도 크게 상처받는 순간이 올 수 있습니다. 감정의 깊이를 유지하면서도 안정적인 루틴과 회복 시간을 함께 만드는 것이 이 관계를 지속 가능하게 하는 방법입니다.',
+            description: '감정 깊이가 클수록 기복도 함께 커질 수 있습니다. 감정 연결감을 유지하면서도 안정적인 일상 루틴과 회복 시간을 함께 만드는 것이 이 관계를 오래 지속하게 하는 방법입니다.',
           },
           growthBalance: {
-            description: '감정의 깊이와 진심 어린 연결을 유지하면서도, 가끔은 가볍고 안정적인 시간을 함께 만들면 이 관계는 깊으면서도 오래 이어질 수 있습니다.',
+            description: '서로에 대한 감정 몰입과 연결감을 유지하면서도, 가끔은 가볍고 편안한 일상을 함께 나누면 이 관계는 깊으면서도 오래 이어질 수 있습니다.',
           },
         },
 
         unifiedSections: {
           coreEnergy: {
             headline: '감정을 깊게 느끼고 깊게 연결되는 관계',
-            description: '감정 깊이가 크고 정서적 유대가 강합니다. 깊은 공감과 감정 공유가 이 관계의 핵심입니다. 감정이 클수록 관계도 깊어지지만, 기복도 함께 커집니다.',
+            description: '서로에게 감정적으로 깊이 몰입하는 관계입니다. 함께 있는 순간의 분위기와 감정 연결감을 중요하게 여깁니다. 현실적인 효율보다 서로의 감정을 우선할 때가 있으며, 그 깊이가 이 관계를 특별하게 만듭니다.',
             keywords: ['감정 깊이', '공감', '정서 유대', '몰입', '기복'],
           },
           lifePattern: {
@@ -4699,7 +4738,9 @@ export function getRelationArchetype(
   shapeA?: string,
   shapeB?: string,
   colorIdsA?: string[],
-  colorIdsB?: string[]
+  colorIdsB?: string[],
+  cardIdsA?: string[],  // 무의식·현재·미래 카드 ID 배열 (cardIdsA[0] = 무의식 카드)
+  cardIdsB?: string[]  // 무의식·현재·미래 카드 ID 배열 (cardIdsB[0] = 무의식 카드)
 ): ArchetypeResult {
   // ── 레이어형 가중치 구조 ──
   // Layer 1: 컬러 조합 (주축 — archetype의 70~80%)
@@ -4708,6 +4749,54 @@ export function getRelationArchetype(
   // Layer 2: 도형 (modifier — 점수 보너스만, archetype 완전교체 금지)
   //   - 같은 컬러 조합이면 도형이 바뀌어도 archetype 유지
   //   - 극단적 조합에서만 인접 archetype으로 이동
+
+  // ── 섹션별 가중치 구조 ──────────────────────────────────────────────────
+  // 1컬러(핵심 기질) + 2컬러(표현 보정) + 3컬러(보조 흐름) + 무의식카드(현재 상태)
+  // 섹션마다 가중치 비율이 다름 (제안: 표현/회복/재정/생활 섹션별 차등)
+  type SectionWeightProfile = { c1: number; c2: number; c3: number; card: number };
+  const SECTION_WEIGHTS: Record<string, SectionWeightProfile> = {
+    expression: { c1: 0.35, c2: 0.35, c3: 0.10, card: 0.20 }, // 표현 방식: 2컬러+무의식카드 영향 큼
+    recovery:   { c1: 0.30, c2: 0.20, c3: 0.10, card: 0.40 }, // 회복 방식: 무의식카드(현재 상태) 영향 가장 큼
+    finance:    { c1: 0.55, c2: 0.25, c3: 0.10, card: 0.10 }, // 재정 스타일: 기본 기질 영향 가장 큼
+    lifestyle:  { c1: 0.60, c2: 0.20, c3: 0.10, card: 0.10 }, // 생활패턴/공간: 기본 기질 영향 가장 큼
+  };
+
+  // 무의식 카드 컬러 ID 추출 (cards[0] = 무의식 카드)
+  // 카드 컬러 키를 COLOR_EMOTION_SCORE 키로 정규화 (purple → violet)
+  const normalizeCardColor = (color: string | null): string | null => {
+    if (!color) return null;
+    const MAP: Record<string, string> = { purple: 'violet', gray: 'neutral', grey: 'neutral' };
+    return MAP[color] ?? color;
+  };
+  const unconsciousCardColorA = normalizeCardColor(
+    cardIdsA?.[0] ? (CARD_DATA.find(c => c.id === cardIdsA![0])?.color ?? null) : null
+  );
+  const unconsciousCardColorB = normalizeCardColor(
+    cardIdsB?.[0] ? (CARD_DATA.find(c => c.id === cardIdsB![0])?.color ?? null) : null
+  );
+
+  // 섹션별 가중치 적용 점수 계산
+  function calcSectionScore(
+    colorIds: string[],
+    unconsciousCardColor: string | null,
+    dimension: keyof EmotionDimension,
+    section: keyof typeof SECTION_WEIGHTS
+  ): number {
+    const w = SECTION_WEIGHTS[section];
+    const c1Score = COLOR_EMOTION_SCORE[colorIds[0]] ?? DEFAULT_EMOTION_SCORE;
+    const c2Score = COLOR_EMOTION_SCORE[colorIds[1]] ?? DEFAULT_EMOTION_SCORE;
+    const c3Score = COLOR_EMOTION_SCORE[colorIds[2]] ?? DEFAULT_EMOTION_SCORE;
+    const cardScore = unconsciousCardColor
+      ? (COLOR_EMOTION_SCORE[unconsciousCardColor] ?? DEFAULT_EMOTION_SCORE)
+      : DEFAULT_EMOTION_SCORE;
+    // 컬러 개수에 따라 가중치 재분배 (없는 컬러는 기본값 사용)
+    return (
+      c1Score[dimension] * w.c1 +
+      c2Score[dimension] * w.c2 +
+      c3Score[dimension] * w.c3 +
+      cardScore[dimension] * w.card
+    ) * 3.5; // 기존 단순합산(3컬러 × 평균 ~5점 = ~15) 수준으로 스케일 맞춤
+  }
 
   // 1. 컬러 점수 계산 — 첫 번째 컬러 1.5배 가중치
   function calcWeightedEmotionScore(colorIds: string[]): EmotionDimension {
@@ -4786,11 +4875,12 @@ export function getRelationArchetype(
   }
 
   // ── 표현 속도 동적 할당 ──
-  // 콜러의 expression 점수를 기반으로 personA/personB 표현 스타일을 실제 입력에 맞게 할당
-  // (archetype의 고정값이 아닌, 실제 두 사람의 콜러 성향 반영)
+  // 섹션별 가중치(expression: c1=35%, c2=35%, c3=10%, card=20%) 기반으로
+  // personA/personB 표현 스타일을 실제 입력에 맞게 할당
   const baseData = ARCHETYPE_DATA[finalArchetype];
-  const exprScoreA = scoreA.expression;
-  const exprScoreB = scoreB.expression;
+  // expression 섹션 가중치 적용 점수 (무의식 카드 포함)
+  const exprScoreA = calcSectionScore(colorIdsA ?? [], unconsciousCardColorA, 'expression', 'expression');
+  const exprScoreB = calcSectionScore(colorIdsB ?? [], unconsciousCardColorB, 'expression', 'expression');
   // ── 유사형 관계 expressionSpeed 오버라이드 ──
   // dominantA === dominantB인 경우 '차이' 중심 description 대신 '유사형 과열' 중심으로 교체
   const dominantA = getDominantFamily(familiesA);
@@ -4813,14 +4903,19 @@ export function getRelationArchetype(
   // 블랙/인디고/네이비/화이트/실버 등 '내면 처리·경계·침잠' 컬러가 포함되면
   // expression 점수에서 페널티를 적용하여 실제 표현 성향을 더 정확히 반영
   const INNER_PROCESS_COLORS = new Set(['black', 'indigo', 'navy', 'white', 'silver', 'sage', 'olive']);
+  // 블루: 논리 정리 후 표현 성향 → 강한 페널티 아닌 소프트 보정
+  const INNER_SOFT_COLORS = new Set(['blue']);
   const DIRECT_BOOST_COLORS  = new Set(['red', 'coral', 'orange', 'magenta', 'yellow']);
   function calcAdjustedExprScore(colorIds: string[], rawScore: number): number {
     let adj = rawScore;
     colorIds.forEach((id, idx) => {
-      const w = idx === 0 ? 1.5 : 1.0;
       if (INNER_PROCESS_COLORS.has(id)) {
         // 내면 처리형 컬러: 점수 하향 (1번 컬러면 더 강하게)
         adj -= (idx === 0 ? 4.5 : 3.0);
+      }
+      if (INNER_SOFT_COLORS.has(id)) {
+        // 블루: 소프트 페널티 (1번이면 -3.0, 2~3번이면 -2.0)
+        adj -= (idx === 0 ? 3.0 : 2.0);
       }
       if (DIRECT_BOOST_COLORS.has(id) && idx === 0) {
         // 직접 표현형 컬러가 1번(핵심 기질)이면 소폭 상향
@@ -4832,26 +4927,89 @@ export function getRelationArchetype(
   const adjScoreA = calcAdjustedExprScore(colorIdsA ?? [], exprScoreA);
   const adjScoreB = calcAdjustedExprScore(colorIdsB ?? [], exprScoreB);
 
-  if (!isSameEnergyFamily && Math.abs(adjScoreA - adjScoreB) >= 2) {
-    // ── 표현 점수 임계값: 3컬러 가중치 합산 기준 (최대 ~31.5, 최소 ~3.5) ──
-    // 단일 컬러 기준(0-10)이 아닌 합산 점수 기준으로 수정
-    // 예: 그린·옐로우·바이올렛 = 3*1.5+5+3 = 12.5 → '상황에 따라 표현'
-    //     레드·블루·옐로우 = 9*1.5+6+5 = 24.5 → '즉각적 표현'
-    const getExprLabel = (score: number): string => {
-      if (score >= 22) return '즉각적 표현';     // 레드·오렌지 계열 주도
-      if (score >= 16) return '직접적 표현';     // 옐로우·블루 계열 주도
-      if (score >= 11) return '상황에 따라 표현'; // 그린·핑크 계열
-      if (score >= 7)  return '내면 처리 후 표현'; // 바이올렛·인디고 계열
-      return '조용한 표현';                      // 화이트·블랙 계열
+  // ── 표현 점수 임계값: 3컬러 가중치 합산 기준 (최대 ~31.5, 최소 ~3.5) ──
+  const getExprLabel = (score: number): string => {
+    if (score >= 22) return '즉각적 표현';     // 레드·오렌지 계열 주도
+    if (score >= 16) return '직접적 표현';     // 옐로우·블루 계열 주도
+    if (score >= 11) return '상황에 따라 표현'; // 그린·핑크 계열
+    if (score >= 7)  return '내면 처리 후 표현'; // 바이올렛·인디고 계열
+    return '조용한 표현';                      // 화이트·블랙 계열
+  };
+  // 동일 레이블 조합에서 사용할 설명문 맵
+  const sameExprLabelDescMap: Record<string, string> = {
+    '즉각적 표현': '두 사람 모두 감정을 빠르게 표현하는 편입니다. 같은 속도로 반응하지만 둘 다 흥분하면 감정 강도가 함께 올라가는 순간이 생길 수 있습니다.',
+    '직접적 표현': '두 사람 모두 감정을 직접적으로 표현하는 편이지만, 표현의 강도나 방식에 차이가 있을 수 있습니다. 서로의 표현 방식을 이해하는 것이 중요합니다.',
+    '상황에 따라 표현': '두 사람 모두 상황에 따라 표현 방식을 조율하는 편입니다. 서로 눈치를 보다 정작 하고 싶은 말을 미루는 패턴이 생길 수 있습니다.',
+    '내면 처리 후 표현': '두 사람 모두 내면에서 먼저 정리한 후 표현하는 편입니다. 서로의 침묵을 이해하지만 둘 다 기다리다 연결이 늦어지는 패턴이 반복될 수 있습니다.',
+    '조용한 표현': '두 사람 모두 감정을 조용히 담아두는 편입니다. 서로 이해하지만 감정을 꺼내는 데 시간이 걸려 연결이 느려질 수 있습니다.',
+  };
+  // ── 컬러 조합별 표현 성향 설명 (1컬러 핵심 성향 + 2컬러 보정 흐름) ──
+  // 1컬러(핵심 기질)와 2컬러(표현 보정)를 함께 반영한 입체적 설명 생성
+  function getColorExprTraitDesc(colorIds: string[]): string {
+    const c1 = colorIds[0] ?? '';
+    const c2 = colorIds[1] ?? '';
+    const C1_DESC: Record<string, string> = {
+      blue: '기본적으로는 생각과 감정을 어느 정도 정리한 후 표현하려는 성향이 있습니다',
+      red: '기본적으로는 감정이 올라오면 비교적 빠르고 직접적으로 표현하는 성향이 있습니다',
+      coral: '기본적으로는 감정을 따뜻하고 즉각적으로 표현하는 성향이 있습니다',
+      orange: '기본적으로는 활기차고 빠르게 감정을 표현하는 성향이 있습니다',
+      yellow: '기본적으로는 밝고 가볍게 감정을 표현하는 성향이 있습니다',
+      green: '기본적으로는 상황을 살피며 균형 있게 표현하는 성향이 있습니다',
+      olive: '기본적으로는 내면에서 충분히 정리한 후 표현하는 성향이 있습니다',
+      sage: '기본적으로는 조용하고 신중하게 표현하는 성향이 있습니다',
+      navy: '기본적으로는 책임감 있게 신중하게 표현하는 성향이 있습니다',
+      indigo: '기본적으로는 내면 깊이 정리한 후 표현하는 성향이 있습니다',
+      violet: '기본적으로는 깊은 감정을 천천히 표현하는 성향이 있습니다',
+      black: '기본적으로는 감정을 내면에 담아두다 표현하는 성향이 있습니다',
+      white: '기본적으로는 감정을 정화하고 비운 후 표현하는 성향이 있습니다',
+      pink: '기본적으로는 따뜻하고 감성적으로 표현하는 성향이 있습니다',
+      magenta: '기본적으로는 감정에 몰입하여 깊게 표현하는 성향이 있습니다',
+      gold: '기본적으로는 안정적이고 품격 있게 표현하는 성향이 있습니다',
+      brown: '기본적으로는 신중하고 묵직하게 표현하는 성향이 있습니다',
+      teal: '기본적으로는 감정과 이성을 균형 있게 조율하며 표현하는 성향이 있습니다',
+      skyblue: '기본적으로는 명료하고 시원하게 표현하는 성향이 있습니다',
+      mint: '기본적으로는 부드럽고 가볍게 표현하는 성향이 있습니다',
+      lavender: '기본적으로는 부드럽고 치유적으로 표현하는 성향이 있습니다',
     };
+    const C2_CORRECTION: Record<string, string> = {
+      red: '하지만 두 번째 컬러인 레드 영향으로 감정이 올라오면 비교적 빠르고 직접적으로 표현되기도 합니다',
+      coral: '하지만 두 번째 컬러인 코랄 영향으로 감정이 올라오면 따뜻하고 즉각적으로 표현되기도 합니다',
+      orange: '하지만 두 번째 컬러인 오렌지 영향으로 활기차게 감정을 꺼내는 순간이 생기기도 합니다',
+      yellow: '하지만 두 번째 컬러인 옐로우 영향으로 밝고 가볍게 감정을 표현하는 순간이 있기도 합니다',
+      blue: '하지만 두 번째 컬러인 블루 영향으로 표현 전에 한 번 더 정리하려는 흐름이 생기기도 합니다',
+      green: '하지만 두 번째 컬러인 그린 영향으로 상황을 살피며 표현을 조율하는 흐름이 있기도 합니다',
+      olive: '하지만 두 번째 컬러인 올리브 영향으로 내면에서 충분히 정리한 후 표현하려는 경향이 있기도 합니다',
+      navy: '하지만 두 번째 컬러인 네이비 영향으로 신중하게 표현을 조율하는 흐름이 있기도 합니다',
+      indigo: '하지만 두 번째 컬러인 인디고 영향으로 깊이 정리한 후 표현하려는 흐름이 있기도 합니다',
+      black: '하지만 두 번째 컬러인 블랙 영향으로 감정을 담아두다 한꺼번에 표현하는 순간이 생기기도 합니다',
+      pink: '하지만 두 번째 컬러인 핑크 영향으로 감성적이고 따뜻하게 표현하는 순간이 있기도 합니다',
+      magenta: '하지만 두 번째 컬러인 마젠타 영향으로 감정에 몰입하여 깊게 표현하는 순간이 있기도 합니다',
+    };
+    const base = C1_DESC[c1] ?? '기본적으로는 자신만의 방식으로 표현하는 성향이 있습니다';
+    const correction = c2 && C2_CORRECTION[c2] ? `. ${C2_CORRECTION[c2]}` : '';
+    return `${base}${correction}.`;
+  }
+
+  if (!isSameEnergyFamily) {
     const labelA = getExprLabel(adjScoreA);
     const labelB = getExprLabel(adjScoreB);
-    // 두 레이블이 다를 때만 교체 (같으면 archetype 기본값 유지)
+    // 1컬러 핵심 성향 + 2컬러 보정 흐름 설명 생성
+    const traitDescA = getColorExprTraitDesc(colorIdsA ?? []);
+    const traitDescB = getColorExprTraitDesc(colorIdsB ?? []);
     if (labelA !== labelB) {
+      // 레이블이 다를 때: 두 레이블 조합 기반 동적 할당 + 입체적 설명
       dynamicExpressionSpeed = {
         personA: labelA,
         personB: labelB,
-        description: baseData.expressionSpeed.description,
+        description: `첫 번째 사람: ${traitDescA} 두 번째 사람: ${traitDescB}`,
+      };
+    } else {
+      // 레이블이 같을 때: 동일 레이블 설명문 + 입체적 설명
+      const sameDesc = sameExprLabelDescMap[labelA] ?? baseData.expressionSpeed.description;
+      dynamicExpressionSpeed = {
+        personA: labelA,
+        personB: labelB,
+        description: `${sameDesc} 첫 번째 사람: ${traitDescA} 두 번째 사람: ${traitDescB}`,
       };
     }
   }
@@ -5063,197 +5221,6 @@ export function getRelationArchetype(
         personA: '"나 아직 정리가 안 됐어. 조금만 기다려줘." 내면 정리 후 대화형입니다.',
         personB: '"언제까지 기다려야 해? 해결하고 넘어가야지." 현실 해결 우선형입니다.',
         tip: '"오늘 저녁에 얘기하자"처럼 시간을 정해두면 두 사람 모두 편합니다.',
-      },
-    },
-    // ── black + lavender 조합 (내면·강도 vs 감성·회복) ──
-    'black-lavender': {
-      finance: {
-        title: '재정 스타일 차이',
-        description: '한 사람은 원칙과 통제 중심 소비, 다른 사람은 감성과 여유 중심 소비를 합니다.',
-        personA: '"소비는 원칙이 있어야 해. 계획 없이 쓰면 안 돼." 원칙·통제형 소비입니다.',
-        personB: '"이건 사면 마음이 편해질 것 같아. 여유를 위한 소비는 필요해." 감성·여유형 소비입니다.',
-        tension: '"왜 이렇게 눈에 보이는 것에만 쓰야?"와 "왜 이렇게 단단해?"가 반복됩니다.',
-      },
-      cleaning: {
-        title: '청소·정리 스타일',
-        description: '한 사람은 엄격한 정돈 기준, 다른 사람은 부드럽고 편안한 공간을 원합니다.',
-        personA: '"집은 엄격하게 정돈되어야 해. 어수선하면 집중이 안 돼." 엄격한 정돈형입니다.',
-        personB: '"집이 따뜻하고 편안하면 돼. 너무 단단하면 숫막혀." 부드럼·편안형입니다.',
-        tension: '"왜 이렇게 어질러?"와 "왜 이렇게 단단해?"가 반복됩니다.',
-      },
-      rest: {
-        title: '휴식·회복 방식',
-        description: '한 사람은 혼자 강하게 충전하고, 다른 사람은 부드럽고 감성적인 연결로 회복합니다.',
-        personA: '"혼자 조용히 있어야 충전돼. 사람이 많으면 지쳐." 독립 충전형입니다.',
-        personB: '"분위기 좋은 곳에서 조용히 쉬어야 충전돼." 감성 공간 회복형입니다.',
-        tension: '한 사람이 혼자 충전할 때 다른 사람은 "나를 피하는 건가?"라고 느낄 수 있습니다.',
-      },
-      affection: {
-        title: '애정 표현 방식',
-        description: '한 사람은 진지한 행동과 신뢰, 다른 사람은 부드럽고 감성적인 표현으로 사랑을 표현합니다.',
-        personA: '"말보다 행동으로 보여주는 게 진심이야." 진지한 신뢰형입니다.',
-        personB: '"따뜻한 말과 부드러운 스킨십이 사랑의 언어야." 감성·연결형입니다.',
-        tip: '"왜 표현을 안 해?"보다 "이런 방식이 나한테 사랑이야"라고 먼저 알려주세요.',
-      },
-      conflict: {
-        title: '갈등 직후 반응',
-        description: '한 사람은 혼자 강하게 정리하고, 다른 사람은 부드럽게 회복하려 합니다.',
-        personA: '"나 지금 혼자 있어야 해. 정리되면 얘기할게." 독립 정리형입니다.',
-        personB: '"지금 내 마음을 먼저 알아줘줘. 부드럽게 말해줘." 감성 우선형입니다.',
-        tip: '"나 지금 정리 중이야, 조금 있다 다시 연락할게"라는 신호가 오해를 줄입니다.',
-      },
-    },
-    // ── indigo + green 조합 (내면·성찰 vs 조율·회복) ──
-    'indigo-green': {
-      finance: {
-        title: '재정 스타일 차이',
-        description: '한 사람은 의미와 가치 중심 소비, 다른 사람은 관계와 조화 중심 소비를 합니다.',
-        personA: '"이게 정말 가치 있는 건지 먼저 생각해봐야 해." 의미·가치 중심 소비입니다.',
-        personB: '"우리 함께 즐길 수 있는 것에 쓰는 건 아깝지 않아." 관계·함께 중심 소비입니다.',
-        tension: '"왜 이렇게 현실적이야?"와 "왜 이렇게 이상적이야?"가 반복됩니다.',
-      },
-      cleaning: {
-        title: '청소·정리 스타일',
-        description: '한 사람은 조용하고 정돈된 공간, 다른 사람은 자연스러운 조화와 편안함을 원합니다.',
-        personA: '"조용하고 정돈된 공간이어야 생각이 정리돼." 미니멀·정돈형입니다.',
-        personB: '"집이 자연스러운 조화를 이뢨면 돼. 너무 단단하면 숫막혀." 자연·조화형입니다.',
-        tension: '"왜 이렇게 어질러?"와 "왜 이렇게 단순해?"가 반복됩니다.',
-      },
-      rest: {
-        title: '휴식·회복 방식',
-        description: '한 사람은 내면 성찰로, 다른 사람은 자연과 관계 회복으로 충전합니다.',
-        personA: '"혼자 조용히 있어야 충전돼. 생각 정리할 시간이 필요해." 내면 회복형입니다.',
-        personB: '"자연 속에서 걸거나, 사람과 연결되면 기분 풀려." 자연·연결 회복형입니다.',
-        tension: '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
-      },
-      affection: {
-        title: '애정 표현 방식',
-        description: '한 사람은 깊은 대화와 신뢰, 다른 사람은 자연스러운 연결과 조율로 사랑을 표현합니다.',
-        personA: '"네 생각이 궁금해. 깊은 엘기 하고 싶어." 깊은 연결형입니다.',
-        personB: '"같이 있는 시간이 좋아. 자연스러운 연결이 사랑의 언어야." 자연·조화형입니다.',
-        tip: '서로의 사랑 언어가 다릅니다. "나는 이렇게 표현해"라고 먼저 알려주세요.',
-      },
-      conflict: {
-        title: '갈등 직후 반응',
-        description: '한 사람은 내면에서 천천히 정리하고, 다른 사람은 자연스러운 화해를 원합니다.',
-        personA: '"나 아직 정리가 안 돼. 조금만 기다려줘." 내면 정리 후 대화형입니다.',
-        personB: '"시간이 지나면 자연스러운 화해가 돼. 서로 조율하자." 자연 화해형입니다.',
-        tip: '"오늘 저녀에 엘기하자"첫럼 시간을 정해두면 두 사람 모두 편합니다.',
-      },
-    },
-    // ── white + indigo 조합 (정화·비움 vs 내면·성찰) ──
-    'white-indigo': {
-      finance: {
-        title: '재정 스타일 차이',
-        description: '두 사람 모두 신중하고 절제된 소비 성향이 있지만, 기준이 다릅니다.',
-        personA: '"꼭 필요한 것만 사자. 비워야 첨워지는 거야." 절제·정화형 소비입니다.',
-        personB: '"이게 정말 가치 있는 것인지 먼저 생각해봐야 해." 의미·가치 중심 소비입니다.',
-        tension: '두 사람 모두 즉흥 소비는 적지만, "왜 이걸 새로 새로 사?"와 "왜 이걸 아직도 갖고 있어?"가 생길 수 있습니다.',
-      },
-      cleaning: {
-        title: '청소·정리 스타일',
-        description: '두 사람 모두 정돈을 중시하지만, 한 사람은 비움, 다른 사람은 의미 있는 것만 남기는 방식을 선호합니다.',
-        personA: '"물건이 없어야 마음이 편해. 자꼬 비우자." 미니멀·정화형입니다.',
-        personB: '"의미 있는 것만 남기자. 물건 하나하나에 의미가 있어야 해." 의미·선별형입니다.',
-        tension: '"왜 이걸 버려?"와 "왜 이걸 아직도 갖고 있어?"가 반복됩니다.',
-      },
-      rest: {
-        title: '휴식·회복 방식',
-        description: '두 사람 모두 조용한 회복을 선호하지만, 한 사람은 비움, 다른 사람은 성찰로 충전합니다.',
-        personA: '"조용한 공간에서 혼자 비워내야 충전돼." 고요·정화 회복형입니다.',
-        personB: '"혼자 조용히 있으면서 생각을 정리해야 충전돼." 내면 성찰 충전형입니다.',
-        tension: '두 사람 모두 혼자 있으려 하면 "서로 피하는 건가?"라는 오해가 생길 수 있습니다.',
-      },
-      affection: {
-        title: '애정 표현 방식',
-        description: '두 사람 모두 절제된 표현을 선호하지만, 한 사람은 정화된 행동, 다른 사람은 깊은 진심으로 사랑을 표현합니다.',
-        personA: '"말보다 행동으로 보여주는 게 더 진심이야." 정화된 행동형입니다.',
-        personB: '"네 안에 있는 진짜 이야기를 듣고 싶어." 깊은 진심형입니다.',
-        tip: '"왜 표현을 안 해?"보다 "나는 이렇게 표현해"라고 먼저 알려주세요.',
-      },
-      conflict: {
-        title: '갈등 직후 반응',
-        description: '두 사람 모두 시간이 필요하지만, 한 사람은 비움, 다른 사람은 성찰로 정리합니다.',
-        personA: '"지금은 말하기 싫어. 마음을 비워내면 얘기할게." 정화 후 대화형입니다.',
-        personB: '"나 아직 정리가 안 돼. 조금만 기다려줘." 내면 정리 후 대화형입니다.',
-        tip: '"오늘 저녀에 엘기하자"첫럼 시간을 정해두면 두 사람 모두 편합니다.',
-      },
-    },
-    // ── red + green 조합 (활력·실행 vs 조율·회복) ──
-    'red-green': {
-      finance: {
-        title: '재정 스타일 차이',
-        description: '한 사람은 빠른 결정과 즉흥적 소비, 다른 사람은 관계와 조화를 위한 실용적 소비를 합니다.',
-        personA: '"좋으면 사는 거지. 지금 행복이 중요해." 즉흥·활력형 소비입니다.',
-        personB: '"우리 둘 다 편안한 것에 쓰자. 관계를 위한 소비는 아깝지 않아." 조화·실용형 소비입니다.',
-        tension: '"왜 이렇게 충동적이야?"와 "왜 이렇게 늘 조율하려 해?"가 반복됩니다.',
-      },
-      cleaning: {
-        title: '청소·정리 스타일',
-        description: '한 사람은 빠른 실행 우선, 다른 사람은 자연스러운 조화와 편안함을 원합니다.',
-        personA: '"일단 치우자. 나중에 완벽하게 해도 돼." 빠른 실행형입니다.',
-        personB: '"집이 자연스러운 조화를 이뢨면 돼. 너무 빠르게 하면 어지러지는 것 같아." 자연·조화형입니다.',
-        tension: '"왜 이렇게 느리야?"와 "왜 이렇게 서둥러?"가 반복됩니다.',
-      },
-      rest: {
-        title: '휴식·회복 방식',
-        description: '한 사람은 활동하면서 기분 전환, 다른 사람은 자연 속에서 회복합니다.',
-        personA: '"나가서 다이나미한 데 가면 기분 풀려. 집에만 있으면 답답해." 활동 전환형입니다.',
-        personB: '"자연 속에서 걸거나, 조용히 쉬어야 충전돼." 자연·회복형입니다.',
-        tension: '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
-      },
-      affection: {
-        title: '애정 표현 방식',
-        description: '한 사람은 즉각적인 표현, 다른 사람은 자연스러운 연결과 조율로 사랑을 표현합니다.',
-        personA: '"지금 보고 싶어. 바로 만나자. 가자!"입니다. 즉각적이고 직접적인 표현형입니다.',
-        personB: '"같이 있는 시간이 좋아. 자연스러운 연결이 사랑의 언어야." 자연·조화형입니다.',
-        tip: '서로의 사랑 언어가 다릅니다. "나는 이렇게 표현해"라고 먼저 알려주세요.',
-      },
-      conflict: {
-        title: '갈등 직후 반응',
-        description: '한 사람은 즉각 해결하려 하고, 다른 사람은 자연스러운 화해를 원합니다.',
-        personA: '"지금 바로 엘기하자. 이대로 두면 더 커져." 즉각 해결형입니다.',
-        personB: '"시간이 지나면 자연스러운 화해가 돼. 서로 조율하자." 자연 화해형입니다.',
-        tip: '"오늘 저녀에 엘기하자"첫럼 시간을 정해두면 두 사람 모두 편합니다.',
-      },
-    },
-    // ── lavender + black 조합 (감성·회복 vs 내면·강도) ──
-    // 역방향은 swapLifestyleSections()로 자동 처리됨
-    'lavender-black': {
-      finance: {
-        title: '재정 스타일 차이',
-        description: '한 사람은 감성과 여유 중심 소비, 다른 사람은 원칙과 통제 중심 소비를 합니다.',
-        personA: '"이건 사면 마음이 편해질 것 같아. 여유를 위한 소비는 필요해." 감성·여유형 소비입니다.',
-        personB: '"소비는 원칙이 있어야 해. 계획 없이 쓰면 안 돼." 원칙·통제형 소비입니다.',
-        tension: '"왜 이렇게 단단해?"와 "왜 이렇게 눈에 보이는 것에만 쓰야?"가 반복됩니다.',
-      },
-      cleaning: {
-        title: '청소·정리 스타일',
-        description: '한 사람은 부드럽고 편안한 공간, 다른 사람은 엄격한 정돈 기준을 원합니다.',
-        personA: '"집이 따뜻하고 편안하면 돼. 너무 단단하면 숫막혀." 부드럼·편안형입니다.',
-        personB: '"집은 엄격하게 정돈되어야 해. 어수선하면 집중이 안 돼." 엄격한 정돈형입니다.',
-        tension: '"왜 이렇게 단단해?"와 "왜 이렇게 어질러?"가 반복됩니다.',
-      },
-      rest: {
-        title: '휴식·회복 방식',
-        description: '한 사람은 부드럽고 감성적인 연결로, 다른 사람은 혼자 강하게 충전하며 회복합니다.',
-        personA: '"분위기 좋은 곳에서 조용히 쉬어야 충전돼." 감성 공간 회복형입니다.',
-        personB: '"혼자 조용히 있어야 충전돼. 사람이 많으면 지쳐." 독립 충전형입니다.',
-        tension: '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
-      },
-      affection: {
-        title: '애정 표현 방식',
-        description: '한 사람은 부드럽고 감성적인 표현, 다른 사람은 진지한 행동과 신뢰로 사랑을 표현합니다.',
-        personA: '"따뜻한 말과 부드러운 스킨십이 사랑의 언어야." 감성·연결형입니다.',
-        personB: '"말보다 행동으로 보여주는 게 진심이야." 진지한 신뢰형입니다.',
-        tip: '"왜 표현을 안 해?"보다 "이런 방식이 나한테 사랑이야"라고 먼저 알려주세요.',
-      },
-      conflict: {
-        title: '갈등 직후 반응',
-        description: '한 사람은 부드럽게 회복하려 하고, 다른 사람은 혼자 강하게 정리합니다.',
-        personA: '"지금 내 마음을 먼저 알아줘줘. 부드럽게 말해줘." 감성 우선형입니다.',
-        personB: '"나 지금 혼자 있어야 해. 정리되면 얘기할게." 독립 정리형입니다.',
-        tip: '"나 지금 정리 중이야, 조금 있다 다시 연락할게"라는 신호가 오해를 줄입니다.',
       },
     },
     // ── white + blue 조합 ──
@@ -5730,7 +5697,7 @@ export function getRelationArchetype(
         description: '한 사람은 질서와 시스템 중심, 다른 사람은 비우고 단순하게 유지하는 공간을 원합니다.',
         personA: '"집은 질서가 있어야 해. 시스템이 있어야 마음이 편해." 질서·시스템형입니다.',
         personB: '"비울수록 마음이 편해. 단순하게 유지하고 싶어." 정화·미니멀형입니다.',
-        tension: '질서 방식이 달라 "왜 이렇게 어질러?"와 "왜 이렇게 새 것을 자꼬 사?"가 반복될 수 있습니다.',
+        tension: '질서 방식이 달라 "왜 이렇게 어질러?"와 "왜 이렇게 새 것을 자꾸 사?"가 반복될 수 있습니다.',
       },
       rest: {
         title: '휴식·회복 방식',
@@ -5742,7 +5709,7 @@ export function getRelationArchetype(
       affection: {
         title: '애정 표현 방식',
         description: '한 사람은 신뢰와 깊이 있는 연결, 다른 사람은 조용하고 진심 어린 표현으로 사랑을 표현합니다.',
-        personA: '"만을 수 있어야 해. 깊이 연결되는 게 사랑이야." 신뢰·깊이형입니다.',
+        personA: '"믿을 수 있어야 해. 깊이 연결되는 게 사랑이야." 신뢰·깊이형입니다.',
         personB: '"말 없이도 알아줬으면 해. 조용히 옆에 있어줘." 조용한 진심형입니다.',
         tip: '서로의 사랑 언어가 다릅니다. "나는 이렇게 표현해"라고 먼저 알려주세요.',
       },
@@ -5768,11 +5735,11 @@ export function getRelationArchetype(
         description: '한 사람은 의미 있는 물건과 정돈된 내면 공간, 다른 사람은 따뜻하고 감성적인 공간을 원합니다.',
         personA: '"의미 있는 것만 남겨야 해. 공간이 정돈돼 있어야 생각이 정리돼." 의미·정돈형입니다.',
         personB: '"공간이 따뜻하고 감성적이어야 마음이 편해." 감성 공간형입니다.',
-        tension: '공간 취향이 달라 "왜 이렇게 새로운 것을 자꼬 사?"와 "왜 이렇게 썰렁해?"가 반복됩니다.',
+        tension: '공간 취향이 달라 "왜 이렇게 새로운 것을 자꾸 사?"와 "왜 이렇게 썰렁해?"가 반복됩니다.',
       },
       rest: {
         title: '휴식·회복 방식',
-        description: '한 사람은 혼자 깊이 생각하고 성찰하는 시간으로, 다른 사람은 따뜻한 연결과 감성적 회복로 충전합니다.',
+        description: '한 사람은 혼자 깊이 생각하고 성찰하는 시간으로, 다른 사람은 따뜻한 연결과 감성적 회복으로 충전합니다.',
         personA: '"혼자 조용히 생각하거나, 의미 있는 것에 집중해야 충전돼." 내면 성찰형입니다.',
         personB: '"네가 옆에 있어줘야 해. 따뜻한 연결이 있어야 충전돼." 연결·감성 회복형입니다.',
         tension: '한 사람이 혼자 있고 싶을 때 다른 사람은 연결을 원해 방향이 엇갈립니다.',
@@ -5788,7 +5755,7 @@ export function getRelationArchetype(
         title: '갈등 직후 반응',
         description: '한 사람은 혼자 정리한 후 깊이 대화하려 하고, 다른 사람은 빨리 화해하고 감정적으로 연결하려 합니다.',
         personA: '"충분히 정리되면 얘기하자. 지금은 혼자 있어야 해." 내면 정리 후 대화형입니다.',
-        personB: '"빨리 화해하고 싶어. 안아줘." 빨른 연결형입니다.',
+        personB: '"빨리 화해하고 싶어. 안아줘." 빠른 연결형입니다.',
         tip: '"나 지금 정리 중이야, 조금만 기다려줘"라는 신호가 오해를 줄입니다.',
       },
     },
@@ -5830,47 +5797,6 @@ export function getRelationArchetype(
         tip: '두 사람 모두 조용한 편이라 시간을 주면 자연스럽게 해결됩니다.',
       },
     },
-    // ── white-black-indigo + red-lavender-green 조합 (절제·내면 vs 활력·감성) ──
-    'white-black-indigo|red-lavender-green': {
-      finance: {
-        title: '재정 스타일 차이',
-        description: '한 사람은 신중하고 절제된 소비, 다른 사람은 경험과 감성 중심의 소비를 합니다.',
-        personA: '"꼭 필요한 건지 다시 생각해봐. 비워야 채워지는 거야." 신중 절제형 소비입니다. 충동 소비보다 필요성을 먼저 검토하고, 안정을 우선합니다.',
-        personB: '"기분 좋아지는 것, 경험하는 것에 쓰는 건 아깝지 않아." 즉흥·감성형 소비입니다. 현재의 감정과 경험을 중시하며 반응형 소비를 합니다.',
-        tension: '"왜 이렇게 충동적이야?"와 "왜 이렇게 소극적이야?"가 반복됩니다. 소비 전 간단한 기준 합의가 마찰을 줄입니다.',
-      },
-      cleaning: {
-        title: '청소·정리 스타일',
-        description: '한 사람은 완벽하게 비우고 정리하는 방식, 다른 사람은 분위기와 편안함 중심의 공간을 원합니다.',
-        personA: '"제대로 하려면 다 꺼내서 다시 정리해야 해." 완전 정리·미니멀형입니다. 물건이 줄어야 마음이 가벼워집니다.',
-        personB: '"집이 따뜻하고 편안하면 돼. 완벽하지 않아도 괜찮아." 분위기·편안함 중심입니다. 정돈보다 감성적 공간이 우선입니다.',
-        tension: '한 사람이 치워놓으면 다른 사람이 다시 꺼내놓는 패턴이 반복됩니다.',
-      },
-      rest: {
-        title: '휴식·회복 방식',
-        description: '한 사람은 조용한 공간에서 혼자 비워내며 회복하고, 다른 사람은 활동하거나 감성적 연결로 에너지를 회복합니다.',
-        personA: '"조용한 데서 혼자 있어야 충전돼. 자극이 없어야 쉬어지는 느낌이야." 고요·내면 회복형입니다.',
-        personB: '"나가서 뭔가 하거나, 분위기 좋은 곳에 가면 기분 풀려." 활동·감성 전환형입니다.',
-        tension: '쉬는 방식이 정반대라 "같이 있어도 따로 쉬는 느낌"이 강합니다.',
-      },
-      affection: {
-        title: '애정 표현 방식',
-        description: '한 사람은 절제된 행동과 진심, 다른 사람은 즉각적인 표현과 따뜻한 연결로 사랑을 표현합니다.',
-        personA: '"말보다 행동으로 보여주는 게 더 진심이야." 절제된 진심형입니다. 표현이 적어도 깊이가 있습니다.',
-        personB: '"지금 보고 싶어. 바로 만나자. 안아줘." 즉각적이고 감성적인 표현형입니다.',
-        tip: '"왜 표현을 안 해?"보다 "이런 방식이 나한테 사랑이야"라고 알려주세요.',
-      },
-      conflict: {
-        title: '갈등 직후 반응',
-        description: '한 사람은 완전히 정리될 때까지 거리를 두고, 다른 사람은 빠르게 연결을 회복하려 합니다.',
-        personA: '"지금은 말하기 싫어. 완전히 정리되면 얘기할게." 완전 정리 후 대화형입니다.',
-        personB: '"지금 바로 해결하자. 이대로 두면 더 커져." 즉각 해결·재연결형입니다.',
-        tip: '"언제쯤 얘기할 수 있어?"라고 시간을 정해두면 두 사람 모두 덜 불안합니다.',
-      },
-    },
-    // ── red-lavender-green + white-black-indigo 역방향 (swap 처리됨) ──
-    // 역방향은 swapLifestyleSections()로 자동 처리되므로 별도 항목 불필요
-
     // ── yellow-gold-beige + blue-sky-white 조합 (밝음·자신감 vs 신뢰·표현) ──
     'yellow-gold-beige|blue-sky-white': {
       finance: {
@@ -5898,13 +5824,13 @@ export function getRelationArchetype(
         title: '애정 표현 방식',
         description: '한 사람은 밝고 표현적인 애정, 다른 사람은 신뢰와 진심 어린 연결로 사랑을 표현합니다.',
         personA: '"같이 뭔가 하자. 지금 바로 가자." 밝고 표현적인 애정입니다.',
-        personB: '"만을 수 있어야 해. 진심이 느껴져야 해." 신뢰·진심형입니다.',
+        personB: '"믿을 수 있어야 해. 진심이 느껴져야 해." 신뢰·진심형입니다.',
         tip: '서로의 사랑 언어가 다릅니다. "나는 이렇게 표현해"라고 먼저 알려주세요.',
       },
       conflict: {
         title: '갈등 직후 반응',
         description: '한 사람은 빠르게 털고 넘어가려 하고, 다른 사람은 충분히 정리한 후 대화하려 합니다.',
-        personA: '"빨리 털어버리고 다시 좋아지자." 빨른 전환형입니다.',
+        personA: '"빨리 털어버리고 다시 좋아지자." 빠른 전환형입니다.',
         personB: '"충분히 정리되면 얘기하자. 지금은 좀 있어줘." 내면 정리 후 대화형입니다.',
         tip: '"언제쯤 얘기할 수 있어?"라고 시간을 정해두면 두 사람 모두 덜 불안합니다.',
       },
@@ -5914,7 +5840,6 @@ export function getRelationArchetype(
   // 전체 조합 키 매칭 (양방향)
   const fullComboKey1 = `${fullKeyA}|${fullKeyB}`;
   const fullComboKey2 = `${fullKeyB}|${fullKeyA}`;
-
   // personA/B swap 헬퍼: 역방향 키 매칭 시 personA/B를 교환하여 올바른 방향으로 출력
   function swapLifestyleSections(s: LifestyleSections): LifestyleSections {
     const swapSection = <T extends { personA: string; personB: string }>(sec: T | undefined): T | undefined => {
@@ -5965,7 +5890,7 @@ export function getRelationArchetype(
     // ── red-blue-black + pink-indigo-yellow 3컬러 전체 조합 ──
     'red-blue-black|pink-indigo-yellow': {
       attractionContrast: '첫 번째 사람은 빠른 실행력과 신뢰·기준·질서를 동시에 원합니다. 감정보다 논리가 먼저이고, 약속과 원칙이 흔들리면 관계에 대한 신뢰가 흔들립니다. 두 번째 사람은 따뜻한 인정과 감정적 공감, 현실 안정감을 원합니다. 그래서 한 사람은 "왜 감정적으로 반응해?"라고 느끼고, 다른 사람은 "왜 이렇게 차갑게 말해?"라고 느낄 수 있습니다.',
-      relationFlow: '한 사람이 논리적으로 정리하려 하면, 다른 사람은 "내 감정은 어디 갔어?"라고 느끼는 패턴이 반복됩니다. 논리와 감정이 번갈아 충돌합니다. "맞고 틀리고"보다 "네 마음이 어둠어?"가 먼저 필요한 관계입니다.',
+      relationFlow: '한 사람이 논리적으로 정리하려 하면, 다른 사람은 "내 감정은 어디 갔어?"라고 느끼는 패턴이 반복됩니다. 논리와 감정이 번갈아 충돌합니다. "맞고 틀리고"보다 "네 마음이 어때?"가 먼저 필요한 관계입니다.',
       expressionDifference: '한 사람은 "사실 관계를 먼저 정리하자"는 논리 우선형입니다. 다른 사람은 "내 마음을 먼저 알아줬으면 해"라는 감정 우선형입니다. 같은 상황을 완전히 다른 방식으로 경험합니다.',
       conflictPattern: '"왜 감정적이야?"와 "왜 이렇게 딱딱해?"가 교차합니다. 한 사람의 논리가 다른 사람에게는 차가움으로, 다른 사람의 감정 표현이 한 사람에게는 비효율로 느껴집니다. "지금 많이 속상했구나"라는 공감 한 마디가 논리보다 먼저 필요합니다.',
       connectionStyle: '두 사람이 같은 목표를 향해 움직일 때 가장 잘 연결됩니다. 한 사람의 실행력과 다른 사람의 따뜻한 감각이 합쳐지면 강한 팀이 됩니다. 함께 계획하고, 함께 실행하고, 함께 결과를 나누는 경험이 이 관계를 단단하게 만듭니다.',
@@ -6068,10 +5993,138 @@ export function getRelationArchetype(
     ? { ...baseData.profileContrastOverride, ...colorBasedProfileOverride }
     : baseData.profileContrastOverride;
 
+  // ── 공통 성향 축(Personality Axis) 도출 ──────────────────────────────────
+  // 표현 속도 레이블(dynamicExpressionSpeed)을 기반으로
+  // 갈등 반응·회복 방식·profileContrast.expressionDifference를 일관되게 연결
+  const exprLabelA = dynamicExpressionSpeed.personA;
+  const exprLabelB = dynamicExpressionSpeed.personB;
+
+  // 표현 레이블 + 에너지 패밀리 → 갈등 반응 설명 맵
+  // 같은 '직접적 표현' 레이블이라도 warm 계열(핑크·옐로우·그린)은 감정 중심 문장,
+  // cool 계열(블루·네이비·인디고)은 논리 정리 문장으로 분기
+  function getConflictDesc(exprLabel: string, primaryFamily: EnergyFamily): string {
+    const isWarm = primaryFamily === 'warm_active' || primaryFamily === 'warm_soft' || primaryFamily === 'warm_grounded';
+    const isCool = primaryFamily === 'cool_clear' || primaryFamily === 'cool_deep';
+    const isNature = primaryFamily === 'nature';
+
+    switch (exprLabel) {
+      case '즉각적 표현':
+        if (isWarm) return '"지금 바로 얘기하자. 이 감정 그냥 두면 더 커져." 즉각 해결형입니다.';
+        return '"지금 바로 얘기하자." 즉각 해결형입니다. 내면에서 정리된 후 빠르게 표현합니다.';
+      case '직접적 표현':
+        if (isWarm) return '"지금 바로 얘기하자. 미루면 더 힘들어." 즉각 해결형입니다. 감정을 바로 꺼내야 풀리는 편입니다.';
+        if (isCool) return '"감정 빼고 논리적으로 얘기하자." 논리 정리형입니다. 관계를 위해 논리적으로 조율합니다.';
+        if (isNature) return '"천천히 자연스럽게 풀어가자." 자연 회복형입니다.';
+        return '"직접적으로 얘기하자." 직접 표현형입니다.';
+      case '상황에 따라 표현':
+        if (isWarm) return '"지금 감정이 정리되면 바로 얘기할게." 감정 중심 신중형입니다.';
+        return '"천천히 생각하고 얘기하자." 신중 대화형입니다.';
+      case '내면 처리 후 표현':
+        if (isWarm) return '"먼저 내 마음을 알아줬으면 해. 그 다음에 얘기하자." 공감 먼저형입니다.';
+        return '"조금만 시간 줘. 나 아직 정리가 안 됐어." 내면 정리형입니다.';
+      case '조용한 표현':
+        return '"일단 각자 정리하고 다시 얘기하자." 공간 회복형입니다.';
+      case '빠른 정리':
+        return '"빨리 정리하고 다음으로 넘어가자." 빠른 전환형입니다.';
+      case '천천히 소화':
+        return '"충분히 소화한 후에야 앞으로 갈 수 있어." 충분 소화형입니다.';
+      case '거리 필요':
+        return '"잠깐 공간이 필요해." 공간 회복형입니다.';
+      case '연결 필요':
+        if (isWarm) return '"지금 네가 필요해. 같이 있어줘." 즉각 연결형입니다.';
+        return '"지금 연결이 필요해." 즉각 연결형입니다.';
+      case '감정 파도':
+        return '"지금 감정이 올라와 있어." 감정 순환형입니다.';
+      case '안정적 표현':
+        return '"크게 표현하지 않아도 알아줬으면 해." 안정 표현형입니다.';
+      case '편안한 표현':
+        return '"편안하게 표현할 수 있어." 자연스러운 표현형입니다.';
+      case '현실적 판단':
+        return '"현실적으로 해결하자." 현실 해결형입니다.';
+      case '갈등 후 정리':
+        return '"혼자 정리하고 다시 연결하자." 내면 정리형입니다.';
+      case '갈등 후 표현':
+        if (isWarm) return '"표현하면서 회복해. 말하면 풀려." 표현 회복형입니다.';
+        return '"표현하면서 회복해." 표현 회복형입니다.';
+      case '보호/챙김':
+        return '"내가 챙겨줄게." 보호 표현형입니다.';
+      case '의존/기댐':
+        return '"네가 있어야 안정돼." 연결 의존형입니다.';
+      case '감정 표현':
+        if (isWarm) return '"지금 바로 얘기하자. 이 감정 그냥 넘기면 안 돼." 즉각 표현형입니다.';
+        return '"감정을 크게 표현하는 편이야." 감정 표현형입니다.';
+      case '감정 공감':
+        return '"네 감정을 먼저 받아줄게." 공감 우선형입니다.';
+      default:
+        return `"${exprLabel}" 표현형입니다.`;
+    }
+  }
+
+  // 표현 레이블 → profileContrast.expressionDifference 동기화 맵
+  const EXPR_LABEL_PAIR_TO_EXPR_DIFF: Record<string, string> = {
+    '즉각적 표현|즉각적 표현': '두 사람 모두 감정을 빠르게 표현하는 편입니다. 같은 속도로 반응하지만 둘 다 흥분하면 감정 강도가 함께 올라가는 순간이 생길 수 있습니다.',
+    '직접적 표현|직접적 표현': '두 사람 모두 감정을 직접적으로 표현하는 편입니다. 표현 방식은 비슷하지만 표현의 강도나 기대하는 반응에 차이가 있을 수 있습니다.',
+    '내면 처리 후 표현|내면 처리 후 표현': '두 사람 모두 내면에서 먼저 정리한 후 표현하는 편입니다. 서로의 침묵을 이해하지만 둘 다 기다리다 연결이 늦어지는 패턴이 반복될 수 있습니다.',
+    '즉각적 표현|직접적 표현': '한 사람은 감정이 올라오면 바로 표현하고, 다른 사람은 생각을 정리한 후 직접적으로 말합니다. 속도는 비슷하지만 표현의 즉흥성과 논리성에 차이가 있습니다.',
+    '직접적 표현|즉각적 표현': '한 사람은 생각을 정리한 후 직접적으로 말하고, 다른 사람은 감정이 올라오면 바로 표현합니다. 속도는 비슷하지만 표현의 논리성과 즉흥성에 차이가 있습니다.',
+    '즉각적 표현|내면 처리 후 표현': '한 사람은 감정을 바로 표현하고, 다른 사람은 내면에서 충분히 정리한 후 표현합니다. "왜 말을 안 해?"보다 "언제쯤 얘기할 수 있어?"가 이 관계에서 더 효과적입니다.',
+    '내면 처리 후 표현|즉각적 표현': '한 사람은 내면에서 충분히 정리한 후 표현하고, 다른 사람은 감정을 바로 표현합니다. "나 지금 정리 중이야"라는 신호가 오해를 줄여줍니다.',
+    '직접적 표현|내면 처리 후 표현': '한 사람은 감정을 비교적 바로 표현하고, 다른 사람은 내면에서 정리한 후 표현합니다. 표현 속도의 차이가 때로는 "왜 말이 없어?"라는 오해로 이어질 수 있습니다.',
+    '내면 처리 후 표현|직접적 표현': '한 사람은 내면에서 정리한 후 표현하고, 다른 사람은 감정을 비교적 바로 표현합니다. 한 사람의 침묵이 다른 사람에게는 거리감으로 느껴질 수 있습니다.',
+    '즉각적 표현|상황에 따라 표현': '한 사람은 감정을 바로 표현하고, 다른 사람은 상황에 따라 표현 방식을 조율합니다. 빠른 사람이 기다려주는 것이 이 관계의 균형입니다.',
+    '상황에 따라 표현|즉각적 표현': '한 사람은 상황에 따라 표현 방식을 조율하고, 다른 사람은 감정을 바로 표현합니다. 빠른 사람이 기다려주는 것이 이 관계의 균형입니다.',
+    '직접적 표현|상황에 따라 표현': '한 사람은 직접적으로 표현하고, 다른 사람은 상황을 살피며 표현합니다. 직접적인 사람이 먼저 말을 꺼내는 것이 이 관계에서 자연스럽습니다.',
+    '상황에 따라 표현|직접적 표현': '한 사람은 상황을 살피며 표현하고, 다른 사람은 직접적으로 표현합니다. 직접적인 사람이 먼저 말을 꺼내는 것이 이 관계에서 자연스럽습니다.',
+    '내면 처리 후 표현|상황에 따라 표현': '한 사람은 내면에서 정리한 후 표현하고, 다른 사람은 상황에 따라 표현 방식을 조율합니다. 두 사람 모두 표현이 느린 편이라 먼저 말을 꺼내는 연습이 필요합니다.',
+    '상황에 따라 표현|내면 처리 후 표현': '한 사람은 상황에 따라 표현 방식을 조율하고, 다른 사람은 내면에서 정리한 후 표현합니다. 두 사람 모두 표현이 느린 편이라 먼저 말을 꺼내는 연습이 필요합니다.',
+    '조용한 표현|내면 처리 후 표현': '두 사람 모두 표현이 적은 편입니다. 서로의 마음을 오해하지 않도록 주기적으로 "요즘 어때?"라고 먼저 연결을 시도하는 것이 중요합니다.',
+    '내면 처리 후 표현|조용한 표현': '두 사람 모두 표현이 적은 편입니다. 서로의 마음을 오해하지 않도록 주기적으로 "요즘 어때?"라고 먼저 연결을 시도하는 것이 중요합니다.',
+  };
+
+  // ── 성향 축 기반 갈등 반응 섹션 보정 ──
+  // LIFESTYLE_MAP/buildDefaultLifestyleSections에서 생성된 갈등 반응 섹션의
+  // personA/B 설명이 표현 속도 레이블과 일치하지 않을 경우 동기화
+  if (lifestyleSections?.conflict && !isSameEnergyFamily) {
+    const conflictDescA = getConflictDesc(exprLabelA, familiesA[0] ?? 'neutral');
+    const conflictDescB = getConflictDesc(exprLabelB, familiesB[0] ?? 'neutral');
+    // LIFESTYLE_MAP에서 명시적으로 정의된 섹션은 보정하지 않음
+    // buildDefaultLifestyleSections에서 생성된 경우(EnergyFamily 기반)만 보정
+    // 판별: lifestyleKey/fullComboKey 매칭이 없었으면 buildDefault가 호출됨
+    const hasExplicitLifestyleMap =
+      !!(LIFESTYLE_MAP[lifestyleKey] ?? LIFESTYLE_MAP[lifestyleKeyRev]);
+    if (!hasExplicitLifestyleMap && conflictDescA && conflictDescB) {
+      lifestyleSections = {
+        ...lifestyleSections,
+        conflict: {
+          ...lifestyleSections.conflict,
+          personA: conflictDescA,
+          personB: conflictDescB,
+        },
+      };
+    }
+  }
+
+  // ── profileContrast.expressionDifference 동기화 ──
+  // 컬러 조합 기반 오버라이드가 없는 경우, 표현 속도 레이블 조합으로 동적 생성
+  const exprPairKey = `${exprLabelA}|${exprLabelB}`;
+  const dynamicExprDiff = EXPR_LABEL_PAIR_TO_EXPR_DIFF[exprPairKey];
+  let finalProfileContrast = mergedProfileContrast;
+  if (dynamicExprDiff && finalProfileContrast) {
+    // 컬러 기반 오버라이드가 expressionDifference를 명시적으로 정의하지 않은 경우만 동기화
+    if (!colorBasedProfileOverride?.expressionDifference) {
+      finalProfileContrast = {
+        ...finalProfileContrast,
+        expressionDifference: dynamicExprDiff,
+      };
+    }
+  } else if (dynamicExprDiff && !finalProfileContrast) {
+    finalProfileContrast = { expressionDifference: dynamicExprDiff };
+  }
+
   return {
     archetype: finalArchetype,
     ...baseData,
-    profileContrastOverride: mergedProfileContrast,
+    profileContrastOverride: finalProfileContrast,
     expressionSpeed: dynamicExpressionSpeed,
     lifestyleSections,
   };
@@ -6095,7 +6148,7 @@ function buildDefaultLifestyleSections(
       circle: '갈등 후에도 연결을 원하는 패턴입니다. 관계가 끝나지 않는다는 신호가 회복을 돕습니다.',
       square: '갈등 직후 원인과 해결책을 먼저 찾는 패턴입니다. 감정 공감이 먼저 이루어지면 회복이 빠릅니다.',
       diamond: '갈등 직후 긴장이 오래 지속되고 작은 말 한마디가 마음에 오래 남는 패턴입니다. 섬세한 공감이 회복을 돕습니다.',
-      pentagon: '갈등 직후 자신의 방향성을 지키려는 태도가 상대에게 밀어내는 느낙으로 읽힐 수 있습니다.',
+      pentagon: '갈등 직후 자신의 방향성을 지키려는 태도가 상대에게 밀어내는 느낌으로 읽힐 수 있습니다.',
       hexagon: '갈등 직후 관계를 지키려는 마음에 자신의 감정을 숨기는 패턴이 있습니다. 상대는 실제 상태를 모를 수 있습니다.',
     };
     return notes[shape] ?? '';
@@ -7098,6 +7151,16 @@ const COLLEAGUE_ARCHETYPE_DATA: Record<ColleagueArchetype, LightArchetypeResult>
     recoveryRoutine: '불균형이 느껴지면 솔직하게 이야기하고 역할 재조정하기',
     relationStrength: '서로의 강점을 인정하고 균형 있게 협업하는 능력이 이 관계의 가장 큰 자산입니다.',
     closingMessage: '좋은 협업 관계는 업무를 넘어 서로에 대한 신뢰를 만들어냅니다.',
+    togetherRoutine: {
+      routines: [
+        '업무 시작 전 역할과 목표 짧게 확인하기',
+        '서로의 기여를 인정하는 짧은 말 한마디',
+        '점심이나 커피 함께하며 업무 외 이야기 나누기',
+        '마무리 후 서로의 수고 인정하기',
+        '어려운 일 생기면 먼저 이야기하기',
+      ],
+      energyNote: '서로의 강점을 인정하는 작은 말 한마디가, 협업의 에너지를 살려줍니다.',
+    },
   },
   역할분리형: {
     typeName: '역할 분리형 관계',
@@ -7114,6 +7177,16 @@ const COLLEAGUE_ARCHETYPE_DATA: Record<ColleagueArchetype, LightArchetypeResult>
     recoveryRoutine: '갈등이 생기면 역할과 감정을 분리해서 이야기하기',
     relationStrength: '명확한 역할 분리가 효율적인 협업을 만들고, 그 신뢰가 관계의 기반이 됩니다.',
     closingMessage: '역할이 명확한 관계는 신뢰를 만들고, 그 신뢰가 더 좋은 협업으로 이어집니다.',
+    togetherRoutine: {
+      routines: [
+        '업무 외 가벼운 대화로 관계 유지하기',
+        '서로의 강점 인정하고 역할 조율하기',
+        '점심이나 커피 함께하기',
+        '프로젝트 목표와 진행 상황 함께 확인하기',
+        '피드백은 업무 중심으로, 감정은 분리해서 이야기하기',
+      ],
+      energyNote: '역할이 명확한 관계일수록, 업무 외의 작은 연결이 신뢰를 더 단단하게 만들어줍니다.',
+    },
   },
   소통중심형: {
     typeName: '소통 중심형 관계',
