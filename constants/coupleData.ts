@@ -5838,11 +5838,33 @@ export function getRelationArchetype(
   // 전체 조합 키 매칭 (양방향)
   const fullComboKey1 = `${fullKeyA}|${fullKeyB}`;
   const fullComboKey2 = `${fullKeyB}|${fullKeyA}`;
-  let lifestyleSections: LifestyleSections | undefined =
-    FULL_LIFESTYLE_MAP[fullComboKey1] ??
-    FULL_LIFESTYLE_MAP[fullComboKey2] ??
-    LIFESTYLE_MAP[lifestyleKey] ??
-    LIFESTYLE_MAP[lifestyleKeyRev];
+  // personA/B swap 헬퍼: 역방향 키 매칭 시 personA/B를 교환하여 올바른 방향으로 출력
+  function swapLifestyleSections(s: LifestyleSections): LifestyleSections {
+    const swapSection = <T extends { personA: string; personB: string }>(sec: T | undefined): T | undefined => {
+      if (!sec) return undefined;
+      return { ...sec, personA: sec.personB, personB: sec.personA };
+    };
+    return {
+      finance: swapSection(s.finance),
+      cleaning: swapSection(s.cleaning),
+      rest: swapSection(s.rest),
+      affection: swapSection(s.affection),
+      conflict: swapSection(s.conflict),
+    };
+  }
+
+  let lifestyleSections: LifestyleSections | undefined;
+  if (FULL_LIFESTYLE_MAP[fullComboKey1]) {
+    lifestyleSections = FULL_LIFESTYLE_MAP[fullComboKey1];
+  } else if (FULL_LIFESTYLE_MAP[fullComboKey2]) {
+    // 역방향 매칭: personA/B swap
+    lifestyleSections = swapLifestyleSections(FULL_LIFESTYLE_MAP[fullComboKey2]!);
+  } else if (LIFESTYLE_MAP[lifestyleKey]) {
+    lifestyleSections = LIFESTYLE_MAP[lifestyleKey];
+  } else if (LIFESTYLE_MAP[lifestyleKeyRev]) {
+    // 역방향 매칭: personA/B swap
+    lifestyleSections = swapLifestyleSections(LIFESTYLE_MAP[lifestyleKeyRev]!);
+  }
 
   // 생활 섹션이 없으면 에너지 계열 기반 기본 생성
   if (!lifestyleSections) {
