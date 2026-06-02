@@ -574,9 +574,9 @@ export default function ResultScreen() {
           <TouchableOpacity
             activeOpacity={0.8}
             style={[styles.reviewButton, { backgroundColor: '#8FA68E' }]}
-            onPress={() => router.push('/reviews' as any)}
+            onPress={() => router.push({ pathname: '/(tabs)/reviews', params: { autoOpen: '1', sessionType: 'individual' } } as any)}
           >
-            <Text style={styles.reviewButtonText}>후기 남기기 혹은 후기 보기 →</Text>
+            <Text style={styles.reviewButtonText}>후기 남기기 →</Text>
           </TouchableOpacity>
         </View>
 

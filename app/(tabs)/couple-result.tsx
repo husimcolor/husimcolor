@@ -1116,7 +1116,7 @@ export default function CoupleResultScreen() {
         {/* 후기 남기기 CTA */}
         <Pressable
           style={[styles.reviewCta, { backgroundColor: accentCouple + '18', borderColor: accentCouple + '60' }]}
-          onPress={() => router.push({ pathname: '/(tabs)/reviews', params: { autoOpen: '1' } } as any)}
+          onPress={() => router.push({ pathname: '/(tabs)/reviews', params: { autoOpen: '1', sessionType: 'couple' } } as any)}
         >
           <Text style={[styles.reviewCtaEmoji]}>✍️</Text>
           <View style={{ flex: 1 }}>

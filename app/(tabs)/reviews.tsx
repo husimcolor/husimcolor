@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -38,15 +38,20 @@ function StarRating({ rating, onRate }: { rating: number; onRate?: (r: number) =
 
 export default function ReviewsScreen() {
   const colors = useColors();
-  const params = useLocalSearchParams<{ autoOpen?: string }>();
+  const params = useLocalSearchParams<{ autoOpen?: string; sessionType?: string }>();
+  const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
+  const [sessionType, setSessionType] = useState<string>('');
 
-  // 커플 결과 등 외부에서 autoOpen=1 파라미터로 진입 시 자동으로 모달 열기
+  // 커플/개인 결과 등 외부에서 autoOpen=1 파라미터로 진입 시 자동으로 모달 열기
   useEffect(() => {
     if (params.autoOpen === '1') {
       setModalVisible(true);
     }
-  }, [params.autoOpen]);
+    if (params.sessionType) {
+      setSessionType(params.sessionType);
+    }
+  }, [params.autoOpen, params.sessionType]);
   const [nickname, setNickname] = useState('');
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState('');
@@ -59,7 +64,20 @@ export default function ReviewsScreen() {
       setNickname('');
       setRating(5);
       setContent('');
-      Alert.alert('감사합니다', '후기가 등록되었습니다 🌸');
+      // 이전 화면으로 복귀 (커플/개인 결과 화면)
+      const returnPath = params.sessionType === 'couple'
+        ? '/(tabs)/couple-result'
+        : params.sessionType === 'individual'
+        ? '/(tabs)/result'
+        : null;
+      if (returnPath) {
+        Alert.alert('감사합니다', '후기가 등록되었습니다 🌸', [
+          { text: '결과 화면으로', onPress: () => router.push(returnPath as any) },
+          { text: '후기 목록 보기', style: 'cancel' },
+        ]);
+      } else {
+        Alert.alert('감사합니다', '후기가 등록되었습니다 🌸');
+      }
     },
     onError: () => {
       Alert.alert('오류', '후기 등록에 실패했습니다. 다시 시도해 주세요.');
@@ -75,7 +93,12 @@ export default function ReviewsScreen() {
       Alert.alert('알림', '후기를 5자 이상 입력해 주세요.');
       return;
     }
-    createMutation.mutate({ nickname: nickname.trim(), rating, content: content.trim() });
+    createMutation.mutate({
+      nickname: nickname.trim(),
+      rating,
+      content: content.trim(),
+      sessionType: sessionType || undefined,
+    });
   };
 
   const formatDate = (d: Date | string) => {
@@ -160,6 +183,32 @@ export default function ReviewsScreen() {
               maxLength={20}
               returnKeyType="next"
             />
+
+            <Text style={[styles.inputLabel, { color: colors.muted }]}>세션 유형</Text>
+            <View style={styles.tagRow}>
+              {[
+                { key: 'individual', label: '개인 코칭' },
+                { key: 'couple', label: '커플 코칭' },
+                { key: 'family', label: '가족/친구' },
+              ].map(({ key, label }) => (
+                <TouchableOpacity
+                  key={key}
+                  activeOpacity={0.75}
+                  style={[
+                    styles.tagChip,
+                    sessionType === key
+                      ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                      : { backgroundColor: 'transparent', borderColor: colors.border },
+                  ]}
+                  onPress={() => setSessionType(prev => prev === key ? '' : key)}
+                >
+                  <Text style={[
+                    styles.tagChipText,
+                    { color: sessionType === key ? '#fff' : colors.muted },
+                  ]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             <Text style={[styles.inputLabel, { color: colors.muted }]}>별점</Text>
             <StarRating rating={rating} onRate={setRating} />
@@ -340,5 +389,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  tagRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+    marginTop: 2,
+  },
+  tagChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  tagChipText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

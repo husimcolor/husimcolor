@@ -43,6 +43,13 @@
       "when": 1779201796851,
       "tag": "0005_amusing_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1780372367824,
+      "tag": "0006_warm_black_tarantula",
+      "breakpoints": true
     }
   ]
 }
