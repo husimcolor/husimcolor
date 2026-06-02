@@ -1223,6 +1223,13 @@ export default function CoupleResultScreen() {
         </Pressable>
 
         <Pressable
+          style={[styles.reviewBtn, { borderColor: accentCouple, backgroundColor: accentCouple + '18' }]}
+          onPress={() => router.push({ pathname: '/(tabs)/reviews', params: { autoOpen: '1', sessionType: 'couple' } } as any)}
+        >
+          <Text style={[styles.reviewBtnText, { color: accentCouple }]}>✍️ 후기 남기기</Text>
+        </Pressable>
+
+        <Pressable
           style={[styles.shareBtn, { borderColor: accentCouple + '80', backgroundColor: accentCouple + '15' }]}
           onPress={async () => {
             try {
@@ -1353,6 +1360,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   homeBtnText: { fontSize: 14, fontWeight: '500' },
+  reviewBtn: {
+    paddingVertical: 14, borderRadius: 16, alignItems: 'center',
+    borderWidth: 1.5, marginBottom: 12, marginTop: 4,
+  },
+  reviewBtnText: { fontSize: 15, fontWeight: '700' },
   shareBtn: {
     paddingVertical: 14, borderRadius: 16, alignItems: 'center',
     borderWidth: 1, marginBottom: 12, marginTop: 4,
