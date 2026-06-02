@@ -298,3 +298,11 @@
 - [x] personA/B 렌더링 매핑 로직 검증 완료 - 올바르게 구현됨
 - [x] swapLifestyleSections 함수 검증 완료 - 역방향 키 매칭 시 personA/B 올바르게 교환됨
 - [x] 두 사람이 같은 도형 선택 시 shapeProfileNote 동일 설명 버그 수정 - "두 사람 모두 ${modifier} 방식으로 관계를 이어갑니다"로 통합 표현
+
+## LIFESTYLE_MAP 확장 및 역방향 검증 (2026-06-02)
+- [x] LIFESTYLE_MAP 신규 조합 추가: red-green, black-lavender, indigo-green, white-indigo (각 5섹션 전체)
+- [x] lavender-black / green-red / blue-white / pink-red 역방향 swap 로직 검증 완료 (주석으로 명시)
+- [x] FULL_LIFESTYLE_MAP 신규 3컬러 조합 추가: indigo-black-pink|lavender-pink-cream, white-blue-red|orange-yellow-warm
+- [x] affection tip 문장 중복 제거 - 각 조합 특성에 맞게 차별화 (7개 항목)
+- [x] 오타 수정: 즐기운→즐거운, 꼭준한→꾸준한, 안아줘줘→안아줘, 어딘→어딘가
+- [x] Vercel 배포
