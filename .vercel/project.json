@@ -1,4 +1,16 @@
 {
+  "projectId": "prj_VC39YhbebLBEHkw1GcOG2nBK2QR9",
   "orgId": "team_7gstW63DOvDcW26u17YUeDaC",
-  "projectId": "prj_VC39YhbebLBEHkw1GcOG2nBK2QR9"
+  "projectName": "husimcolor",
+  "settings": {
+    "createdAt": 1778556080464,
+    "framework": null,
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": "dist",
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
 }

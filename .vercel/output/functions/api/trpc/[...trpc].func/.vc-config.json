@@ -1,0 +1,10 @@
+{
+  "handler": "api/trpc/[...trpc].js",
+  "runtime": "nodejs20.x",
+  "maxDuration": 30,
+  "environment": {},
+  "launcherType": "Nodejs",
+  "shouldAddHelpers": true,
+  "shouldAddSourcemapSupport": true,
+  "awsLambdaHandler": ""
+}

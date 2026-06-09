@@ -1,0 +1,10 @@
+{
+  "handler": "api/debug.js",
+  "runtime": "nodejs20.x",
+  "maxDuration": 10,
+  "environment": {},
+  "launcherType": "Nodejs",
+  "shouldAddHelpers": true,
+  "shouldAddSourcemapSupport": true,
+  "awsLambdaHandler": ""
+}

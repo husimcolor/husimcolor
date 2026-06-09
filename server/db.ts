@@ -17,10 +17,13 @@ export async function getDb() {
       const urlWithoutSsl = rawUrl.replace(/[?&]ssl=[^&]*/g, "").replace(/\?$/, "");
       const pool = mysql.createPool({
         uri: urlWithoutSsl,
-        ssl: { rejectUnauthorized: true },
+        ssl: {
+          rejectUnauthorized: false,
+          minVersion: 'TLSv1.2',
+        },
         waitForConnections: true,
         connectionLimit: 5,
-        connectTimeout: 10000,
+        connectTimeout: 15000,
       }).promise();
       _db = drizzle(pool) as any;
       console.log("[Database] Connected successfully");

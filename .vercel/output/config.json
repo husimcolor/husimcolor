@@ -1,109 +1,103 @@
 {
-  "outputDirectory": "dist",
-  "functions": {
-    "api/trpc/[...trpc].js": {
-      "runtime": "@vercel/node@3",
-      "maxDuration": 30
-    }
-  },
-  "rewrites": [
+  "version": 3,
+  "routes": [
     {
-      "source": "/api/trpc/:path*",
-      "destination": "/api/trpc/[...trpc]"
+      "src": "^(?:/(.*))$",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block"
+      },
+      "continue": true
     },
     {
-      "source": "/((?!_expo/|assets/).*)",
-      "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
+      "src": "^/index\\.html$",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      },
+      "continue": true
     },
     {
-      "source": "/index.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        },
-        {
-          "key": "Pragma",
-          "value": "no-cache"
-        },
-        {
-          "key": "Expires",
-          "value": "0"
-        }
-      ]
+      "src": "^(?:/(couple-result|couple-start|couple-card-select|premium-color-select|premium-result|payment))\\.html$",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      },
+      "continue": true
     },
     {
-      "source": "/(couple-result|couple-start|couple-card-select|premium-color-select|premium-result|payment)\\.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        },
-        {
-          "key": "Pragma",
-          "value": "no-cache"
-        },
-        {
-          "key": "Expires",
-          "value": "0"
-        }
-      ]
+      "src": "^/_expo/static/js(?:/(.*))$",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
+      "continue": true
     },
     {
-      "source": "/_expo/static/js/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
+      "src": "^/_expo/static/css(?:/(.*))$",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
+      "continue": true
     },
     {
-      "source": "/_expo/static/css/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
+      "src": "^/_expo/static(?:/(.*))$",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
+      "continue": true
     },
     {
-      "source": "/_expo/static/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
+      "src": "^/assets(?:/(.*))$",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
+      "continue": true
     },
     {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
+      "handle": "filesystem"
+    },
+    {
+      "src": "^/api/trpc(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?$",
+      "dest": "/api/trpc/[...trpc]?path=$1",
+      "check": true
+    },
+    {
+      "src": "^(?:/((?!_expo/|assets/).*))$",
+      "dest": "/index.html",
+      "check": true
+    },
+    {
+      "src": "^/api/trpc/([^/]+)$",
+      "dest": "/api/trpc/[...trpc]?...trpc=$1",
+      "check": true
+    },
+    {
+      "src": "^/api(/.*)?$",
+      "status": 404
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/"
+    },
+    {
+      "handle": "error"
+    },
+    {
+      "status": 404,
+      "src": "^(?!/api).*$",
+      "dest": "/404.html"
+    },
+    {
+      "handle": "miss"
+    },
+    {
+      "src": "^/api/(.+)(?:\\.(?:ts))$",
+      "dest": "/api/$1",
+      "check": true
     }
   ],
-  "version": 3
+  "crons": []
 }

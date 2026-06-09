@@ -1,8 +1,8 @@
 {
   "outputDirectory": "dist",
   "functions": {
-    "api/trpc/[...trpc].js": {
-      "runtime": "@vercel/node@3",
+    "api/trpc/[...trpc].ts": {
+      "runtime": "@vercel/node@3.2.7",
       "maxDuration": 30
     }
   },
