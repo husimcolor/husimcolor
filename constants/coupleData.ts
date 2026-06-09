@@ -2729,6 +2729,9 @@ function buildProfileContrast(
     'red-violet': isCouple
       ? `한 사람은 즉각 반응, 추진력, 표현 직선성이 특징입니다. 다른 사람은 깊은 감정, 이상적 연결, 내면 성찰이 특징입니다.\n한 사람의 활기가 다른 사람에게 자극이 되고, 다른 사람의 깊이가 한 사람에게 신비감을 줍니다.\n반복되는 패턴은 이렇게 나타납니다. 속도 차이가 반복됩니다. 한 사람은 "왜 반응이 없어?"라고 느끼고, 다른 사람은 "왜 이렇게 빨리 결론 내려?"라고 느낍니다.`
       : `한 사람은 즉각적으로 반응하고, 다른 사람은 깊이 생각한 후 표현합니다. 속도 차이가 반복적인 긴장 포인트입니다.`,
+    'green-pink': isCouple
+      ? `한 사람은 갈등 회피, 배려, 조용한 중재가 특징입니다. 다른 사람은 애정 표현, 정서 반응, 따뜻한 연결이 특징입니다.\n다른 사람의 따뜻함이 한 사람에게 온기를 주고, 한 사람의 부드러움이 다른 사람에게 안정감을 줍니다.\n반복되는 패턴은 이렇게 나타납니다. 다른 사람의 표현 기대가 한 사람에게 부담이 되고, 한 사람의 조용한 배려가 다른 사람에게 무관심으로 느껴집니다.`
+      : `한 사람은 조용한 배려로, 다른 사람은 따뜻한 표현으로 관계를 이어갑니다. 표현 방식 차이를 이해하는 것이 필요합니다.`,
     'pink-green': isCouple
       ? `한 사람은 애정 표현, 정서 반응, 따뜻한 연결이 특징입니다. 다른 사람은 갈등 회피, 배려, 조용한 중재가 특징입니다.\n한 사람의 따뜻함이 다른 사람에게 온기를 주고, 다른 사람의 부드러움이 한 사람에게 안정감을 줍니다.\n반복되는 패턴은 이렇게 나타납니다. 한 사람의 표현 기대가 다른 사람에게 부담이 되고, 다른 사람의 조용한 배려가 한 사람에게 무관심으로 느껴집니다.`
       : `한 사람은 따뜻한 표현으로, 다른 사람은 조용한 배려로 관계를 이어갑니다. 표현 방식 차이를 이해하는 것이 필요합니다.`,
@@ -2941,6 +2944,15 @@ function buildDynamicProfileContrast(
   const descB = name2B && trait2B
     ? `${name1B}+${name2B} 컬러를 가진 두 번째 사람은 ${trait1B} 성향이 있으면서도 ${trait2B} 면이 함께 작용합니다.`
     : `${name1B} 컬러를 가진 두 번째 사람은 ${trait1B} 성향이 있습니다.`;
+
+  // [DEV LOG] 컬러 기준 확인용 — 고객 화면에는 표시되지 않음
+  if (__DEV__) {
+    console.log(
+      `[커플 분석 DEV] 첫 번째 사람: ${name1A}+${name2A}(${c1A}+${c2A}) | 두 번째 사람: ${name1B}+${name2B}(${c1B}+${c2B})`,
+      '\n→ descA:', descA,
+      '\n→ descB:', descB,
+    );
+  }
 
   return `${descA} ${descB} ${attraction} ${hard} ${pattern} 서로의 의도를 먼저 확인하는 것이 이 연결을 더 단단하게 만들어줍니다.`;
 }
@@ -6574,11 +6586,46 @@ export function getRelationArchetype(
   const profileKey2 = `${fullKeyB}|${fullKeyA}`;
   const profileKeySimple1 = `${c0A}|${c0B}`;
   const profileKeySimple2 = `${c0B}|${c0A}`;
-  const colorBasedProfileOverride: ProfileContrastOverride | undefined =
-    PROFILE_CONTRAST_OVERRIDE_MAP[profileKey1] ??
-    PROFILE_CONTRAST_OVERRIDE_MAP[profileKey2] ??
-    PROFILE_CONTRAST_OVERRIDE_MAP[profileKeySimple1] ??
-    PROFILE_CONTRAST_OVERRIDE_MAP[profileKeySimple2];
+
+  // 역방향 매칭 시 "첫 번째 사람"과 "두 번째 사람" 순서를 올바르게 교환하는 함수
+  // PROFILE_CONTRAST_OVERRIDE_MAP의 항목은 정방향 기준으로 작성되어 있으므로,
+  // 역방향 키로 매칭된 경우 텍스트 내 순서를 swap해야 함
+  function swapProfileContrastPersonOrder(override: ProfileContrastOverride): ProfileContrastOverride {
+    const swapText = (text: string | undefined): string | undefined => {
+      if (!text) return text;
+      // "첫 번째 사람"과 "두 번째 사람"을 임시 플레이스홀더로 교환
+      return text
+        .replace(/첫 번째 사람/g, '__PERSON_B_TEMP__')
+        .replace(/두 번째 사람/g, '첫 번째 사람')
+        .replace(/__PERSON_B_TEMP__/g, '두 번째 사람');
+    };
+    return {
+      attractionContrast: swapText(override.attractionContrast),
+      relationFlow: swapText(override.relationFlow),
+      expressionDifference: swapText(override.expressionDifference),
+      conflictPattern: swapText(override.conflictPattern),
+      connectionStyle: swapText(override.connectionStyle),
+    };
+  }
+
+  // 정방향 키 우선 매칭, 역방향 키 매칭 시 swap 처리
+  let colorBasedProfileOverride: ProfileContrastOverride | undefined;
+  let isProfileOverrideReversed = false;
+  if (PROFILE_CONTRAST_OVERRIDE_MAP[profileKey1]) {
+    colorBasedProfileOverride = PROFILE_CONTRAST_OVERRIDE_MAP[profileKey1];
+  } else if (PROFILE_CONTRAST_OVERRIDE_MAP[profileKey2]) {
+    colorBasedProfileOverride = PROFILE_CONTRAST_OVERRIDE_MAP[profileKey2];
+    isProfileOverrideReversed = true;
+  } else if (PROFILE_CONTRAST_OVERRIDE_MAP[profileKeySimple1]) {
+    colorBasedProfileOverride = PROFILE_CONTRAST_OVERRIDE_MAP[profileKeySimple1];
+  } else if (PROFILE_CONTRAST_OVERRIDE_MAP[profileKeySimple2]) {
+    colorBasedProfileOverride = PROFILE_CONTRAST_OVERRIDE_MAP[profileKeySimple2];
+    isProfileOverrideReversed = true;
+  }
+  // 역방향 매칭된 경우 첫 번째/두 번째 사람 순서 교환
+  if (colorBasedProfileOverride && isProfileOverrideReversed) {
+    colorBasedProfileOverride = swapProfileContrastPersonOrder(colorBasedProfileOverride);
+  }
   // 기존 archetype profileContrastOverride와 병합 (컬러 기반이 우선)
   const mergedProfileContrast: ProfileContrastOverride | undefined = colorBasedProfileOverride
     ? { ...baseData.profileContrastOverride, ...colorBasedProfileOverride }
