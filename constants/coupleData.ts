@@ -4732,6 +4732,123 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
   },
 };
 
+// ── 현재 카드(가운데 카드) 컬러별 보충 문장 맵 (섹션별 분리) ──────────────
+// 컬러 = 기질, 심리카드 = 현재 상태 원칙에 따라
+// 기본 기질 해석(1·2순위 컬러) 뒤에 현재 상태 보충 1~2문장만 추가
+// 섹션별로 다른 보충 문장: 생활패턴(일상 변화), 재정(소비 성향), 휴식(회복 방식), 갈등(감정 대응)
+
+// 생활패턴(일상 변화·행동 흐름) 보충
+const SUPPLEMENT_CLEANING: Record<string, string> = {
+  red:     '다만 현재 레드 카드 영향으로 평소보다 즉각적으로 행동하고 싶은 욕구가 강해질 수 있습니다. 이 시기에는 충동적인 변화보다 작은 실천부터 시작하는 것이 도움이 됩니다.',
+  orange:  '다만 현재 오렌지 카드 영향으로 평소보다 새로운 방식과 변화를 시도하고 싶은 에너지가 높아질 수 있습니다. 일상에 작은 새로움을 더해보는 것이 이 시기에 활력이 됩니다.',
+  yellow:  '다만 현재 옐로우 카드 영향으로 평소보다 활동적이고 가벼운 흐름을 원하는 에너지가 강해질 수 있습니다. 일상을 밝고 유쾌하게 채워가는 것이 이 시기에 잘 맞습니다.',
+  green:   '다만 현재 그린 카드 영향으로 평소보다 균형 잡힌 일상과 안정적인 루틴을 원하는 에너지가 강해질 수 있습니다. 무리하지 않고 자연스러운 흐름을 유지하는 것이 좋습니다.',
+  blue:    '다만 현재 블루 카드 영향으로 평소보다 조용하고 차분한 일상을 원하는 에너지가 강해질 수 있습니다. 혼자만의 시간과 공간을 충분히 확보하는 것이 이 시기에 중요합니다.',
+  indigo:  '다만 현재 인디고 카드 영향으로 평소보다 깊이 생각하고 내면을 탐색하는 에너지가 강해질 수 있습니다. 서두르지 않고 자신의 속도대로 일상을 이어가는 것이 좋습니다.',
+  violet:  '다만 현재 바이올렛 카드 영향으로 평소보다 감수성이 예민해지고 섬세한 흐름이 강해질 수 있습니다. 일상에서 감정의 흐름을 자연스럽게 표현하는 연습이 도움이 됩니다.',
+  pink:    '다만 현재 핑크 카드 영향으로 평소보다 따뜻한 연결과 공감을 원하는 에너지가 높아질 수 있습니다. 상대와 함께하는 일상 속 작은 순간들을 소중히 여기는 것이 이 시기에 맞습니다.',
+  white:   '다만 현재 화이트 카드 영향으로 평소보다 정리와 비움에 대한 욕구가 강해질 수 있습니다. 불필요한 것을 덜어내고 단순하게 생활하는 것이 이 시기에 잘 맞습니다.',
+  black:   '다만 현재 블랙 카드 영향으로 평소보다 경계와 자신만의 공간을 지키려는 에너지가 강해질 수 있습니다. 일상에서 자신의 리듬을 유지하는 것이 이 시기에 중요합니다.',
+  brown:   '다만 현재 브라운 카드 영향으로 평소보다 안정적이고 현실적인 일상 기반을 원하는 에너지가 강해질 수 있습니다. 작고 확실한 일상의 루틴을 챙기는 것이 이 시기에 도움이 됩니다.',
+  beige:   '다만 현재 베이지 카드 영향으로 평소보다 편안하고 익숙한 일상을 원하는 에너지가 강해질 수 있습니다. 새로운 변화보다 익숙한 루틴 안에서 안정감을 찾는 것이 이 시기에 좋습니다.',
+  neutral: '다만 현재 심리 상태가 고요하고 중립적인 흐름에 있습니다. 이 시기에는 무리한 변화보다 현재의 일상 리듬을 유지하는 것이 가장 좋습니다.',
+  navy:    '다만 현재 네이비 카드 영향으로 평소보다 신뢰할 수 있는 일상과 안정적인 환경을 원하는 에너지가 강해질 수 있습니다. 믿을 수 있는 루틴 안에서 천천히 에너지를 회복하는 것이 이 시기에 맞습니다.',
+  sky:     '다만 현재 스카이블루 카드 영향으로 평소보다 자유롭고 가벼운 일상을 원하는 에너지가 높아질 수 있습니다. 부담 없이 열린 방식으로 일상을 채워가는 것이 좋습니다.',
+  mint:    '다만 현재 민트 카드 영향으로 평소보다 신선한 시작과 청량한 변화를 원하는 에너지가 강해질 수 있습니다. 일상에 작은 새로움을 더해보는 것이 이 시기에 활력이 됩니다.',
+  peach:   '다만 현재 피치 카드 영향으로 평소보다 부드럽고 따뜻한 일상을 원하는 에너지가 높아질 수 있습니다. 상대와 함께하는 따뜻한 일상의 순간들을 의도적으로 만들어보세요.',
+  coral:   '다만 현재 코랄 카드 영향으로 평소보다 활기차고 따뜻한 에너지가 강해지는 시기입니다. 이 에너지를 일상 속에서 긍정적으로 표현하는 것이 좋습니다.',
+  gold:    '다만 현재 골드 카드 영향으로 평소보다 자신감과 성취 욕구가 높아질 수 있습니다. 이 시기에는 일상 속에서 작은 목표를 세우고 함께 이루어가는 것이 관계에 활력을 줍니다.',
+  lavender:'다만 현재 라벤더 카드 영향으로 평소보다 감성적이고 섬세한 흐름이 강해질 수 있습니다. 부드럽고 여유 있는 방식으로 일상을 보내는 것이 이 시기에 잘 맞습니다.',
+  sage:    '다만 현재 세이지 카드 영향으로 평소보다 차분하고 지혜로운 흐름이 강해지는 시기입니다. 서두르지 않고 자연스럽게 흘러가는 것이 이 시기에 가장 좋습니다.',
+};
+
+// 재정패턴(소비 및 지출 성향) 보충
+const SUPPLEMENT_FINANCE: Record<string, string> = {
+  red:     '다만 현재 레드 카드 영향으로 평소보다 즉각적인 소비 욕구가 강해질 수 있습니다. 충동 지출을 방지하기 위해 구매 전 하루 정도 기다려보는 것이 도움이 됩니다.',
+  orange:  '다만 현재 오렌지 카드 영향으로 평소보다 새로운 경험과 변화에 돈을 쓰고 싶은 욕구가 커질 수 있습니다. 이 시기에는 함께 새로운 경험을 계획하되 예산 안에서 즐기는 것이 좋습니다.',
+  yellow:  '다만 현재 옐로우 카드 영향으로 평소보다 가볍고 즐거운 소비에 대한 욕구가 높아질 수 있습니다. 소소한 즐거움을 위한 소비는 허용하되 큰 지출은 신중하게 결정하는 것이 좋습니다.',
+  green:   '다만 현재 그린 카드 영향으로 평소보다 균형 잡힌 소비와 안정적인 재정 관리를 원하는 에너지가 강해질 수 있습니다. 이 시기에는 불필요한 지출을 줄이고 균형을 맞추는 것이 도움이 됩니다.',
+  blue:    '다만 현재 블루 카드 영향으로 평소보다 차분하고 신중한 소비 성향이 강해질 수 있습니다. 큰 결정은 충분히 생각한 뒤 내리는 것이 이 시기에 잘 맞습니다.',
+  indigo:  '다만 현재 인디고 카드 영향으로 평소보다 가치 있는 것에 집중하고 불필요한 소비를 줄이려는 에너지가 강해질 수 있습니다. 의미 있는 곳에 집중적으로 투자하는 것이 이 시기에 좋습니다.',
+  violet:  '다만 현재 바이올렛 카드 영향으로 평소보다 감성적인 소비 욕구가 높아질 수 있습니다. 감정에 따른 충동 구매보다 실질적인 필요를 먼저 확인하는 것이 도움이 됩니다.',
+  pink:    '다만 현재 핑크 카드 영향으로 평소보다 상대를 위한 소비나 관계 중심의 지출 욕구가 높아질 수 있습니다. 마음을 표현하되 서로 부담 없는 방식을 찾는 것이 이 시기에 좋습니다.',
+  white:   '다만 현재 화이트 카드 영향으로 평소보다 불필요한 소비를 줄이고 정리하려는 에너지가 강해질 수 있습니다. 지출을 점검하고 꼭 필요한 것만 남기는 것이 이 시기에 잘 맞습니다.',
+  black:   '다만 현재 블랙 카드 영향으로 평소보다 재정적 경계와 보호 본능이 강해지는 시기입니다. 자신의 재정 기준을 명확히 하고 상대와 소비 방식에 대해 솔직하게 이야기하는 것이 중요합니다.',
+  brown:   '다만 현재 브라운 카드 영향으로 평소보다 안정적인 재정 기반을 원하는 에너지가 강해질 수 있습니다. 이 시기에는 저축과 비상금 확보에 집중하는 것이 도움이 됩니다.',
+  beige:   '다만 현재 베이지 카드 영향으로 평소보다 편안하고 안정적인 소비 패턴을 원하는 에너지가 강해질 수 있습니다. 익숙하고 검증된 소비 방식을 유지하는 것이 이 시기에 좋습니다.',
+  neutral: '다만 현재 심리 상태가 고요하고 중립적인 흐름에 있습니다. 이 시기에는 큰 재정 결정보다 현재의 소비 패턴을 점검하고 유지하는 것이 가장 좋습니다.',
+  navy:    '다만 현재 네이비 카드 영향으로 평소보다 신뢰할 수 있는 재정 계획과 안정적인 기반을 원하는 에너지가 강해질 수 있습니다. 장기적인 관점에서 재정을 점검하는 것이 이 시기에 맞습니다.',
+  sky:     '다만 현재 스카이블루 카드 영향으로 평소보다 자유롭고 유연한 소비를 원하는 에너지가 높아질 수 있습니다. 지나친 제약보다 합리적인 범위 안에서 유연하게 소비하는 것이 좋습니다.',
+  mint:    '다만 현재 민트 카드 영향으로 평소보다 새로운 소비 방식이나 재정 계획을 시도하고 싶은 에너지가 강해질 수 있습니다. 작은 변화부터 시도해보는 것이 이 시기에 활력이 됩니다.',
+  peach:   '다만 현재 피치 카드 영향으로 평소보다 따뜻한 관계를 위한 소비 욕구가 높아질 수 있습니다. 상대와 함께하는 경험에 투자하되 서로 부담 없는 수준을 유지하는 것이 좋습니다.',
+  coral:   '다만 현재 코랄 카드 영향으로 평소보다 활기차고 즉흥적인 소비 욕구가 강해지는 시기입니다. 이 에너지를 긍정적으로 활용하되 충동 지출은 주의하는 것이 좋습니다.',
+  gold:    '다만 현재 골드 카드 영향으로 평소보다 가치 있는 것에 투자하고 싶은 욕구가 높아질 수 있습니다. 이 시기에는 함께 의미 있는 목표를 위한 재정 계획을 세워보는 것이 좋습니다.',
+  lavender:'다만 현재 라벤더 카드 영향으로 평소보다 감성적이고 섬세한 소비 욕구가 강해질 수 있습니다. 아름다움과 여유를 위한 소비는 허용하되 균형을 유지하는 것이 이 시기에 잘 맞습니다.',
+  sage:    '다만 현재 세이지 카드 영향으로 평소보다 차분하고 지혜로운 소비 판단이 강해지는 시기입니다. 서두르지 않고 신중하게 소비 결정을 내리는 것이 이 시기에 가장 좋습니다.',
+};
+
+// 휴식방식(회복 및 충전 방식) 보충
+const SUPPLEMENT_REST: Record<string, string> = {
+  red:     '다만 현재 레드 카드 영향으로 평소보다 활동적인 방식으로 에너지를 발산하고 싶은 욕구가 강해질 수 있습니다. 이 시기에는 함께 움직이는 활동이 회복에 도움이 됩니다.',
+  orange:  '다만 현재 오렌지 카드 영향으로 평소보다 새로운 경험과 변화를 통해 충전하고 싶은 에너지가 높아질 수 있습니다. 이 시기에 함께 새로운 장소나 활동을 시도해보는 것이 좋습니다.',
+  yellow:  '다만 현재 옐로우 카드 영향으로 평소보다 가볍고 즐거운 방식으로 충전하고 싶은 에너지가 강해질 수 있습니다. 부담 없이 웃을 수 있는 시간을 함께 만들어보는 것이 이 시기에 잘 맞습니다.',
+  green:   '다만 현재 그린 카드 영향으로 평소보다 균형 잡힌 회복과 자연스러운 충전을 원하는 에너지가 강해질 수 있습니다. 무리하지 않고 자연 속에서 천천히 회복하는 것이 이 시기에 좋습니다.',
+  blue:    '다만 현재 블루 카드 영향으로 평소보다 조용하고 혼자만의 시간을 통해 충전하고 싶은 에너지가 강해질 수 있습니다. 이 시기에는 각자의 회복 시간을 충분히 존중하는 것이 중요합니다.',
+  indigo:  '다만 현재 인디고 카드 영향으로 평소보다 깊은 내면 탐색과 고독한 시간을 통해 충전하고 싶은 욕구가 강해질 수 있습니다. 서두르지 않고 자신만의 방식으로 회복하는 것이 좋습니다.',
+  violet:  '다만 현재 바이올렛 카드 영향으로 평소보다 감수성이 예민해지고 섬세한 방식으로 충전하고 싶은 에너지가 강해질 수 있습니다. 감정의 흐름을 억누르지 않고 부드럽게 회복하는 것이 도움이 됩니다.',
+  pink:    '다만 현재 핑크 카드 영향으로 평소보다 따뜻한 연결과 함께하는 시간을 통해 충전하고 싶은 욕구가 높아질 수 있습니다. 상대와 감정을 나누는 시간이 이 시기에 최고의 회복이 됩니다.',
+  white:   '다만 현재 화이트 카드 영향으로 평소보다 비우고 정리하는 방식으로 충전하고 싶은 에너지가 강해질 수 있습니다. 조용하고 단순한 환경 속에서 쉬는 것이 이 시기에 잘 맞습니다.',
+  black:   '다만 현재 블랙 카드 영향으로 평소보다 자신만의 공간과 경계를 지키며 충전하고 싶은 에너지가 강해질 수 있습니다. 충분한 혼자만의 시간이 이 시기에 회복의 핵심입니다.',
+  brown:   '다만 현재 브라운 카드 영향으로 평소보다 안정적이고 익숙한 환경에서 충전하고 싶은 에너지가 강해질 수 있습니다. 집에서 루틴대로 쉬는 것이 이 시기에 가장 효과적입니다.',
+  beige:   '다만 현재 베이지 카드 영향으로 평소보다 편안하고 따뜻한 환경에서 천천히 회복하고 싶은 에너지가 강해질 수 있습니다. 익숙한 공간에서 여유롭게 쉬는 것이 이 시기에 좋습니다.',
+  neutral: '다만 현재 심리 상태가 고요하고 중립적인 흐름에 있습니다. 이 시기에는 특별한 활동보다 현재의 회복 리듬을 그대로 유지하는 것이 가장 좋습니다.',
+  navy:    '다만 현재 네이비 카드 영향으로 평소보다 신뢰할 수 있는 공간과 사람 안에서 충전하고 싶은 에너지가 강해질 수 있습니다. 믿을 수 있는 환경 속에서 천천히 회복하는 것이 이 시기에 맞습니다.',
+  sky:     '다만 현재 스카이블루 카드 영향으로 평소보다 자유롭고 가벼운 방식으로 충전하고 싶은 에너지가 높아질 수 있습니다. 부담 없이 열린 방식으로 쉬는 것이 이 시기에 좋습니다.',
+  mint:    '다만 현재 민트 카드 영향으로 평소보다 신선하고 청량한 방식으로 충전하고 싶은 에너지가 강해질 수 있습니다. 자연 속 산책이나 가벼운 활동이 이 시기에 활력이 됩니다.',
+  peach:   '다만 현재 피치 카드 영향으로 평소보다 부드럽고 따뜻한 방식으로 충전하고 싶은 욕구가 높아질 수 있습니다. 상대와 함께하는 따뜻한 시간이 이 시기에 최고의 회복이 됩니다.',
+  coral:   '다만 현재 코랄 카드 영향으로 평소보다 활기차고 따뜻한 에너지로 충전하고 싶은 욕구가 강해지는 시기입니다. 이 에너지를 함께 즐기는 활동으로 표현하는 것이 좋습니다.',
+  gold:    '다만 현재 골드 카드 영향으로 평소보다 성취감을 통해 충전하고 싶은 욕구가 높아질 수 있습니다. 이 시기에는 함께 작은 목표를 이루는 활동이 회복에 도움이 됩니다.',
+  lavender:'다만 현재 라벤더 카드 영향으로 평소보다 감성적이고 섬세한 방식으로 충전하고 싶은 에너지가 강해질 수 있습니다. 부드럽고 여유 있는 회복 시간이 이 시기에 잘 맞습니다.',
+  sage:    '다만 현재 세이지 카드 영향으로 평소보다 차분하고 지혜로운 방식으로 회복하고 싶은 에너지가 강해지는 시기입니다. 서두르지 않고 자연스럽게 충전하는 것이 이 시기에 가장 좋습니다.',
+};
+
+// 갈등패턴(감정 표현 및 갈등 대응) 보충
+const SUPPLEMENT_CONFLICT: Record<string, string> = {
+  red:     '다만 현재 레드 카드 영향으로 평소보다 즉각적인 감정 반응과 강한 표현 욕구가 커질 수 있습니다. 갈등 상황에서 한 박자 쉬고 반응하는 것이 이 시기에 특히 중요합니다.',
+  orange:  '다만 현재 오렌지 카드 영향으로 평소보다 감정 표현이 활발해지고 변화를 원하는 에너지가 높아질 수 있습니다. 갈등 후 새로운 방식으로 대화를 시도해보는 것이 이 시기에 도움이 됩니다.',
+  yellow:  '다만 현재 옐로우 카드 영향으로 평소보다 가볍게 넘기거나 유머로 풀려는 에너지가 강해질 수 있습니다. 갈등을 가볍게 처리하기보다 상대의 감정을 먼저 확인하는 것이 이 시기에 중요합니다.',
+  green:   '다만 현재 그린 카드 영향으로 평소보다 균형과 조화를 원하는 에너지가 강해질 수 있습니다. 갈등 후 서로의 감정을 인정하고 자연스럽게 회복하는 것이 이 시기에 잘 맞습니다.',
+  blue:    '다만 현재 블루 카드 영향으로 평소보다 차분하게 내면을 정리하려는 에너지가 강해질 수 있습니다. 갈등 후 충분한 시간을 갖고 감정을 정리한 뒤 대화하는 것이 이 시기에 좋습니다.',
+  indigo:  '다만 현재 인디고 카드 영향으로 평소보다 깊이 생각하고 혼자 정리하려는 에너지가 강해질 수 있습니다. 갈등 후 자신의 감정을 충분히 탐색한 뒤 상대와 대화하는 것이 이 시기에 좋습니다.',
+  violet:  '다만 현재 바이올렛 카드 영향으로 평소보다 감수성이 예민해지고 감정이 깊어지는 시기입니다. 갈등 상황에서 감정이 증폭되지 않도록 부드럽게 표현하는 연습이 이 시기에 특히 도움이 됩니다.',
+  pink:    '다만 현재 핑크 카드 영향으로 평소보다 따뜻한 연결과 공감을 원하는 에너지가 높아질 수 있습니다. 갈등 후 상대의 마음을 먼저 확인하고 따뜻하게 다가가는 것이 이 시기에 관계를 회복하는 가장 좋은 방법입니다.',
+  white:   '다만 현재 화이트 카드 영향으로 평소보다 감정을 정리하고 비우려는 에너지가 강해질 수 있습니다. 갈등 후 각자 감정을 정리하는 시간을 갖고 다시 연결하는 것이 이 시기에 잘 맞습니다.',
+  black:   '다만 현재 블랙 카드 영향으로 평소보다 경계와 보호 본능이 강해지는 시기입니다. 갈등 상황에서 자신의 에너지를 지키면서도 상대와의 연결을 유지하는 균형이 이 시기에 중요합니다.',
+  brown:   '다만 현재 브라운 카드 영향으로 평소보다 안정과 현실적인 해결을 원하는 에너지가 강해질 수 있습니다. 갈등 후 실질적인 해결책을 함께 찾는 것이 이 시기에 도움이 됩니다.',
+  beige:   '다만 현재 베이지 카드 영향으로 평소보다 편안하고 안정적인 방식으로 갈등을 해결하고 싶은 에너지가 강해질 수 있습니다. 익숙하고 따뜻한 방식으로 대화하는 것이 이 시기에 좋습니다.',
+  neutral: '다만 현재 심리 상태가 고요하고 중립적인 흐름에 있습니다. 이 시기에는 감정적인 반응보다 차분하게 상황을 바라보는 것이 갈등 해결에 도움이 됩니다.',
+  navy:    '다만 현재 네이비 카드 영향으로 평소보다 신뢰와 안정을 원하는 에너지가 강해질 수 있습니다. 갈등 후 서로에 대한 신뢰를 확인하고 천천히 회복하는 것이 이 시기에 맞습니다.',
+  sky:     '다만 현재 스카이블루 카드 영향으로 평소보다 자유롭고 가벼운 방식으로 갈등을 해소하고 싶은 에너지가 높아질 수 있습니다. 무거운 대화보다 가볍게 연결하는 방식이 이 시기에 효과적입니다.',
+  mint:    '다만 현재 민트 카드 영향으로 평소보다 신선하고 새로운 방식으로 갈등을 해결하고 싶은 에너지가 강해질 수 있습니다. 기존 패턴에서 벗어나 새로운 대화 방식을 시도해보는 것이 이 시기에 도움이 됩니다.',
+  peach:   '다만 현재 피치 카드 영향으로 평소보다 부드럽고 따뜻한 방식으로 갈등을 해소하고 싶은 욕구가 높아질 수 있습니다. 상대에게 먼저 따뜻하게 다가가는 것이 이 시기에 관계를 회복하는 가장 좋은 방법입니다.',
+  coral:   '다만 현재 코랄 카드 영향으로 평소보다 활기차고 직접적인 감정 표현 욕구가 강해지는 시기입니다. 이 에너지를 긍정적인 방향으로 표현하되 상대의 속도를 배려하는 것이 중요합니다.',
+  gold:    '다만 현재 골드 카드 영향으로 평소보다 자신감과 주도적인 해결 욕구가 높아질 수 있습니다. 갈등 상황에서 상대의 의견도 충분히 듣고 함께 해결책을 찾는 것이 이 시기에 좋습니다.',
+  lavender:'다만 현재 라벤더 카드 영향으로 평소보다 감성적이고 섬세한 감정 흐름이 강해질 수 있습니다. 갈등 후 감정을 부드럽게 표현하고 상대의 감정도 섬세하게 살피는 것이 이 시기에 잘 맞습니다.',
+  sage:    '다만 현재 세이지 카드 영향으로 평소보다 차분하고 지혜로운 방식으로 갈등을 바라보는 에너지가 강해지는 시기입니다. 서두르지 않고 천천히 대화하는 것이 이 시기에 가장 좋습니다.',
+};
+
+// 섹션별 현재 카드 보충 문장 생성 함수 (파일 레벨 - getRelationArchetype 및 buildDefaultLifestyleSections 공유)
+type LifestyleSectionType = 'cleaning' | 'finance' | 'rest' | 'conflict';
+function getCurrentCardSupplement(cardColor?: string | null, section: LifestyleSectionType = 'finance'): string {
+  if (!cardColor) return '';
+  const map = section === 'cleaning' ? SUPPLEMENT_CLEANING
+    : section === 'finance' ? SUPPLEMENT_FINANCE
+    : section === 'rest' ? SUPPLEMENT_REST
+    : SUPPLEMENT_CONFLICT;
+  const text = map[cardColor] ?? '';
+  return text ? ' ' + text : '';
+}
+
 export function getRelationArchetype(
   familiesA: EnergyFamily[],
   familiesB: EnergyFamily[],
@@ -6162,58 +6279,43 @@ export function getRelationArchetype(
       const MAP: Record<string, string> = { purple: 'violet', gray: 'neutral', grey: 'neutral' };
       return MAP[color] ?? color;
     };
-    const CURRENT_CARD_SUPPLEMENT_LOCAL: Record<string, string> = {
-      red:     '다만 현재 레드 카드 영향으로 평소보다 즉각적인 반응과 강한 추진 욕구가 커질 수 있습니다. 에너지를 조절하며 상대의 속도를 배려하는 것이 도움이 됩니다.',
-      orange:  '다만 현재 오렌지 카드 영향으로 평소보다 새로운 경험과 변화에 대한 욕구가 커질 수 있습니다. 이 시기에 함께 새로운 루틴을 만들어보는 것이 좋습니다.',
-      yellow:  '다만 현재 옐로우 카드 영향으로 평소보다 활동적이고 사교적인 에너지가 높아질 수 있습니다. 가볍고 밝은 방식으로 일상을 채워가는 것이 이 시기에 잘 맞습니다.',
-      green:   '다만 현재 그린 카드 영향으로 평소보다 균형과 안정을 더 중요하게 느끼는 시기입니다. 무리하지 않고 자연스러운 흐름을 따르는 것이 회복에 도움이 됩니다.',
-      blue:    '다만 현재 블루 카드 영향으로 평소보다 차분하고 내면으로 향하는 에너지가 강해질 수 있습니다. 혼자만의 시간을 충분히 확보하는 것이 이 시기에 중요합니다.',
-      indigo:  '다만 현재 인디고 카드 영향으로 평소보다 깊은 성찰과 내면 탐색의 욕구가 강해질 수 있습니다. 서두르지 않고 천천히 자신의 흐름을 따라가는 것이 좋습니다.',
-      violet:  '다만 현재 바이올렛 카드 영향으로 평소보다 감수성과 직관이 예민해지는 시기입니다. 감정의 흐름을 억누르지 않고 부드럽게 표현하는 연습이 도움이 됩니다.',
-      pink:    '다만 현재 핑크 카드 영향으로 평소보다 따뜻한 연결과 공감에 대한 욕구가 높아질 수 있습니다. 상대와 감정을 나누는 시간을 의도적으로 만들어보세요.',
-      white:   '다만 현재 화이트 카드 영향으로 평소보다 정리와 비움에 대한 욕구가 강해질 수 있습니다. 불필요한 것을 덜어내고 단순하게 생활하는 것이 이 시기에 잘 맞습니다.',
-      black:   '다만 현재 블랙 카드 영향으로 평소보다 경계와 보호 본능이 강해지는 시기입니다. 자신의 에너지를 지키면서 상대와의 거리를 조율하는 것이 중요합니다.',
-      brown:   '다만 현재 브라운 카드 영향으로 평소보다 안정과 현실적인 기반에 집중하는 에너지가 강해질 수 있습니다. 작고 확실한 것들을 챙기는 것이 이 시기에 도움이 됩니다.',
-      beige:   '다만 현재 베이지 카드 영향으로 평소보다 편안함과 안정감을 더 중요하게 느끼는 시기입니다. 익숙하고 따뜻한 환경 속에서 천천히 회복하는 것이 좋습니다.',
-      neutral: '다만 현재 심리 상태가 고요하고 중립적인 흐름에 있습니다. 이 시기에는 무리한 변화보다 현재의 리듬을 유지하는 것이 가장 좋습니다.',
-      navy:    '다만 현재 네이비 카드 영향으로 평소보다 깊은 신뢰와 안정에 대한 욕구가 강해질 수 있습니다. 믿을 수 있는 관계와 공간 안에서 천천히 에너지를 회복하는 것이 이 시기에 맞습니다.',
-      sky:     '다만 현재 스카이블루 카드 영향으로 평소보다 자유롭고 가벼운 흐름을 원하는 에너지가 높아질 수 있습니다. 부담 없이 열린 방식으로 일상을 채워가는 것이 좋습니다.',
-      mint:    '다만 현재 민트 카드 영향으로 평소보다 신선한 시작과 청량한 변화를 원하는 에너지가 강해질 수 있습니다. 작은 새로움을 일상에 더해보는 것이 이 시기에 활력이 됩니다.',
-      peach:   '다만 현재 피치 카드 영향으로 평소보다 부드러운 연결과 따뜻한 표현에 대한 욕구가 높아질 수 있습니다. 상대에게 작은 온기를 표현하는 것이 이 시기에 관계를 더 가깝게 합니다.',
-      coral:   '다만 현재 코랄 카드 영향으로 평소보다 활기차고 따뜻한 에너지가 강해지는 시기입니다. 이 에너지를 관계 안에서 긍정적으로 표현하는 것이 좋습니다.',
-      gold:    '다만 현재 골드 카드 영향으로 평소보다 자신감과 성취 욕구가 높아질 수 있습니다. 이 시기에는 함께 목표를 세우고 작은 성공을 나누는 것이 관계에 활력을 줍니다.',
-      lavender:'다만 현재 라벤더 카드 영향으로 평소보다 감성적이고 섬세한 흐름이 강해질 수 있습니다. 부드럽고 여유 있는 방식으로 일상을 보내는 것이 이 시기에 잘 맞습니다.',
-      sage:    '다만 현재 세이지 카드 영향으로 평소보다 차분하고 지혜로운 흐름이 강해지는 시기입니다. 서두르지 않고 자연스럽게 흘러가는 것이 이 시기에 가장 좋습니다.',
-    };
-    const getSupp = (cardColor?: string | null): string => {
+    const getSuppForSection = (cardColor?: string | null, section: 'cleaning' | 'finance' | 'rest' | 'conflict' = 'finance'): string => {
       if (!cardColor) return '';
       const normalized = normalizeCardColorLocal(cardColor);
-      const text = normalized ? (CURRENT_CARD_SUPPLEMENT_LOCAL[normalized] ?? '') : '';
+      if (!normalized) return '';
+      // 섹션별로 다른 보충 문장 맵 사용
+      // 생활패턴=일상 변화, 재정=소비 성향, 휴식=회복 방식, 갈등=감정 대응
+      const map = section === 'cleaning' ? SUPPLEMENT_CLEANING
+        : section === 'finance' ? SUPPLEMENT_FINANCE
+        : section === 'rest' ? SUPPLEMENT_REST
+        : SUPPLEMENT_CONFLICT;
+      const text = map[normalized] ?? '';
       return text ? ' ' + text : '';
     };
-    const suppA = getSupp(currentCardColorA);
-    const suppB = getSupp(currentCardColorB);
-    // finance/rest/conflict 섹션 personA/B에 현재 카드 보충 문장 추가
-    if (lifestyleSections.finance) {
-      lifestyleSections = {
-        ...lifestyleSections,
-        finance: {
-          ...lifestyleSections.finance,
-          personA: (lifestyleSections.finance.personA ?? '') + suppA,
-          personB: (lifestyleSections.finance.personB ?? '') + suppB,
-        },
-        rest: lifestyleSections.rest ? {
-          ...lifestyleSections.rest,
-          personA: (lifestyleSections.rest.personA ?? '') + suppA,
-          personB: (lifestyleSections.rest.personB ?? '') + suppB,
-        } : lifestyleSections.rest,
-        conflict: lifestyleSections.conflict ? {
-          ...lifestyleSections.conflict,
-          personA: (lifestyleSections.conflict.personA ?? '') + suppA,
-          personB: (lifestyleSections.conflict.personB ?? '') + suppB,
-        } : lifestyleSections.conflict,
-      };
-    }
+    // cleaning/finance/rest/conflict 섹션 personA/B에 현재 카드 보충 문장 추가 (섹션별 분리)
+    lifestyleSections = {
+      ...lifestyleSections,
+      cleaning: lifestyleSections.cleaning ? {
+        ...lifestyleSections.cleaning,
+        personA: (lifestyleSections.cleaning.personA ?? '') + getSuppForSection(currentCardColorA, 'cleaning'),
+        personB: (lifestyleSections.cleaning.personB ?? '') + getSuppForSection(currentCardColorB, 'cleaning'),
+      } : lifestyleSections.cleaning,
+      finance: lifestyleSections.finance ? {
+        ...lifestyleSections.finance,
+        personA: (lifestyleSections.finance.personA ?? '') + getSuppForSection(currentCardColorA, 'finance'),
+        personB: (lifestyleSections.finance.personB ?? '') + getSuppForSection(currentCardColorB, 'finance'),
+      } : lifestyleSections.finance,
+      rest: lifestyleSections.rest ? {
+        ...lifestyleSections.rest,
+        personA: (lifestyleSections.rest.personA ?? '') + getSuppForSection(currentCardColorA, 'rest'),
+        personB: (lifestyleSections.rest.personB ?? '') + getSuppForSection(currentCardColorB, 'rest'),
+      } : lifestyleSections.rest,
+      conflict: lifestyleSections.conflict ? {
+        ...lifestyleSections.conflict,
+        personA: (lifestyleSections.conflict.personA ?? '') + getSuppForSection(currentCardColorA, 'conflict'),
+        personB: (lifestyleSections.conflict.personB ?? '') + getSuppForSection(currentCardColorB, 'conflict'),
+      } : lifestyleSections.conflict,
+    };
   }
 
   // ── 컬러 조합 기반 profileContrastOverride 동적 교체 ──
@@ -6531,39 +6633,7 @@ function buildDefaultLifestyleSections(
   const shapeNoteA = getShapeLifestyleNote(shapeA);
   const shapeNoteB = getShapeLifestyleNote(shapeB);
 
-  // ── 현재 카드(가운데 카드) 컬러별 보충 문장 맵 ──────────────────────────
-  // 컬러 = 기질, 심리카드 = 현재 상태 원칙에 따라
-  // 기본 기질 해석(1·2순위 컬러) 뒤에 현재 상태 보충 1~2문장만 추가
-  const CURRENT_CARD_SUPPLEMENT: Record<string, string> = {
-    red:     '다만 현재 레드 카드 영향으로 평소보다 즉각적인 반응과 강한 추진 욕구가 커질 수 있습니다. 에너지를 조절하며 상대의 속도를 배려하는 것이 도움이 됩니다.',
-    orange:  '다만 현재 오렌지 카드 영향으로 평소보다 새로운 경험과 변화에 대한 욕구가 커질 수 있습니다. 이 시기에 함께 새로운 루틴을 만들어보는 것이 좋습니다.',
-    yellow:  '다만 현재 옐로우 카드 영향으로 평소보다 활동적이고 사교적인 에너지가 높아질 수 있습니다. 가볍고 밝은 방식으로 일상을 채워가는 것이 이 시기에 잘 맞습니다.',
-    green:   '다만 현재 그린 카드 영향으로 평소보다 균형과 안정을 더 중요하게 느끼는 시기입니다. 무리하지 않고 자연스러운 흐름을 따르는 것이 회복에 도움이 됩니다.',
-    blue:    '다만 현재 블루 카드 영향으로 평소보다 차분하고 내면으로 향하는 에너지가 강해질 수 있습니다. 혼자만의 시간을 충분히 확보하는 것이 이 시기에 중요합니다.',
-    indigo:  '다만 현재 인디고 카드 영향으로 평소보다 깊은 성찰과 내면 탐색의 욕구가 강해질 수 있습니다. 서두르지 않고 천천히 자신의 흐름을 따라가는 것이 좋습니다.',
-    violet:  '다만 현재 바이올렛 카드 영향으로 평소보다 감수성과 직관이 예민해지는 시기입니다. 감정의 흐름을 억누르지 않고 부드럽게 표현하는 연습이 도움이 됩니다.',
-    pink:    '다만 현재 핑크 카드 영향으로 평소보다 따뜻한 연결과 공감에 대한 욕구가 높아질 수 있습니다. 상대와 감정을 나누는 시간을 의도적으로 만들어보세요.',
-    white:   '다만 현재 화이트 카드 영향으로 평소보다 정리와 비움에 대한 욕구가 강해질 수 있습니다. 불필요한 것을 덜어내고 단순하게 생활하는 것이 이 시기에 잘 맞습니다.',
-    black:   '다만 현재 블랙 카드 영향으로 평소보다 경계와 보호 본능이 강해지는 시기입니다. 자신의 에너지를 지키면서 상대와의 거리를 조율하는 것이 중요합니다.',
-    brown:   '다만 현재 브라운 카드 영향으로 평소보다 안정과 현실적인 기반에 집중하는 에너지가 강해질 수 있습니다. 작고 확실한 것들을 챙기는 것이 이 시기에 도움이 됩니다.',
-    beige:   '다만 현재 베이지 카드 영향으로 평소보다 편안함과 안정감을 더 중요하게 느끼는 시기입니다. 익숙하고 따뜻한 환경 속에서 천천히 회복하는 것이 좋습니다.',
-    neutral: '다만 현재 심리 상태가 고요하고 중립적인 흐름에 있습니다. 이 시기에는 무리한 변화보다 현재의 리듬을 유지하는 것이 가장 좋습니다.',
-    navy:    '다만 현재 네이비 카드 영향으로 평소보다 깊은 신뢰와 안정에 대한 욕구가 강해질 수 있습니다. 믿을 수 있는 관계와 공간 안에서 천천히 에너지를 회복하는 것이 이 시기에 맞습니다.',
-    sky:     '다만 현재 스카이블루 카드 영향으로 평소보다 자유롭고 가벼운 흐름을 원하는 에너지가 높아질 수 있습니다. 부담 없이 열린 방식으로 일상을 채워가는 것이 좋습니다.',
-    mint:    '다만 현재 민트 카드 영향으로 평소보다 신선한 시작과 청량한 변화를 원하는 에너지가 강해질 수 있습니다. 작은 새로움을 일상에 더해보는 것이 이 시기에 활력이 됩니다.',
-    peach:   '다만 현재 피치 카드 영향으로 평소보다 부드러운 연결과 따뜻한 표현에 대한 욕구가 높아질 수 있습니다. 상대에게 작은 온기를 표현하는 것이 이 시기에 관계를 더 가깝게 합니다.',
-    coral:   '다만 현재 코랄 카드 영향으로 평소보다 활기차고 따뜻한 에너지가 강해지는 시기입니다. 이 에너지를 관계 안에서 긍정적으로 표현하는 것이 좋습니다.',
-    gold:    '다만 현재 골드 카드 영향으로 평소보다 자신감과 성취 욕구가 높아질 수 있습니다. 이 시기에는 함께 목표를 세우고 작은 성공을 나누는 것이 관계에 활력을 줍니다.',
-    lavender:'다만 현재 라벤더 카드 영향으로 평소보다 감성적이고 섬세한 흐름이 강해질 수 있습니다. 부드럽고 여유 있는 방식으로 일상을 보내는 것이 이 시기에 잘 맞습니다.',
-    sage:    '다만 현재 세이지 카드 영향으로 평소보다 차분하고 지혜로운 흐름이 강해지는 시기입니다. 서두르지 않고 자연스럽게 흘러가는 것이 이 시기에 가장 좋습니다.',
-  };
-  // 현재 카드 컬러 기반 보충 문장 생성 함수
-  const getCurrentCardSupplement = (cardColor?: string | null): string => {
-    if (!cardColor) return '';
-    return (CURRENT_CARD_SUPPLEMENT[cardColor] ?? '') ? ' ' + CURRENT_CARD_SUPPLEMENT[cardColor] : '';
-  };
-
-  // ── archetype별 표현 오버라이드 맵 ──────────────────────────────
+  // ── archetype별 표현 오버라이드 맵 ──────────────
   // 각 archetype에 맞는 restPersonMap/conflictPersonMap 오버라이드
   type ArchetypeOverride = {
     rest?: Partial<Record<EnergyFamily, string>>;
@@ -6575,15 +6645,15 @@ function buildDefaultLifestyleSections(
   const ARCHETYPE_LIFESTYLE_OVERRIDE: Partial<Record<RelationArchetype, ArchetypeOverride>> = {
     성장자극형: {
       rest: {
-        nature: '"나가서 뭔가 새로운 걸 해야 충전돼." 활동 전환형입니다.',
+        nature: '"나가서 뮨가 새로운 걸 해야 충전돼." 활동 전환형입니다.',
         neutral: '"아무것도 안 하고 완전히 비워야 다시 달릴 수 있어." 완전 리셋형입니다.',
         warm_soft: '"함께 새로운 걸 경험하면 충전돼." 공유 활동형입니다.',
         cool_deep: '"혼자 깊이 생각하며 정리해야 충전돼." 내면 정리형입니다.',
       },
       conflict: {
-        nature: '"일단 같이 움직이자. 걸으면서 얘기해." 활동 해소형입니다.',
+        nature: '"일단 같이 움직이자. 걸으면서 엘기해." 활동 해소형입니다.',
         neutral: '"각자 정리하고 다시 만나자. 그게 더 빨라." 공간 회복형입니다.',
-        warm_soft: '"지금 바로 얘기하자. 미루면 더 힘들어." 즉각 해결형입니다.',
+        warm_soft: '"지금 바로 엘기하자. 미루면 더 힘들어." 즉각 해결형입니다.',
       },
       shapeRhythmOverride: undefined,
       restDescription: '두 사람이 쉬는 방식이 다릅니다. 한 사람은 활동으로 에너지를 전환하고, 다른 사람은 자신만의 방식으로 충전합니다.',
@@ -6593,10 +6663,10 @@ function buildDefaultLifestyleSections(
       rest: {
         nature: '"혼자만의 시간이 있어야 다시 가까워질 수 있어." 독립 충전형입니다.',
         warm_active: '"나가서 에너지를 쓰고 나면 다시 가까워지고 싶어져." 활동 후 연결형입니다.',
-        warm_soft: '"가까이 있다가도 숨 쉴 공간이 필요해." 거리 조절형입니다.',
+        warm_soft: '"가까이 있다가도 숨 쉼 공간이 필요해." 거리 조절형입니다.',
       },
       conflict: {
-        nature: '"잠깐 거리를 두고 각자 숨 좀 쉬자." 공간 회복형입니다.',
+        nature: '"잠긄 거리를 두고 각자 숨 좀 쉼자." 공간 회복형입니다.',
         warm_active: '"지금 바로 해결하고 싶어. 미루면 더 멀어져." 즉각 해결형입니다.',
       },
       restDescription: '두 사람이 쉬는 방식이 다릅니다. 가까워졌다 멀어지는 패턴이 휴식 방식에도 나타납니다.',
@@ -6609,34 +6679,10 @@ function buildDefaultLifestyleSections(
       },
       conflict: {
         nature: '"천천히 정리될 때까지 기다리자." 속도 존중형입니다.',
-        neutral: '"각자 정리하고 준비됐을 때 얘기하자." 공간 회복형입니다.',
+        warm_active: '"빨리 풀자. 시간 끌면 더 싶어져." 빠른 해결형입니다.',
       },
-      restDescription: '두 사람이 쉬는 속도가 다릅니다. 빠른 사람은 이미 충전됐는데 느린 사람은 아직 회복 중일 수 있습니다.',
-      conflictDescription: '갈등 후 두 사람의 회복 속도가 다릅니다. 빠른 사람이 기다려주는 것이 이 관계의 핵심입니다.',
-    },
-    회복형: {
-      rest: {
-        nature: '"함께 조용히 있는 것만으로도 충전돼." 공존 회복형입니다.',
-        warm_soft: '"네가 옆에 있으면 자연스럽게 회복돼." 연결 충전형입니다.',
-      },
-      conflict: {
-        nature: '"잠깐 각자 숨 쉬고, 다시 천천히 연결하자." 재연결형입니다.',
-        warm_soft: '"먼저 안아주면 말이 나와." 스킨십 회복형입니다.',
-      },
-      restDescription: '두 사람이 쉬는 방식이 다릅니다. 회복 후 다시 연결되는 것이 이 관계의 패턴입니다.',
-      conflictDescription: '갈등 후 두 사람의 반응 방식이 다릅니다. 이 관계에서는 회복 후 재연결이 핵심입니다.',
-    },
-    현실균형형: {
-      rest: {
-        nature: '"계획된 휴식이 있어야 진짜 쉬어지는 느낌이야." 루틴 회복형입니다.',
-        warm_active: '"뭔가 해야 쉬는 것 같아." 활동 충전형입니다.',
-      },
-      conflict: {
-        nature: '"논리적으로 정리하고 얘기하자." 현실 해결형입니다.',
-        warm_active: '"지금 바로 얘기하고 해결하자." 즉각 해결형입니다.',
-      },
-      restDescription: '두 사람이 쉬는 방식이 다릅니다. 현실적이고 계획적인 휴식 방식이 이 관계의 특징입니다.',
-      conflictDescription: '갈등 후 두 사람의 반응 방식이 다릅니다. 감정보다 현실적 해결을 먼저 찾는 패턴입니다.',
+      restDescription: '두 사람의 휴식 속도가 다릅니다. 한 사람은 빨리 충전하고, 다른 사람은 시간이 필요합니다.',
+      conflictDescription: '갈등 후 두 사람의 해결 속도가 다릅니다. 한 사람은 빨리 풀고 싶고, 다른 사람은 시간이 필요합니다.',
     },
   };
 
@@ -6896,6 +6942,17 @@ function buildDefaultLifestyleSections(
     return { ...base, ...override };
   };
 
+  // 생활패턴(일상 변화·행동 흐름) 기질 맵
+  const cleaningPersonMap: Record<EnergyFamily, string> = {
+    warm_active: '"지금 당장 바꾸자. 변화가 생기면 기분이 좋아져." 즉각 변화형입니다.',
+    warm_soft: '"분위기가 좋아야 일상이 잘 돌아가는 것 같아." 감성 환경형입니다.',
+    warm_grounded: '"루틴이 있어야 안정감이 생겨. 정해진 흐름이 편해." 루틴 안정형입니다.',
+    cool_clear: '"효율적으로 정리되어야 마음이 편해." 체계 정리형입니다.',
+    cool_deep: '"내 공간과 흐름이 있어야 일상이 잘 돌아가." 내면 질서형입니다.',
+    nature: '"자연스럽게 흘러가는 일상이 좋아. 무리하지 않는 게 최고야." 자연 흐름형입니다.',
+    neutral: '"불필요한 것 없이 단순하게 사는 게 편해." 단순 정화형입니다.',
+  };
+
   // 재정 스타일 맵
   const financePersonMap: Record<EnergyFamily, string> = {
     warm_active: '"지금 필요하면 바로 사자." 현재 중심, 경험 소비형입니다.',
@@ -6940,13 +6997,24 @@ function buildDefaultLifestyleSections(
     : (isSameFamily ? '갈등 후 두 사람의 반응 방식이 비슷합니다.' : '갈등 후 두 사람의 반응 방식이 다릅니다.');
 
   return {
+    cleaning: {
+      title: isSameFamily ? '생활 패턴' : '생활 패턴 차이',
+      description: isSameFamily
+        ? '두 사람의 일상 흐름이 비슷합니다. 같은 성향이 만나면 서로의 생활 패턴이 강화되는 순간이 생길 수 있습니다.'
+        : '두 사람의 일상 흐름과 생활 방식이 다릅니다.',
+      personA: cleaningPersonMap[fA] + getCurrentCardSupplement(currentCardColorA, 'cleaning'),
+      personB: cleaningPersonMap[fB] + getCurrentCardSupplement(currentCardColorB, 'cleaning'),
+      tension: isSameFamily
+        ? '두 사람 모두 비슷한 생활 패턴이 있어, 서로의 흐름이 강화되는 순간을 주의하세요. 가끔 다른 방식으로 일상을 채워보는 것이 도움이 됩니다.'
+        : '생활 리듬이 달라 "왜 이렇게 해?"가 반복될 수 있습니다. 서로의 방식을 인정하고 함께 맞춰가는 것이 중요합니다.',
+    },
     finance: {
       title: isSameFamily ? '재정 스타일' : '재정 스타일 차이',
       description: isSameFamily
         ? '두 사람의 소비 방식이 비슷합니다. 같은 성향이 만나면 서로의 소비 패턴이 강화되는 순간이 생길 수 있습니다.'
         : '두 사람의 소비 기준과 재정 관리 방식이 다릅니다.',
-      personA: financePersonMap[fA] + shapeFinanceNote(fA, shapeA) + getCurrentCardSupplement(currentCardColorA),
-      personB: financePersonMap[fB] + shapeFinanceNote(fB, shapeB) + getCurrentCardSupplement(currentCardColorB),
+      personA: financePersonMap[fA] + shapeFinanceNote(fA, shapeA) + getCurrentCardSupplement(currentCardColorA, 'finance'),
+      personB: financePersonMap[fB] + shapeFinanceNote(fB, shapeB) + getCurrentCardSupplement(currentCardColorB, 'finance'),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 소비 성향이 있어, 서로의 패턴이 강화되는 순간을 주의하세요. 함께 기준을 정하는 것이 도움이 됩니다.'
         : '소비 기준이 달라 "왜 이걸 샰어?"가 반복될 수 있습니다. 함께 기준을 정하는 것이 도움이 됩니다.',
@@ -6954,8 +7022,8 @@ function buildDefaultLifestyleSections(
     rest: {
       title: '휴식·회복 방식',
       description: restDesc,
-      personA: effectiveRestMap[fA] + shapeRestNote(fA, shapeA) + getCurrentCardSupplement(currentCardColorA),
-      personB: effectiveRestMap[fB] + shapeRestNote(fB, shapeB) + getCurrentCardSupplement(currentCardColorB),
+      personA: effectiveRestMap[fA] + shapeRestNote(fA, shapeA) + getCurrentCardSupplement(currentCardColorA, 'rest'),
+      personB: effectiveRestMap[fB] + shapeRestNote(fB, shapeB) + getCurrentCardSupplement(currentCardColorB, 'rest'),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 휴식 패턴이 있어 서로의 성향이 강화되는 순간을 주의하세요. 가끔 다른 방식으로 함께 충전하는 시간을 만들어보세요.'
         : '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
@@ -6963,8 +7031,8 @@ function buildDefaultLifestyleSections(
     conflict: {
       title: '갈등 직후 반응',
       description: conflictDesc,
-      personA: effectiveConflictMap[fA] + shapeConflictNote(fA, shapeA) + getCurrentCardSupplement(currentCardColorA),
-      personB: effectiveConflictMap[fB] + shapeConflictNote(fB, shapeB) + getCurrentCardSupplement(currentCardColorB),
+      personA: effectiveConflictMap[fA] + shapeConflictNote(fA, shapeA) + getCurrentCardSupplement(currentCardColorA, 'conflict'),
+      personB: effectiveConflictMap[fB] + shapeConflictNote(fB, shapeB) + getCurrentCardSupplement(currentCardColorB, 'conflict'),
       tip: isSameFamily
         ? '두 사람의 갈등 반응 방식이 비슷하기 때문에 서로의 패턴이 강화될 수 있습니다. 한 사람이 먼저 다른 방식으로 다가가는 것이 중요합니다.'
         : '서로의 갈등 반응 방식이 다름을 인정하는 것이 첫 번째 단계입니다.',
