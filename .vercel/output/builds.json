@@ -5,9 +5,7 @@
     "/home/ubuntu/.nvm/versions/node/v22.13.0/bin/node",
     "/home/ubuntu/.nvm/versions/node/v22.13.0/bin/vercel",
     "build",
-    "--prod",
-    "--token",
-    "REDACTED"
+    "--prod"
   ],
   "cliVersion": "54.10.2",
   "builds": [
