@@ -434,14 +434,25 @@ export default function AdminScreen() {
                       <Text style={[styles.cardName, { color: colors.foreground }]}>{r.nickname}</Text>
                       <Text style={{ color: "#C4A35A", fontSize: 13 }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</Text>
                     </View>
-                    <Text style={[styles.cardSubtitle, { color: colors.muted }]} numberOfLines={1}>{r.content}</Text>
+                    <Text style={[styles.cardSubtitle, { color: colors.muted }]} numberOfLines={1}>
+                      {r.checkItems ? r.checkItems.split(',')[0] : (r.content ?? '')}
+                    </Text>
                   </View>
                   <Text style={[styles.expandIcon, { color: colors.muted }]}>{isExpanded ? "▲" : "▼"}</Text>
                 </TouchableOpacity>
                 {isExpanded && (
                   <View style={styles.cardBody}>
                     <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                    <Text style={[{ color: colors.foreground, fontSize: 14, lineHeight: 22, marginBottom: 8 }]}>{r.content}</Text>
+                    {r.checkItems && (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                        {r.checkItems.split(',').filter(Boolean).map((c: string, idx: number) => (
+                          <View key={idx} style={{ borderWidth: 1, borderColor: colors.primary, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 }}>
+                            <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '500' }}>✓ {c}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                    {r.content ? <Text style={[{ color: colors.foreground, fontSize: 14, lineHeight: 22, marginBottom: 8 }]}>{r.content}</Text> : null}
                     {r.tags && <Text style={[{ color: colors.muted, fontSize: 12, marginBottom: 8 }]}>태그: {r.tags}</Text>}
                     {r.colorCombo && <Text style={[{ color: colors.muted, fontSize: 12, marginBottom: 8 }]}>컬러: {r.colorCombo}</Text>}
                     <Text style={[{ color: colors.muted, fontSize: 11, marginBottom: 12 }]}>{formatDate(r.createdAt)}</Text>

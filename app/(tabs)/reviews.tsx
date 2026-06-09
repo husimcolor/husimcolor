@@ -11,12 +11,21 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  ScrollView,
 } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import { trpc } from '@/lib/trpc';
 
 const STAR_COUNT = 5;
+
+const CHECK_ITEMS = [
+  '결과가 잘 맞았어요',
+  '나를 이해하는 데 도움이 되었어요',
+  '관계를 이해하는 데 도움이 되었어요',
+  '친구나 가족에게 추천하고 싶어요',
+  '다시 이용하고 싶어요',
+];
 
 function StarRating({ rating, onRate }: { rating: number; onRate?: (r: number) => void }) {
   return (
@@ -40,6 +49,7 @@ export default function ReviewsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [nickname, setNickname] = useState('');
   const [rating, setRating] = useState(5);
+  const [selectedChecks, setSelectedChecks] = useState<string[]>([]);
   const [content, setContent] = useState('');
 
   const { data: reviews, isLoading, isError, refetch } = trpc.reviews.list.useQuery(undefined, {
@@ -52,6 +62,7 @@ export default function ReviewsScreen() {
       setModalVisible(false);
       setNickname('');
       setRating(5);
+      setSelectedChecks([]);
       setContent('');
       Alert.alert('감사합니다', '후기가 등록되었습니다 🌸');
     },
@@ -60,16 +71,28 @@ export default function ReviewsScreen() {
     },
   });
 
+  const toggleCheck = (item: string) => {
+    setSelectedChecks(prev =>
+      prev.includes(item) ? prev.filter(c => c !== item) : [...prev, item]
+    );
+  };
+
   const handleSubmit = () => {
     if (!nickname.trim()) {
       Alert.alert('알림', '닉네임을 입력해 주세요.');
       return;
     }
-    if (!content.trim() || content.trim().length < 5) {
-      Alert.alert('알림', '후기를 5자 이상 입력해 주세요.');
+    // 체크 항목 또는 자유 입력 중 하나 이상 필요
+    if (selectedChecks.length === 0 && !content.trim()) {
+      Alert.alert('알림', '체크 항목을 선택하거나 후기를 입력해 주세요.');
       return;
     }
-    createMutation.mutate({ nickname: nickname.trim(), rating, content: content.trim() });
+    createMutation.mutate({
+      nickname: nickname.trim(),
+      rating,
+      checkItems: selectedChecks.length > 0 ? selectedChecks.join(',') : undefined,
+      content: content.trim() || undefined,
+    });
   };
 
   const formatDate = (d: Date | string) => {
@@ -123,19 +146,33 @@ export default function ReviewsScreen() {
               </Text>
             </View>
           }
-          renderItem={({ item }) => (
-            <View style={[styles.reviewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <View style={styles.reviewHeader}>
-                <Text style={[styles.reviewNickname, { color: colors.foreground }]}>{item.nickname}</Text>
-                <Text style={[styles.reviewDate, { color: colors.muted }]}>{formatDate(item.createdAt)}</Text>
+          renderItem={({ item }) => {
+            const checks = item.checkItems ? item.checkItems.split(',').filter(Boolean) : [];
+            return (
+              <View style={[styles.reviewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={styles.reviewHeader}>
+                  <Text style={[styles.reviewNickname, { color: colors.foreground }]}>{item.nickname}</Text>
+                  <Text style={[styles.reviewDate, { color: colors.muted }]}>{formatDate(item.createdAt)}</Text>
+                </View>
+                <StarRating rating={item.rating} />
+                {item.colorCombo ? (
+                  <Text style={[styles.reviewCombo, { color: colors.primary }]}>🎨 {item.colorCombo}</Text>
+                ) : null}
+                {checks.length > 0 && (
+                  <View style={styles.checkTagRow}>
+                    {checks.map((c, idx) => (
+                      <View key={idx} style={[styles.checkTag, { backgroundColor: colors.background, borderColor: colors.primary }]}>
+                        <Text style={[styles.checkTagText, { color: colors.primary }]}>✓ {c}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+                {item.content ? (
+                  <Text style={[styles.reviewContent, { color: colors.foreground }]}>{item.content}</Text>
+                ) : null}
               </View>
-              <StarRating rating={item.rating} />
-              {item.colorCombo ? (
-                <Text style={[styles.reviewCombo, { color: colors.primary }]}>🎨 {item.colorCombo}</Text>
-              ) : null}
-              <Text style={[styles.reviewContent, { color: colors.foreground }]}>{item.content}</Text>
-            </View>
-          )}
+            );
+          }}
         />
       )}
 
@@ -158,44 +195,80 @@ export default function ReviewsScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>닉네임</Text>
-            <TextInput
-              style={[styles.input, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.surface }]}
-              placeholder="닉네임을 입력하세요"
-              placeholderTextColor={colors.muted}
-              value={nickname}
-              onChangeText={setNickname}
-              maxLength={20}
-              returnKeyType="next"
-            />
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {/* 닉네임 */}
+              <Text style={[styles.inputLabel, { color: colors.muted }]}>닉네임</Text>
+              <TextInput
+                style={[styles.input, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.surface }]}
+                placeholder="닉네임을 입력하세요"
+                placeholderTextColor={colors.muted}
+                value={nickname}
+                onChangeText={setNickname}
+                maxLength={20}
+                returnKeyType="next"
+              />
 
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>별점</Text>
-            <StarRating rating={rating} onRate={setRating} />
+              {/* 별점 */}
+              <Text style={[styles.inputLabel, { color: colors.muted, marginTop: 12 }]}>별점</Text>
+              <StarRating rating={rating} onRate={setRating} />
 
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>후기</Text>
-            <TextInput
-              style={[styles.textArea, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.surface }]}
-              placeholder="휴심컬러 경험을 자유롭게 남겨주세요 (5자 이상)"
-              placeholderTextColor={colors.muted}
-              value={content}
-              onChangeText={setContent}
-              multiline
-              maxLength={500}
-              returnKeyType="done"
-              textAlignVertical="top"
-            />
-            <Text style={[styles.charCount, { color: colors.muted }]}>{content.length}/500</Text>
-
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={[styles.submitButton, { backgroundColor: colors.primary, opacity: createMutation.isPending ? 0.6 : 1 }]}
-              onPress={handleSubmit}
-              disabled={createMutation.isPending}
-            >
-              <Text style={styles.submitButtonText}>
-                {createMutation.isPending ? '등록 중...' : '후기 등록하기'}
+              {/* 체크형 후기 */}
+              <Text style={[styles.inputLabel, { color: colors.muted, marginTop: 12 }]}>
+                어떤 점이 좋으셨나요? <Text style={{ color: colors.primary }}>(복수 선택 가능)</Text>
               </Text>
-            </TouchableOpacity>
+              <View style={styles.checkList}>
+                {CHECK_ITEMS.map((item) => {
+                  const checked = selectedChecks.includes(item);
+                  return (
+                    <TouchableOpacity
+                      key={item}
+                      activeOpacity={0.7}
+                      style={[
+                        styles.checkRow,
+                        {
+                          backgroundColor: checked ? colors.primary + '18' : colors.surface,
+                          borderColor: checked ? colors.primary : colors.border,
+                        },
+                      ]}
+                      onPress={() => toggleCheck(item)}
+                    >
+                      <View style={[styles.checkbox, { borderColor: checked ? colors.primary : colors.muted, backgroundColor: checked ? colors.primary : 'transparent' }]}>
+                        {checked && <Text style={styles.checkmark}>✓</Text>}
+                      </View>
+                      <Text style={[styles.checkLabel, { color: checked ? colors.primary : colors.foreground }]}>{item}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* 자유 입력 (선택사항) */}
+              <Text style={[styles.inputLabel, { color: colors.muted, marginTop: 12 }]}>
+                추가로 남기고 싶은 말 <Text style={{ color: colors.muted, fontWeight: '400' }}>(선택)</Text>
+              </Text>
+              <TextInput
+                style={[styles.textArea, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.surface }]}
+                placeholder="자유롭게 남겨주세요"
+                placeholderTextColor={colors.muted}
+                value={content}
+                onChangeText={setContent}
+                multiline
+                maxLength={500}
+                returnKeyType="done"
+                textAlignVertical="top"
+              />
+              <Text style={[styles.charCount, { color: colors.muted }]}>{content.length}/500</Text>
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[styles.submitButton, { backgroundColor: colors.primary, opacity: createMutation.isPending ? 0.6 : 1 }]}
+                onPress={handleSubmit}
+                disabled={createMutation.isPending}
+              >
+                <Text style={styles.submitButtonText}>
+                  {createMutation.isPending ? '등록 중...' : '후기 등록하기'}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -286,6 +359,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
   },
+  checkTagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  checkTag: {
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  checkTagText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -296,14 +384,14 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     borderWidth: 1,
     padding: 24,
-    gap: 10,
     paddingBottom: 40,
+    maxHeight: '90%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   modalTitle: {
     fontSize: 18,
@@ -315,8 +403,8 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 13,
-    fontWeight: '500',
-    marginTop: 4,
+    fontWeight: '600',
+    marginBottom: 6,
   },
   input: {
     borderWidth: 1,
@@ -325,24 +413,57 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 15,
   },
+  checkList: {
+    gap: 8,
+  },
+  checkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  checkLabel: {
+    fontSize: 14,
+    lineHeight: 20,
+    flex: 1,
+  },
   textArea: {
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
-    height: 110,
+    height: 90,
   },
   charCount: {
     fontSize: 11,
     textAlign: 'right',
-    marginTop: -4,
+    marginTop: 4,
+    marginBottom: 8,
   },
   submitButton: {
     paddingVertical: 14,
     borderRadius: 14,
     alignItems: 'center',
     marginTop: 6,
+    marginBottom: 8,
   },
   submitButtonText: {
     color: '#fff',

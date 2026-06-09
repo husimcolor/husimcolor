@@ -112,7 +112,8 @@ export const appRouter = router({
       .input(z.object({
         nickname: z.string().min(1).max(50),
         rating: z.number().int().min(1).max(5),
-        content: z.string().max(500).default(''),
+        content: z.string().max(500).optional(),
+        checkItems: z.string().max(500).optional(), // 선택형 체크 항목 (콤마 구분)
         tags: z.string().max(255).optional(),
         colorCombo: z.string().max(100).optional(),
       }))

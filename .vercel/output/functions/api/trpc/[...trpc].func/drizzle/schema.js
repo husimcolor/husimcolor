@@ -28,7 +28,8 @@ exports.reviews = (0, mysql_core_1.mysqlTable)("reviews", {
     id: (0, mysql_core_1.int)("id").autoincrement().primaryKey(),
     nickname: (0, mysql_core_1.varchar)("nickname", { length: 50 }).notNull(),
     rating: (0, mysql_core_1.int)("rating").notNull(), // 1~5
-    content: (0, mysql_core_1.text)("content").notNull(),
+    content: (0, mysql_core_1.text)("content"), // 자유 입력 (선택사항)
+    checkItems: (0, mysql_core_1.varchar)("checkItems", { length: 500 }), // 선택형 체크 항목 (콤마 구분)
     tags: (0, mysql_core_1.varchar)("tags", { length: 255 }), // 공감 포인트 태그 (콤마 구분)
     colorCombo: (0, mysql_core_1.varchar)("colorCombo", { length: 100 }), // 예: "라벤더 + 인디고 + 세이지"
     createdAt: (0, mysql_core_1.timestamp)("createdAt").defaultNow().notNull(),

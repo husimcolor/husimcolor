@@ -30,7 +30,8 @@ export const reviews = mysqlTable("reviews", {
   id: int("id").autoincrement().primaryKey(),
   nickname: varchar("nickname", { length: 50 }).notNull(),
   rating: int("rating").notNull(), // 1~5
-  content: text("content").notNull(),
+  content: text("content"), // 자유 입력 (선택사항)
+  checkItems: varchar("checkItems", { length: 500 }), // 선택형 체크 항목 (콤마 구분)
   tags: varchar("tags", { length: 255 }), // 공감 포인트 태그 (콤마 구분)
   colorCombo: varchar("colorCombo", { length: 100 }), // 예: "라벤더 + 인디고 + 세이지"
   createdAt: timestamp("createdAt").defaultNow().notNull(),

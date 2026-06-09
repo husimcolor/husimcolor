@@ -143,7 +143,8 @@ exports.appRouter = (0, trpc_1.router)({
             .input(zod_1.z.object({
             nickname: zod_1.z.string().min(1).max(50),
             rating: zod_1.z.number().int().min(1).max(5),
-            content: zod_1.z.string().max(500).default(''),
+            content: zod_1.z.string().max(500).optional(),
+            checkItems: zod_1.z.string().max(500).optional(), // 선택형 체크 항목 (콤마 구분)
             tags: zod_1.z.string().max(255).optional(),
             colorCombo: zod_1.z.string().max(100).optional(),
         }))
