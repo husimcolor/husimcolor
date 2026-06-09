@@ -776,7 +776,7 @@ export default function CoupleResultScreen() {
 
           {/* 두 사람 프로파일 대비 요약 — 끌림 이유 + 반복 패턴 + 해법 (archetype 오버라이드 우선) */}
           <SectionCard accentColor={accentCouple} label={getRelSectionLabel()} title={getRelSectionTitle()} colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.attractionContrast ?? coupleAnalysis.profileContrast}</Text>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.profileContrast || archetypeResult?.profileContrastOverride?.attractionContrast}</Text>
           </SectionCard>
 
           {/* ─── 생활 관계 섹션 (컬러+도형 조합 기반) — 왜 끌리는데 왜 힘든지 바로 다음 ─── */}
