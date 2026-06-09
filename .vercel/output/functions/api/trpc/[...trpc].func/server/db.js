@@ -236,28 +236,29 @@ async function getTestSessionStats() {
             deepStart: 0, deepResult: 0,
             coupleStart: 0, coupleResult: 0,
         };
+    // 고유 deviceId 기준으로 집계 - 새로고침/재진입 중복 카운트 방지
     const freeStartResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'free_start'));
     const freeResultResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'free_result'));
     const deepStartResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'deep_start'));
     const deepResultResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'deep_result'));
     const coupleStartResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'couple_start'));
     const coupleResultResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'couple_result'));
     return {
@@ -300,29 +301,29 @@ async function getVisitorStats() {
         .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'premium'));
-    // 테스트 세션 추적 통계 (이벤트 발생 횟수 기준)
+    // 테스트 세션 추적 통계 (고유 deviceId 기준 - 새로고침/재진입 중복 카운트 방지)
     const freeStartResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'free_start'));
     const freeResultResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'free_result'));
     const deepStartResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'deep_start'));
     const deepResultResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'deep_result'));
     const coupleStartResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'couple_start'));
     const coupleResultResult = await db
-        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(*)` })
+        .select({ cnt: (0, drizzle_orm_3.sql) `COUNT(DISTINCT ${schema_5.visitorLogs.deviceId})` })
         .from(schema_5.visitorLogs)
         .where((0, drizzle_orm_1.eq)(schema_5.visitorLogs.visitType, 'couple_result'));
     return {

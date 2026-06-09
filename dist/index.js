@@ -289,12 +289,12 @@ async function getTestSessionStats() {
     coupleStart: 0,
     coupleResult: 0
   };
-  const freeStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_start"));
-  const freeResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_result"));
-  const deepStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_start"));
-  const deepResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_result"));
-  const coupleStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_start"));
-  const coupleResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_result"));
+  const freeStartResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_start"));
+  const freeResultResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_result"));
+  const deepStartResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_start"));
+  const deepResultResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_result"));
+  const coupleStartResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_start"));
+  const coupleResultResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_result"));
   return {
     freeStart: Number(freeStartResult[0]?.cnt ?? 0),
     freeResult: Number(freeResultResult[0]?.cnt ?? 0),
@@ -324,12 +324,12 @@ async function getVisitorStats() {
   const todayResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(sql`DATE(${visitorLogs.createdAt}) = CURDATE()`);
   const freeTrialResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_trial"));
   const premiumResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "premium"));
-  const freeStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_start"));
-  const freeResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_result"));
-  const deepStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_start"));
-  const deepResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_result"));
-  const coupleStartResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_start"));
-  const coupleResultResult = await db.select({ cnt: sql`COUNT(*)` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_result"));
+  const freeStartResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_start"));
+  const freeResultResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "free_result"));
+  const deepStartResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_start"));
+  const deepResultResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "deep_result"));
+  const coupleStartResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_start"));
+  const coupleResultResult = await db.select({ cnt: sql`COUNT(DISTINCT ${visitorLogs.deviceId})` }).from(visitorLogs).where(eq(visitorLogs.visitType, "couple_result"));
   return {
     totalLogs: Number(totalLogsResult[0]?.cnt ?? 0),
     totalVisitors: Number(totalResult[0]?.cnt ?? 0),
