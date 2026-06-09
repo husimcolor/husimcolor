@@ -2789,12 +2789,160 @@ function buildProfileContrast(
   const colorContrastResult = colorIdContrastMap[`${colorA0_contrast}-${colorB0_contrast}`] ?? colorIdContrastMap[`${colorB0_contrast}-${colorA0_contrast}`];
   if (colorContrastResult) return colorContrastResult + (shapeProfileNote ?? '');
 
-  // 포낙 — 계열별 기본 대비 문장
-  const fallbackA = getFamilyProfileLabel(fA);
-  const fallbackB = getFamilyProfileLabel(fB);
-  const attrLine = getAttractionLine(fA, fB);
-  const baseResult = contrastMap[key] ?? contrastMap[reverseKey] ?? `${nameA}의 성향을 가진 사람은 ${fallbackA} 방식으로 관계를 이어갑니다. ${nameB}의 성향을 가진 사람은 ${fallbackB} 방식으로 연결됩니다.\n${attrLine}\n반복되는 패턴은 이렇게 나타납니다. 서로의 방식이 다를 뿐인데, 그 다름이 거리감으로 읽히는 순간이 생깁니다. 서로의 의도를 먼저 확인하는 것이 오해를 줄이는 가장 빠른 방법입니다.`;
+  // 계열별 기본 대비 문장 (사전 정의 없는 조합 → 동적 생성)
+  const baseResult = contrastMap[key] ?? contrastMap[reverseKey] ?? buildDynamicProfileContrast(
+    fA, fB, colorsA, colorsB, relLabel
+  );
   return baseResult + (shapeProfileNote ?? '');
+}
+
+// 컬러별 기질 트레이트 맵 (1순위 컬러 id 기반)
+const COLOR_TRAIT_MAP: Record<string, [string, string]> = {
+  red:        ['즉각적인 표현과 강한 추진력', '감정이 생기면 바로 행동으로 옮기려 합니다'],
+  orange:     ['활기차고 친밀한 연결 욕구', '함께 웃고 즐기는 시간에서 에너지를 얻습니다'],
+  coral:      ['따뜻한 표현과 관계 중심 성향', '감정을 밝고 부드럽게 표현하는 것이 자연스럽습니다'],
+  magenta:    ['깊은 감정 몰입과 진심 어린 연결', '한번 마음을 열면 깊이 투자하고 상처도 깊이 남습니다'],
+  pink:       ['따뜻한 공감과 정서적 연결 욕구', '공감받고 싶은 마음이 크고 관계 온도에 민감합니다'],
+  peach:      ['부드러운 배려와 따뜻한 관계 유지', '갈등보다 조화를 선택하며 분위기를 편안하게 만듭니다'],
+  beige:      ['안정적인 배려와 조용한 온기', '겉으로 드러내기보다 행동으로 마음을 전합니다'],
+  cream:      ['부드럽고 여유로운 관계 흐름', '서두르지 않고 자연스럽게 관계를 쌓아갑니다'],
+  gold:       ['안정된 자신감과 현실적 판단', '신뢰와 책임을 중요하게 여기며 꾸준히 관계를 지킵니다'],
+  brown:      ['현실적이고 묵직한 안정감', '말보다 행동으로 신뢰를 쌓고 변화보다 지속을 선호합니다'],
+  terracotta: ['따뜻하고 현실적인 생활 중심 성향', '일상 안에서 관계를 가꾸는 것을 중요하게 여깁니다'],
+  blue:       ['신뢰와 진솔한 소통 중심 성향', '말보다 일관된 행동으로 마음을 전하는 것을 선호합니다'],
+  skyblue:    ['가볍고 자유로운 소통 방식', '밝고 솔직하게 표현하며 공간과 여유를 중요하게 여깁니다'],
+  teal:       ['감정 정화와 균형 회복 성향', '내면을 고요하게 유지하며 차분하게 관계를 이어갑니다'],
+  mint:       ['가볍고 상쾌한 회복 에너지', '부담 없이 편안하게 연결되는 것을 좋아합니다'],
+  indigo:     ['깊은 내면 탐색과 성찰 중심 성향', '충분히 생각하고 정리한 뒤에야 마음을 표현합니다'],
+  violet:     ['직관과 이상, 깊이 있는 연결 욕구', '감정보다 의미와 진심이 느껴지는 관계를 원합니다'],
+  black:      ['혼자 회복하는 시간과 경계 중심 성향', '말보다 침묵으로 감정을 정리하며 간섭을 부담스러워합니다'],
+  silver:     ['명료한 판단과 감정 절제 성향', '감정보다 논리와 구조를 중심으로 관계를 이어갑니다'],
+  navy:       ['책임감과 신뢰 중심의 묵직한 성향', '말 없이 곁을 지키는 방식으로 마음을 전합니다'],
+  green:      ['배려와 관계 조화, 자연스러운 중재 성향', '갈등을 피하고 편안한 흐름을 유지하려 합니다'],
+  olive:      ['현실적 균형과 안정적 관계 유지', '무리하지 않고 자신의 페이스를 지키며 관계를 이어갑니다'],
+  sage:       ['차분하고 자연스러운 회복 에너지', '조용히 자신을 유지하며 관계에서도 여유를 찾습니다'],
+  lavender:   ['부드러운 감성과 관계 회복 성향', '감정을 부드럽게 풀어가며 관계를 따뜻하게 유지합니다'],
+  white:      ['정화와 비움, 생활 질서 중심 성향', '정리된 환경과 감정 비움이 안정감의 기반입니다'],
+  yellow:     ['밝고 가벼운 현실 중심 에너지', '긍정적으로 상황을 바라보며 유연하게 적응합니다'],
+};
+
+// 에너지 계열별 끌림 이유 맵 (A계열-B계열 키)
+const DYNAMIC_ATTRACTION_MAP: Partial<Record<string, string>> = {
+  'warm_active-cool_deep':    '한 사람의 활기차고 직접적인 표현이 다른 사람에게 살아있는 느낌을 주고, 다른 사람의 깊고 조용한 내면이 한 사람에게 안정감을 줍니다.',
+  'warm_active-warm_soft':    '한 사람의 활기찬 에너지가 다른 사람에게 자극이 되고, 다른 사람의 따뜻한 배려가 한 사람에게 온기를 줍니다.',
+  'warm_active-nature':       '한 사람의 추진력이 다른 사람에게 방향감을 주고, 다른 사람의 자연스러운 흐름이 한 사람에게 편안함을 줍니다.',
+  'warm_active-neutral':      '한 사람의 즉각적인 표현이 다른 사람에게 활력을 주고, 다른 사람의 균형 잡힌 시각이 한 사람에게 안정감을 줍니다.',
+  'warm_active-cool_clear':   '한 사람의 열정적인 표현이 다른 사람에게 에너지를 주고, 다른 사람의 명료한 판단이 한 사람에게 방향감을 줍니다.',
+  'warm_active-warm_grounded':'한 사람의 활기찬 추진력이 다른 사람에게 자극이 되고, 다른 사람의 묵직한 안정감이 한 사람에게 신뢰를 줍니다.',
+  'warm_soft-cool_deep':      '한 사람의 따뜻한 공감이 다른 사람에게 온기를 주고, 다른 사람의 깊이 있는 내면이 한 사람에게 진정성을 줍니다.',
+  'warm_soft-nature':         '두 사람 모두 관계를 소중히 여기는 마음이 있어 처음부터 편안하게 연결됩니다.',
+  'warm_soft-neutral':        '한 사람의 따뜻한 배려가 다른 사람에게 안정감을 주고, 다른 사람의 밝고 균형 잡힌 시각이 한 사람에게 가벼움을 줍니다.',
+  'warm_soft-cool_clear':     '한 사람의 따뜻한 감성이 다른 사람에게 온기를 주고, 다른 사람의 명료한 소통이 한 사람에게 신뢰를 줍니다.',
+  'warm_soft-warm_grounded':  '두 사람 모두 관계를 안정적으로 이어가려는 마음이 있어 자연스럽게 신뢰가 쌓입니다.',
+  'cool_deep-nature':         '한 사람의 깊이 있는 내면이 다른 사람에게 진정성을 주고, 다른 사람의 자연스러운 흐름이 한 사람에게 편안함을 줍니다.',
+  'cool_deep-neutral':        '한 사람의 깊이 있는 성찰이 다른 사람에게 의미를 주고, 다른 사람의 균형 잡힌 시각이 한 사람에게 안정감을 줍니다.',
+  'cool_deep-cool_clear':     '두 사람 모두 내면을 중요하게 여기는 편이라 말 없이도 서로를 이해하는 순간이 있습니다.',
+  'cool_deep-warm_grounded':  '한 사람의 깊이 있는 내면이 다른 사람에게 진정성을 주고, 다른 사람의 현실적 안정감이 한 사람에게 든든함을 줍니다.',
+  'nature-neutral':           '두 사람 모두 자연스럽고 균형 잡힌 흐름을 선호하여 처음부터 편안하게 연결됩니다.',
+  'nature-cool_clear':        '한 사람의 자연스러운 배려가 다른 사람에게 편안함을 주고, 다른 사람의 명료한 소통이 한 사람에게 방향감을 줍니다.',
+  'nature-warm_grounded':     '두 사람 모두 안정적인 관계를 선호하여 자연스럽게 신뢰가 쌓입니다.',
+  'neutral-cool_clear':       '한 사람의 균형 잡힌 시각이 다른 사람에게 안정감을 주고, 다른 사람의 명료한 소통이 한 사람에게 방향감을 줍니다.',
+  'neutral-warm_grounded':    '한 사람의 밝고 유연한 태도가 다른 사람에게 활력을 주고, 다른 사람의 묵직한 안정감이 한 사람에게 신뢰를 줍니다.',
+  'cool_clear-warm_grounded': '한 사람의 명료한 판단이 다른 사람에게 방향감을 주고, 다른 사람의 현실적 안정감이 한 사람에게 든든함을 줍니다.',
+};
+
+// 에너지 계열별 힘든 이유 맵
+const DYNAMIC_HARD_MAP: Partial<Record<string, string>> = {
+  'warm_active-cool_deep':    '한 사람은 지금 당장 반응을 원하고, 다른 사람은 아직 마음을 정리하는 중입니다. 이 속도 차이가 "왜 반응이 없어?"와 "나는 생각 중이야"의 반복으로 이어집니다.',
+  'warm_active-warm_soft':    '한 사람의 빠른 표현이 다른 사람에게 부담이 되고, 다른 사람의 조용한 배려가 한 사람에게 답답함으로 느껴질 수 있습니다.',
+  'warm_active-nature':       '한 사람은 빠르게 결론 내리고 싶고, 다른 사람은 자신의 리듬대로 흐르고 싶어 합니다. 속도와 방향 차이가 반복적인 긴장 포인트입니다.',
+  'warm_active-neutral':      '한 사람의 즉각적인 표현이 다른 사람에게 충동적으로 느껴지고, 다른 사람의 균형 잡힌 태도가 한 사람에게 냉담하게 느껴질 수 있습니다.',
+  'warm_active-cool_clear':   '한 사람은 감정으로 연결되고 싶고, 다른 사람은 논리적으로 정리하고 싶어 합니다. 표현 방식 차이가 오해를 만들 수 있습니다.',
+  'warm_active-warm_grounded':'한 사람은 즉각적으로 움직이고 싶고, 다른 사람은 충분히 검토한 뒤 행동하려 합니다. 이 속도 차이가 반복적인 긴장 포인트입니다.',
+  'warm_soft-cool_deep':      '한 사람은 지금 공감받고 싶고, 다른 사람은 충분히 정리한 뒤 표현하려 합니다. "왜 반응이 없어?"와 "나는 정리 중이야"가 반복됩니다.',
+  'warm_soft-nature':         '한 사람은 더 적극적인 표현을 원하고, 다른 사람은 자연스러운 흐름을 선호합니다. 기대 차이가 서운함으로 이어질 수 있습니다.',
+  'warm_soft-neutral':        '한 사람은 감정적 공감을 원하고, 다른 사람은 현실적으로 정리하려 합니다. 공감 방식 차이가 거리감을 만들 수 있습니다.',
+  'warm_soft-cool_clear':     '한 사람은 감정으로 연결되고 싶고, 다른 사람은 명료하게 정리하고 싶어 합니다. "왜 이렇게 논리적이야?"와 "왜 이렇게 감정적이야?"가 교차합니다.',
+  'warm_soft-warm_grounded':  '한 사람은 감정 표현과 공감을 원하고, 다른 사람은 행동으로 마음을 전합니다. 서로의 사랑 언어가 달라 오해가 생길 수 있습니다.',
+  'cool_deep-nature':         '한 사람은 깊이 있는 연결을 원하고, 다른 사람은 자연스럽고 가벼운 흐름을 선호합니다. 연결 방식 차이가 거리감으로 읽힐 수 있습니다.',
+  'cool_deep-neutral':        '한 사람은 깊이 있는 대화를 원하고, 다른 사람은 가볍고 현실적인 소통을 선호합니다. "왜 이렇게 무거워?"와 "왜 이렇게 가벼워?"가 교차합니다.',
+  'cool_deep-cool_clear':     '두 사람 모두 감정을 안으로 담아두는 편이라, 서로 기다리다 연결이 늦어지는 패턴이 생깁니다.',
+  'cool_deep-warm_grounded':  '한 사람은 내면 탐색을 중요하게 여기고, 다른 사람은 현실적인 행동을 우선합니다. 감정 표현이 줄어들면서 서로가 멀어지는 느낌이 생깁니다.',
+  'nature-neutral':           '두 사람 모두 갈등을 피하는 편이라, "괜찮아"라고 말하면서 각자 쌓아두는 패턴이 생깁니다.',
+  'nature-cool_clear':        '한 사람은 자연스러운 흐름을 원하고, 다른 사람은 명확하게 정리하고 싶어 합니다. 방향 설정 방식 차이가 긴장 포인트입니다.',
+  'nature-warm_grounded':     '두 사람 모두 안정을 선호하지만, 변화가 필요한 순간에 둘 다 망설이는 패턴이 생깁니다.',
+  'neutral-cool_clear':       '한 사람은 유연하게 적응하고, 다른 사람은 명확한 기준을 원합니다. 방향 차이가 반복적인 긴장 포인트입니다.',
+  'neutral-warm_grounded':    '한 사람은 가볍고 유연하게, 다른 사람은 묵직하고 신중하게 움직입니다. 생활 리듬 차이가 반복적인 긴장 포인트입니다.',
+  'cool_clear-warm_grounded': '한 사람은 명료하게 결론 내리고 싶고, 다른 사람은 신중하게 검토하려 합니다. 결정 속도 차이가 반복적인 긴장 포인트입니다.',
+};
+
+// 에너지 계열별 반복 패턴 맵
+const DYNAMIC_PATTERN_MAP: Partial<Record<string, string>> = {
+  'warm_active-cool_deep':    '한 사람이 먼저 다가가고, 다른 사람은 시간이 지난 뒤 반응하는 흐름이 반복됩니다.',
+  'warm_active-warm_soft':    '한 사람이 빠르게 표현하면 다른 사람이 잠시 물러서고, 그 거리가 다시 가까워지는 흐름이 반복됩니다.',
+  'warm_active-nature':       '한 사람이 방향을 제시하고 다른 사람이 따라가는 흐름이 반복되다, 다른 사람이 지쳐 거리를 두는 패턴이 생깁니다.',
+  'warm_active-neutral':      '한 사람이 먼저 표현하고, 다른 사람이 균형을 맞추려는 흐름이 반복됩니다.',
+  'warm_active-cool_clear':   '한 사람이 감정으로 먼저 반응하고, 다른 사람이 논리로 정리하려는 흐름이 반복됩니다.',
+  'warm_active-warm_grounded':'한 사람이 빠르게 결정하고, 다른 사람이 검토하며 속도를 조절하는 흐름이 반복됩니다.',
+  'warm_soft-cool_deep':      '한 사람이 먼저 연락하고, 다른 사람이 그 연락을 기다리는 흐름이 반복됩니다.',
+  'warm_soft-nature':         '한 사람이 더 많이 표현하고, 다른 사람이 자연스럽게 받아들이는 흐름이 반복됩니다.',
+  'warm_soft-neutral':        '한 사람이 감정으로 다가가고, 다른 사람이 현실적으로 정리하는 흐름이 반복됩니다.',
+  'warm_soft-cool_clear':     '한 사람이 감정으로 먼저 반응하고, 다른 사람이 논리로 정리하려는 흐름이 반복됩니다.',
+  'warm_soft-warm_grounded':  '한 사람이 감정으로 표현하고, 다른 사람이 행동으로 응답하는 흐름이 반복됩니다.',
+  'cool_deep-nature':         '한 사람이 깊이 생각하며 거리를 두고, 다른 사람이 자연스럽게 기다리는 흐름이 반복됩니다.',
+  'cool_deep-neutral':        '한 사람이 깊이 정리하고, 다른 사람이 가볍게 풀어가려는 흐름이 반복됩니다.',
+  'cool_deep-cool_clear':     '두 사람 모두 먼저 말하기를 기다리다 서로 기다리는 패턴이 반복됩니다.',
+  'cool_deep-warm_grounded':  '한 사람이 내면을 정리하며 거리를 두고, 다른 사람이 묵묵히 기다리는 흐름이 반복됩니다.',
+  'nature-neutral':           '두 사람 모두 자연스럽게 흐르다 방향이 필요한 순간에 서로 기다리는 패턴이 반복됩니다.',
+  'nature-cool_clear':        '한 사람이 자연스럽게 흐르고, 다른 사람이 명확하게 정리하려는 흐름이 반복됩니다.',
+  'nature-warm_grounded':     '두 사람 모두 안정을 선호하다 변화가 필요한 순간에 서로 기다리는 패턴이 반복됩니다.',
+  'neutral-cool_clear':       '한 사람이 유연하게 적응하고, 다른 사람이 명확한 방향을 잡으려는 흐름이 반복됩니다.',
+  'neutral-warm_grounded':    '한 사람이 가볍게 제안하고, 다른 사람이 신중하게 검토하는 흐름이 반복됩니다.',
+  'cool_clear-warm_grounded': '한 사람이 명료하게 결론 내리고, 다른 사람이 신중하게 검토하는 흐름이 반복됩니다.',
+};
+
+/**
+ * 사전 정의 없는 컬러 조합에서 5~7문장 동적 생성
+ * 1·2순위 컬러 기질 + 끌림 이유 + 힘든 이유 + 반복 패턴 포함
+ */
+function buildDynamicProfileContrast(
+  fA: EnergyFamily, fB: EnergyFamily,
+  colorsA: ColorData[], colorsB: ColorData[],
+  relLabel: string
+): string {
+  const c1A = colorsA[0]?.id ?? '';
+  const c2A = colorsA[1]?.id ?? '';
+  const c1B = colorsB[0]?.id ?? '';
+  const c2B = colorsB[1]?.id ?? '';
+  const name1A = colorsA[0]?.korName ?? '';
+  const name2A = colorsA[1]?.korName ?? '';
+  const name1B = colorsB[0]?.korName ?? '';
+  const name2B = colorsB[1]?.korName ?? '';
+
+  const [trait1A] = COLOR_TRAIT_MAP[c1A] ?? [getFamilyProfileLabel(fA)];
+  const [trait2A] = COLOR_TRAIT_MAP[c2A] ?? [''];
+  const [trait1B] = COLOR_TRAIT_MAP[c1B] ?? [getFamilyProfileLabel(fB)];
+  const [trait2B] = COLOR_TRAIT_MAP[c2B] ?? [''];
+
+  const key = `${fA}-${fB}`;
+  const revKey = `${fB}-${fA}`;
+  const attraction = DYNAMIC_ATTRACTION_MAP[key] ?? DYNAMIC_ATTRACTION_MAP[revKey]
+    ?? `한 사람의 ${getFamilyProfileLabel(fA)} 에너지가 다른 사람에게 새로운 자극으로 다가옵니다.`;
+  const hard = DYNAMIC_HARD_MAP[key] ?? DYNAMIC_HARD_MAP[revKey]
+    ?? `서로의 에너지 방식이 다르게 읽히는 순간이 반복될 수 있습니다.`;
+  const pattern = DYNAMIC_PATTERN_MAP[key] ?? DYNAMIC_PATTERN_MAP[revKey]
+    ?? `서로의 의도를 먼저 확인하는 것이 오해를 줄이는 가장 빠른 방법입니다.`;
+
+  // 1순위 컬러 + 2순위 컬러 기질 문장 조합
+  const descA = name2A && trait2A
+    ? `${name1A}+${name2A} 컬러를 가진 첫 번째 사람은 ${trait1A} 성향이 있으면서도 ${trait2A} 면이 함께 작용합니다.`
+    : `${name1A} 컬러를 가진 첫 번째 사람은 ${trait1A} 성향이 있습니다.`;
+
+  const descB = name2B && trait2B
+    ? `${name1B}+${name2B} 컬러를 가진 두 번째 사람은 ${trait1B} 성향이 있으면서도 ${trait2B} 면이 함께 작용합니다.`
+    : `${name1B} 컬러를 가진 두 번째 사람은 ${trait1B} 성향이 있습니다.`;
+
+  return `${descA} ${descB} ${attraction} ${hard} ${pattern} 서로의 의도를 먼저 확인하는 것이 이 연결을 더 단단하게 만들어줍니다.`;
 }
 
 function getFamilyProfileLabel(family: EnergyFamily): string {
