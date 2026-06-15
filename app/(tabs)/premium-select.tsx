@@ -166,13 +166,9 @@ function WebCard({ card, index, isFlipped, isSelected, onPress, entryDelay }: We
     flipEl.addEventListener("animationend", onFlipOutEnd);
   }, [isFlipped]);
 
-  // 모든 카드 동일 기준: 선택 시 soft gold, 뒷면 시 공통 베이지, 앞면 비선택 시 화이트 카드만 얇은 보정
+  // 모든 카드 동일 기준: 선택 시 soft gold, 뒷면/앞면 모두 동일한 얇은 베이지 테두리
   const borderStyle = isSelected
     ? { borderWidth: 2.5, borderColor: '#C8A96E', borderStyle: 'solid' as const }
-    : showFront
-    ? (card.colorKor === '화이트'
-      ? { borderWidth: 1, borderColor: '#D8C7A5', borderStyle: 'solid' as const }
-      : {})
     : { borderWidth: 1, borderColor: '#C4B49A', borderStyle: 'solid' as const };
 
   return (
@@ -370,9 +366,9 @@ function NativeCard({
               transform: [{ rotateY: backRotate }],
               backfaceVisibility: "hidden",
               position: "absolute",
-              // 모든 카드 동일 기준: 선택 시 soft gold, 비선택 화이트 카드만 얇은 보정
-              borderWidth: isSelected ? 2.5 : (card.colorKor === '화이트' ? 1 : 0),
-              borderColor: isSelected ? '#C8A96E' : '#D8C7A5',
+              // 모든 카드 동일 기준: 선택 시 soft gold, 비선택 시 모두 동일한 얇은 베이지 테두리
+              borderWidth: isSelected ? 2.5 : 1,
+              borderColor: isSelected ? '#C8A96E' : '#C4B49A',
             },
           ]}
         >
