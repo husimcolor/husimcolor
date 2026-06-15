@@ -675,9 +675,9 @@ export default function PremiumResultScreen() {
                   styles.cardSummaryBadge,
                   {
                     backgroundColor: card.colorHex,
-                    // 블랙 카드: 골드 테두리, 화이트 카드: 연한 골드 테두리
-                    borderWidth: card.colorKor === "블랙" ? 2 : card.colorKor === "화이트" ? 1.5 : 0,
-                    borderColor: card.colorKor === "블랙" ? "#D4AF37" : card.colorKor === "화이트" ? "#D8C7A5" : "transparent",
+                    // 모든 카드 동일: 연한 베이지 테두리
+                    borderWidth: 1,
+                    borderColor: '#C4B49A',
                   },
                 ]}
               >

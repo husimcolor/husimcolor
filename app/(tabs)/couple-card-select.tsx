@@ -142,14 +142,9 @@ function WebCard({ card, isFlipped, isSelected, onPress, entryDelay, isShuffle }
   }, [isFlipped]);
 
   // 선택 강조: 모든 카드 공통 soft gold outline
-  // 뒷면 상태: 카드 컬러와 무관하게 동일한 베이지 테두리
-  // 선택 시: 모든 카드(블랙 포함) 동일한 soft gold
+  // 모든 카드 동일 기준: 선택 시 soft gold, 뒷면/앞면 모두 동일한 얇은 베이지 테두리
   const borderStyle = isSelected
     ? { borderWidth: 2.5, borderColor: '#C8A96E', borderStyle: 'solid' as const }
-    : showFront
-    ? (card.colorKor === '화이트'
-      ? { borderWidth: 1, borderColor: '#D8C7A5', borderStyle: 'solid' as const }
-      : {})
     : { borderWidth: 1, borderColor: '#C4B49A', borderStyle: 'solid' as const };
 
   return (
