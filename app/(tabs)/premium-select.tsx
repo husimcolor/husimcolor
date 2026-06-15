@@ -166,13 +166,14 @@ function WebCard({ card, index, isFlipped, isSelected, onPress, entryDelay }: We
     flipEl.addEventListener("animationend", onFlipOutEnd);
   }, [isFlipped]);
 
-  const borderStyle = card.colorKor === "화이트"
-    ? { borderWidth: isSelected ? 2.5 : 1.5, borderColor: isSelected ? "#A08050" : "#D8C7A5", borderStyle: "solid" as const }
-    : card.colorKor === "블랙"
-    ? { borderWidth: isSelected ? 2.5 : 1.5, borderColor: "#D4AF37", borderStyle: "solid" as const }
-    : isSelected
-    ? { borderWidth: 2.5, borderColor: "#FFFFFF", borderStyle: "solid" as const }
-    : {};
+  // 모든 카드 동일 기준: 선택 시 soft gold, 뒷면 시 공통 베이지, 앞면 비선택 시 화이트 카드만 얇은 보정
+  const borderStyle = isSelected
+    ? { borderWidth: 2.5, borderColor: '#C8A96E', borderStyle: 'solid' as const }
+    : showFront
+    ? (card.colorKor === '화이트'
+      ? { borderWidth: 1, borderColor: '#D8C7A5', borderStyle: 'solid' as const }
+      : {})
+    : { borderWidth: 1, borderColor: '#C4B49A', borderStyle: 'solid' as const };
 
   return (
     <div
@@ -195,8 +196,8 @@ function WebCard({ card, index, isFlipped, isSelected, onPress, entryDelay }: We
           backgroundColor: showFront ? card.colorHex : CARD_BACK_COLOR,
           ...borderStyle,
           boxShadow: isSelected
-            ? `0 4px 14px ${card.colorHex}88`
-            : "0 2px 6px rgba(0,0,0,0.18)",
+            ? '0 4px 14px rgba(200, 169, 110, 0.50)'
+            : '0 2px 6px rgba(0,0,0,0.18)',
         }}
       >
         {showFront ? (
@@ -369,12 +370,9 @@ function NativeCard({
               transform: [{ rotateY: backRotate }],
               backfaceVisibility: "hidden",
               position: "absolute",
-              borderWidth: card.colorKor === "화이트" ? (isSelected ? 2.5 : 1.5) : (isSelected ? 2.5 : 0),
-              borderColor: card.colorKor === "블랙"
-                ? "#D4AF37"
-                : card.colorKor === "화이트"
-                ? (isSelected ? "#A08050" : "#D8C7A5")
-                : "#FFFFFF",
+              // 모든 카드 동일 기준: 선택 시 soft gold, 비선택 화이트 카드만 얇은 보정
+              borderWidth: isSelected ? 2.5 : (card.colorKor === '화이트' ? 1 : 0),
+              borderColor: isSelected ? '#C8A96E' : '#D8C7A5',
             },
           ]}
         >
@@ -546,7 +544,7 @@ export default function PremiumSelectScreen() {
         {/* 헤더 */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: '#3D3530' }]}>
-            컨러 에너지 카드 선택
+            컬러 에너지 카드 선택
           </Text>
           <Text style={[styles.subtitle, { color: '#5F4B3B' }]}>
             마음이 이끄는 카드를 3장 선택해 주세요
