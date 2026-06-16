@@ -1176,11 +1176,25 @@ export default function CoupleResultScreen() {
           {(lightArchetypeResult?.togetherRoutine ?? archetypeResult.togetherRoutine) && (() => {
             const tr = lightArchetypeResult?.togetherRoutine ?? archetypeResult.togetherRoutine;
             const hasFaith = sessionData?.personA.info.faith === '기독교' || sessionData?.personB.info.faith === '기독교';
+            // 연인/부부 루틴 분기: 연인은 동거 전제 표현을 자연스러운 데이트 표현으로 교체
+            const isLover = relationType === '연인';
+            const LOVER_ROUTINE_MAP: Record<string, string> = {
+              '같이 장보기 가기': '함께 쇼핑하기',
+              '잠자기 전 "오늘 어땠어?" 한마디': '하루 한 번 안부 묻기',
+              '잠자기 전 오늘 좋았던 순간 이야기하기': '카페 데이트하기',
+              '잠자기 전 내일 계획 짧게 이야기하기': '서로에게 짧은 메시지 남기기',
+              '잠자기 전 서로의 눈을 바라보며 감사 이야기하기': '드라이브하며 이야기하기',
+              '잠자기 전 서로의 눈을 바라보며 감사 제목 이야기하기': '조용히 산책하기',
+              '잠자기 전 "오늘 고마웠어" 한마디': '하루 한 번 안부 묻기',
+            };
+            const displayRoutines = isLover
+              ? tr.routines.map((r: string) => LOVER_ROUTINE_MAP[r] ?? r)
+              : tr.routines;
             return (
               <View style={[styles.togetherRoutineCard, { borderColor: accentCouple + '50' }]}>
                 <Text style={[styles.togetherRoutineTitle, { color: accentCouple }]}>🌿 함께하면 좋은 회복 루틴</Text>
                 <View style={styles.togetherRoutineList}>
-                  {tr.routines.map((routine: string, i: number) => (
+                  {displayRoutines.map((routine: string, i: number) => (
                     <View key={i} style={styles.togetherRoutineItem}>
                       <View style={[styles.togetherRoutineDot, { backgroundColor: accentCouple }]} />
                       <Text style={[styles.togetherRoutineText, { color: '#F0E8DC' }]}>{routine}</Text>
