@@ -166,6 +166,37 @@ export default function CoupleResultScreen() {
 
   // 관계 유형별 섹션 제목 분기
   const isRomanticRel = relationType === '연인' || relationType === '부부';
+
+  // ─── 연인/부부 루틴 분기 맵 ───
+  // 각 archetype typeName별로 연인에게 어색한 동거 전제 표현을 연인 친화적 표현으로 교체
+  const LOVER_CONVERSATION_MAP: Record<string, string> = {
+    '생활동반자형 관계': '"오늘 가장 기억나는 순간 뭐야?" — 일상의 작은 이야기를 나누는 대화. 서로의 하루를 궁금해하는 것이 이 관계의 대화 루틴입니다.',
+    '현실협력형 관계': '"요즘 가장 걱정되는 게 뭐야?" — 현실적인 고민을 함께 나누는 대화. 서로의 상황을 이해하려는 것이 이 관계의 대화 루틴입니다.',
+  };
+
+  const LOVER_AFFECTION_MAP: Record<string, string> = {
+    '생활동반자형 관계': '함께 쇼핑하기, 카페 데이트하기, 드라이브하며 이야기하기. 서로에게 짧은 메시지 남기기, 만났을 때 따뜻하게 인사하기. 함께하는 시간 안에서 자연스럽게 연결되는 것이 이 관계의 애정 표현입니다.',
+    '현실협력형 관계': '현실적인 배려. 힘든 날 먼저 연락하기, 옆에 조용히 있어주기, 함께 계획 세우기. 현실 속의 작은 배려가 이 관계의 애정 표현입니다. 가끔 "오늘 고마웠어"라는 한 마디가 이 관계를 따뜻하게 유지합니다.',
+    '회복형 관계': '갈등 후 회복했을 때 먼저 연락하기. "우리 또 해냈어"라고 말하며 다시 연결되기. 화해 후의 안도감을 함께 느끼는 것이 이 관계에서 가장 따뜻한 애정 표현입니다.',
+  };
+
+  const LOVER_ENERGY_MAP: Record<string, string> = {
+    '생활동반자형 관계': '함께하는 시간이 이 관계의 언어입니다. 특별한 이벤트가 아니라 함께 있는 것 자체가 두 사람을 안정시킵니다.',
+    '현실협력형 관계': '서로의 현실을 이해하며 함께 나아가는 것이 이 관계의 사랑 방식입니다. 같은 방향을 바라보는 시간이 두 사람을 살아나게 합니다.',
+    '회복형 관계': '멀어졌다 다시 연결되는 이 관계는 함께 쉬는 시간이 가장 중요합니다. 갈등 후 산책하거나 카페에서 이야기하는 것이 두 사람을 회복시킵니다.',
+  };
+
+  // 연인/부부 분기 텍스트 반환 함수
+  const getLoverText = (
+    map: Record<string, string>,
+    typeName: string,
+    fallback: string
+  ): string => {
+    if (relationType === '연인' && map[typeName]) return map[typeName];
+    return fallback;
+  };
+
+
   const isParentChildRel = relationType === '아빠-아들' || relationType === '아빠-딸' || relationType === '엄마-아들' || relationType === '엄마-딸' || relationType === '부모-자녀';
   const isFriendRel = relationType === '친구';
   const isColleagueRel = relationType === '동료';
@@ -523,7 +554,7 @@ export default function CoupleResultScreen() {
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.connectionStyle}</Text>
               </SectionCard>
               <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title={isParentChildRel ? '대화 흐름' : isFriendRel ? '대화 패턴' : isColleagueRel ? '소통 루틴' : '대화 루틴'} colors={colors}>
-                <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.conversationRoutine}</Text>
+                <Text style={[styles.bodyText, { color: colors.foreground }]}>{getLoverText(LOVER_CONVERSATION_MAP, lightArchetypeResult.typeName, lightArchetypeResult.conversationRoutine)}</Text>
               </SectionCard>
               <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title={isParentChildRel ? '갈등 후 회복 방식' : isFriendRel ? '거리감 후 회복 방식' : isColleagueRel ? '갈등 후 관계 회복' : '관계 회복 루틴'} colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.recoveryRoutine}</Text>
@@ -1048,7 +1079,7 @@ export default function CoupleResultScreen() {
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.expressionDifference ?? coupleAnalysis.expressionDifference}</Text>
           </SectionCard>
           <SectionCard accentColor="#9B7FD4" label={archetypeResult.typeName} title="이 관계의 회복 루틴" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult.affectionRoutine}</Text>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{getLoverText(LOVER_AFFECTION_MAP, archetypeResult.typeName, archetypeResult.affectionRoutine)}</Text>
           </SectionCard>
           <SectionCard accentColor={accentCouple} title="대화 & 연결 루틴" colors={colors}>
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.relationFlow ?? coupleAnalysis.relationFlow}</Text>
@@ -1209,7 +1240,7 @@ export default function CoupleResultScreen() {
                 </View>
                 <View style={[styles.togetherEnergyBox, { borderColor: accentCouple + '40' }]}>
                   <Text style={[styles.togetherEnergyLabel, { color: accentCouple }]}>✨ 함께하면 살아나는 에너지</Text>
-                  <Text style={styles.togetherEnergyText}>{tr.energyNote}</Text>
+                  <Text style={styles.togetherEnergyText}>{getLoverText(LOVER_ENERGY_MAP, archetypeResult.typeName, tr.energyNote)}</Text>
                 </View>
               </View>
             );
