@@ -88,7 +88,7 @@ type PersonProfile =
   | 'balanced_healer' // nature 우세 — 균형·치유 중심, 자연스러운 흐름
   | 'clear_minded';   // neutral 우세 — 정화·명료 중심, 새로운 시작
 
-function getPersonEnergyProfile(families: EnergyFamily[]): {
+function getPersonEnergyProfile(families: EnergyFamily[], primaryFamily?: EnergyFamily, secondaryFamily?: EnergyFamily): {
   dominant: EnergyFamily;
   secondary: EnergyFamily | null;
   profile: PersonProfile;
@@ -165,12 +165,43 @@ function getPersonEnergyProfile(families: EnergyFamily[]): {
     finalRelStyle += secondaryNuance[secondary] ?? '';
   }
 
+  // 1번 컬러(primaryFamily) 기반 심리 흐름 오버라이드
+  const familyPsychMap: Partial<Record<EnergyFamily, string>> = {
+    warm_active: '지금 마음속에는 감정이 생기면 바로 꺼내고 싶은 충동이 있습니다. 표현하지 못하면 답답해지는 유형입니다. 이 결이 관계 안에서 속도 차이를 만들고, 상대가 준비되지 않았을 때 오해가 생길 수 있습니다. 앞으로는 표현하기 전에 잠깐 멈춰 묻는 연습이 관계를 한 단계 더 따뜻하게 만들어줍니다.',
+    warm_soft: '지금 마음속에는 따뜻하게 연결되고 싶은 마음이 조용히 흐르고 있습니다. 누군가를 돌보고 싶은 마음이 크지만, 그 마음이 너무 커지면 자신의 감정은 뒤로 밀리게 될 수 있습니다. 앞으로는 자신에게도 그 따뜻함을 돌려주는 시간이 필요합니다.',
+    warm_grounded: '지금 마음속에는 흔들리지 않는 안정된 관계를 원하는 마음이 있습니다. 변화보다 익숙한 안정감에서 편안함을 찾는 편입니다. 이 결이 관계 안에서 소통을 늘리는 데 시간이 필요하게 만들 수 있습니다. 앞으로는 작은 인정 한 마디가 이 결을 편안하게 열어줍니다.',
+    cool_clear: '지금 마음속에는 함께 있어도 자신만의 공간이 필요한 마음이 있습니다. 논리적으로 정리되지 않은 것에 불편함을 느끼는 편입니다. 이 결이 관계 안에서 감정 연결보다 실질적 소통을 앞세우게 만들 수 있습니다. 앞으로는 먼저 공감하고 정리하는 순서를 연습하면 관계의 온도가 높아집니다.',
+    cool_deep: '지금 마음속에는 많은 것을 담아두고 있습니다. 침묵이 거리두기가 아니라 정리하는 시간임을 상대가 이해하지 못하면 오해가 생길 수 있습니다. 이 결이 관계 안에서 감정적 거리감을 만들 수 있습니다. 앞으로는 지금 어떤 마음인지 먼저 한 마디 건네는 것이 이 결을 편안하게 만들어줍니다.',
+    nature: '지금 마음속에는 관계 안에서 균형과 안정을 찾고 싶은 마음이 흐르고 있습니다. 자연스럽게 흘러가는 관계를 원하며, 억지스러운 것보다 서로 편안한 방식으로 연결되는 것을 중요하게 여깁니다. 이 결이 관계 안에서 조용한 존재감으로 나타날 수 있습니다. 앞으로는 "나 여기 있어"라고 먼저 말해주는 연습이 도움이 됩니다.',
+    neutral: '지금 마음속에는 더 깊이 이해하고 성장하고 싶은 마음이 있습니다. 새로운 지식과 명료한 시각으로 현실을 파악하고 싶은 성향입니다. 이 결이 관계 안에서 감정 연결보다 이해와 정리가 앞서는 순간을 만들 수 있습니다. 앞으로는 감정을 먼저 인정하고 나누는 연습이 관계의 온도를 높여줍니다.',
+  };
+
+  // 2번 컬러(secondaryFamily) 기반 감정 흐름 오버라이드
+  const familyCurrentMap: Partial<Record<EnergyFamily, string>> = {
+    warm_active: '지금 관계 안에서 감정이 활발하게 움직이고 있습니다. 표현하고 싶은 것이 많고, 함께 무언가를 하고 싶은 마음이 강합니다. 이렇게 에너지가 넘치는 시기일수록, 잠깐 속도를 늦추고 상대의 리듬을 확인하는 것이 관계를 더 따뜻하게 만들어줍니다.',
+    warm_soft: '지금 따뜻한 연결과 애정을 나누고 싶은 마음이 흐르고 있습니다. 상대를 배려하는 마음이 크지만, 자신의 감정도 충분히 표현받고 싶은 욕구가 함께 있습니다. 지금 가장 필요한 것은 서로의 마음을 솔직하게 나누는 시간입니다.',
+    warm_grounded: '지금 안정적인 관계와 일상을 원하는 마음이 있습니다. 변화보다 익숙하고 신뢰할 수 있는 것에서 편안함을 찾고 있습니다. 꾸준한 일상의 작은 인정이 지금 가장 큰 힘이 되는 시점입니다.',
+    cool_clear: '지금 자유롭고 가벼운 흐름을 원하고 있습니다. 감정보다 상황을 명료하게 정리하고 싶은 마음이 있고, 관계에서도 각자의 공간이 필요합니다. 부담 없이 솔직하게 소통할 수 있는 환경이 지금 가장 편안합니다.',
+    cool_deep: '지금 마음속에 많은 것을 담아두고 있습니다. 감정이 충분히 가라앉은 후에야 표현할 수 있어, 겉으로는 조용해 보일 수 있습니다. 혼자만의 시간이 충분히 주어질 때 비로소 마음이 열립니다.',
+    nature: '지금 관계 안에서 균형과 안정을 회복하고 싶은 마음이 있습니다. 억지로 무언가를 하기보다 서로 편안한 리듬으로 연결되고 싶어 합니다. 조용히 함께 있어주는 것만으로도 충분히 연결된 느낌을 받습니다.',
+    neutral: '지금 복잡한 것들을 정리하고 새롭게 시작하고 싶은 마음이 있습니다. 감정을 담백하게 정리하며, 솔직하고 명료한 소통을 원합니다. 지금은 자신에게 필요한 것이 무엇인지 조용히 확인하는 시간이 도움이 됩니다.',
+  };
+
+  // 3개 컬러가 모두 다른 계열이거나 primaryFamily가 명시된 경우, 1번/2번 컬러 기반으로 각각 오버라이드
+  const allDifferent = new Set(families).size === families.length;
+  const finalPsychText = (primaryFamily && (allDifferent || primaryFamily !== dominant))
+    ? (familyPsychMap[primaryFamily] ?? psychologyFlowMap[profile])
+    : psychologyFlowMap[profile];
+  const finalCurrentText = (secondaryFamily && (allDifferent || secondaryFamily !== dominant))
+    ? (familyCurrentMap[secondaryFamily] ?? currentFlowMap[profile])
+    : currentFlowMap[profile];
+
   return {
     dominant,
     secondary,
     profile,
-    psychologyFlowText: psychologyFlowMap[profile],
-    currentFlowText: currentFlowMap[profile],
+    psychologyFlowText: finalPsychText,
+    currentFlowText: finalCurrentText,
     relationshipStyleText: finalRelStyle,
   };
 }
@@ -204,10 +235,10 @@ export function generatePersonAnalysis(
 
   // 3개 컬러의 EnergyFamily 조합으로 개인 에너지 프로파일 도출
   const allFamilies = [card1, card2, card3].map(c => getFamily(c.id));
-  const energyProfile = getPersonEnergyProfile(allFamilies);
+  const [f1, f2] = allFamilies;
+  const energyProfile = getPersonEnergyProfile(allFamilies, f1, f2);
 
   // 감정 표현 방식 — 1번 카드 기반 (기존 유지)
-  const f1 = getFamily(card1.id);
   const emotionExpression = getEmotionExpression(f1, card1);
 
   // 보완 컬러 — 3번 카드와 반대 계열에서 선택
