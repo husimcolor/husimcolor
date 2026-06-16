@@ -340,7 +340,7 @@ const ARCHETYPE_MAP: Record<LifeArchetypeKey, LifeArchetype> = {
     iconName: 'favorite-border',
     coreEnergy: '사람의 감정적 상처와 내면의 흐름을 읽고, 정서적 안정과 회복을 돕는 역할에서 에너지가 살아납니다.',
     thriveIn: '깊은 공감과 신뢰가 있는 환경, 감정적 안전감이 있는 공간에서 가장 빛납니다.',
-    drainPattern: '타인의 감정을 너무 깊이 흥수하다가 자신이 지치는 패턴이 반복될 수 있습니다.',
+    drainPattern: '타인의 감정을 너무 깊이 흥수하다가 자신이 지치는 경향이 나타날 수 있습니다.',
     lifeDirection: '감정 회복과 정서 안정 중심의 삶이 자연스럽게 맞습니다. 자신의 감정도 돌보는 루틴이 있을 때 더 오래 빛납니다.',
     connectionStyle: '상대의 감정을 먼저 읽고 조용히 공감하는 방식으로 깊이 연결됩니다.',
     dailyPractice: '오늘 나의 감정을 한 줄로 적어보세요. 좋은 말이어도, 힘들었던 말이어도 괜찮아요.',
