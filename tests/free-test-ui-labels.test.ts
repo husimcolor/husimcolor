@@ -78,11 +78,21 @@ describe("무료 3컬러 테스트 역할 표기", () => {
     expect(resultScreen).toContain("const uri = await captureShareCard()");
     expect(resultScreen).toContain("const handleShareAppWithFriend");
     expect(resultScreen).toContain("휴심컬러 친구에게 공유하기");
-    expect(resultScreen).toContain("const APP_START_URL = 'https://husimcolor.vercel.app'");
-    expect(resultScreen).toContain("const APP_SHARE_TITLE = '휴심컬러 – 색으로 읽는 나의 마음'");
-    expect(resultScreen).toContain("25가지 컬러 중 마음이 끌리는 3가지 컬러를 선택하고 지금 나의 마음 흐름을 만나보세요.");
-    expect(resultScreen).toContain("share-app-25-colors.webp");
-    expect(resultScreen).toContain("Clipboard.setStringAsync(APP_START_URL)");
+    expect(resultScreen).toContain("const APP_SHARE_TITLE = '휴심컬러 | 색으로 읽는 나의 마음'");
+    expect(resultScreen).toContain("마음이 끌리는 3가지 컬러를 선택해 지금의 나를 가볍게 들여다보세요.");
+    expect(resultScreen).toContain("await Share.share({");
+    expect(resultScreen).toContain("url: FREE_TEST_START_URL");
+
+    const friendShareHandler = resultScreen.slice(
+      resultScreen.indexOf("const handleShareAppWithFriend"),
+      resultScreen.indexOf("// 인스타그램 스토리 공유"),
+    );
+    expect(friendShareHandler).toContain("navigator.share");
+    expect(friendShareHandler).toContain("url: FREE_TEST_START_URL");
+    expect(friendShareHandler).not.toContain("files:");
+    expect(friendShareHandler).not.toContain("FileSystem.copyAsync");
+    expect(friendShareHandler).not.toContain("getAppShareImageUri");
+    expect(friendShareHandler).not.toContain("share-app-25-colors.webp");
   });
 
   it("이전 무료 테스트 역할 명칭을 화면 코드에서 사용하지 않는다", () => {

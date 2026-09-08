@@ -11,8 +11,8 @@ import {
   Platform,
   Linking,
   Alert,
+  Share,
 } from 'react-native';
-import { Asset } from 'expo-asset';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import ViewShot, { captureRef, type ViewShotRef } from 'react-native-view-shot';
@@ -46,10 +46,8 @@ const SOCIAL_LINKS = {
 
 // 운영 환경에서 새 사용자를 무료 3컬러 테스트의 첫 번째 선택 화면으로 바로 연결한다.
 const FREE_TEST_START_URL = 'https://husimcolor.vercel.app/select?step=0';
-const APP_START_URL = 'https://husimcolor.vercel.app';
-const APP_SHARE_IMAGE = require('../../assets/images/share-app-25-colors.webp');
-const APP_SHARE_TITLE = '휴심컬러 – 색으로 읽는 나의 마음';
-const APP_SHARE_TEXT = '25가지 컬러 중 마음이 끌리는 3가지 컬러를 선택하고 지금 나의 마음 흐름을 만나보세요.';
+const APP_SHARE_TITLE = '휴심컬러 | 색으로 읽는 나의 마음';
+const APP_SHARE_TEXT = '마음이 끌리는 3가지 컬러를 선택해 지금의 나를 가볍게 들여다보세요.';
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -81,14 +79,6 @@ export default function ResultScreen() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const getAppShareImageUri = async () => {
-    const asset = Asset.fromModule(APP_SHARE_IMAGE);
-    await asset.downloadAsync();
-    const uri = asset.localUri ?? asset.uri;
-    if (!uri) throw new Error('대표 이미지를 준비하지 못했습니다.');
-    return uri;
   };
 
   // 이미지 저장 - 웹: <a> 다운로드 방식 / 네이티브: 시스템 공유 시트
@@ -163,42 +153,33 @@ export default function ResultScreen() {
     }
   };
 
-  // 친구 초대 공유: 개인 결과가 아닌 서비스 대표 이미지·소개·첫 화면 URL을 전달한다.
+  // 친구 초대 공유: 개인 결과·이미지 없이 서비스 소개와 무료 테스트 첫 화면 URL만 전달한다.
   const handleShareAppWithFriend = async () => {
     if (isAppSharing) return;
     setIsAppSharing(true);
-    const shareText = `${APP_SHARE_TITLE}\n${APP_SHARE_TEXT}\n무료 컬러 테스트 시작하기: ${APP_START_URL}`;
+    const shareText = `${APP_SHARE_TITLE}\n${APP_SHARE_TEXT}\n\n휴심컬러 시작하기: ${FREE_TEST_START_URL}`;
     try {
-      const imageUri = await getAppShareImageUri();
       if (Platform.OS === 'web') {
-        const blob = await (await fetch(imageUri)).blob();
-        const file = new File([blob], `husimcolor_25_colors_${Date.now()}.webp`, { type: 'image/webp' });
-        if (navigator.share && navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ title: APP_SHARE_TITLE, text: shareText, files: [file] });
+        if (navigator.share) {
+          await navigator.share({
+            title: APP_SHARE_TITLE,
+            text: `${APP_SHARE_TITLE}\n${APP_SHARE_TEXT}\n\n휴심컬러 시작하기:`,
+            url: FREE_TEST_START_URL,
+          });
           return;
         }
-        const link = document.createElement('a');
-        link.href = imageUri;
-        link.download = 'husimcolor_25_colors.webp';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        await Clipboard.setStringAsync(APP_START_URL);
-        Alert.alert('대표 이미지와 링크를 준비했습니다', '카카오톡에서 대표 이미지를 선택하고, 복사된 휴심컬러 시작 링크를 붙여넣어 친구에게 보내보세요.');
+        await Clipboard.setStringAsync(shareText);
+        Alert.alert('시작 링크 복사 완료', '휴심컬러 소개와 무료 테스트 시작 링크를 복사했습니다. 카카오톡 메시지에 붙여넣어 공유해보세요.');
         return;
       }
 
-      const destinationUri = `${FileSystem.cacheDirectory}husimcolor_25_colors_${Date.now()}.webp`;
-      await FileSystem.copyAsync({ from: imageUri, to: destinationUri });
-      await Clipboard.setStringAsync(APP_START_URL);
-      const available = await Sharing.isAvailableAsync();
-      if (!available) {
-        Alert.alert('알림', '이 환경에서는 공유 기능을 사용할 수 없습니다. 시작 링크는 복사했습니다.');
-        return;
-      }
-      await Sharing.shareAsync(destinationUri, { mimeType: 'image/webp', dialogTitle: '휴심컬러 친구에게 공유하기' });
-      Alert.alert('시작 링크 복사 완료', '대표 이미지를 카카오톡으로 보낸 뒤, 복사된 시작 링크를 메시지에 붙여넣어 친구를 초대해보세요.');
-    } catch {
+      await Share.share({
+        title: APP_SHARE_TITLE,
+        message: shareText,
+        url: FREE_TEST_START_URL,
+      });
+    } catch (error) {
+      if (error instanceof Error && /cancel|dismiss/i.test(error.message)) return;
       Alert.alert('오류', '휴심컬러 공유를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setIsAppSharing(false);
@@ -577,8 +558,8 @@ export default function ResultScreen() {
           >
             <Text style={styles.friendShareIcon}>🌿</Text>
             <View style={styles.friendShareTextBox}>
-              <Text style={[styles.friendShareTitle, { color: '#456544' }]}>
-                {isAppSharing ? '대표 이미지 준비 중...' : '휴심컬러 친구에게 공유하기'}
+              <Text style={[styles.friendShareTitle, { color: '#456544' }]}> 
+                {isAppSharing ? '공유 준비 중...' : '휴심컬러 친구에게 공유하기'}
               </Text>
               <Text style={[styles.friendShareDescription, { color: '#6A8067' }]}>25가지 컬러로 마음을 읽어보세요</Text>
             </View>
