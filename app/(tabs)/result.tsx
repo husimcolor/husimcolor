@@ -854,11 +854,16 @@ function ShareSummaryCard({
   );
 }
 
-function summarizeForShareCard(text: string, maxLength = 46): string {
+function summarizeForShareCard(text: string, maxLength = 54): string {
   const normalized = text.replace(/\s+/g, ' ').trim();
-  const firstSentence = normalized.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim() ?? normalized;
-  if (firstSentence.length <= maxLength) return firstSentence;
-  const shortened = firstSentence.slice(0, maxLength).replace(/[\s,·:;]+$/, '');
+  const sentences = normalized.match(/[^.!?]+[.!?]*/g)?.map((sentence) => sentence.trim()).filter(Boolean) ?? [normalized];
+  // 아주 짧은 첫 문장(예: "서두르지 않아도 됩니다.")보다 역할의 핵심이 담긴 문장을 우선한다.
+  const summary = sentences.find((sentence) => sentence.length >= 16 && sentence.length <= maxLength)
+    ?? sentences.find((sentence) => sentence.length <= maxLength)
+    ?? sentences[0]
+    ?? normalized;
+  if (summary.length <= maxLength) return summary;
+  const shortened = summary.slice(0, maxLength).replace(/[\s,·:;]+$/, '');
   return `${shortened}…`;
 }
 

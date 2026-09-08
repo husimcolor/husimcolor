@@ -53,6 +53,8 @@ describe("무료 3컬러 테스트 역할 표기", () => {
     expect(resultScreen).toContain("const shareCardRef");
     expect(resultScreen).toContain("const captureShareCard");
     expect(resultScreen).toContain("function summarizeForShareCard");
+    expect(resultScreen).toContain("const sentences = normalized.match");
+    expect(resultScreen).toContain("sentence.length >= 16");
     expect(resultScreen).toContain("primarySummary={summarizeForShareCard(interpretation.psychologyFlow)}");
     expect(resultScreen).toContain("supportingSummary={summarizeForShareCard(interpretation.personalityFlow)}");
     expect(resultScreen).toContain("recoverySummary={summarizeForShareCard(interpretation.recoveryFlow)}");

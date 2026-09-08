@@ -74,6 +74,144 @@ export const COLOR_PERSONALITY_TRAITS: Record<string, readonly string[]> = {
   cream: ['편안함을 중시', '내면 정돈', '신중한 관계 형성', '자기 리듬 중시'],
 };
 
+/**
+ * 무료 3컬러 결과의 역할별 원본 문장.
+ * 주기질과 보조기질은 지속적인 성향·행동 방식만, 회복방향은 지금 필요한 돌봄의 방향만 담는다.
+ */
+export interface ColorRoleContent {
+  primaryTrait: string;
+  secondaryTrait: string;
+  recoveryDirection: string;
+}
+
+export const COLOR_ROLE_CONTENT: Record<string, ColorRoleContent> = {
+  red: {
+    primaryTrait: '마음먹은 일은 바로 시작하고 끝까지 밀고 가는 편입니다. 분명하게 뜻을 말하고 행동으로 옮기는 데 익숙합니다.',
+    secondaryTrait: '목표가 생기면 빠르게 몰입하는 편입니다. 어려운 상황에서도 먼저 방법을 찾고 움직입니다.',
+    recoveryDirection: '잠깐 멈춰도 괜찮습니다. 속도를 낮추고 몸과 마음이 쉬는 시간을 만들어 보세요.',
+  },
+  orange: {
+    primaryTrait: '사람들과 어울리며 분위기를 밝게 만드는 편입니다. 새로운 만남과 즐거운 대화에서 힘을 얻습니다.',
+    secondaryTrait: '새로운 자극이 생기면 아이디어를 떠올리는 편입니다. 즉흥적인 제안으로 함께하는 시간을 즐겁게 만듭니다.',
+    recoveryDirection: '혼자만의 시간이 길었다면 가벼운 연결부터 다시 시작해보세요. 짧은 안부나 산책이 마음에 활기를 줄 수 있습니다.',
+  },
+  yellow: {
+    primaryTrait: '궁금한 것을 질문으로 풀고 배움을 통해 생각을 넓혀가는 편입니다. 여러 가능성을 비교하며 균형 있게 판단합니다.',
+    secondaryTrait: '새로운 정보를 찾아보고 이해하는 과정을 좋아합니다. 시작하기 전 충분히 살피고 준비하면 마음이 놓이는 편입니다.',
+    recoveryDirection: '머릿속이 복잡할 때는 중요한 한 가지부터 골라보세요. 생각을 적어보면 마음이 한결 정리될 수 있습니다.',
+  },
+  green: {
+    primaryTrait: '관계에서 조화와 안정을 중요하게 여기는 편입니다. 갑작스러운 변화보다 천천히 신뢰를 쌓는 관계를 선호합니다.',
+    secondaryTrait: '서로의 입장을 고르게 살피며 꾸준히 돌보는 편입니다. 갈등이 생겨도 관계의 평온함을 지키려 합니다.',
+    recoveryDirection: '관계 안에서 편안함과 신뢰를 다시 쌓아가 보세요. 작은 약속을 지키는 순간이 균형을 되찾는 데 도움이 될 수 있습니다.',
+  },
+  blue: {
+    primaryTrait: '맡은 일에 책임을 다하며 상대와의 약속을 소중히 여기는 편입니다. 말보다 깊이 들어주는 태도로 신뢰를 쌓습니다.',
+    secondaryTrait: '충분히 듣고 난 뒤 신중하게 마음을 전하는 편입니다. 차분하게 상황을 살피며 책임 있게 선택합니다.',
+    recoveryDirection: '마음속 말을 믿을 사람에게 한마디라도 꺼내보세요. 감정을 나누는 경험이 관계를 조금 더 편안하게 할 수 있습니다.',
+  },
+  indigo: {
+    primaryTrait: '혼자 조용히 생각하며 일의 이유와 의미를 살피는 편입니다. 가벼운 대화보다 깊은 이야기를 나눌 수 있는 신뢰를 중요하게 여깁니다.',
+    secondaryTrait: '궁금한 일이 생기면 끝까지 파고들어 답을 찾는 편입니다. 겉으로 드러난 모습보다 그 안의 이유를 자세히 살핍니다.',
+    recoveryDirection: '혼자 모든 답을 찾으려 하지 않아도 됩니다. 떠오른 생각을 적거나 믿을 사람과 나누며 마음을 정리해보세요.',
+  },
+  violet: {
+    primaryTrait: '혼자만의 시간을 통해 생각과 마음을 조용히 들여다보는 편입니다. 말로 다 설명하기 어려운 분위기와 감정을 섬세하게 살핍니다.',
+    secondaryTrait: '일상의 작은 장면에서도 남다른 생각을 떠올리는 편입니다. 내가 중요하게 여기는 가치와 꿈을 따라 자신만의 방식으로 표현합니다.',
+    recoveryDirection: '이상에 대한 마음을 잠시 내려놓고 현재의 나를 살펴보세요. 좋아하는 음악이나 조용한 시간이 마음을 편안하게 할 수 있습니다.',
+  },
+  pink: {
+    primaryTrait: '사람들과 따뜻하게 마음을 나누는 것을 중요하게 생각합니다. 상대의 마음을 세심하게 살피고 공감할 때 편안함을 느끼는 편입니다.',
+    secondaryTrait: '주변 사람에게 다정한 관심을 표현하고 세심하게 챙기는 편입니다. 해결책보다 서로의 마음을 이해하는 대화를 좋아합니다.',
+    recoveryDirection: '다른 사람을 챙기던 마음을 잠시 나에게도 돌려보세요. 받고 싶은 다정함을 말이나 작은 행동으로 표현해도 좋습니다.',
+  },
+  magenta: {
+    primaryTrait: '겉으로는 부드러워 보여도 내면에는 깊은 애정과 진심을 품고 있는 편입니다. 가벼운 만남보다 서로의 진심이 통하는 관계를 중요하게 여깁니다.',
+    secondaryTrait: '가치 있다고 느끼는 일이나 관계에 마음을 다해 몰입하는 편입니다. 변화를 만들 때도 진심을 담아 움직입니다.',
+    recoveryDirection: '무리해서 밝아지려 하기보다 진심을 안전한 관계 안에서 조금씩 나눠보세요. 마음을 숨기지 않는 시간이 도움이 될 수 있습니다.',
+  },
+  coral: {
+    primaryTrait: '말보다 리액션과 정서적 공감을 먼저 원하는 편입니다. 사람과 따뜻하게 연결되고 감정을 주고받을 때 자신의 에너지가 자연스럽게 살아나는 편입니다.',
+    secondaryTrait: '사람들과 반응을 주고받을 때 즐거움을 느낍니다. 친근하게 표현하고 함께하는 분위기를 좋아합니다.',
+    recoveryDirection: '주변을 챙기느라 바빴다면 오늘은 나를 위한 시간을 만들어 보세요. 공감받고 싶은 마음을 솔직히 말해도 괜찮습니다.',
+  },
+  gold: {
+    primaryTrait: '자신만의 분명한 기준을 가지고 성장하는 것을 중요하게 생각합니다. 품위 있는 말과 행동으로 사람에게 신뢰를 주는 편입니다.',
+    secondaryTrait: '목표를 향해 적극적으로 움직이고 성취의 기쁨을 소중히 여깁니다. 자신의 실력을 차근차근 쌓아갈 때 만족을 느끼는 편입니다.',
+    recoveryDirection: '비교하는 마음이 커질 때는 내가 잘해낸 일 하나를 떠올려보세요. 자신의 가치를 인정하는 시간이 자신감을 되찾는 데 도움이 될 수 있습니다.',
+  },
+  brown: {
+    primaryTrait: '현실의 안정과 확실함을 중요하게 여기며 차분하게 일상을 꾸려가는 편입니다. 관계에서도 신뢰를 바탕으로 든든하게 곁을 지킵니다.',
+    secondaryTrait: '생활 속에서 맡은 일을 묵묵히 해내는 편입니다. 새로운 일도 먼저 충분히 살핀 뒤 신중하게 움직입니다.',
+    recoveryDirection: '익숙한 방식에서 작은 변화 하나를 시도해보세요. 편안한 범위에서 새로움을 더하면 마음이 조금 유연해질 수 있습니다.',
+  },
+  beige: {
+    primaryTrait: '갈등을 피하고 주변과 부드럽게 어우러지는 것을 편안해하는 편입니다. 사람들과 적당한 거리를 유지하며 일상의 조화를 지켜갑니다.',
+    secondaryTrait: '주변 분위기를 온화하게 만들고 친근하게 다가가는 편입니다. 튀지 않으면서도 함께 있는 사람이 편안하도록 살핍니다.',
+    recoveryDirection: '온화함을 지키면서도 마음속 말을 한 문장으로 표현해보세요. 나의 목소리를 내는 일이 관계를 더 편안하게 할 수 있습니다.',
+  },
+  white: {
+    primaryTrait: '복잡한 상황에서도 기준을 분명히 하고 정돈된 방식으로 일을 마무리하는 편입니다. 관계에서도 진심과 신뢰가 쌓일 때 마음을 엽니다.',
+    secondaryTrait: '생각이 복잡해지면 혼자 조용히 정리하는 편입니다. 불필요한 것을 덜고 본질에 집중할 때 마음이 편안합니다.',
+    recoveryDirection: '혼자 정리한 마음에 따뜻한 연결을 더해보세요. 부담 없는 안부 한마디가 관계를 다시 가깝게 할 수 있습니다.',
+  },
+  black: {
+    primaryTrait: '자기만의 선을 분명하게 긋고 믿을 수 있는 사람과 깊게 관계 맺는 편입니다. 혼자서도 신중하게 집중하며 자신을 잘 지킵니다.',
+    secondaryTrait: '주변 분위기에 쉽게 휩쓸리지 않고 충분히 살핀 뒤 움직입니다. 중요한 일과 관계에는 깊이 몰입하는 편입니다.',
+    recoveryDirection: '혼자 감당하던 일을 믿을 사람과 조금 나눠보세요. 작은 도움을 받아들이는 경험이 더 깊은 안정으로 이어질 수 있습니다.',
+  },
+  silver: {
+    primaryTrait: '상황을 한발 물러나 객관적으로 살피고 논리적으로 판단하는 편입니다. 차분하고 신중한 태도로 신뢰를 쌓아갑니다.',
+    secondaryTrait: '합리적인 선택을 중요하게 여기고 생각을 정돈해 표현하는 편입니다. 감정을 서두르지 않고 조심스럽게 살핍니다.',
+    recoveryDirection: '분석하기 전에 지금의 기분을 먼저 느껴보세요. 정확하지 않아도 한 단어로 표현하면 마음과의 거리가 가까워질 수 있습니다.',
+  },
+  olive: {
+    primaryTrait: '주변 상황을 넓게 살피며 조화로운 관계를 만드는 것을 중요하게 여깁니다. 자신의 의견보다 전체의 균형을 먼저 생각하는 편입니다.',
+    secondaryTrait: '서둘러 결정하기보다 충분히 생각하고 신중하게 판단합니다. 상대의 마음을 헤아리며 모두가 편안한 방향을 찾으려 합니다.',
+    recoveryDirection: '모두의 마음을 살피던 만큼 내 의견도 한 번 꺼내보세요. 말하기 어렵다면 글로 적는 것부터 시작해도 좋습니다.',
+  },
+  mint: {
+    primaryTrait: '새로운 변화에 유연하게 적응하며 주변에 밝고 산뜻한 분위기를 전하는 편입니다. 타인에게 도움을 주고 편안한 느낌을 줄 때 보람을 느낍니다.',
+    secondaryTrait: '새로운 분위기나 변화에 열린 편입니다. 익숙한 방식에만 머무르기보다 새로운 방법을 시도하는 것을 좋아합니다.',
+    recoveryDirection: '해야 할 일에서 잠시 떨어져 충분히 쉬어보세요. 아무것도 하지 않는 시간도 마음을 다시 가볍게 하는 데 도움이 될 수 있습니다.',
+  },
+  skyblue: {
+    primaryTrait: '넓은 시야로 세상을 바라보며 새로운 경험을 즐기는 편입니다. 구속받기보다 열린 마음으로 가볍게 시작하는 것을 좋아합니다.',
+    secondaryTrait: '자유로운 상상으로 새로운 기회를 찾아보는 편입니다. 어려운 순간에도 가능성을 먼저 발견하려 합니다.',
+    recoveryDirection: '떠오른 생각을 작은 행동 하나로 옮겨보세요. 눈앞의 일에 잠시 집중하면 꿈과 현실이 더 가깝게 느껴질 수 있습니다.',
+  },
+  lavender: {
+    primaryTrait: '감정을 섬세하게 느끼며 사람과 정서적으로 깊이 연결되기를 원하는 편입니다. 서로 진심으로 이해받는 관계를 소중히 여깁니다.',
+    secondaryTrait: '자신의 내면을 조용히 살피고 감정을 차분하게 정리하는 편입니다. 겉으로 드러내기보다 조용한 공감으로 마음을 전합니다.',
+    recoveryDirection: '섬세한 마음을 무리해서 설명하지 않아도 됩니다. 따뜻한 차나 좋아하는 음악처럼 마음을 다독이는 시간을 만들어보세요.',
+  },
+  peach: {
+    primaryTrait: '주변 사람의 마음을 세심하게 살피고 따뜻하게 반응하는 편입니다. 서로의 감정을 나누며 마음이 연결될 때 편안함을 느낍니다.',
+    secondaryTrait: '상대의 말에 다정하게 귀를 기울이고 편안한 분위기를 만드는 데 익숙합니다. 친근한 배려로 가까운 사람을 돌보는 편입니다.',
+    recoveryDirection: '다른 사람에게 건넨 따뜻함을 오늘은 나에게도 돌려보세요. 받고 싶은 위로를 내게 먼저 건네도 좋습니다.',
+  },
+  terracotta: {
+    primaryTrait: '현실적인 감각으로 일상을 단단하게 가꾸며 꾸준한 애정을 나누는 편입니다. 따뜻하고 진실한 관계를 차분하게 만들어갑니다.',
+    secondaryTrait: '익숙한 안정감을 지키면서도 그 안에서 작은 변화를 시도하는 편입니다. 충분히 생각하고 적응할 시간을 가지며 차근차근 움직입니다.',
+    recoveryDirection: '바쁘게 움직이던 마음을 잠시 멈추고 편안한 일상으로 돌아가 보세요. 익숙한 한 끼와 한 공간이 마음을 가라앉힐 수 있습니다.',
+  },
+  sage: {
+    primaryTrait: '상대의 분위기를 먼저 살피고 조용히 배려하며 관계의 균형을 맞추는 편입니다. 과하지 않은 태도로 주변을 편안하게 합니다.',
+    secondaryTrait: '서두르기보다 상황에 맞춰 부드럽게 조율하는 편입니다. 갈등이 생겨도 차분한 태도로 관계의 평온함을 지키려 합니다.',
+    recoveryDirection: '남을 편안하게 하려는 마음을 나에게도 돌려보세요. 내 감정을 알아차리고 한마디로 표현해도 좋습니다.',
+  },
+  teal: {
+    primaryTrait: '이성과 감정 사이에서 중심을 잡으며 매사를 차분하게 대하는 편입니다. 상황을 명확하게 파악한 뒤 신중하게 행동합니다.',
+    secondaryTrait: '복잡한 일을 차분히 분석해 핵심을 정리하는 것을 좋아합니다. 분명하고 깔끔한 방식으로 일을 처리할 때 편안함을 느낍니다.',
+    recoveryDirection: '생각으로 정리하기 어려운 감정은 말이나 글로 가볍게 꺼내보세요. 논리와 마음을 함께 살피는 시간이 도움이 될 수 있습니다.',
+  },
+  cream: {
+    primaryTrait: '주변을 차분하게 정리하고 자신만의 편안한 속도로 생활하는 것을 좋아합니다. 사람을 사귈 때도 서두르기보다 천천히 마음을 여는 편입니다.',
+    secondaryTrait: '복잡한 상황에서도 침착하게 마음을 가다듬는 편입니다. 조용히 생각을 정리하고 세심하게 움직이는 방식을 선호합니다.',
+    recoveryDirection: '서두르지 않아도 됩니다. 복잡한 것들을 내려놓고 자신만의 고요한 리듬을 되찾아 보세요. 조용히 자신의 페이스로 돌아가는 것이 지금 가장 필요한 회복입니다.',
+  },
+};
+
 export const COLOR_DATA: ColorData[] = [
   {
     id: 'red',
@@ -177,7 +315,7 @@ export const COLOR_DATA: ColorData[] = [
     glowIntensity: 0.35,
     keywords: ['책임감', '신뢰', '침묵'],
     recovery: '감정 표현',
-    complementColors: ['코랄', '터콰이즈'],
+    complementColors: ['코랄', '틸'],
     strengths: ['책임감', '신뢰감', '집중력', '침착함'],
     shadows: ['감정을 혼자 정리하는 편', '남을 먼저 챙기며 지치는 편', '연결을 바라지만 표현이 어려운 편'],
     reading1: '책임감이 강하고 신뢰를 중요하게 여기는 편입니다.\n힘든 것도 혼자 감당하고 조용히 해결하려는 편이며, 약한 모습을 보이는 것이 불편하게 느껴집니다.\n깊이 있는 관계를 소중히 여기지만, 그만큼 관계에서 상처받으면 회복하는 데 시간이 걸립니다.',
@@ -245,7 +383,7 @@ export const COLOR_DATA: ColorData[] = [
     highlightColor: 'rgba(255,200,220,0.4)',
     glowIntensity: 0.45,
     keywords: ['공감', '정서적 연결', '배려', '따뜻함'],
-    recovery: '자존감 회복',
+    recovery: '자기 돌봄과 정서적 충전',
     complementColors: ['세이지그린', '크림'],
     strengths: ['따뜻한 공감력', '정서적 연결', '섬세한 배려', '감성'],
     shadows: ['공감보다 해결책이 먼저면 서운한 편', '반응이 적으면 마음이 상하는 편', '관계를 챙기며 지치는 편'],
@@ -268,7 +406,7 @@ export const COLOR_DATA: ColorData[] = [
     highlightColor: 'rgba(255,160,210,0.4)',
     glowIntensity: 0.45,
     keywords: ['열정', '변화', '강렬함'],
-    recovery: '열정 회복',
+    recovery: '진심 어린 연결',
     complementColors: ['그린', '민트'],
     strengths: ['열정', '변화 주도', '강인함', '창의성'],
     shadows: ['감정의 높낮이가 크게 느껴지는 편', '방향을 정할 때 오래 고민하는 편', '한꺼번에 쏟고 지치는 편'],
@@ -360,7 +498,7 @@ export const COLOR_DATA: ColorData[] = [
     highlightColor: 'rgba(240,220,190,0.35)',
     glowIntensity: 0.35,
     keywords: ['온화함', '편안함', '자연스러움'],
-    recovery: '생활 안정',
+    recovery: '편안한 자기표현',
     complementColors: ['세이지그린', '라벤더'],
     strengths: ['온화함', '편안함', '조화로움', '친화력'],
     shadows: ['의견을 조심스럽게 말하는 편', '갈등 앞에서 말을 아끼는 편', '감정을 혼자 정리하는 편'],
@@ -452,7 +590,7 @@ export const COLOR_DATA: ColorData[] = [
     highlightColor: 'rgba(190,210,160,0.3)',
     glowIntensity: 0.3,
     keywords: ['지혜', '성숙', '조화'],
-    recovery: '균형 회복',
+    recovery: '자기 목소리 회복',
     complementColors: ['코랄', '테라코타'],
     strengths: ['지혜', '성숙함', '균형', '포용력'],
     shadows: ['의견을 조심스럽게 말하는 편', '중재하며 나를 뒤로 미루는 편', '관계 조화를 먼저 챙기는 편'],
@@ -715,15 +853,16 @@ export function generateInterpretation(
 
   const complementColors = filtered.slice(0, 3);
 
-  const psychologyFlow = softenFreeTestTone(generatePsychologyFlow(card1, card2, card3));
-  const personalityFlow = ensureDistinctSecondaryTrait(
-    psychologyFlow,
-    softenFreeTestTone(generatePersonalityFlow(card1, card2, card3)),
-    card1,
-    card2,
-  );
+  const primaryRole = COLOR_ROLE_CONTENT[card1.id];
+  const secondaryRole = COLOR_ROLE_CONTENT[card2.id];
+  const recoveryRole = COLOR_ROLE_CONTENT[card3.id];
+
+  // 결과 역할을 명확히 분리한다: 1번은 주기질, 2번은 보조기질, 3번은 회복방향.
+  // 각 역할은 같은 원본 데이터의 전용 문장을 사용하므로 현재 상태·회복 처방이 성향 카드에 섞이지 않는다.
+  const psychologyFlow = softenFreeTestTone(primaryRole?.primaryTrait ?? card1.reading1);
+  const personalityFlow = softenFreeTestTone(secondaryRole?.secondaryTrait ?? card2.reading2);
   const coachingMessage = softenFreeTestTone(generateCoachingMessage(card1, card2, card3));
-  const recoveryFlow = softenFreeTestTone(generateRecoveryFlow(card3));
+  const recoveryFlow = softenFreeTestTone(recoveryRole?.recoveryDirection ?? generateRecoveryFlow(card3));
 
   return {
     psychologyFlow,

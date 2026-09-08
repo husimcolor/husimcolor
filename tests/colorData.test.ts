@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { COLOR_DATA, COLOR_PERSONALITY_TRAITS, getColorById, generateInterpretation } from '../constants/colorData';
+import { COLOR_DATA, COLOR_PERSONALITY_TRAITS, COLOR_ROLE_CONTENT, getColorById, generateInterpretation } from '../constants/colorData';
 
 describe('COLOR_DATA', () => {
   it('25가지 콜러가 모두 존재해야 한다', () => {
@@ -53,6 +53,40 @@ describe('COLOR_DATA', () => {
     expect(COLOR_PERSONALITY_TRAITS.sage).toEqual(['분위기를 살핌', '조용한 배려', '자연스러운 조율', '평온한 균형']);
     expect(COLOR_PERSONALITY_TRAITS.teal).toEqual(['이성·감정 조율', '명료함 추구', '깊이 있는 탐구', '차분한 판단']);
     expect(COLOR_PERSONALITY_TRAITS.cream).toEqual(['편안함을 중시', '내면 정돈', '신중한 관계 형성', '자기 리듬 중시']);
+  });
+
+  it('25컬러는 주기질·보조기질·회복방향 전용 문장을 각각 제공한다', () => {
+    expect(Object.keys(COLOR_ROLE_CONTENT)).toHaveLength(25);
+
+    for (const color of COLOR_DATA) {
+      const roleContent = COLOR_ROLE_CONTENT[color.id];
+      expect(roleContent).toBeDefined();
+      expect(roleContent.primaryTrait).toMatch(/[.!?]$/);
+      expect(roleContent.secondaryTrait).toMatch(/[.!?]$/);
+      expect(roleContent.recoveryDirection).toMatch(/[.!?]$/);
+      expect(roleContent.primaryTrait).not.toMatch(/지금은|시기입니다|휴식이 필요|회복이 필요|지쳐/);
+      expect(roleContent.secondaryTrait).not.toMatch(/지금은|시기입니다|휴식이 필요|회복이 필요|지쳐/);
+    }
+
+    expect(COLOR_ROLE_CONTENT.coral.primaryTrait).toBe(
+      '말보다 리액션과 정서적 공감을 먼저 원하는 편입니다. 사람과 따뜻하게 연결되고 감정을 주고받을 때 자신의 에너지가 자연스럽게 살아나는 편입니다.',
+    );
+    expect(COLOR_ROLE_CONTENT.mint.secondaryTrait).toBe(
+      '새로운 분위기나 변화에 열린 편입니다. 익숙한 방식에만 머무르기보다 새로운 방법을 시도하는 것을 좋아합니다.',
+    );
+    expect(COLOR_ROLE_CONTENT.cream.recoveryDirection).toBe(
+      '서두르지 않아도 됩니다. 복잡한 것들을 내려놓고 자신만의 고요한 리듬을 되찾아 보세요. 조용히 자신의 페이스로 돌아가는 것이 지금 가장 필요한 회복입니다.',
+    );
+  });
+
+  it('보완 컬러는 현재 등록된 25컬러 안에서만 추천한다', () => {
+    const knownNames = new Set(COLOR_DATA.map((color) => color.korName));
+    for (const color of COLOR_DATA) {
+      for (const complementColor of color.complementColors) {
+        expect(knownNames.has(complementColor)).toBe(true);
+      }
+    }
+    expect(getColorById('blue')?.complementColors).toEqual(['코랄', '틸']);
   });
 });
 
@@ -128,6 +162,10 @@ describe('generateInterpretation', () => {
           expect(result.personalityFlow).not.toContain('반드시');
           expect(result.recoveryFlow).not.toContain('반드시');
           expect(result.coachingMessage).not.toContain('반드시');
+          expect(result.psychologyFlow).toBe(COLOR_ROLE_CONTENT[card1.id].primaryTrait);
+          expect(result.personalityFlow).toBe(COLOR_ROLE_CONTENT[card2.id].secondaryTrait);
+          expect(result.psychologyFlow).not.toContain(card2.reading2.split('\n')[0]);
+          expect(result.personalityFlow).not.toContain(card2.reading1.split('\n')[0]);
           const primaryLines = new Set(
             result.psychologyFlow.split('\n').map((line) => line.trim()).filter(Boolean),
           );
