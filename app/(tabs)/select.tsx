@@ -37,22 +37,22 @@ const CARD_INFO = [
   {
     step: 0,
     number: '1',
-    title: '무의식 / 내면 흐름',
-    subtitle: '마음 깊은 곳에서 자연스럽게 끌리는 색을 선택하세요',
+    title: '주기질',
+    subtitle: '나를 가장 잘 드러내는 기본 성향의 색을 선택하세요',
     accentColor: '#5B8DB8',
   },
   {
     step: 1,
     number: '2',
-    title: '현재 상태 / 심리 흐름',
-    subtitle: '지금 이 순간 나의 상태와 가장 가까운 색을 선택하세요',
+    title: '보조기질',
+    subtitle: '주기질을 보완하며 함께 드러나는 성향의 색을 선택하세요',
     accentColor: '#E05A4E',
   },
   {
     step: 2,
     number: '3',
-    title: '회복 방향 / 필요한 에너지',
-    subtitle: '지금 당신에게 필요한 에너지의 색을 선택하세요',
+    title: '회복방향',
+    subtitle: '지금 당신에게 필요한 회복 에너지의 색을 선택하세요',
     accentColor: '#8FA68E',
   },
 ];

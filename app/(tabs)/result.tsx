@@ -241,12 +241,12 @@ export default function ResultScreen() {
         <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 0.95 }}>
         {/* 선택한 컬러 카드 3개 */}
         <View style={styles.colorCardsSection}>
-          <Text style={[styles.sectionLabel, { color: '#555555' }]}>오늘 선택한 컬러</Text>
+          <Text style={[styles.sectionLabel, { color: '#555555' }]}>나를 읽어주는 3가지 컬러</Text>
           <View style={styles.colorCards}>
             {[
-              { card: card1, label: '1번 카드', desc: '무의식 / 내면 성향' },
-              { card: card2, label: '2번 카드', desc: '현재 상태' },
-              { card: card3, label: '3번 카드', desc: '회복 방향' },
+              { card: card1, label: '1번 컬러', desc: '주기질' },
+              { card: card2, label: '2번 컬러', desc: '보조기질' },
+              { card: card3, label: '3번 컬러', desc: '회복방향' },
             ].map(({ card, label, desc }, i) => (
               <View
                 key={i}
@@ -302,6 +302,11 @@ export default function ResultScreen() {
             borderColor="#DDD8CE"
             titleColor="#3D3530"
             contentColor="#3D3530"
+            colorContext={{
+              card: card1,
+              role: '주기질',
+              description: '나의 기본 성향',
+            }}
           />
 
           {/* 성격 흐름 */}
@@ -313,6 +318,11 @@ export default function ResultScreen() {
             borderColor="#DDD8CE"
             titleColor="#3D3530"
             contentColor="#3D3530"
+            colorContext={{
+              card: card2,
+              role: '보조기질',
+              description: '나를 보완하는 성향',
+            }}
           />
 
           {/* 장점 & 감정 패턴 나란히 */}
@@ -392,8 +402,16 @@ export default function ResultScreen() {
           >
             <View style={styles.recoveryHeader}>
               <Text style={styles.recoveryIcon}>🌱</Text>
-              <Text style={[styles.recoveryTitle, { color: '#2A6A3A' }]}>회복 방향</Text>
+              <Text style={[styles.recoveryTitle, { color: '#2A6A3A' }]}>회복방향</Text>
             </View>
+            <ColorContextBadge
+              card={card3}
+              role="회복방향"
+              description="지금 필요한 회복"
+              textColor="#1A5A2A"
+              backgroundColor="#D8EED8"
+              borderColor="#A8CEB0"
+            />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               <View style={[styles.recoveryBadge, { backgroundColor: '#B8D8C0', borderColor: '#8ABF9A' }]}>
                 <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{card3.korName} 컬러</Text>
@@ -612,6 +630,7 @@ function ResultCard({
   borderColor,
   titleColor,
   contentColor,
+  colorContext,
 }: {
   icon: string;
   title: string;
@@ -620,6 +639,11 @@ function ResultCard({
   borderColor: string;
   titleColor: string;
   contentColor: string;
+  colorContext?: {
+    card: typeof COLOR_DATA[number];
+    role: string;
+    description: string;
+  };
 }) {
   return (
     <View style={[styles.resultCard, { backgroundColor: bgColor, borderColor }]}>
@@ -627,7 +651,42 @@ function ResultCard({
         <Text style={styles.resultCardIcon}>{icon}</Text>
         <Text style={[styles.resultCardTitle, { color: titleColor }]}>{title}</Text>
       </View>
+      {colorContext && (
+        <ColorContextBadge
+          card={colorContext.card}
+          role={colorContext.role}
+          description={colorContext.description}
+          textColor={titleColor}
+          backgroundColor="#FFFFFF99"
+          borderColor={borderColor}
+        />
+      )}
       <Text style={[styles.resultCardContent, { color: contentColor }]}>{content}</Text>
+    </View>
+  );
+}
+
+function ColorContextBadge({
+  card,
+  role,
+  description,
+  textColor,
+  backgroundColor,
+  borderColor,
+}: {
+  card: typeof COLOR_DATA[number];
+  role: string;
+  description: string;
+  textColor: string;
+  backgroundColor: string;
+  borderColor: string;
+}) {
+  return (
+    <View style={[styles.colorContextBadge, { backgroundColor, borderColor }]}>
+      <View style={[styles.colorContextChip, { backgroundColor: card.hex }, getLightColorBorder(card.hex)]} />
+      <Text style={[styles.colorContextMain, { color: textColor }]}>{card.korName} · {role}</Text>
+      <Text style={[styles.colorContextArrow, { color: textColor }]}>→</Text>
+      <Text style={[styles.colorContextDescription, { color: textColor }]}>{description}</Text>
     </View>
   );
 }
@@ -725,6 +784,34 @@ const styles = StyleSheet.create({
   resultCardContent: {
     fontSize: 14,
     lineHeight: 24,
+  },
+  colorContextBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  colorContextChip: {
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+  },
+  colorContextMain: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  colorContextArrow: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  colorContextDescription: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   twoColumnSection: {
     flexDirection: 'row',

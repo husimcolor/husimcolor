@@ -184,9 +184,9 @@ export default function HomeScreen() {
         {/* 카드 미리보기 */}
         <Animated.View style={[styles.cardPreview, { opacity: fadeAnim }]}>
           {[
-            { label: '1번 카드', desc: '무의식 / 내면 흐름', color: '#5B8DB8' },
-            { label: '2번 카드', desc: '현재 상태 / 심리 흐름', color: '#E05A4E' },
-            { label: '3번 카드', desc: '회복 방향 / 필요한 에너지', color: '#8FA68E' },
+            { label: '1번 컬러', desc: '주기질', color: '#5B8DB8' },
+            { label: '2번 컬러', desc: '보조기질', color: '#E05A4E' },
+            { label: '3번 컬러', desc: '회복방향', color: '#8FA68E' },
           ].map((card, i) => (
             <View
               key={i}
