@@ -43,7 +43,8 @@ const SOCIAL_LINKS = {
   instagram: 'https://www.instagram.com/husim_lumiere?igsh=MTh6bWhpdWRjb2Rtcw==',
 };
 
-const FREE_TEST_START_URL = 'https://husimcolor.vercel.app';
+// 운영 환경에서 새 사용자를 무료 3컬러 테스트의 첫 번째 선택 화면으로 바로 연결한다.
+const FREE_TEST_START_URL = 'https://husimcolor.vercel.app/select?step=0';
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -116,7 +117,7 @@ export default function ResultScreen() {
   const handleKakaoShare = async () => {
     try {
       const uri = await captureShareCard();
-      const shareText = '휴심컬러가 읽어준 나의 3가지 컬러 결과입니다. 나만의 컬러를 확인해보세요.';
+      const shareText = `🌿 나도 휴심컬러로 마음 읽어보기\n25가지 컬러 중 3가지를 선택해 지금 나의 마음을 만나보세요.\n무료 컬러 테스트 시작하기: ${FREE_TEST_START_URL}`;
       if (Platform.OS === 'web') {
         const blob = await (await fetch(uri)).blob();
         const file = new File([blob], `husimcolor_result_${Date.now()}.png`, { type: 'image/png' });
@@ -124,7 +125,6 @@ export default function ResultScreen() {
           await navigator.share({
             title: '휴심컬러 나의 컬러 결과',
             text: shareText,
-            url: FREE_TEST_START_URL,
             files: [file],
           });
           return;

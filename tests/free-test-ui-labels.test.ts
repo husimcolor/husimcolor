@@ -55,6 +55,15 @@ describe("무료 3컬러 테스트 역할 표기", () => {
     expect(resultScreen).toContain("const uri = await captureShareCard()");
   });
 
+  it("카카오톡 공유는 결과 페이지가 아닌 첫 컬러 선택 화면 링크를 안내 문구와 함께 제공한다", () => {
+    expect(resultScreen).toContain("const FREE_TEST_START_URL = 'https://husimcolor.vercel.app/select?step=0'");
+    expect(resultScreen).toContain("🌿 나도 휴심컬러로 마음 읽어보기");
+    expect(resultScreen).toContain("25가지 컬러 중 3가지를 선택해 지금 나의 마음을 만나보세요.");
+    expect(resultScreen).toContain("무료 컬러 테스트 시작하기: ${FREE_TEST_START_URL}");
+    expect(resultScreen).toContain("files: [file]");
+    expect(resultScreen).not.toContain("window.location.href");
+  });
+
   it("이전 무료 테스트 역할 명칭을 화면 코드에서 사용하지 않는다", () => {
     for (const source of [selectScreen, resultScreen, homeScreen]) {
       expect(source).not.toContain("무의식 / 내면 흐름");
