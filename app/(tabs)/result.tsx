@@ -296,7 +296,7 @@ export default function ResultScreen() {
           {/* 현재 심리 흐름 */}
           <ResultCard
             icon="🌊"
-            title="지금 나의 마음"
+            title="주기질 — 나의 기본 성향"
             content={interpretation.psychologyFlow}
             bgColor="#F2EFE7"
             borderColor="#DDD8CE"
@@ -312,7 +312,7 @@ export default function ResultScreen() {
           {/* 성격 흐름 */}
           <ResultCard
             icon="🌿"
-            title="나의 성향"
+            title="보조기질 — 나를 보완하는 성향"
             content={interpretation.personalityFlow}
             bgColor="#F2EFE7"
             borderColor="#DDD8CE"
@@ -402,7 +402,7 @@ export default function ResultScreen() {
           >
             <View style={styles.recoveryHeader}>
               <Text style={styles.recoveryIcon}>🌱</Text>
-              <Text style={[styles.recoveryTitle, { color: '#2A6A3A' }]}>회복방향</Text>
+              <Text style={[styles.recoveryTitle, { color: '#2A6A3A' }]}>회복방향 — 지금 필요한 회복</Text>
             </View>
             <ColorContextBadge
               card={card3}

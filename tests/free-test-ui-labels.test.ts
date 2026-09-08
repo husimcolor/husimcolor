@@ -25,6 +25,12 @@ describe("무료 3컬러 테스트 역할 표기", () => {
     expect(resultScreen).toContain("지금 필요한 회복");
   });
 
+  it("결과 섹션 제목이 각 컬러 역할 및 해석 목적과 일치한다", () => {
+    expect(resultScreen).toContain("주기질 — 나의 기본 성향");
+    expect(resultScreen).toContain("보조기질 — 나를 보완하는 성향");
+    expect(resultScreen).toContain("회복방향 — 지금 필요한 회복");
+  });
+
   it("이전 무료 테스트 역할 명칭을 화면 코드에서 사용하지 않는다", () => {
     for (const source of [selectScreen, resultScreen, homeScreen]) {
       expect(source).not.toContain("무의식 / 내면 흐름");

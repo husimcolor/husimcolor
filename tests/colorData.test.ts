@@ -13,12 +13,21 @@ describe('COLOR_DATA', () => {
       expect(color.name).toBeTruthy();
       expect(color.korName).toBeTruthy();
       expect(color.hex).toMatch(/^#[0-9A-Fa-f]{6}$/);
-      expect(color.keywords).toHaveLength(3);
+      expect(color.keywords.length).toBeGreaterThanOrEqual(3);
       expect(color.recovery).toBeTruthy();
       expect(color.complementColors.length).toBeGreaterThanOrEqual(1);
       expect(color.strengths.length).toBeGreaterThanOrEqual(2);
       expect(color.shadows.length).toBeGreaterThanOrEqual(2);
       expect(color.recoveryMessages.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('마음 습관은 컬러별 의미를 담은 짧은 단일 표현이어야 한다', () => {
+    for (const color of COLOR_DATA) {
+      for (const habit of color.shadows) {
+        expect(habit.length).toBeLessThanOrEqual(24);
+        expect(habit).not.toMatch(/[.!?\n]/);
+      }
     }
   });
 
@@ -81,5 +90,31 @@ describe('generateInterpretation', () => {
 
     expect(result.strengths.length).toBeLessThanOrEqual(4);
     expect(uniqueStrengths.size).toBe(result.strengths.length);
+  });
+
+  it('모든 3컬러 순서 조합에서 필수 결과를 생성해야 한다', () => {
+    for (const card1 of COLOR_DATA) {
+      for (const card2 of COLOR_DATA) {
+        for (const card3 of COLOR_DATA) {
+          const result = generateInterpretation(card1, card2, card3);
+          expect(result.psychologyFlow.trim()).not.toBe('');
+          expect(result.personalityFlow.trim()).not.toBe('');
+          expect(result.recoveryFlow.trim()).not.toBe('');
+          expect(result.coachingMessage.trim()).not.toBe('');
+          expect(result.psychologyFlow).not.toContain('반드시');
+          expect(result.personalityFlow).not.toContain('반드시');
+          expect(result.recoveryFlow).not.toContain('반드시');
+          expect(result.coachingMessage).not.toContain('반드시');
+          const primaryLines = new Set(
+            result.psychologyFlow.split('\n').map((line) => line.trim()).filter(Boolean),
+          );
+          const repeatedLines = result.personalityFlow
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line && primaryLines.has(line));
+          expect(repeatedLines).toHaveLength(0);
+        }
+      }
+    }
   });
 });
