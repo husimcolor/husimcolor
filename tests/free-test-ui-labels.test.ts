@@ -31,6 +31,24 @@ describe("무료 3컬러 테스트 역할 표기", () => {
     expect(resultScreen).toContain("회복방향 — 지금 필요한 회복");
   });
 
+  it("보완 컬러를 중립 카드 위의 실제 색상 칩과 회복 의미로 표시한다", () => {
+    expect(resultScreen).toContain("backgroundColor: colorInfo?.hex");
+    expect(resultScreen).toContain("colorInfo?.recovery");
+    expect(resultScreen).toContain("styles.complementChip");
+    expect(resultScreen).not.toContain("backgroundColor: '#4A7A5A'");
+  });
+
+  it("저장과 인스타 공유는 전용 9:16 요약카드를 사용하고 카카오 공유는 기존 흐름을 유지한다", () => {
+    expect(resultScreen).toContain("function ShareSummaryCard");
+    expect(resultScreen).toContain("aspectRatio: 9 / 16");
+    expect(resultScreen).toContain("const shareCardRef");
+    expect(resultScreen).toContain("const captureShareCard");
+    expect(resultScreen).toContain("const handleKakaoShare");
+    expect(resultScreen).toContain("captureRef(viewShotRef");
+    expect(resultScreen).toContain("const handleInstaShare");
+    expect(resultScreen).toContain("const uri = await captureShareCard()");
+  });
+
   it("이전 무료 테스트 역할 명칭을 화면 코드에서 사용하지 않는다", () => {
     for (const source of [selectScreen, resultScreen, homeScreen]) {
       expect(source).not.toContain("무의식 / 내면 흐름");

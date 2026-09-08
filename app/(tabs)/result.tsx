@@ -50,35 +50,45 @@ export default function ResultScreen() {
 
   // Animated 완전 제거 - 인앱 브라우저(인스타/카카오)에서 opacity 0 버그 방지
   const viewShotRef = useRef<ViewShotRef>(null);
+  const shareCardRef = useRef<ViewShotRef>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const captureShareCard = async () => {
+    let uri: string | undefined;
+    if (shareCardRef.current && typeof shareCardRef.current.capture === 'function') {
+      uri = await shareCardRef.current.capture();
+    } else {
+      uri = await captureRef(shareCardRef, { format: 'png', quality: 0.95 });
+    }
+    if (!uri) throw new Error('공유카드 캡처에 실패했습니다.');
+    return uri;
+  };
+
+  const downloadShareCard = (uri: string) => {
+    const link = document.createElement('a');
+    link.href = uri;
+    link.download = `husimcolor_story_${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // 이미지 저장 - 웹: <a> 다운로드 방식 / 네이티브: 시스템 공유 시트
   const handleSaveImage = async () => {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      // ViewShot으로 화면 캡처
-      let uri: string | undefined;
-      if (viewShotRef.current && typeof viewShotRef.current.capture === 'function') {
-        uri = await viewShotRef.current.capture();
-      } else {
-        uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
-      }
-      if (!uri) throw new Error('캡처 실패');
+      // 전용 9:16 요약 공유카드를 캡처
+      const uri = await captureShareCard();
 
       // 웹 환경: <a> 태그로 직접 다운로드
       if (Platform.OS === 'web') {
-        const link = document.createElement('a');
-        link.href = uri;
-        link.download = `husimcolor_result_${Date.now()}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        downloadShareCard(uri);
         return;
       }
 
       // 네이티브 환경: 임시 파일로 복사 후 시스템 공유 시트
-      const destUri = `${FileSystem.cacheDirectory}husimcolor_result_${Date.now()}.png`;
+      const destUri = `${FileSystem.cacheDirectory}husimcolor_story_${Date.now()}.png`;
       await FileSystem.copyAsync({ from: uri, to: destUri });
 
       const available = await Sharing.isAvailableAsync();
@@ -145,15 +155,28 @@ export default function ResultScreen() {
 
   // 인스타그램 스토리 공유
   const handleInstaShare = async () => {
-    if (Platform.OS === 'web') {
-      await handleWebShare('인스타그램');
-      return;
-    }
     try {
-      const uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
+      const uri = await captureShareCard();
+      if (Platform.OS === 'web') {
+        const blob = await (await fetch(uri)).blob();
+        const file = new File([blob], `husimcolor_story_${Date.now()}.png`, { type: 'image/png' });
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            title: '휴심컬러 오늘의 결과 카드',
+            text: '휴심컬러가 읽어준 오늘의 나를 공유합니다.',
+            files: [file],
+          });
+          return;
+        }
+        downloadShareCard(uri);
+        Alert.alert('요약카드 저장 완료', '저장된 9:16 카드를 인스타그램 스토리에서 선택해 공유해보세요.');
+        return;
+      }
+      const destUri = `${FileSystem.cacheDirectory}husimcolor_story_${Date.now()}.png`;
+      await FileSystem.copyAsync({ from: uri, to: destUri });
       const available = await Sharing.isAvailableAsync();
       if (available) {
-        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '인스타그램에 공유' });
+        await Sharing.shareAsync(destUri, { mimeType: 'image/png', dialogTitle: '인스타그램 스토리에 공유', UTI: 'public.png' });
       } else {
         Alert.alert('알림', '이 환경에서는 공유 기능을 사용할 수 없습니다.');
       }
@@ -381,12 +404,13 @@ export default function ResultScreen() {
                 return (
                   <View
                     key={i}
-                    style={[styles.complementTag, { backgroundColor: '#4A7A5A', borderColor: '#2E5C3E', flexDirection: 'column', alignItems: 'flex-start', paddingVertical: 7, paddingHorizontal: 12, minWidth: 90 }]}
+                    style={[styles.complementTag, { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE' }]}
                   >
-                    <Text style={[styles.complementTagText, { color: '#FFFFFF', fontWeight: '700' }]}>{c}</Text>
-                    {colorInfo && (
-                      <Text style={{ color: '#CCEAD6', fontSize: 11, marginTop: 2, lineHeight: 15 }}>{colorInfo.recovery}</Text>
-                    )}
+                    <View style={[styles.complementChip, { backgroundColor: colorInfo?.hex ?? '#C8BFB0' }, colorInfo ? getLightColorBorder(colorInfo.hex) : {}]} />
+                    <View style={styles.complementTextGroup}>
+                      <Text style={[styles.complementTagText, { color: '#3D3530' }]}>{c}</Text>
+                      <Text style={styles.complementMeaning}>{colorInfo?.recovery ?? '균형 회복'}</Text>
+                    </View>
                   </View>
                 );
               })}
@@ -444,6 +468,14 @@ export default function ResultScreen() {
 
         </View>
         </ViewShot>{/* ViewShot 캡처 영역 끝 */}
+
+        {/* 저장·인스타 스토리용 9:16 결과 요약카드 */}
+        <View style={styles.shareCardPreviewSection}>
+          <Text style={[styles.shareCardPreviewLabel, { color: '#6B5D52' }]}>스토리용 결과 요약카드</Text>
+          <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 0.95 }}>
+            <ShareSummaryCard card1={card1} card2={card2} card3={card3} message={interpretation.coachingMessage} />
+          </ViewShot>
+        </View>
 
         {/* 공유 버튼 섹션 */}
         <View style={styles.shareSection}>
@@ -691,6 +723,60 @@ function ColorContextBadge({
   );
 }
 
+function ShareSummaryCard({
+  card1,
+  card2,
+  card3,
+  message,
+}: {
+  card1: typeof COLOR_DATA[number];
+  card2: typeof COLOR_DATA[number];
+  card3: typeof COLOR_DATA[number];
+  message: string;
+}) {
+  const selected = [
+    { card: card1, role: '주기질', detail: '나의 기본 성향' },
+    { card: card2, role: '보조기질', detail: '나를 보완하는 성향' },
+    { card: card3, role: '회복방향', detail: '지금 필요한 회복' },
+  ];
+
+  return (
+    <View collapsable={false} style={styles.storyCard}>
+      <LinearGradient
+        colors={['#FCF9F3', '#F3EEE5', '#E8EFE5']}
+        locations={[0, 0.62, 1]}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <View style={styles.storyTopRow}>
+        <Text style={styles.storyBrand}>휴심컬러</Text>
+        <Text style={styles.storyBrandSub}>COLOR PSYCHOLOGY</Text>
+      </View>
+      <View style={styles.storyDivider} />
+      <Text style={styles.storyEyebrow}>TODAY&apos;S COLOR NOTE</Text>
+      <Text style={styles.storyTitle}>오늘 나를 읽어주는{`\n`}3가지 컬러</Text>
+      <View style={styles.storyColorList}>
+        {selected.map(({ card, role, detail }) => (
+          <View key={role} style={styles.storyColorRow}>
+            <View style={[styles.storyColorChip, { backgroundColor: card.hex }, getLightColorBorder(card.hex)]} />
+            <View style={styles.storyColorText}>
+              <Text style={styles.storyColorName}>{role} : {card.korName}</Text>
+              <Text style={styles.storyColorDetail}>{detail}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+      <View style={styles.storyMessageBox}>
+        <Text style={styles.storyMessageLabel}>오늘의 코칭 메시지</Text>
+        <Text style={styles.storyMessage}>“{message.replace(/\n/g, ' ')}”</Text>
+      </View>
+      <View style={styles.storyFooter}>
+        <View style={styles.storyFooterLine} />
+        <Text style={styles.storyFooterText}>휴심컬러 · 색으로 읽는 나의 마음</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -876,15 +962,173 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   complementTag: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
+    minWidth: 138,
+    flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
     borderWidth: 1,
   },
+  complementChip: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.22,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  complementTextGroup: {
+    flexShrink: 1,
+    gap: 2,
+  },
   complementTagText: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  complementMeaning: {
+    color: '#766B62',
+    fontSize: 11,
+    fontWeight: '500',
+    lineHeight: 15,
+  },
+  shareCardPreviewSection: {
+    marginTop: 26,
+    alignItems: 'center',
+    gap: 10,
+  },
+  shareCardPreviewLabel: {
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.4,
+  },
+  storyCard: {
+    width: '100%',
+    maxWidth: 360,
+    aspectRatio: 9 / 16,
+    overflow: 'hidden',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#D9CDBE',
+    paddingHorizontal: 28,
+    paddingTop: 30,
+    paddingBottom: 24,
+    justifyContent: 'space-between',
+    shadowColor: '#9B8E85',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  storyTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  storyBrand: {
+    color: '#40372F',
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  storyBrandSub: {
+    color: '#9B8E85',
+    fontSize: 7,
+    fontWeight: '700',
+    letterSpacing: 0.9,
+  },
+  storyDivider: {
+    height: 1,
+    backgroundColor: '#D9CDBE',
+    marginTop: 7,
+  },
+  storyEyebrow: {
+    color: '#71846D',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginTop: 4,
+  },
+  storyTitle: {
+    color: '#3D3530',
+    fontSize: 26,
+    lineHeight: 35,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+    marginTop: -5,
+  },
+  storyColorList: {
+    gap: 13,
+  },
+  storyColorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  storyColorChip: {
+    width: 31,
+    height: 31,
+    borderRadius: 16,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.26,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  storyColorText: {
+    flexShrink: 1,
+    gap: 1,
+  },
+  storyColorName: {
+    color: '#3D3530',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '800',
+  },
+  storyColorDetail: {
+    color: '#7B7067',
+    fontSize: 10.5,
+    lineHeight: 16,
+    fontWeight: '500',
+  },
+  storyMessageBox: {
+    backgroundColor: 'rgba(255,255,255,0.56)',
+    borderWidth: 1,
+    borderColor: '#E5DCCF',
+    borderRadius: 17,
+    paddingHorizontal: 17,
+    paddingVertical: 15,
+    gap: 8,
+  },
+  storyMessageLabel: {
+    color: '#7A694F',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  storyMessage: {
+    color: '#514238',
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 21,
+  },
+  storyFooter: {
+    alignItems: 'center',
+    gap: 9,
+  },
+  storyFooterLine: {
+    width: 42,
+    height: 1,
+    backgroundColor: '#B7C7B2',
+  },
+  storyFooterText: {
+    color: '#7C756B',
+    fontSize: 9,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   coachingCard: {
     padding: 20,
