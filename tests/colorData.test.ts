@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { COLOR_DATA, getColorById, generateInterpretation } from '../constants/colorData';
+import { COLOR_DATA, COLOR_PERSONALITY_TRAITS, getColorById, generateInterpretation } from '../constants/colorData';
 
 describe('COLOR_DATA', () => {
   it('25가지 콜러가 모두 존재해야 한다', () => {
@@ -35,6 +35,21 @@ describe('COLOR_DATA', () => {
     const ids = COLOR_DATA.map((c) => c.id);
     const uniqueIds = new Set(ids);
     expect(uniqueIds.size).toBe(COLOR_DATA.length);
+  });
+
+  it('승인된 22컬러 성격특징은 4개의 짧은 태그를 제공한다', () => {
+    expect(Object.keys(COLOR_PERSONALITY_TRAITS)).toHaveLength(22);
+    for (const traits of Object.values(COLOR_PERSONALITY_TRAITS)) {
+      expect(traits).toHaveLength(4);
+      for (const trait of traits) {
+        expect(trait.length).toBeLessThanOrEqual(14);
+        expect(trait).not.toMatch(/[.!?\n]/);
+      }
+    }
+    expect(COLOR_PERSONALITY_TRAITS.yellow).toEqual(['호기심이 많음', '질문하며 탐색', '배움을 즐김', '생각을 확장함']);
+    expect(COLOR_PERSONALITY_TRAITS.white).toEqual(['명료함 추구', '높은 기준', '정돈을 중시함', '완성도를 중요시함']);
+    expect(COLOR_PERSONALITY_TRAITS.mint).toEqual(['새로움에 개방적', '전환이 빠름', '산뜻함을 선호', '유연한 적응']);
+    expect(COLOR_PERSONALITY_TRAITS.lavender).toEqual(['섬세한 감수성', '내면 지향적', '이상적 관계 추구', '정서적 섬세함']);
   });
 });
 

@@ -31,6 +31,15 @@ describe("무료 3컬러 테스트 역할 표기", () => {
     expect(resultScreen).toContain("회복방향 — 지금 필요한 회복");
   });
 
+  it("성격특징은 주기질·보조기질에만 캡슐형 태그로 표시한다", () => {
+    expect(resultScreen).toContain("personalityTraits={COLOR_PERSONALITY_TRAITS[card1.id]}");
+    expect(resultScreen).toContain("personalityTraits={COLOR_PERSONALITY_TRAITS[card2.id]}");
+    expect(resultScreen).not.toContain("personalityTraits={COLOR_PERSONALITY_TRAITS[card3.id]}");
+    expect(resultScreen).toContain("성격 특징");
+    expect(resultScreen).toContain("flexWrap: 'wrap'");
+    expect(resultScreen).toContain("borderRadius: 999");
+  });
+
   it("보완 컬러를 중립 카드 위의 실제 색상 칩과 회복 의미로 표시한다", () => {
     expect(resultScreen).toContain("backgroundColor: colorInfo?.hex");
     expect(resultScreen).toContain("colorInfo?.recovery");

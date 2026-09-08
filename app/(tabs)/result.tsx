@@ -22,7 +22,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
-import { generateInterpretation, COLOR_DATA } from '@/constants/colorData';
+import { generateInterpretation, COLOR_DATA, COLOR_PERSONALITY_TRAITS } from '@/constants/colorData';
 import { isPremiumActive, getTrialStatus } from '@/lib/trialUtils';
 
 // 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
@@ -326,6 +326,7 @@ export default function ResultScreen() {
               role: '주기질',
               description: '나의 기본 성향',
             }}
+            personalityTraits={COLOR_PERSONALITY_TRAITS[card1.id]}
           />
 
           {/* 성격 흐름 */}
@@ -342,6 +343,7 @@ export default function ResultScreen() {
               role: '보조기질',
               description: '나를 보완하는 성향',
             }}
+            personalityTraits={COLOR_PERSONALITY_TRAITS[card2.id]}
           />
 
           {/* 장점 & 감정 패턴 나란히 */}
@@ -667,6 +669,7 @@ function ResultCard({
   titleColor,
   contentColor,
   colorContext,
+  personalityTraits,
 }: {
   icon: string;
   title: string;
@@ -680,6 +683,7 @@ function ResultCard({
     role: string;
     description: string;
   };
+  personalityTraits?: readonly string[];
 }) {
   return (
     <View style={[styles.resultCard, { backgroundColor: bgColor, borderColor }]}>
@@ -696,6 +700,18 @@ function ResultCard({
           backgroundColor="#FFFFFF99"
           borderColor={borderColor}
         />
+      )}
+      {personalityTraits && personalityTraits.length > 0 && (
+        <View style={styles.personalityTraitsSection}>
+          <Text style={[styles.personalityTraitsLabel, { color: titleColor }]}>성격 특징</Text>
+          <View style={styles.personalityTraitsList}>
+            {personalityTraits.map((trait) => (
+              <View key={trait} style={[styles.personalityTraitTag, { borderColor, backgroundColor: '#FFFFFF99' }]}>
+                <Text style={[styles.personalityTraitText, { color: titleColor }]}>{trait}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
       )}
       <Text style={[styles.resultCardContent, { color: contentColor }]}>{content}</Text>
     </View>
@@ -888,6 +904,31 @@ const styles = StyleSheet.create({
   resultCardContent: {
     fontSize: 14,
     lineHeight: 24,
+  },
+  personalityTraitsSection: {
+    gap: 6,
+  },
+  personalityTraitsLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  personalityTraitsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  personalityTraitTag: {
+    maxWidth: '100%',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
+  personalityTraitText: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    fontWeight: '600',
   },
   colorContextBadge: {
     alignSelf: 'flex-start',
