@@ -101,6 +101,11 @@ describe('generateInterpretation', () => {
           expect(result.personalityFlow.trim()).not.toBe('');
           expect(result.recoveryFlow.trim()).not.toBe('');
           expect(result.coachingMessage.trim()).not.toBe('');
+          expect(result.coachingMessage).not.toContain('\n');
+          expect(result.coachingMessage.length).toBeLessThanOrEqual(80);
+          expect(result.coachingMessage).not.toContain('회복');
+          expect(result.recoveryFlow).not.toContain(result.coachingMessage);
+          expect(result.coachingMessage).not.toContain(result.recoveryFlow);
           expect(result.psychologyFlow).not.toContain('반드시');
           expect(result.personalityFlow).not.toContain('반드시');
           expect(result.recoveryFlow).not.toContain('반드시');
@@ -115,6 +120,18 @@ describe('generateInterpretation', () => {
           expect(repeatedLines).toHaveLength(0);
         }
       }
+    }
+  });
+
+  it('각 회복방향 컬러는 1·2번 컬러 조합에 따라 여러 실천 메시지를 제공한다', () => {
+    for (const recoveryCard of COLOR_DATA) {
+      const messages = new Set<string>();
+      for (const card1 of COLOR_DATA) {
+        for (const card2 of COLOR_DATA) {
+          messages.add(generateInterpretation(card1, card2, recoveryCard).coachingMessage);
+        }
+      }
+      expect(messages.size).toBeGreaterThanOrEqual(2);
     }
   });
 });
