@@ -38,13 +38,19 @@ describe("무료 3컬러 테스트 역할 표기", () => {
     expect(resultScreen).not.toContain("backgroundColor: '#4A7A5A'");
   });
 
-  it("저장과 인스타 공유는 전용 9:16 요약카드를 사용하고 카카오 공유는 기존 흐름을 유지한다", () => {
+  it("저장·인스타·카카오 공유가 실제 결과 기반 전용 9:16 요약카드를 사용한다", () => {
     expect(resultScreen).toContain("function ShareSummaryCard");
     expect(resultScreen).toContain("aspectRatio: 9 / 16");
     expect(resultScreen).toContain("const shareCardRef");
     expect(resultScreen).toContain("const captureShareCard");
+    expect(resultScreen).toContain("function summarizeForShareCard");
+    expect(resultScreen).toContain("primarySummary={summarizeForShareCard(interpretation.psychologyFlow)}");
+    expect(resultScreen).toContain("supportingSummary={summarizeForShareCard(interpretation.personalityFlow)}");
+    expect(resultScreen).toContain("recoverySummary={summarizeForShareCard(interpretation.recoveryFlow)}");
     expect(resultScreen).toContain("const handleKakaoShare");
-    expect(resultScreen).toContain("captureRef(viewShotRef");
+    expect(resultScreen).not.toContain("captureRef(viewShotRef");
+    expect(resultScreen).toContain("FREE_TEST_START_URL");
+    expect(resultScreen).toContain("Clipboard.setStringAsync(FREE_TEST_START_URL)");
     expect(resultScreen).toContain("const handleInstaShare");
     expect(resultScreen).toContain("const uri = await captureShareCard()");
   });

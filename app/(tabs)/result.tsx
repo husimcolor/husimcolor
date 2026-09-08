@@ -17,6 +17,7 @@ import * as WebBrowser from 'expo-web-browser';
 import ViewShot, { captureRef, type ViewShotRef } from 'react-native-view-shot';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
@@ -41,6 +42,8 @@ const SOCIAL_LINKS = {
   youtube: 'https://youtube.com/@huali7603?si=zMMC1MRxIfrlWUIA',
   instagram: 'https://www.instagram.com/husim_lumiere?igsh=MTh6bWhpdWRjb2Rtcw==',
 };
+
+const FREE_TEST_START_URL = 'https://husimcolor.vercel.app';
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -109,42 +112,35 @@ export default function ResultScreen() {
     }
   };
 
-  // 웹 환경 공유 헬퍼 - navigator.share() 또는 URL 클립보드 복사
-  const handleWebShare = async (title: string) => {
-    const shareUrl = typeof window !== 'undefined' ? window.location.href : 'https://husimcolor.vercel.app';
-    // Web Share API 지원 여부 확인
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({
-          title: '휴심컬러 - 나의 컬러 해석 결과',
-          text: '25가지 컬러로 읽는 나의 마음 흐름 💫 지금 확인해보세요!',
-          url: shareUrl,
-        });
-        return;
-      } catch {
-        // 공유 취소 등 - 아래 클립보드 복사로 폴백
-      }
-    }
-    // 클립보드 복사 폴백
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      Alert.alert('링크 복사 완료', `${title}에 붙여넣기 하여 공유해보세요!\n\n${shareUrl}`);
-    } catch {
-      Alert.alert('공유 링크', `아래 링크를 복사하여 ${title}에 공유해보세요:\n\n${shareUrl}`);
-    }
-  };
-
-  // 카카오톡 공유
+  // 카카오톡 공유: 동일한 9:16 요약카드 이미지와 새 사용자를 위한 시작 링크를 제공
   const handleKakaoShare = async () => {
-    if (Platform.OS === 'web') {
-      await handleWebShare('카카오톡');
-      return;
-    }
     try {
-      const uri = await captureRef(viewShotRef, { format: 'png', quality: 0.95 });
+      const uri = await captureShareCard();
+      const shareText = '휴심컬러가 읽어준 나의 3가지 컬러 결과입니다. 나만의 컬러를 확인해보세요.';
+      if (Platform.OS === 'web') {
+        const blob = await (await fetch(uri)).blob();
+        const file = new File([blob], `husimcolor_result_${Date.now()}.png`, { type: 'image/png' });
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            title: '휴심컬러 나의 컬러 결과',
+            text: shareText,
+            url: FREE_TEST_START_URL,
+            files: [file],
+          });
+          return;
+        }
+        downloadShareCard(uri);
+        await Clipboard.setStringAsync(FREE_TEST_START_URL);
+        Alert.alert('요약카드 저장 완료', '이미지와 무료 테스트 시작 링크를 준비했습니다. 카카오톡에서 이미지를 선택하고 링크를 붙여넣어 공유해보세요.');
+        return;
+      }
+      const destUri = `${FileSystem.cacheDirectory}husimcolor_result_${Date.now()}.png`;
+      await FileSystem.copyAsync({ from: uri, to: destUri });
+      await Clipboard.setStringAsync(FREE_TEST_START_URL);
       const available = await Sharing.isAvailableAsync();
       if (available) {
-        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '휴심컬러 결과 공유' });
+        await Sharing.shareAsync(destUri, { mimeType: 'image/png', dialogTitle: '휴심컬러 결과 요약카드 공유', UTI: 'public.png' });
+        Alert.alert('시작 링크 복사 완료', '요약카드와 함께 새 사용자가 테스트를 시작할 수 있는 링크를 복사했습니다. 카카오톡 메시지에 붙여넣어 함께 공유해보세요.');
       } else {
         Alert.alert('알림', '이 환경에서는 공유 기능을 사용할 수 없습니다.');
       }
@@ -473,7 +469,15 @@ export default function ResultScreen() {
         <View style={styles.shareCardPreviewSection}>
           <Text style={[styles.shareCardPreviewLabel, { color: '#6B5D52' }]}>스토리용 결과 요약카드</Text>
           <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 0.95 }}>
-            <ShareSummaryCard card1={card1} card2={card2} card3={card3} message={interpretation.coachingMessage} />
+            <ShareSummaryCard
+              card1={card1}
+              card2={card2}
+              card3={card3}
+              primarySummary={summarizeForShareCard(interpretation.psychologyFlow)}
+              supportingSummary={summarizeForShareCard(interpretation.personalityFlow)}
+              recoverySummary={summarizeForShareCard(interpretation.recoveryFlow)}
+              message={interpretation.coachingMessage}
+            />
           </ViewShot>
         </View>
 
@@ -727,17 +731,23 @@ function ShareSummaryCard({
   card1,
   card2,
   card3,
+  primarySummary,
+  supportingSummary,
+  recoverySummary,
   message,
 }: {
   card1: typeof COLOR_DATA[number];
   card2: typeof COLOR_DATA[number];
   card3: typeof COLOR_DATA[number];
+  primarySummary: string;
+  supportingSummary: string;
+  recoverySummary: string;
   message: string;
 }) {
   const selected = [
-    { card: card1, role: '주기질', detail: '나의 기본 성향' },
-    { card: card2, role: '보조기질', detail: '나를 보완하는 성향' },
-    { card: card3, role: '회복방향', detail: '지금 필요한 회복' },
+    { card: card1, role: '주기질', summary: primarySummary },
+    { card: card2, role: '보조기질', summary: supportingSummary },
+    { card: card3, role: '회복방향', summary: recoverySummary },
   ];
 
   return (
@@ -755,12 +765,12 @@ function ShareSummaryCard({
       <Text style={styles.storyEyebrow}>TODAY&apos;S COLOR NOTE</Text>
       <Text style={styles.storyTitle}>오늘 나를 읽어주는{`\n`}3가지 컬러</Text>
       <View style={styles.storyColorList}>
-        {selected.map(({ card, role, detail }) => (
+        {selected.map(({ card, role, summary }) => (
           <View key={role} style={styles.storyColorRow}>
             <View style={[styles.storyColorChip, { backgroundColor: card.hex }, getLightColorBorder(card.hex)]} />
             <View style={styles.storyColorText}>
-              <Text style={styles.storyColorName}>{role} : {card.korName}</Text>
-              <Text style={styles.storyColorDetail}>{detail}</Text>
+              <Text style={styles.storyColorName}>{role} · {card.korName}</Text>
+              <Text numberOfLines={2} style={styles.storyColorSummary}>{summary}</Text>
             </View>
           </View>
         ))}
@@ -775,6 +785,14 @@ function ShareSummaryCard({
       </View>
     </View>
   );
+}
+
+function summarizeForShareCard(text: string, maxLength = 46): string {
+  const normalized = text.replace(/\s+/g, ' ').trim();
+  const firstSentence = normalized.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim() ?? normalized;
+  if (firstSentence.length <= maxLength) return firstSentence;
+  const shortened = firstSentence.slice(0, maxLength).replace(/[\s,·:;]+$/, '');
+  return `${shortened}…`;
 }
 
 const styles = StyleSheet.create({
@@ -1015,8 +1033,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D9CDBE',
     paddingHorizontal: 28,
-    paddingTop: 30,
-    paddingBottom: 24,
+    paddingTop: 26,
+    paddingBottom: 20,
     justifyContent: 'space-between',
     shadowColor: '#9B8E85',
     shadowOffset: { width: 0, height: 8 },
@@ -1055,14 +1073,14 @@ const styles = StyleSheet.create({
   },
   storyTitle: {
     color: '#3D3530',
-    fontSize: 26,
-    lineHeight: 35,
+    fontSize: 24,
+    lineHeight: 32,
     fontWeight: '800',
     letterSpacing: -0.5,
     marginTop: -5,
   },
   storyColorList: {
-    gap: 13,
+    gap: 11,
   },
   storyColorRow: {
     flexDirection: 'row',
@@ -1092,6 +1110,12 @@ const styles = StyleSheet.create({
     color: '#7B7067',
     fontSize: 10.5,
     lineHeight: 16,
+    fontWeight: '500',
+  },
+  storyColorSummary: {
+    color: '#74685E',
+    fontSize: 11.5,
+    lineHeight: 17,
     fontWeight: '500',
   },
   storyMessageBox: {
