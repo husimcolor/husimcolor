@@ -37,8 +37,8 @@ describe('COLOR_DATA', () => {
     expect(uniqueIds.size).toBe(COLOR_DATA.length);
   });
 
-  it('승인된 22컬러 성격특징은 4개의 짧은 태그를 제공한다', () => {
-    expect(Object.keys(COLOR_PERSONALITY_TRAITS)).toHaveLength(22);
+  it('승인된 25컬러 성격특징은 4개의 짧은 태그를 제공한다', () => {
+    expect(Object.keys(COLOR_PERSONALITY_TRAITS)).toHaveLength(25);
     for (const traits of Object.values(COLOR_PERSONALITY_TRAITS)) {
       expect(traits).toHaveLength(4);
       for (const trait of traits) {
@@ -50,6 +50,9 @@ describe('COLOR_DATA', () => {
     expect(COLOR_PERSONALITY_TRAITS.white).toEqual(['명료함 추구', '높은 기준', '정돈을 중시함', '완성도를 중요시함']);
     expect(COLOR_PERSONALITY_TRAITS.mint).toEqual(['새로움에 개방적', '전환이 빠름', '산뜻함을 선호', '유연한 적응']);
     expect(COLOR_PERSONALITY_TRAITS.lavender).toEqual(['섬세한 감수성', '내면 지향적', '이상적 관계 추구', '정서적 섬세함']);
+    expect(COLOR_PERSONALITY_TRAITS.sage).toEqual(['분위기를 살핌', '조용한 배려', '자연스러운 조율', '평온한 균형']);
+    expect(COLOR_PERSONALITY_TRAITS.teal).toEqual(['이성·감정 조율', '명료함 추구', '깊이 있는 탐구', '차분한 판단']);
+    expect(COLOR_PERSONALITY_TRAITS.cream).toEqual(['편안함을 중시', '내면 정돈', '신중한 관계 형성', '자기 리듬 중시']);
   });
 });
 

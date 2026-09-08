@@ -69,6 +69,9 @@ export const COLOR_PERSONALITY_TRAITS: Record<string, readonly string[]> = {
   lavender: ['섬세한 감수성', '내면 지향적', '이상적 관계 추구', '정서적 섬세함'],
   peach: ['관계 중심', '감수성 풍부', '정서적 교류 중시', '따뜻한 표현'],
   terracotta: ['현실적인 온기', '단단한 일상 감각', '꾸준한 애정', '안정 속 변화'],
+  sage: ['분위기를 살핌', '조용한 배려', '자연스러운 조율', '평온한 균형'],
+  teal: ['이성·감정 조율', '명료함 추구', '깊이 있는 탐구', '차분한 판단'],
+  cream: ['편안함을 중시', '내면 정돈', '신중한 관계 형성', '자기 리듬 중시'],
 };
 
 export const COLOR_DATA: ColorData[] = [

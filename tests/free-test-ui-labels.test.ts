@@ -73,6 +73,18 @@ describe("무료 3컬러 테스트 역할 표기", () => {
     expect(resultScreen).not.toContain("window.location.href");
   });
 
+  it("개인 결과카드 공유와 친구 초대용 앱 공유를 독립적으로 제공한다", () => {
+    expect(resultScreen).toContain("const handleKakaoShare");
+    expect(resultScreen).toContain("const uri = await captureShareCard()");
+    expect(resultScreen).toContain("const handleShareAppWithFriend");
+    expect(resultScreen).toContain("휴심컬러 친구에게 공유하기");
+    expect(resultScreen).toContain("const APP_START_URL = 'https://husimcolor.vercel.app'");
+    expect(resultScreen).toContain("const APP_SHARE_TITLE = '휴심컬러 – 색으로 읽는 나의 마음'");
+    expect(resultScreen).toContain("25가지 컬러 중 마음이 끌리는 3가지 컬러를 선택하고 지금 나의 마음 흐름을 만나보세요.");
+    expect(resultScreen).toContain("share-app-25-colors.webp");
+    expect(resultScreen).toContain("Clipboard.setStringAsync(APP_START_URL)");
+  });
+
   it("이전 무료 테스트 역할 명칭을 화면 코드에서 사용하지 않는다", () => {
     for (const source of [selectScreen, resultScreen, homeScreen]) {
       expect(source).not.toContain("무의식 / 내면 흐름");
