@@ -21,7 +21,7 @@ import { type ColorData } from "@/constants/colorData";
 import { buildStage2CardInterpretations, buildStage2ColorBridge } from "@/constants/premiumStage2CardInterpretation";
 import { type UserProfile } from "./profile";
 import { trpc } from "@/lib/trpc";
-import { buildLifeEnergyResult, type LifeEnergyResult, type ContextualRoutine } from "@/constants/lifeArchetype";
+import { buildCustomRecoveryRoutine, buildLifeEnergyResult, type LifeEnergyResult } from "@/constants/lifeArchetype";
 import { buildLifeRoleEnergyReport } from "@/constants/lifeRoleEnergy";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
@@ -586,6 +586,12 @@ export default function PremiumResultScreen() {
     [card1, card2, card3].map((c) => ({ color: c.color, shape: c.shape })),
     card3.complementColors,
   );
+  const customRecoveryRoutine = buildCustomRecoveryRoutine(
+    lifeEnergyResult.complementaryFiveElements.elements,
+    card3.wellness,
+    lifeEnergyResult.routines,
+    lifeEnergyResult.currentRoutines,
+  );
   const lifeRoleReport = buildLifeRoleEnergyReport(
     prevColors.length >= 3 ? prevColors.map((color) => color.id) : [card1.color, card2.color, card3.color],
     [card1, card2, card3].map((card) => ({ color: card.color, shape: card.shape })),
@@ -1060,13 +1066,13 @@ export default function PremiumResultScreen() {
             ))}
           </View>
         </View>
-        {/* 보완 루틴 섹션 */}
+        {/* 오늘의 맞춤 회복 루틴 — 보완오행과 현재 흐름을 한 카드에 통합 */}
         <View style={[styles.wellnessSection, { backgroundColor: '#FFF8F0', borderColor: '#E8D5B0' }]}>
           <Text style={[styles.wellnessSectionTitle, { color: '#8B6914' }]}>
-            🌿 오늘의 보완 루틴
+            🌿 오늘의 맞춤 회복 루틴
           </Text>
           <Text style={[styles.wellnessSectionSub, { color: '#A0845C' }]}>
-            보완 컬러 에너지를 생활에 연결하는 회복 행동 가이드입니다
+            보완 에너지를 오늘의 생활 리듬에 연결하는 짧은 회복 안내입니다
           </Text>
           <Text style={[styles.wellnessElementNote, { color: '#8B6914' }]}>
             보완 에너지 · {lifeEnergyResult.complementaryFiveElements.elements.join(' · ')}
@@ -1078,7 +1084,15 @@ export default function PremiumResultScreen() {
             <Text style={styles.wellnessIcon}>🍵</Text>
             <View style={styles.wellnessContent}>
               <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>추천 차</Text>
-              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{card3.wellness.tea}</Text>
+            <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{card3.wellness.tea}</Text>
+          </View>
+          </View>
+          <View style={styles.wellnessDivider} />
+          <View style={styles.wellnessRow}>
+            <Text style={styles.wellnessIcon}>🍚</Text>
+            <View style={styles.wellnessContent}>
+              <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>추천 음식</Text>
+              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{customRecoveryRoutine.food}</Text>
             </View>
           </View>
           <View style={styles.wellnessDivider} />
@@ -1086,49 +1100,29 @@ export default function PremiumResultScreen() {
             <Text style={styles.wellnessIcon}>🌬️</Text>
             <View style={styles.wellnessContent}>
               <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>추천 호흡</Text>
-              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{card3.wellness.breath}</Text>
+              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{customRecoveryRoutine.breath}</Text>
             </View>
           </View>
           <View style={styles.wellnessDivider} />
           <View style={styles.wellnessRow}>
             <Text style={styles.wellnessIcon}>🌱</Text>
             <View style={styles.wellnessContent}>
-              <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>추천 루틴</Text>
-              {card3.wellness.routine.map((item, idx) => (
-                <Text key={idx} style={[styles.wellnessRoutineItem, { color: '#5C4A1E' }]}>
-                  · {sanitizeRecovery(item, profile?.faith ?? '')}
-                </Text>
-              ))}
+              <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>추천 움직임</Text>
+              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{sanitizeRecovery(customRecoveryRoutine.movement, profile?.faith ?? '')}</Text>
             </View>
           </View>
-          {/* 직업별 루틴 노트 - 행동 가이드 보완 */}
-          {jobCoaching && (
-            <View style={styles.jobRoutineNote}>
-              <Text style={[styles.jobRoutineText, { color: '#8B6914' }]}>
-                💡 {jobCoaching.routineNote}
-              </Text>
+          <View style={styles.wellnessDivider} />
+          <View style={styles.wellnessRow}>
+            <Text style={styles.wellnessIcon}>🏡</Text>
+            <View style={styles.wellnessContent}>
+              <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>오늘의 작은 실천</Text>
+              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{sanitizeRecovery(customRecoveryRoutine.smallPractice, profile?.faith ?? '')}</Text>
             </View>
-          )}
-        </View>
-
-        {/* 맞춤 회복 루틴 섹션 — Archetype + 에너지 흐름 조합 */}
-        <View style={[styles.contextualRoutineSection, { backgroundColor: '#F0F4FF', borderColor: '#B8C8F0' }]}>
-          <Text style={[styles.contextualRoutineTitle, { color: '#2A3A6E' }]}>
-            🌱 {lifeEnergyResult.routines.label}
-          </Text>
-          <Text style={[styles.contextualRoutineSub, { color: '#4A5A8E' }]}>
-            지금 나의 에너지 흐름에 맞춘 실천 제안입니다
-          </Text>
-          {lifeEnergyResult.routines.items.map((item, idx) => (
-            <View key={idx} style={styles.contextualRoutineItem}>
-              <Text style={[styles.contextualRoutineDot, { color: '#5B6FB8' }]}>·</Text>
-              <Text style={[styles.contextualRoutineText, { color: '#2A3A6E' }]}>{item}</Text>
-            </View>
-          ))}
-          <View style={[styles.contextualRoutineCoachingBox, { backgroundColor: '#E8EDFF', borderColor: '#B8C8F0' }]}>
-            <Text style={[styles.contextualRoutineCoachingText, { color: '#1A2A5E' }]}>
-              {lifeEnergyResult.routines.coaching}
-            </Text>
+          </View>
+          <View style={styles.wellnessDivider} />
+          <View style={styles.wellnessMessageBox}>
+            <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>💡 오늘의 회복 메시지</Text>
+            <Text style={[styles.wellnessMessageText, { color: '#5C4A1E' }]}>{customRecoveryRoutine.message}</Text>
           </View>
         </View>
 
@@ -2256,6 +2250,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   wellnessValue: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  wellnessMessageBox: {
+    paddingTop: 10,
+    gap: 4,
+  },
+  wellnessMessageText: {
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '500',

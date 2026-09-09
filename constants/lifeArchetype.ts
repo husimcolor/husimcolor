@@ -5,7 +5,7 @@
  * 사용자에게는 자연스러운 코칭 문장으로만 출력합니다.
  */
 
-import type { CardColorType } from './cardData';
+import type { CardColorType, CardData } from './cardData';
 import { COLOR_DATA } from './colorData';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -674,6 +674,16 @@ export interface ContextualRoutine {
   coaching: string;
 }
 
+/** 보완오행과 기존 카드 wellness를 한 카드에 보여주기 위한 짧은 회복 안내 */
+export interface CustomRecoveryRoutine {
+  food: string;
+  tea: string;
+  breath: string;
+  movement: string;
+  smallPractice: string;
+  message: string;
+}
+
 export interface LifeEnergyResult {
   /** 삶의 역할 Archetype 목록 (메인 1개 + 보조 최대 1개) */
   archetypes: LifeArchetype[];
@@ -687,6 +697,8 @@ export interface LifeEnergyResult {
   complementaryFiveElements: FiveElementsResult;
   /** Archetype + 오행 흐름 조합 맞춤 회복 루틴 */
   routines: ContextualRoutine;
+  /** 현재 주요 오행 흐름을 반영한 작은 실천용 기존 루틴 */
+  currentRoutines: ContextualRoutine;
   /** 오행 흐름 유형 (성경구절 매칭용 내부값) */
   flowType: string;
 }
@@ -842,6 +854,46 @@ function buildContextualRoutinesForFlow(
   };
 }
 
+/** 보완오행의 생활 색감에 맞춘 짧은 음식군. 치료·효능 표현 없이 식재료 선택만 안내한다. */
+const COMPLEMENTARY_FOOD_GROUP: Record<OhangElement, string> = {
+  목: '브로콜리·시금치 등 신선한 녹색 채소',
+  화: '토마토·파프리카 등 붉은 채소',
+  토: '단호박·고구마 등 따뜻한 노란 식재료',
+  금: '배·무 등 담백한 흰 식재료',
+  수: '검은콩·검은깨 등 검은 식재료',
+};
+
+const MOVEMENT_KEYWORDS = ['걷기', '산책', '스트레칭', '햇빛', '움직', '걸음', '밖으로'];
+
+function firstMovement(items: string[]): string | undefined {
+  return items.find((item) => MOVEMENT_KEYWORDS.some((keyword) => item.includes(keyword)));
+}
+
+/**
+ * 현재 주요 오행은 작은 실천에, 보완오행은 음식·차·호흡·움직임·회복 메시지에 연결한다.
+ * 차·호흡·움직임·생활 문장은 기존 3번 카드 wellness와 ContextualRoutine만 재사용한다.
+ */
+export function buildCustomRecoveryRoutine(
+  complementaryElements: OhangElement[],
+  wellness: CardData['wellness'],
+  complementaryRoutines: ContextualRoutine,
+  currentRoutines: ContextualRoutine,
+): CustomRecoveryRoutine {
+  const primaryComplement = complementaryElements[0] ?? '토';
+  const complementaryItems = [...wellness.routine, ...complementaryRoutines.items];
+  const movement = firstMovement(complementaryItems) ?? complementaryItems[0] ?? '오늘 몸이 편한 속도로 잠시 움직이기';
+  const smallPractice = currentRoutines.items.find((item) => item !== movement) ?? currentRoutines.items[0] ?? '오늘 나에게 필요한 한 가지를 천천히 해보기';
+
+  return {
+    food: COMPLEMENTARY_FOOD_GROUP[primaryComplement],
+    tea: wellness.tea,
+    breath: wellness.breath,
+    movement,
+    smallPractice,
+    message: complementaryRoutines.coaching,
+  };
+}
+
 /** 기존 단일 오행 점수 기반 흐름 루틴. 다른 기존 호출 경로와 호환을 유지한다. */
 export function buildContextualRoutines(
   archetypes: LifeArchetype[],
@@ -894,6 +946,7 @@ export function buildLifeEnergyResult(
   // 현재 주요 오행은 몸·마음 흐름에, 보완오행은 회복 루틴에만 사용한다.
   const energyFlow = interpretEnergyFlow(currentFiveElements.score);
   const routines = buildComplementaryContextualRoutines(archetypes, complementaryFiveElements.elements);
+  const currentRoutines = buildContextualRoutines(archetypes, currentFiveElements.score);
   // 오행 흐름 유형 계산 (성경구절 매칭용)
   const dom = (Object.keys(currentFiveElements.score) as Array<keyof typeof currentFiveElements.score>).reduce((a, b) =>
     currentFiveElements.score[a] >= currentFiveElements.score[b] ? a : b
@@ -908,5 +961,5 @@ export function buildLifeEnergyResult(
     else if (dom === '금') flowType = '예민';
     else if (dom === '목') flowType = '성장';
   }
-  return { archetypes, archetypeCoaching, energyFlow, currentFiveElements, complementaryFiveElements, routines, flowType };
+  return { archetypes, archetypeCoaching, energyFlow, currentFiveElements, complementaryFiveElements, routines, currentRoutines, flowType };
 }
