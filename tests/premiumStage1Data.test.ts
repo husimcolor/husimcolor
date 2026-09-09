@@ -19,6 +19,12 @@ function hasSharedLongPhrase(left: string, right: string): boolean {
   return [...wordTrigrams(right)].some((phrase) => leftPhrases.has(phrase));
 }
 
+const ABSTRACT_OUTPUT_PATTERNS = /마음이 남는|마음의 여유|내면의 여백|마음의 속도를 따라|한쪽에 부담이 쏠리지|마음과 현실이 함께 갈|마음의 온도|정서적 거리|흐름이 함께 보이|힘을 이어주|답답했던 답답함/;
+
+function lastWord(tag: string): string {
+  return tag.trim().split(/\s+/).at(-1) ?? tag;
+}
+
 describe('유료 심화 1단계 컬러 에너지 흐름', () => {
   it('25컬러 모두 역할별 조합 프로필을 제공한다', () => {
     expect(Object.keys(PREMIUM_STAGE1_PROFILES)).toHaveLength(25);
@@ -56,6 +62,8 @@ describe('유료 심화 1단계 컬러 에너지 흐름', () => {
           expect(result.growthPossibility).toHaveLength(3);
           expect(result.growthPossibility.every((pattern) => pattern.endsWith('편'))).toBe(true);
           expect(new Set(result.growthPossibility).size).toBe(3);
+          expect(new Set(result.strengths.map(lastWord)).size).toBe(4);
+          expect(result.strengths.join(' ')).not.toMatch(/태도|성향/);
           expect(result.psychologyTendency).not.toBe(result.personalityTendency);
           expect(result.personalityTendency).not.toBe(result.relationshipTendency);
           expect(hasSharedLongPhrase(result.integrationBridge, result.psychologyTendency)).toBe(false);
@@ -66,6 +74,15 @@ describe('유료 심화 1단계 컬러 에너지 흐름', () => {
           expect(hasSharedLongPhrase(result.personalityTendency, result.relationshipTendency)).toBe(false);
           expect(result.psychologyTendency).not.toMatch(/무의식|내면에서는|회복 방향|지금은/);
           expect(result.growthPossibility.join(' ')).not.toMatch(/해보세요|해야 합니다|연습이 필요/);
+          expect([
+            result.integrationBridge,
+            result.psychologyTendency,
+            result.personalityTendency,
+            result.relationshipTendency,
+            result.strengths.join(' '),
+            result.growthPossibility.join(' '),
+            ...result.miniInterpretations.flatMap((mini) => [mini.description, ...mini.strengths, ...mini.tiredStates]),
+          ].join(' ')).not.toMatch(ABSTRACT_OUTPUT_PATTERNS);
         }
       }
     }
@@ -80,7 +97,7 @@ describe('유료 심화 1단계 컬러 에너지 흐름', () => {
     expect(result.miniInterpretations[0].keywords).toHaveLength(3);
     expect(result.miniInterpretations[0].description).toContain('마음의 작은 변화를 세심하게 느끼는');
     expect(result.miniInterpretations[0].tiredStates).toEqual(['생각이 많아짐', '감정 소모']);
-    expect(result.integrationBridge).toContain('작은 마음의 변화를 놓치지 않는 감각');
+    expect(result.integrationBridge).toContain('상대가 편한지 세심하게 살피고');
     expect(result.growthPossibility).toHaveLength(3);
     expect(result.growthPossibility).not.toContain('혼자만의 시간');
     expect(result.relationshipTendency).toContain('말하지 않은 마음까지 이해하고 싶어 합니다');
@@ -96,7 +113,7 @@ describe('유료 심화 1단계 컬러 에너지 흐름', () => {
       '분명한 추진력',
       '깊은 성찰',
       '자기 리듬 유지',
-      '속도를 다루는 힘',
+      '급한 일도 순서를 잡는 힘',
     ]);
     expect(result.growthPossibility).toContain('일이 급하면 속도를 먼저 내는 편');
     expect(result.growthPossibility).toContain('혼자 생각하느라 대화를 미루는 편');
