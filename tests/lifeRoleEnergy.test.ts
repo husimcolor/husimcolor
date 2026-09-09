@@ -22,6 +22,13 @@ describe("삶의 역할 에너지", () => {
     expect(result.coreRole.description).toContain("강점");
     expect(result.directions.length).toBeGreaterThanOrEqual(3);
     expect(result.directions.length).toBeLessThanOrEqual(5);
+    for (const direction of result.directions) {
+      expect(direction.description).toMatch(/활용될 수 있습니다\.|힘을 보탤 수 있습니다\.|좋은 바탕이 될 수 있습니다\.|특히 도움이 됩니다\./);
+      expect(direction.preparation).toBeTruthy();
+      expect(direction.description.length).toBeLessThanOrEqual(90);
+      expect(direction.preparation!.length).toBeLessThanOrEqual(90);
+    }
+    expect(new Set(result.directions.map((direction) => direction.description.split(" ")[0])).size).toBeGreaterThanOrEqual(3);
     expect(result.humanStrengths).toHaveLength(3);
     expect(result.environments).toHaveLength(3);
     expect(result.shadows).toHaveLength(2);
@@ -38,6 +45,8 @@ describe("삶의 역할 에너지", () => {
       inExploration.smallDirection,
       inExperienceTransfer.coreRole.description,
       inExperienceTransfer.smallDirection,
+      ...inExploration.directions.flatMap((direction) => [direction.description, direction.preparation ?? ""]),
+      ...inExperienceTransfer.directions.flatMap((direction) => [direction.description, direction.preparation ?? ""]),
     ].join(" ");
 
     expect(inExploration.coreRole.description).not.toBe(inExperienceTransfer.coreRole.description);
@@ -66,8 +75,15 @@ describe("삶의 역할 에너지", () => {
     expect(new Set(roles).size).toBeGreaterThanOrEqual(4);
   });
 
+  it("includes a distinct supporting-role direction when two social-role signals are present", () => {
+    const result = report(["navy", "white", "yellow"], ["navy_diamond", "white_square", "yellow_triangle"]);
+    expect(result.sourceSummary.supportingRole).toBeTruthy();
+    expect(result.directions).toHaveLength(4);
+    expect(result.directions.map((direction) => direction.title)).toContain("전문 분야 자문·컨설팅");
+  });
+
   it("does not frame the report as a fixed occupation or guaranteed outcome", () => {
-    const forbidden = /반드시 맞는 직업|확실히 성공|직업을 그만두|전직해야|AI가 대체할 수 없/;
+    const forbidden = /반드시 맞는 직업|확실히 성공|직업을 그만두|전직해야|AI가 대체할 수 없|취업 보장|성공을 보장/;
 
     for (const colors of [
       ["red", "orange", "gold"],

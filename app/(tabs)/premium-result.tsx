@@ -992,6 +992,7 @@ export default function PremiumResultScreen() {
               <View key={direction.title} style={styles.lifeRoleDirectionRow}>
                 <Text style={[styles.lifeRoleDirectionTitle, { color: '#4A2E7A' }]}>{direction.title}</Text>
                 <Text style={[styles.lifeRoleDirectionDesc, { color: '#6B4E9A' }]}>{direction.description}</Text>
+                <Text style={[styles.lifeRolePreparationText, { color: '#765B9E' }]}>준비 방향 · {direction.preparation}</Text>
               </View>
             ))}
           </View>
@@ -2021,6 +2022,12 @@ const styles = StyleSheet.create({
   lifeRoleDirectionDesc: {
     fontSize: 13,
     lineHeight: 19,
+  },
+  lifeRolePreparationText: {
+    marginTop: 5,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '600',
   },
   lifeRoleEnvironmentList: {
     gap: 6,

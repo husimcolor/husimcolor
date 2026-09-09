@@ -4,6 +4,7 @@ import type { LifeArchetypeKey } from "./lifeArchetype";
 type RoleDirection = {
   title: string;
   description: string;
+  preparation?: string;
 };
 
 type RoleProfile = {
@@ -210,6 +211,96 @@ const AGE_CONTEXT: Record<string, string> = {
   "60대 이상": "삶에서 익힌 감각을 다른 사람과 나누는 과정에서",
 };
 
+const ROLE_SOCIAL_VALUE: Record<LifeArchetypeKey, string> = {
+  connector: "서로 다른 요구를 맞추는 강점이",
+  healer: "사람이 막히는 지점을 알아차리는 힘이",
+  analyst: "복잡한 내용을 핵심으로 바꾸는 판단력이",
+  leader: "우선순위를 실행으로 옮기는 힘이",
+  artist: "익숙한 경험을 새롭게 전달하는 감각이",
+  expert: "쌓인 경험을 믿을 만한 안내로 바꾸는 힘이",
+};
+
+const DIRECTION_PREPARATION: Record<string, string> = {
+  "협업·운영 조율": "작은 공동 작업에서 역할표와 진행 기록을 만들어 보는 경험이 도움이 됩니다.",
+  "고객 경험·서비스 지원": "사용 후기 하나를 불편·원인·개선안으로 나누어 적어 보는 연습을 해보세요.",
+  "커뮤니티·관계 프로그램": "관심 분야 모임의 운영 보조나 행사 지원으로 현장 흐름을 경험해 볼 수 있습니다.",
+  "교육·안내·멘토링": "안내 자료 하나를 쉬운 말로 다시 써 보거나 관련 교육 과정을 살펴보세요.",
+  "교육·성장 지원": "교육 보조나 멘토링 경험부터 쌓아보고, 필요하면 관련 교육 요건을 확인해 보세요.",
+  "고객 지원·사용자 경험": "자주 듣는 불편을 기록해 보고, 서비스 관련 교육이나 현장 경험을 차근차근 넓혀 보세요.",
+  "돌봄·복지 협력": "지역 기관과 프로그램의 역할을 살피고, 필요하면 관련 교육·자격 기준을 확인해 보세요.",
+  "상담·코칭 보조 분야": "처음부터 독립 역할을 목표로 하기보다, 교육·자격 요건을 확인하며 현장 경험을 쌓아 보세요.",
+  "기획·전략": "작은 과제를 목표·조건·선택지로 나누어 보는 연습으로 판단의 근거를 쌓아 보세요.",
+  "운영 개선·프로세스 설계": "반복되는 과정 하나를 관찰하고, 더 편한 순서를 한 장으로 정리해 보세요.",
+  "리서치·분석": "관심 주제의 자료를 출처별로 비교해 보는 습관부터 가볍게 만들어 보세요.",
+  "전문 지식 콘텐츠": "설명할 수 있는 경험 하나를 짧은 글이나 체크리스트로 남겨 보세요.",
+  "프로젝트·운영 기획": "작은 프로젝트에서 일정과 역할을 맡아 보며 진행 감각을 익혀 보세요.",
+  "서비스·사업 개선": "사용자가 멈칫한 장면 하나를 기록하고, 바꿔 볼 점을 한 줄로 적어 보세요.",
+  "팀·조직 운영": "회의나 공동 작업에서 목표와 다음 할 일을 한 번 정리해 보는 경험을 쌓아 보세요.",
+  "현장 실행·조정": "현장에서 자주 생기는 문제 하나를 골라 필요한 사람·도구·순서를 적어 보세요.",
+  "콘텐츠·브랜드 제작": "관심 있는 주제로 짧은 글·이미지·영상 중 한 가지 결과물을 꾸준히 만들어 보세요.",
+  "경험 기획": "좋았던 공간이나 서비스 경험 하나를 관찰하고, 기억에 남은 이유를 기록해 보세요.",
+  "디자인·기획 협업": "아이디어를 말·그림·간단한 화면 중 편한 방식으로 공유하는 연습을 해보세요.",
+  "문화·교육 콘텐츠": "좋아하는 주제를 다른 사람이 이해할 수 있게 3분 설명으로 바꿔 보세요.",
+  "전문 분야 자문·컨설팅": "기존 경험에서 자주 해결한 문제와 방법을 사례 노트로 정리해 보세요.",
+  "교육·지식 전달": "내가 익힌 방법 하나를 짧은 안내문이나 체크리스트로 바꿔 보세요.",
+  "품질·검토·자문": "결과물을 볼 때 쓰는 나만의 점검 기준을 5개 안으로 적어 보세요.",
+  "전문 콘텐츠·기록": "오래 쌓인 사례 중 다른 사람에게 도움이 될 한 가지를 기록으로 남겨 보세요.",
+};
+
+const DIRECTION_WORK_CONTEXT: Record<string, string> = {
+  "협업·운영 조율": "팀과 고객, 현장의 요청을 이어 실제 진행을 돕는 업무에",
+  "고객 경험·서비스 지원": "이용 흐름을 살피고 불편을 줄이는 지원 업무에",
+  "커뮤니티·관계 프로그램": "같은 관심사를 가진 이들이 꾸준히 만나는 활동에",
+  "교육·안내·멘토링": "알고 있는 내용을 상대가 이해하기 쉬운 말로 전하는 역할에",
+  "교육·성장 지원": "배움과 적응의 과정을 곁에서 돕는 역할에",
+  "고객 지원·사용자 경험": "사람이 실제로 겪는 불편을 듣고 서비스 경험을 개선하는 일에",
+  "돌봄·복지 협력": "지역과 조직 안에서 필요한 지원을 연결하는 역할에",
+  "상담·코칭 보조 분야": "전문가와 함께 변화 과정을 지원하는 보조 역할에",
+  "기획·전략": "다음 방향을 정하는 업무에",
+  "운영 개선·프로세스 설계": "일의 순서를 더 매끄럽게 고치는 업무에",
+  "리서치·분석": "현장의 판단을 돕는 일에",
+  "전문 지식 콘텐츠": "자료와 경험을 누구나 이해할 수 있게 전하는 일에",
+  "프로젝트·운영 기획": "목표와 일정을 세우고 여러 일을 실제로 진행시키는 역할에",
+  "서비스·사업 개선": "불편한 지점을 다음 개선안으로 바꾸는 업무에",
+  "팀·조직 운영": "구성원이 같은 목표를 향해 움직일 수 있게 돕는 역할에",
+  "현장 실행·조정": "상황에 맞춰 필요한 사람과 자원을 연결하는 업무에",
+  "콘텐츠·브랜드 제작": "사람에게 닿는 이야기를 글·이미지·영상으로 만드는 일에",
+  "경험 기획": "공간·서비스·행사에서 사람의 동선을 설계하는 업무에",
+  "디자인·기획 협업": "아이디어를 실제 화면이나 자료로 이어가는 협업에",
+  "문화·교육 콘텐츠": "감각과 경험을 배움의 자료로 전하는 일에",
+  "전문 분야 자문·컨설팅": "쌓아 온 경험을 바탕으로 문제를 함께 검토하는 역할에",
+  "교육·지식 전달": "현장에서 익힌 방법을 안내서나 프로그램으로 전하는 역할에",
+  "품질·검토·자문": "결과의 완성도와 위험 요소를 꼼꼼히 점검하는 업무에",
+  "전문 콘텐츠·기록": "오래 쌓은 지식과 사례를 다른 사람이 활용할 수 있게 남기는 일에",
+};
+
+const DIRECTION_VALUE_CONTEXT: Record<string, string> = {
+  "협업·운영 조율": "서로 다른 요구를 맞추는 힘이",
+  "고객 경험·서비스 지원": "사람이 막히는 지점을 알아차리는 감각이",
+  "커뮤니티·관계 프로그램": "함께 움직일 계기를 만드는 강점이",
+  "교육·안내·멘토링": "어려운 내용을 쉽게 풀어내는 설명력이",
+  "교육·성장 지원": "변화 속도를 살펴 곁을 지키는 힘이",
+  "고객 지원·사용자 경험": "상대의 불편을 구체적으로 듣는 태도가",
+  "돌봄·복지 협력": "필요한 도움을 빠뜨리지 않고 잇는 힘이",
+  "상담·코칭 보조 분야": "작은 변화를 오래 지켜보는 성실함이",
+  "기획·전략": "기준을 세우는 판단력이",
+  "운영 개선·프로세스 설계": "흩어진 과정을 알기 쉬운 흐름으로 바꾸는 힘이",
+  "리서치·분석": "필요한 단서를 찾는 능력이",
+  "전문 지식 콘텐츠": "알아낸 내용을 쉬운 말로 풀어내는 설명력이",
+  "프로젝트·운영 기획": "우선순위를 실제 일정으로 옮기는 추진력이",
+  "서비스·사업 개선": "달라진 점을 실제 행동으로 옮기는 실행력이",
+  "팀·조직 운영": "사람과 일을 같은 방향으로 묶는 조정력이",
+  "현장 실행·조정": "상황에 맞춰 필요한 자원을 골라 쓰는 감각이",
+  "콘텐츠·브랜드 제작": "사람의 시선을 붙잡는 표현력이",
+  "경험 기획": "평범한 경험에 새로운 의미를 더하는 감각이",
+  "디자인·기획 협업": "생각을 결과물로 옮기는 창의력이",
+  "문화·교육 콘텐츠": "경험을 배움의 언어로 바꾸는 전달력이",
+  "전문 분야 자문·컨설팅": "쌓인 경험에서 실마리를 찾는 통찰이",
+  "교육·지식 전달": "익힌 방법을 다른 사람의 언어로 풀어내는 힘이",
+  "품질·검토·자문": "놓치기 쉬운 위험을 짚어내는 꼼꼼함이",
+  "전문 콘텐츠·기록": "사례를 오래 쓸 수 있는 자료로 남기는 힘이",
+};
+
 /**
  * 삶의 역할에서는 기존 몸·감정 흐름용 유형 점수와 별도로, 컬러의 사회적 표현과 카드의 역할을 함께 읽는다.
  * 두 번째 후보도 충분히 반영해 특정 직업군으로 일괄 수렴하지 않도록 한다.
@@ -274,10 +365,27 @@ function deterministicIndex(seed: string, length: number): number {
 function pickDirections(primary: LifeArchetypeKey, supporting?: LifeArchetypeKey): RoleDirection[] {
   const primaryDirections = [...ROLE_PROFILES[primary].directions];
   const supportingDirections = supporting ? ROLE_PROFILES[supporting].directions : [];
-  const unique = [...primaryDirections, ...supportingDirections].filter(
+  const candidates = supporting && supporting !== primary
+    ? [primaryDirections[0], primaryDirections[1], supportingDirections[0], primaryDirections[2]]
+    : primaryDirections.slice(0, 3);
+  const unique = candidates.filter((item): item is RoleDirection => Boolean(item)).filter(
     (item, index, list) => list.findIndex((candidate) => candidate.title === item.title) === index,
   );
   return unique.slice(0, supporting && supporting !== primary ? 4 : 3);
+}
+
+function buildPracticalDirections(primary: LifeArchetypeKey, supporting?: LifeArchetypeKey): RoleDirection[] {
+  const socialValue = ROLE_SOCIAL_VALUE[primary];
+  const directionEndings = ["활용될 수 있습니다.", "힘을 보탤 수 있습니다.", "좋은 바탕이 될 수 있습니다.", "특히 도움이 됩니다."];
+  return pickDirections(primary, supporting).map((direction, index) => {
+    const workContext = DIRECTION_WORK_CONTEXT[direction.title] ?? "내 강점을 현실의 문제 해결에 쓰는 일에";
+    const directionValue = DIRECTION_VALUE_CONTEXT[direction.title] ?? socialValue;
+    return {
+      ...direction,
+      description: `${directionValue} ${workContext} ${directionEndings[index % directionEndings.length]}`,
+      preparation: DIRECTION_PREPARATION[direction.title] ?? "작은 경험을 기록하며 나에게 맞는 방식인지 천천히 확인해 보세요.",
+    };
+  });
 }
 
 function getThirdEnvironment(existing: readonly string[], shape: string): string {
@@ -324,7 +432,7 @@ export function buildLifeRoleEnergyReport(
       description: `${profile.coreDescription} ${firstRolePhrase}이 바탕이 되고, ${secondRolePhrase}이 그 힘을 사회에서 드러내는 데 보탬이 됩니다. ${ageContext} 특히 잘 쓸 수 있는 자원입니다.`,
     },
     humanStrengths: [...profile.humanStrengths],
-    directions: pickDirections(primaryRole, supportingRole),
+    directions: buildPracticalDirections(primaryRole, supportingRole),
     environments: [...profile.environments, futureEnvironment],
     shadows: [...profile.shadows],
     smallDirection: profile.smallAction,
