@@ -125,7 +125,7 @@ describe('유료 심화 1단계 컬러 에너지 흐름', () => {
     expect(result.integrationBridge).toContain('상대가 편한지 세심하게 살피고');
     expect(result.growthPossibility).toHaveLength(3);
     expect(result.growthPossibility).not.toContain('혼자만의 시간');
-    expect(result.relationshipTendency).toContain('말하지 않은 마음까지 이해하고 싶어 합니다');
+    expect(result.relationshipTendency).toMatch(/말하지 않은 (마음|속생각)까지 이해하고 싶어 합니다/);
   });
 
   it('대표 조합에서 융합 강점과 3개의 생활 패턴을 역할별로 생성한다', () => {
@@ -166,5 +166,22 @@ describe('유료 심화 1단계 컬러 에너지 흐름', () => {
 
     expect(thirdDirections.every(Boolean)).toBe(true);
     expect(new Set(thirdDirections).size).toBe(COLOR_DATA.length);
+  });
+
+  it('3번 컬러는 심리·성격·관계 영역에도 고유한 안정·행동·친밀 방식으로 반영된다', () => {
+    const primary = COLOR_DATA.find((color) => color.id === 'black')!;
+    const support = COLOR_DATA.find((color) => color.id === 'white')!;
+    const results = COLOR_DATA.map((third) =>
+      buildPremiumStage1Interpretation([primary, support, third]),
+    );
+
+    expect(new Set(results.map((result) => result.psychologyTendency)).size).toBe(COLOR_DATA.length);
+    expect(new Set(results.map((result) => result.personalityTendency)).size).toBe(COLOR_DATA.length);
+    expect(new Set(results.map((result) => result.relationshipTendency)).size).toBe(COLOR_DATA.length);
+
+    const yellow = results[COLOR_DATA.findIndex((color) => color.id === 'yellow')];
+    expect(yellow.psychologyTendency).toMatch(/궁금|답답/);
+    expect(yellow.personalityTendency).toMatch(/정보|다음 단계/);
+    expect(yellow.relationshipTendency).toMatch(/궁금|생각/);
   });
 });

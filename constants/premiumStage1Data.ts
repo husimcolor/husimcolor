@@ -300,7 +300,7 @@ const NARRATIVE_DIRECTION: Record<BalanceDirection, string> = {
 const THIRD_COLOR_DIRECTION: Record<string, string> = {
   red: "마지막까지 해낼 수 있는 속도를 찾습니다",
   orange: "즐겁게 이어 갈 수 있는 자리를 고릅니다",
-  yellow: "생각이 정리된 뒤 다음 선택을 합니다",
+  yellow: "이해가 되면 다음 선택으로 넘어갑니다",
   green: "모두가 무리 없는 방향을 찾습니다",
   blue: "오래 지킬 수 있는 방식을 택합니다",
   indigo: "스스로 납득되는 결론을 따릅니다",
@@ -323,6 +323,93 @@ const THIRD_COLOR_DIRECTION: Record<string, string> = {
   sage: "시끄럽고 복잡하지 않은 쪽을 고릅니다",
   teal: "기준이 분명할 때 생각이 정리됩니다",
   cream: "내가 감당할 수 있는 속도로 일을 이어갑니다",
+};
+
+/** 3번 컬러가 내면의 안정 조건으로 남기는 고유한 결을 반영한다. */
+const THIRD_COLOR_PSYCHOLOGY: Record<string, string> = {
+  red: "해낸 일이 눈에 보일 때 자신감이 생깁니다",
+  orange: "가볍게 웃을 수 있을 때 기분이 살아납니다",
+  yellow: "궁금한 점이 풀릴 때 답답함이 줄어듭니다",
+  green: "생활이 무리 없이 돌아갈 때 숨이 놓입니다",
+  blue: "계획한 일이 꾸준히 이어질 때 안심합니다",
+  indigo: "이유가 납득될 때 생각이 가라앉습니다",
+  violet: "중요하게 여기는 뜻이 보일 때 힘이 납니다",
+  pink: "따뜻한 말을 들을 때 기분이 풀립니다",
+  magenta: "진심을 숨기지 않아도 될 때 긴장이 풀립니다",
+  coral: "웃을 일이 생기면 기분이 금방 살아납니다",
+  gold: "해낸 일이 눈에 보일 때 만족을 느낍니다",
+  brown: "익숙한 일상이 이어질 때 든든합니다",
+  beige: "부드러운 자리에서 숨이 놓입니다",
+  white: "해야 할 일이 정돈되면 머리가 맑아집니다",
+  black: "내 선이 지켜질 때 긴장이 풀립니다",
+  silver: "한걸음 떨어져 생각할 때 판단이 또렷해집니다",
+  olive: "여러 선택이 고르게 맞을 때 안심합니다",
+  mint: "방식을 바꿀 여지가 있을 때 답답함이 줄어듭니다",
+  skyblue: "넓게 생각할 틈이 있을 때 기분이 가벼워집니다",
+  lavender: "작은 변화를 천천히 받아들일 때 안정됩니다",
+  peach: "다정한 말을 들을 때 표정이 풀립니다",
+  terracotta: "손에 익은 일을 해낼 때 든든합니다",
+  sage: "소란이 잦아들면 기운이 돌아옵니다",
+  teal: "핵심이 분명해지면 생각이 가벼워집니다",
+  cream: "일정을 너무 빽빽하게 잡지 않을 때 숨이 놓입니다",
+};
+
+/** 3번 컬러가 실제 선택·일 처리의 마무리에 더하는 고유한 방식을 반영한다. */
+const THIRD_COLOR_ACTION: Record<string, string> = {
+  red: "마지막 고비에서도 추진력을 잃지 않습니다",
+  orange: "분위기를 살릴 수 있는 방법을 더합니다",
+  yellow: "필요한 정보를 모은 뒤 다음 단계로 갑니다",
+  green: "과정이 오래 갈 수 있도록 속도를 맞춥니다",
+  blue: "계획한 일을 끝까지 해낼 수 있는 방법을 고릅니다",
+  indigo: "겉보다 이유를 짚어 본 뒤 결론을 냅니다",
+  violet: "자기다운 방법으로 생각을 풀어냅니다",
+  pink: "호의가 한쪽으로 쏠리지 않게 조절합니다",
+  magenta: "중요한 부분에 힘을 모아 끝까지 밀고 갑니다",
+  coral: "반응이 살아나는 쪽으로 일을 풀어갑니다",
+  gold: "목표에 닿았는지 점검하며 마무리합니다",
+  brown: "생활에 바로 이어질 수 있게 일을 마무리합니다",
+  beige: "부담이 덜한 순서를 골라 진행합니다",
+  white: "빠진 일이 없는지 점검하며 끝냅니다",
+  black: "내가 감당할 수 있는 범위에서 선을 정합니다",
+  silver: "여러 경우를 비교해 더 나은 쪽을 고릅니다",
+  olive: "엇갈린 조건을 고르게 맞춰 마무리합니다",
+  mint: "한 가지 방법에 묶이지 않고 선택지를 바꿉니다",
+  skyblue: "새 길을 남겨 둔 채 다음으로 넘어갑니다",
+  lavender: "생각할 틈을 남겨 두고 급하게 결론 내리지 않습니다",
+  peach: "말 한마디가 거칠어지지 않게 표현을 고릅니다",
+  terracotta: "평소 리듬이 크게 흔들리지 않게 이어 갑니다",
+  sage: "복잡한 일은 단순한 순서부터 잡습니다",
+  teal: "핵심부터 짚어 결론을 냅니다",
+  cream: "내 리듬에 맞춰 일을 나누어 처리합니다",
+};
+
+/** 3번 컬러가 가까운 관계에서 드러내는 고유한 거리·신뢰·소통 방식을 반영한다. */
+const THIRD_COLOR_RELATION: Record<string, string> = {
+  red: "서로의 의도를 분명히 알 때 가까워집니다",
+  orange: "함께 웃고 반응을 나눌 때 금방 친해집니다",
+  yellow: "관심 있는 주제를 나누며 이야기를 이어갑니다",
+  green: "약속을 지키고 무리 없는 거리를 둘 때 오래 갑니다",
+  blue: "말보다 꾸준한 행동에서 신뢰를 느낍니다",
+  indigo: "겉도는 말보다 깊이 있는 이야기에 끌립니다",
+  violet: "생각의 의미를 나눌 수 있을 때 마음을 엽니다",
+  pink: "서로 챙기는 마음이 자연스러울 때 친밀해집니다",
+  magenta: "진심이 통한다고 느끼는 관계에 오래 힘을 씁니다",
+  coral: "따뜻한 반응이 오갈 때 거리감이 줄어듭니다",
+  gold: "서로의 노력을 인정할 때 믿음이 깊어집니다",
+  brown: "필요한 때 곁을 지키는 사람을 믿습니다",
+  beige: "부담 없이 말을 건넬 수 있는 관계를 좋아합니다",
+  white: "약속과 역할이 분명할 때 신뢰가 생깁니다",
+  black: "서로의 선을 존중하는 사람에게 천천히 다가갑니다",
+  silver: "필요한 거리를 지키며 서서히 가까워집니다",
+  olive: "서로 다른 생각도 고르게 나눌 수 있기를 바랍니다",
+  mint: "가볍게 이야기하며 자연스럽게 친해집니다",
+  skyblue: "새로운 이야기를 함께할 때 관계가 넓어집니다",
+  lavender: "말하지 않아도 헤아려주는 사람에게 편해집니다",
+  peach: "다정한 말 한마디에 친밀감을 느낍니다",
+  terracotta: "꾸준히 안부를 나누며 관계를 이어갑니다",
+  sage: "조용히 곁에 있어 주는 관계를 소중히 여깁니다",
+  teal: "생각을 분명히 말할 수 있을 때 오해가 줄어듭니다",
+  cream: "서두르지 않아도 되는 관계에서 오래 편해집니다",
 };
 
 const PSYCHOLOGY_VALUE: Record<PrimaryMotive, string> = {
@@ -519,6 +606,9 @@ function countMatches(text: string, pattern: RegExp): number {
 /** 한 문장 안에서 같은 어근·부사가 이어지는 경우만 자연스럽게 바꾼다. */
 function softenInternalRepetition(text: string): string {
   return text
+    .replace(/궁금한 점은 끝까지 확인하고 궁금한 점을 직접 확인해 보는/g, "궁금한 점을 끝까지 파고들며 직접 해 보는")
+    .replace(/이야기를 이어갑니다\. 관심 있는 주제를 나누며 이야기를 이어갑니다/g, "대화를 이어갑니다. 관심 있는 주제는 함께 찾아봅니다")
+    .replace(/정리하는 편입니다\. 생각이 정리된 뒤/g, "정리하는 편입니다. 생각이 가라앉은 뒤")
     .replace(/먼저([^.!?]{0,80})먼저/g, (_match, between: string) => `먼저${between}차분히`)
     .replace(/살피고([^.!?]{0,80})살피는/g, (_match, between: string) => `살피고${between}헤아리는`)
     .replace(/확인하고([^.!?]{0,80})확인하는/g, (_match, between: string) => `확인하고${between}살펴보는`);
@@ -553,16 +643,128 @@ function diversifyRepeatedVocabulary(candidate: string, previousSections: string
       .replace(/균형을/g, "고른 방향을")
       .replace(/균형이/g, "조화가");
   }
-  if (countMatches(combined, /마음/g) >= 5) {
+  if (countMatches(combined, /마음/g) >= 3) {
     diversified = diversified
+      .replace(/마음에 맞고 현실적으로도 가능한/g, "현실적으로도 가능한")
       .replace(/내 마음을/g, "내 생각을")
+      .replace(/내 마음에 맞는/g, "내 뜻에 맞는")
+      .replace(/마음에 맞지 않으면/g, "내 뜻에 맞지 않으면")
       .replace(/마음에 맞는/g, "내 뜻에 맞는")
       .replace(/마음이 불편하지 않게/g, "찜찜하지 않게")
       .replace(/마음을 엽니다/g, "경계를 풉니다")
+      .replace(/마음을 보이는/g, "속을 보이는")
+      .replace(/마음을 쉽게 말하지/g, "속얘기를 쉽게 꺼내지")
       .replace(/마음을 전합니다/g, "고마움을 전합니다")
       .replace(/마음을 꺼냅니다/g, "생각을 말합니다")
+      .replace(/마음을 표현합니다/g, "뜻을 전합니다")
       .replace(/속마음을/g, "속얘기를")
-      .replace(/마음이 오래 쓰이는/g, "신경이 오래 쓰이는");
+      .replace(/마음이 오래 쓰이는/g, "신경이 오래 쓰이는")
+      .replace(/마음의 바람을/g, "내 바람을")
+      .replace(/마음까지/g, "속생각까지")
+      .replace(/마음이 복잡하면/g, "생각이 얽히면");
+  }
+  if (countMatches(combined, /먼저/g) >= 3) {
+    diversified = diversified
+      .replace(/을 먼저/g, "을 우선")
+      .replace(/이 먼저/g, "이 앞서")
+      .replace(/먼저 하는/g, "앞세우는")
+      .replace(/먼저 떠올립니다/g, "우선 떠올립니다")
+      .replace(/먼저 찾아/g, "우선 찾아")
+      .replace(/먼저 자리를/g, "부담 없는 자리를")
+      .replace(/먼저 안부를/g, "안부를")
+      .replace(/먼저/g, "우선");
+  }
+  if (countMatches(combined, /정리/g) >= 3) {
+    diversified = diversified
+      .replace(/정리가 될 때까지/g, "생각이 가라앉을 때까지")
+      .replace(/정리할 시간이/g, "생각을 가다듬을 시간이")
+      .replace(/생각이 정리되어야/g, "생각이 가라앉아야")
+      .replace(/생각을 정리합니다/g, "생각을 가다듬습니다")
+      .replace(/정리해야/g, "정돈해야")
+      .replace(/정리하며/g, "가다듬으며")
+      .replace(/정리하는/g, "가다듬는")
+      .replace(/정리합니다/g, "가다듬습니다")
+      .replace(/정리해/g, "가다듬어")
+      .replace(/정리한/g, "가다듬은")
+      .replace(/정리된/g, "정돈된")
+      .replace(/정리력/g, "구조화 감각")
+      .replace(/정리 능력/g, "정돈력");
+  }
+  if (countMatches(combined, /기준/g) >= 3) {
+    diversified = diversified
+      .replace(/내 기준/g, "내 원칙")
+      .replace(/기준과/g, "원칙과")
+      .replace(/정한 기준/g, "세운 원칙")
+      .replace(/기준이/g, "원칙이")
+      .replace(/기준을/g, "판단의 선을")
+      .replace(/기준에/g, "눈높이에");
+  }
+  if (countMatches(combined, /확인/g) >= 2) {
+    diversified = diversified
+      .replace(/진심이 확인될 때까지/g, "진심을 알기 전에는")
+      .replace(/확인합니다/g, "점검합니다")
+      .replace(/확인하며/g, "따져 보며")
+      .replace(/확인한 뒤/g, "살펴본 뒤")
+      .replace(/확인해야/g, "짚어 봐야")
+      .replace(/확인하는/g, "따져 보는")
+      .replace(/확인할/g, "점검할")
+      .replace(/다시 확인/g, "다시 점검")
+      .replace(/확인을/g, "점검을")
+      .replace(/확인이/g, "검토가");
+  }
+  if (countMatches(combined, /새로운/g) >= 2) {
+    diversified = diversified
+      .replace(/새로운 방법/g, "낯선 방법")
+      .replace(/새로운 선택지/g, "다른 선택지")
+      .replace(/새로운 경험/g, "처음 해 보는 경험")
+      .replace(/새로운 시도/g, "다른 시도")
+      .replace(/새로운 이야기/g, "색다른 이야기")
+      .replace(/새로운/g, "다른");
+  }
+  if (countMatches(combined, /고르|고르게/g) >= 3) {
+    diversified = diversified
+      .replace(/고르게/g, "균형 있게")
+      .replace(/고른/g, "알맞은")
+      .replace(/고릅니다/g, "선택합니다");
+  }
+  if (countMatches(combined, /한쪽/g) >= 3) {
+    diversified = diversified
+      .replace(/한쪽으로/g, "어느 한편으로")
+      .replace(/한쪽만/g, "한 사람만")
+      .replace(/한쪽에/g, "한 곳에");
+  }
+  if (countMatches(combined, /느낀 점/g) >= 3) {
+    diversified = diversified.replace(/느낀 점/g, "생각");
+  }
+  if (countMatches(combined, /다정/g) >= 3) {
+    diversified = diversified
+      .replace(/다정한/g, "따뜻한")
+      .replace(/다정함/g, "온기");
+  }
+  if (countMatches(combined, /속도/g) >= 4) {
+    diversified = diversified
+      .replace(/속도로/g, "리듬으로")
+      .replace(/속도를/g, "리듬을")
+      .replace(/속도가/g, "리듬이");
+  }
+  if (countMatches(combined, /조용/g) >= 4) {
+    diversified = diversified
+      .replace(/조용한/g, "차분한")
+      .replace(/조용히/g, "천천히");
+  }
+  if (countMatches(combined, /분위기/g) >= 3) {
+    diversified = diversified
+      .replace(/분위기를 살리/g, "활기를 더하")
+      .replace(/분위기부터 가라앉히/g, "주변을 먼저 가라앉히")
+      .replace(/분위기가/g, "주변이")
+      .replace(/분위기를/g, "자리를")
+      .replace(/분위기에서/g, "자리에서")
+      .replace(/주변 분위기/g, "주변");
+  }
+  if (countMatches(combined, /서두르/g) >= 3) {
+    diversified = diversified
+      .replace(/서두르지/g, "급하게 움직이지")
+      .replace(/서두르기보다/g, "급하게 결정하기보다");
   }
 
   return diversified;
@@ -629,38 +831,45 @@ export function buildPremiumStage1Interpretation(colors: readonly ColorData[]): 
 
   const [p1, p2, p3] = colors.map(profileFor);
   const [e1, e2, e3] = colors.map(engineFor);
+  const thirdColor = colors[2];
 
-  const integrationBridge = buildIntegrationBridge(e1, e2, colors[2]);
+  const integrationBridge = buildIntegrationBridge(e1, e2, thirdColor);
   const psychologyTendency = chooseNaturalNonOverlapping(
     [
-      `${PSYCHOLOGY_VALUE[e1.motive]} 편입니다. ${PSYCHOLOGY_FILTER[e2.support]}. ${PSYCHOLOGY_STABILITY[e3.balance]}.`,
-      `${PSYCHOLOGY_STABILITY[e3.balance]}. ${PSYCHOLOGY_VALUE[e1.motive]} 편이며, ${PSYCHOLOGY_FILTER[e2.support]}.`,
+      `${PSYCHOLOGY_VALUE[e1.motive]} 편입니다. ${PSYCHOLOGY_FILTER[e2.support]}. ${THIRD_COLOR_PSYCHOLOGY[thirdColor.id]}.`,
+      `${THIRD_COLOR_PSYCHOLOGY[thirdColor.id]}. ${PSYCHOLOGY_VALUE[e1.motive]} 편이며, ${PSYCHOLOGY_FILTER[e2.support]}.`,
     ],
     [integrationBridge],
   );
   const personalityTendency = chooseNaturalNonOverlapping(
     [
-      `${DECISION_START[e1.motive]}. ${WORK_PROCESS[e2.support]}. ${FINISH_STYLE[e3.balance]}.`,
-      `${WORK_PROCESS[e2.support]}. ${DECISION_START[e1.motive]} 뒤, ${FINISH_STYLE[e3.balance]}.`,
+      `${DECISION_START[e1.motive]}. ${WORK_PROCESS[e2.support]}. ${THIRD_COLOR_ACTION[thirdColor.id]}.`,
+      `${WORK_PROCESS[e2.support]}. ${DECISION_START[e1.motive]} 뒤, ${THIRD_COLOR_ACTION[thirdColor.id]}.`,
     ],
     [integrationBridge, psychologyTendency],
   );
   const relationshipTendency = chooseNaturalNonOverlapping(
     [
-      `${RELATION_START[e1.relation]}. ${RELATION_EXPRESSION[e2.support]}. ${RELATION_DEEPENING[e3.balance]}.`,
-      `${RELATION_START[e1.relation]}. ${RELATION_DEEPENING[e3.balance]} 그리고 ${RELATION_EXPRESSION[e2.support]}.`,
+      `${RELATION_START[e1.relation]}. ${RELATION_EXPRESSION[e2.support]}. ${THIRD_COLOR_RELATION[thirdColor.id]}.`,
+      `${RELATION_START[e1.relation]}. ${THIRD_COLOR_RELATION[thirdColor.id]} 그리고 ${RELATION_EXPRESSION[e2.support]}.`,
     ],
     [integrationBridge, psychologyTendency, personalityTendency],
   );
 
+  const miniContexts: string[] = [];
   const miniInterpretations = colors.map((color, index) => {
       const profile = [p1, p2, p3][index];
+      const description = polishKoreanOutput(
+        `${profile.psychology} 편입니다. ${profile.behavior} 모습이 보입니다.`,
+        miniContexts,
+      );
+      miniContexts.push(description);
       return {
         colorId: color.id,
         colorName: color.korName,
         hex: color.hex,
         keywords: color.keywords.slice(0, 3),
-        description: polishKoreanOutput(`${profile.psychology} 편입니다. ${profile.behavior} 모습이 보입니다.`),
+        description,
         strengths: profile.strengths.slice(0, 2).map((strength) => polishKoreanOutput(strength)),
         tiredStates: profile.tiredStates.slice(0, 2).map((tiredState) => polishKoreanOutput(tiredState)),
       };
@@ -677,13 +886,36 @@ export function buildPremiumStage1Interpretation(colors: readonly ColorData[]): 
       BALANCE_GROWTH[e3.balance],
     ].map((growth) => polishKoreanOutput(growth)));
 
+  const finalBridge = polishKoreanOutput(integrationBridge);
+  const finalPsychology = polishKoreanOutput(psychologyTendency, [finalBridge]);
+  const finalPersonality = polishKoreanOutput(personalityTendency, [finalBridge, finalPsychology]);
+  const finalStrengths = ensureUniqueTags(strengths.map((strength, index) =>
+    polishKoreanOutput(strength, [finalBridge, finalPsychology, finalPersonality, ...strengths.slice(0, index)]),
+  ));
+  const finalGrowth = ensureUniqueTags(growthPossibility.map((growth, index) =>
+    polishKoreanOutput(growth, [
+      finalBridge,
+      finalPsychology,
+      finalPersonality,
+      ...finalStrengths,
+      ...growthPossibility.slice(0, index),
+    ]),
+  ));
+  const finalRelationship = polishKoreanOutput(relationshipTendency, [
+    finalBridge,
+    finalPsychology,
+    finalPersonality,
+    ...finalStrengths,
+    ...finalGrowth,
+  ]);
+
   return {
     miniInterpretations,
-    integrationBridge: polishKoreanOutput(integrationBridge),
-    psychologyTendency: polishKoreanOutput(psychologyTendency),
-    personalityTendency: polishKoreanOutput(personalityTendency),
-    strengths,
-    growthPossibility,
-    relationshipTendency: polishKoreanOutput(relationshipTendency),
+    integrationBridge: finalBridge,
+    psychologyTendency: finalPsychology,
+    personalityTendency: finalPersonality,
+    strengths: finalStrengths,
+    growthPossibility: finalGrowth,
+    relationshipTendency: finalRelationship,
   };
 }
