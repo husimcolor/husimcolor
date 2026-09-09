@@ -23,10 +23,12 @@ import { type UserProfile } from "./profile";
 import { trpc } from "@/lib/trpc";
 import { buildCustomRecoveryRoutine, buildLifeEnergyResult, type LifeEnergyResult } from "@/constants/lifeArchetype";
 import { buildLifeRoleEnergyReport } from "@/constants/lifeRoleEnergy";
+import { buildPremiumPdfHtml } from "@/lib/premium-pdf-report";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Print from 'expo-print';
 
 // 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
 function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
@@ -92,6 +94,53 @@ const POSITION_LABELS = [
   { label: "2번 카드", sub: "현재 현실 에너지", color: "#7A5CA8" },
   { label: "3번 카드", sub: "미래 · 회복 · 희망 에너지", color: "#8B6030" },
 ];
+
+type DisplayComplementColor = { name: string; meaning: string };
+
+/** 현재 결과 화면의 보완 컬러 선택 규칙을 PDF에서도 같은 값으로 재사용한다. */
+function selectDisplayComplementColors(card1: CardData, card2: CardData, card3: CardData): DisplayComplementColor[] {
+  const calmRecovery = ['화이트', '아이보리', '비이지', '그린', '세이지그린', '네이비', '블루', '라이트블루', '스카이블루', '라벤더', '퍼플', '라일락', '인디고', '실버', '미드나이트'];
+  const highEnergy = ['레드', '코랄', '오렌지', '마젠타'];
+  const similarGroups = [
+    ['블루', '네이비', '인디고', '미드나이트'], ['레드', '코랄', '오렌지', '마젠타'],
+    ['그린', '세이지그린', '올리브'], ['라벤더', '라일락', '퍼플'],
+    ['화이트', '아이보리', '크림', '비이지'], ['미트', '스카이블루', '라이트블루', '틸'],
+  ];
+  const coolStable = ['블루', '네이비', '인디고', '스카이블루', '틸', '미트', '라벤더', '실버', '화이트', '크림', '아이보리', '비이지'];
+  const activeColors = new Set([card1.colorKor, card2.colorKor, card3.colorKor]);
+  const activeGroups = new Set<number>();
+  activeColors.forEach((name) => {
+    const index = similarGroups.findIndex((group) => group.includes(name));
+    if (index >= 0) activeGroups.add(index);
+  });
+  const allColors = [...card3.complementColors, ...card1.complementColors];
+  const canUseRed = [card1.colorKor, card2.colorKor, card3.colorKor].every((color) => coolStable.includes(color));
+  const isCalm = calmRecovery.includes(card3.colorKor);
+  const seen = new Set<string>();
+  const usedGroups = new Set<number>();
+  const filtered = allColors.filter((color) => {
+    if (seen.has(color.name) || activeColors.has(color.name) || (color.name === '레드' && !canUseRed) || (isCalm && highEnergy.includes(color.name))) return false;
+    seen.add(color.name);
+    const index = similarGroups.findIndex((group) => group.includes(color.name));
+    if (index >= 0) {
+      if (activeGroups.has(index) || usedGroups.has(index)) return false;
+      usedGroups.add(index);
+    }
+    return true;
+  });
+  if (filtered.length >= 3) return filtered.slice(0, 3);
+  const seenFallback = new Set(filtered.map((color) => color.name));
+  const usedFallbackGroups = new Set(filtered.map((color) => similarGroups.findIndex((group) => group.includes(color.name))).filter((index) => index >= 0));
+  const extra = allColors.filter((color) => {
+    if (seenFallback.has(color.name) || activeColors.has(color.name) || (color.name === '레드' && !canUseRed) || (isCalm && highEnergy.includes(color.name))) return false;
+    const index = similarGroups.findIndex((group) => group.includes(color.name));
+    if (index >= 0 && usedFallbackGroups.has(index)) return false;
+    seenFallback.add(color.name);
+    if (index >= 0) usedFallbackGroups.add(index);
+    return true;
+  });
+  return [...filtered, ...extra].slice(0, 3);
+}
 
 // 직업별 맞춤 코칭 문구
 type JobCoaching = {
@@ -608,6 +657,88 @@ export default function PremiumResultScreen() {
   const combinedCoaching = generateCombinedCoaching(card1, card2, card3, prevColors.length >= 3 ? prevColors : undefined);
   // 하단 여운 문장: 3번 카드(회복 방향) 기준
   const closingLine = card3.closingLine;
+  const displayComplementColors = selectDisplayComplementColors(card1, card2, card3);
+
+  const handlePdfDownload = async () => {
+    const colorFlowDescription = prevColors.length >= 3
+      ? `${prevColors[0].korName}의 ${prevColors[0].keywords[0]}·${prevColors[1].korName}의 ${prevColors[1].keywords[0]}·${prevColors[2].korName}의 ${prevColors[2].keywords[0]}이 당신의 성향을 이루고 있습니다.`
+      : '';
+    const reportHtml = buildPremiumPdfHtml({
+      profile,
+      selectedColors: prevColors,
+      cards,
+      stage2Bridge,
+      stage2Cards,
+      complementColors: displayComplementColors,
+      colorFlowDescription,
+      combinedCoaching,
+      scripture: jobCoaching?.scriptureVerse ?? null,
+      lifeRoleReport,
+      lifeEnergyResult,
+      customRecoveryRoutine: {
+        tea: card3.wellness.tea,
+        food: customRecoveryRoutine.food,
+        breath: sanitizeRecovery(customRecoveryRoutine.breath, profile?.faith ?? ''),
+        movement: sanitizeRecovery(customRecoveryRoutine.movement, profile?.faith ?? ''),
+        smallPractice: sanitizeRecovery(customRecoveryRoutine.smallPractice, profile?.faith ?? ''),
+        message: customRecoveryRoutine.message,
+      },
+      coachingUrl: 'https://naver.me/ID3fxw2W',
+    });
+    try {
+      if (Platform.OS === 'web') {
+        const html2pdf = (await import('html2pdf.js')).default;
+        const parsed = new DOMParser().parseFromString(reportHtml, 'text/html');
+        const exportRoot = document.createElement('div');
+        exportRoot.style.position = 'fixed';
+        exportRoot.style.left = '-100000px';
+        exportRoot.style.top = '0';
+        exportRoot.style.width = '794px';
+        exportRoot.style.backgroundColor = '#FFFFFF';
+        exportRoot.innerHTML = `<style>${parsed.querySelector('style')?.textContent ?? ''}</style>${parsed.querySelector('main')?.innerHTML ?? ''}`;
+        document.body.appendChild(exportRoot);
+        try {
+          const reportElement = exportRoot.querySelector('main');
+          if (!reportElement) {
+            throw new Error('PDF report content was not created');
+          }
+          await html2pdf()
+            .set({
+              margin: 0,
+              filename: `husimcolor_report_${new Date().toISOString().slice(0, 10)}.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+              pagebreak: { mode: ['css', 'legacy'], avoid: ['section', '.report-card', '.direction-card', '.cta'] },
+            } as any)
+            .from(reportElement)
+            .save();
+        } finally {
+          exportRoot.remove();
+        }
+        return;
+      }
+      const { uri } = await Print.printToFileAsync({
+        html: reportHtml,
+        width: 595,
+        height: 842,
+        margins: { left: 36, right: 36, top: 42, bottom: 42 },
+      });
+      const savedUri = `${FileSystem.documentDirectory}husimcolor_report_${Date.now()}.pdf`;
+      await FileSystem.copyAsync({ from: uri, to: savedUri });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(savedUri, {
+          mimeType: 'application/pdf',
+          UTI: 'com.adobe.pdf',
+          dialogTitle: '휴심컬러 PDF 리포트 저장',
+        });
+      } else {
+        Alert.alert('PDF 생성 완료', 'PDF 리포트가 기기에 저장되었습니다.');
+      }
+    } catch {
+      Alert.alert('PDF 리포트', 'PDF 리포트를 만드는 중 문제가 생겼습니다. 다시 시도해 주세요.');
+    }
+  };
 
   const handleShare = async () => {
     // 보완 루틴 텍스트 구성 (card3 wellness 기준)
@@ -780,85 +911,7 @@ export default function PremiumResultScreen() {
               지금 마음을 채워줄 컬러입니다
             </Text>
             <View style={styles.tagsRow}>
-              {(() => {
-                // 정화·안정·내면 성향 콜러: 레드·코랄·오렌지 같은 고에너지 콜러와 충돌
-                const CALM_RECOVERY = [
-                  '화이트', '아이보리', '비이지', '그린', '세이지그린',
-                  '네이비', '블루', '라이트블루', '스카이블루',
-                  '라벤더', '퍼플', '라일락', '인디고', '실버', '미드나이트',
-                ];
-                // 강한 확장·추진 에너지 콜러: 정화·안정 회복 방향에는 제외
-                const HIGH_ENERGY = ['레드', '코랄', '오렌지', '마젠타'];
-                // 유사 계열 그룹: 같은 그룹에서 하나만 추천
-                // 코랄·오렌지·레드는 에너지 방향이 격쳐 동시 추천 불가
-                const SIMILAR_GROUPS: string[][] = [
-                  ['블루', '네이비', '인디고', '미드나이트'],
-                  ['레드', '코랄', '오렌지', '마젠타'],  // 활성 계열: 전체 그룹에서 1개만 허용
-                  ['그린', '세이지그린', '올리브'],
-                  ['라벤더', '라일락', '퍼플'],
-                  ['화이트', '아이보리', '크림', '비이지'],
-                  ['미트', '스카이블루', '라이트블루', '틸'],
-                ];
-                // 레드 허용 조건: 사용자 카드 3장 모두 쿨/안정 계열일 때만 (극심한 무기력 상황)
-                const COOL_STABLE_KORS = ['블루', '네이비', '인디고', '스카이블루', '틸', '미트', '라벤더', '실버', '화이트', '크림', '아이보리', '비이지'];
-                const allCardsAreCoolStable = [card1.colorKor, card2.colorKor, card3.colorKor].every(c => COOL_STABLE_KORS.includes(c));
-                const isCalm = CALM_RECOVERY.includes(card3.colorKor);
-                // 현재 이미 강하게 활성화된 컬러(3장 카드에 사용된 컬러) 목록
-                const activeColors = new Set([card1.colorKor, card2.colorKor, card3.colorKor]);
-                // 활성화 컬러와 같은 계열 그룹도 제외 대상에 포함
-                const activeGroups = new Set<number>();
-                activeColors.forEach(name => {
-                  const gIdx = SIMILAR_GROUPS.findIndex(g => g.includes(name));
-                  if (gIdx >= 0) activeGroups.add(gIdx);
-                });
-                // card3 보완 컬러를 우선, card1 보완 컬러를 보조로 추가
-                const allColors = [...card3.complementColors, ...card1.complementColors];
-                const seen = new Set<string>();
-                const usedGroups = new Set<number>();
-                const filtered = allColors.filter(c => {
-                  if (seen.has(c.name)) return false;
-                  seen.add(c.name);
-                  // 이미 카드에서 강하게 나타난 콜러 자체는 제외
-                  if (activeColors.has(c.name)) return false;
-                  // 레드는 특수 조건(전체 쿨/안정 계열)일 때만 허용
-                  if (c.name === '레드' && !allCardsAreCoolStable) return false;
-                  // 회복 방향이 안정·정리 성향이면 고에너지 콜러는 제외
-                  if (isCalm && HIGH_ENERGY.includes(c.name)) return false;
-                  // 유사 계열 중복 방지: 같은 그룹에서 이미 추천된 콜러가 있으면 제외
-                  const groupIdx = SIMILAR_GROUPS.findIndex(g => g.includes(c.name));
-                  if (groupIdx >= 0) {
-                    // 이미 활성화된 콜러와 같은 계열이면 우선순위 낙춴(뒤로 미릉)
-                    if (activeGroups.has(groupIdx)) return false;
-                    if (usedGroups.has(groupIdx)) return false;
-                    usedGroups.add(groupIdx);
-                  }
-                  return true;
-                });
-                // 필터 후 3개 미만이면 계열 제한 없이 보충 (activeColors 자체만 제외)
-                if (filtered.length < 3) {
-                  const seen2 = new Set(filtered.map(c => c.name));
-                  const usedGroups2 = new Set<number>();
-                  filtered.forEach(c => {
-                    const gIdx = SIMILAR_GROUPS.findIndex(g => g.includes(c.name));
-                    if (gIdx >= 0) usedGroups2.add(gIdx);
-                  });
-                  const extra = allColors.filter(c => {
-                    if (seen2.has(c.name)) return false;
-                    if (activeColors.has(c.name)) return false;
-                    if (c.name === '레드' && !allCardsAreCoolStable) return false;
-                    if (isCalm && HIGH_ENERGY.includes(c.name)) return false;
-                    const gIdx = SIMILAR_GROUPS.findIndex(g => g.includes(c.name));
-                    if (gIdx >= 0) {
-                      if (usedGroups2.has(gIdx)) return false;
-                      usedGroups2.add(gIdx);
-                    }
-                    seen2.add(c.name);
-                    return true;
-                  });
-                  return [...filtered, ...extra].slice(0, 3);
-                }
-                return filtered.slice(0, 3); // 최대 3개까지만 표시
-              })().map((c) => {
+              {displayComplementColors.map((c) => {
                 const chipStyle = getColorChipStyle(c.name);
                 return (
                   <View
@@ -1171,6 +1224,14 @@ export default function PremiumResultScreen() {
           <Text style={[styles.shareButtonText, { color: '#3D3530' }]}>
             결과 공유하기
           </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.pdfButton, { backgroundColor: '#3D6B5A', borderColor: '#315646' }]}
+          onPress={handlePdfDownload}
+          activeOpacity={0.8}
+        >
+          <MaterialIcons name="picture-as-pdf" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+          <Text style={styles.pdfButtonText}>PDF 리포트 다운로드</Text>
         </TouchableOpacity>
 
         {/* 1:1 코칭 연결 섹션 */}
@@ -1881,6 +1942,20 @@ const styles = StyleSheet.create({
   shareButtonText: {
     fontSize: 15,
     fontWeight: "600",
+  },
+  pdfButton: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    marginBottom: 14,
+  },
+  pdfButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   coachingSection: {
     gap: 10,
