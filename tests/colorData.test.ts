@@ -69,7 +69,7 @@ describe('COLOR_DATA', () => {
     }
 
     expect(COLOR_ROLE_CONTENT.coral.primaryTrait).toBe(
-      '말보다 리액션과 정서적 공감을 먼저 원하는 편입니다. 사람과 따뜻하게 연결되고 감정을 주고받을 때 자신의 에너지가 자연스럽게 살아나는 편입니다.',
+      '말보다 리액션과 정서적 공감을 먼저 원하는 편입니다. 사람과 따뜻하게 연결되고 감정을 주고받을 때 에너지가 자연스럽게 살아납니다.',
     );
     expect(COLOR_ROLE_CONTENT.mint.secondaryTrait).toBe(
       '새로운 분위기나 변화에 열린 편입니다. 익숙한 방식에만 머무르기보다 새로운 방법을 시도하는 것을 좋아합니다.',
