@@ -558,8 +558,8 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   miniColorDescription: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 23,
   },
   miniMetaRow: {
     flexDirection: "row",
@@ -587,8 +587,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   integrationBridgeText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 23,
   },
   sectionCard: {
     borderRadius: 14,
@@ -607,13 +607,13 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   sectionLabel: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "700",
     letterSpacing: 0.5,
   },
   sectionText: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 25,
   },
   tagRow: {
     flexDirection: "row",
@@ -623,12 +623,16 @@ const styles = StyleSheet.create({
   tag: {
     borderRadius: 20,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    maxWidth: "100%",
+    alignSelf: "flex-start",
   },
   tagText: {
-    fontSize: 12,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: "600",
+    flexShrink: 1,
   },
   nextStepBanner: {
     borderRadius: 14,
