@@ -22,6 +22,7 @@ import { buildStage2CardInterpretations, buildStage2ColorBridge } from "@/consta
 import { type UserProfile } from "./profile";
 import { trpc } from "@/lib/trpc";
 import { buildLifeEnergyResult, type LifeEnergyResult, type ContextualRoutine } from "@/constants/lifeArchetype";
+import { buildLifeRoleEnergyReport } from "@/constants/lifeRoleEnergy";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
 import * as Sharing from 'expo-sharing';
@@ -584,6 +585,11 @@ export default function PremiumResultScreen() {
     prevColors.length >= 3 ? prevColors.map((c) => c.id) : [card1.color, card2.color, card3.color],
     [card1, card2, card3].map((c) => ({ color: c.color, shape: c.shape })),
   );
+  const lifeRoleReport = buildLifeRoleEnergyReport(
+    prevColors.length >= 3 ? prevColors.map((color) => color.id) : [card1.color, card2.color, card3.color],
+    [card1, card2, card3].map((card) => ({ color: card.color, shape: card.shape })),
+    profile?.age,
+  );
   // 오행 흐름 유형 및 메인 Archetype 키 추출 (성경구절 매칭용)
   const _lifeFlowType = lifeEnergyResult.flowType;
   const _archetypeKey = lifeEnergyResult.archetypes[0]?.key ?? '';
@@ -954,59 +960,68 @@ export default function PremiumResultScreen() {
           </View>
         ) : null}
 
-        {/* ── 삶의 역할 에너지 Archetype 섹션 ── */}
+        {/* ── 삶의 역할 에너지: 앞 단계의 기질·카드 흐름을 사회적 쓰임으로 연결 ── */}
         <View style={[styles.archetypeSection, { backgroundColor: '#F5F0FF', borderColor: '#C8B8E8' }]}>
           <Text style={[styles.archetypeSectionTitle, { color: '#5B3A8A' }]}>
             ✨ 나의 삶의 역할 에너지
           </Text>
           <Text style={[styles.archetypeSectionSub, { color: '#7A5CAA' }]}>
-            컬러와 카드가 보여주는 나만의 역할 흐름
+            내가 가진 강점을 사회에서 어떤 역할로 써 볼 수 있을까요?
           </Text>
-          {lifeEnergyResult.archetypes.map((arch, idx) => (
-            <View key={arch.key} style={[styles.archetypeCard, { borderLeftColor: idx === 0 ? '#8B5CF6' : '#A78BFA' }]}>
-              <View style={styles.archetypeCardHeader}>
-                <View style={[styles.archetypeIndexBadge, { backgroundColor: idx === 0 ? '#8B5CF6' : '#A78BFA' }]}>
-                  <Text style={styles.archetypeIndexText}>{idx === 0 ? '메인' : '보조'}</Text>
+          <View style={[styles.lifeRoleCoreCard, { borderLeftColor: '#8B5CF6' }]}>
+            <Text style={[styles.lifeRoleLabel, { color: '#7C3AED' }]}>나의 핵심 역할</Text>
+            <Text style={[styles.lifeRoleTitle, { color: '#3D1F6E' }]}>{lifeRoleReport.coreRole.title}</Text>
+            <Text style={[styles.lifeRoleDescription, { color: '#4A2E7A' }]}>{lifeRoleReport.coreRole.description}</Text>
+          </View>
+
+          <View style={styles.lifeRoleBlock}>
+            <Text style={[styles.lifeRoleBlockTitle, { color: '#5B3A8A' }]}>이 역할이 더하는 가치</Text>
+            <Text style={[styles.lifeRoleBlockSub, { color: '#6B4E9A' }]}>정보를 빠르게 찾는 도구가 많아도, 사람의 경험과 판단이 더해지는 지점입니다.</Text>
+            <View style={styles.lifeRoleStrengths}>
+              {lifeRoleReport.humanStrengths.map((strength) => (
+                <View key={strength} style={[styles.lifeRoleStrengthTag, { backgroundColor: '#EEE7FF', borderColor: '#D8C9FA' }]}>
+                  <Text style={[styles.lifeRoleStrengthText, { color: '#563485' }]}>{strength}</Text>
                 </View>
-                <MaterialIcons
-                  name={arch.iconName as any}
-                  size={20}
-                  color={idx === 0 ? '#7C3AED' : '#9B72CF'}
-                  style={{ marginRight: 6, marginTop: 1 }}
-                />
-                <Text style={[styles.archetypeLabel, { color: '#3D1F6E', flex: 1 }]}>{arch.label}</Text>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.lifeRoleBlock}>
+            <Text style={[styles.lifeRoleBlockTitle, { color: '#5B3A8A' }]}>사회적 쓰임새 · 진로 방향</Text>
+            {lifeRoleReport.directions.map((direction) => (
+              <View key={direction.title} style={styles.lifeRoleDirectionRow}>
+                <Text style={[styles.lifeRoleDirectionTitle, { color: '#4A2E7A' }]}>{direction.title}</Text>
+                <Text style={[styles.lifeRoleDirectionDesc, { color: '#6B4E9A' }]}>{direction.description}</Text>
               </View>
-              <Text style={[styles.archetypeCoreEnergy, { color: '#4A2E7A' }]}>{arch.coreEnergy}</Text>
-              <Text style={[styles.archetypeDetail, { color: '#6B4E9A' }]}>
-                <Text style={{ fontWeight: '600' }}>살아나는 환경  </Text>
-                {arch.thriveIn}
-              </Text>
-              <Text style={[styles.archetypeDetail, { color: '#6B4E9A' }]}>
-                <Text style={{ fontWeight: '600' }}>지치는 패턴  </Text>
-                {arch.drainPattern}
-              </Text>
-              <Text style={[styles.archetypeDirection, { color: '#5B3A8A' }]}>{arch.lifeDirection}</Text>
+            ))}
+          </View>
+
+          <View style={styles.lifeRoleBlock}>
+            <Text style={[styles.lifeRoleBlockTitle, { color: '#5B3A8A' }]}>잘 맞는 일의 환경</Text>
+            <View style={styles.lifeRoleEnvironmentList}>
+              {lifeRoleReport.environments.map((environment) => (
+                <View key={environment} style={styles.lifeRoleEnvironmentRow}>
+                  <Text style={[styles.lifeRoleEnvironmentDot, { color: '#8B5CF6' }]}>•</Text>
+                  <Text style={[styles.lifeRoleEnvironmentText, { color: '#5A417D' }]}>{environment}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-          {lifeEnergyResult.archetypes.length >= 2 && (
-            <View style={[styles.archetypeCoachingBox, { backgroundColor: '#EDE9FF', borderColor: '#C4B5FD' }]}>
-              <Text style={[styles.archetypeCoachingText, { color: '#3D1F6E' }]}>
-                {lifeEnergyResult.archetypeCoaching}
-              </Text>
+          </View>
+
+          <View style={[styles.lifeRoleShadowBox, { backgroundColor: '#F0EBFA', borderColor: '#D6CBEA' }]}>
+            <Text style={[styles.lifeRoleBlockTitle, { color: '#5B3A8A' }]}>역할 에너지의 그림자</Text>
+            {lifeRoleReport.shadows.map((shadow) => (
+              <Text key={shadow} style={[styles.lifeRoleShadowText, { color: '#634D83' }]}>· {shadow}</Text>
+            ))}
+          </View>
+
+          <View style={[styles.dailyPracticeCard, { backgroundColor: '#FAF5FF', borderColor: '#DDD6FE' }]}>
+            <View style={styles.dailyPracticeHeader}>
+              <MaterialIcons name="spa" size={16} color="#7C3AED" style={{ marginRight: 6 }} />
+              <Text style={[styles.dailyPracticeLabel, { color: '#5B3A8A' }]}>지금의 작은 방향</Text>
             </View>
-          )}
-          {/* 메인 Archetype 오늘의 실천 카드 */}
-          {lifeEnergyResult.archetypes.length > 0 && lifeEnergyResult.archetypes[0].dailyPractice && (
-            <View style={[styles.dailyPracticeCard, { backgroundColor: '#FAF5FF', borderColor: '#DDD6FE' }]}>
-              <View style={styles.dailyPracticeHeader}>
-                <MaterialIcons name="spa" size={16} color="#7C3AED" style={{ marginRight: 6 }} />
-                <Text style={[styles.dailyPracticeLabel, { color: '#5B3A8A' }]}>오늘의 작은 실천</Text>
-              </View>
-              <Text style={[styles.dailyPracticeText, { color: '#3D1F6E' }]}>
-                {lifeEnergyResult.archetypes[0].dailyPractice}
-              </Text>
-            </View>
-          )}
+            <Text style={[styles.dailyPracticeText, { color: '#3D1F6E' }]}>{lifeRoleReport.smallDirection}</Text>
+          </View>
         </View>
         {/* ── 몸·감정 에너지 흐름 섹션 ── */}
         <View style={[styles.energyFlowSection, { backgroundColor: '#F0F7F4', borderColor: '#A8D5C2' }]}>
@@ -1942,6 +1957,98 @@ const styles = StyleSheet.create({
   archetypeSectionSub: {
     fontSize: 13,
     marginBottom: 16,
+  },
+  lifeRoleCoreCard: {
+    backgroundColor: 'rgba(255,255,255,0.68)',
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    padding: 14,
+    marginBottom: 14,
+  },
+  lifeRoleLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 5,
+  },
+  lifeRoleTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  lifeRoleDescription: {
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  lifeRoleBlock: {
+    marginBottom: 16,
+  },
+  lifeRoleBlockTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  lifeRoleBlockSub: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 9,
+  },
+  lifeRoleStrengths: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 7,
+  },
+  lifeRoleStrengthTag: {
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  lifeRoleStrengthText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  lifeRoleDirectionRow: {
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#D8C9EA',
+  },
+  lifeRoleDirectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 3,
+  },
+  lifeRoleDirectionDesc: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  lifeRoleEnvironmentList: {
+    gap: 6,
+  },
+  lifeRoleEnvironmentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  lifeRoleEnvironmentDot: {
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  lifeRoleEnvironmentText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  lifeRoleShadowBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 13,
+    marginBottom: 12,
+  },
+  lifeRoleShadowText: {
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 3,
   },
   archetypeCard: {
     backgroundColor: 'rgba(255,255,255,0.6)',
