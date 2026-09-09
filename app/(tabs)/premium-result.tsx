@@ -584,6 +584,7 @@ export default function PremiumResultScreen() {
   const lifeEnergyResult: LifeEnergyResult = buildLifeEnergyResult(
     prevColors.length >= 3 ? prevColors.map((c) => c.id) : [card1.color, card2.color, card3.color],
     [card1, card2, card3].map((c) => ({ color: c.color, shape: c.shape })),
+    card3.complementColors,
   );
   const lifeRoleReport = buildLifeRoleEnergyReport(
     prevColors.length >= 3 ? prevColors.map((color) => color.id) : [card1.color, card2.color, card3.color],
@@ -1030,7 +1031,10 @@ export default function PremiumResultScreen() {
             🌊 지금 몸과 마음의 흐름
           </Text>
           <Text style={[styles.energyFlowSub, { color: '#4A8C70' }]}>
-            선택한 컬러와 카드가 읽어주는 현재 에너지
+            주기질·보조기질과 무의식·현재 흐름이 읽어주는 현재 에너지
+          </Text>
+          <Text style={[styles.energyElementNote, { color: '#39715A' }]}>
+            에너지 관점 · 현재 주요 흐름 {lifeEnergyResult.currentFiveElements.elements.join(' · ')}
           </Text>
           <View style={[styles.energyFlowTitleBadge, { backgroundColor: '#D8F0E8', borderColor: '#A8D5C2' }]}>
             <Text style={[styles.energyFlowTitleBadgeText, { color: '#1B5E3B' }]}>
@@ -1062,7 +1066,13 @@ export default function PremiumResultScreen() {
             🌿 오늘의 보완 루틴
           </Text>
           <Text style={[styles.wellnessSectionSub, { color: '#A0845C' }]}>
-            오늘 실천할 수 있는 회복 행동 가이드입니다
+            보완 컬러 에너지를 생활에 연결하는 회복 행동 가이드입니다
+          </Text>
+          <Text style={[styles.wellnessElementNote, { color: '#8B6914' }]}>
+            보완 에너지 · {lifeEnergyResult.complementaryFiveElements.elements.join(' · ')}
+            {lifeEnergyResult.complementaryFiveElements.complementColors?.length
+              ? ` · 보완 컬러 ${lifeEnergyResult.complementaryFiveElements.complementColors.slice(0, 2).join(' · ')}`
+              : ''}
           </Text>
           <View style={styles.wellnessRow}>
             <Text style={styles.wellnessIcon}>🍵</Text>
@@ -2150,6 +2160,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 14,
   },
+  energyElementNote: {
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 18,
+    marginBottom: 10,
+  },
   energyFlowTitleBadge: {
     borderRadius: 20,
     borderWidth: 1,
@@ -2212,6 +2228,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 16,
     lineHeight: 18,
+  },
+  wellnessElementNote: {
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 18,
+    marginTop: -8,
+    marginBottom: 12,
   },
   wellnessRow: {
     flexDirection: 'row',

@@ -6,12 +6,13 @@
  */
 
 import type { CardColorType } from './cardData';
+import { COLOR_DATA } from './colorData';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. 오행 타입 정의 (내부 전용)
 // ─────────────────────────────────────────────────────────────────────────────
 
-type OhangElement = '화' | '토' | '금' | '수' | '목';
+export type OhangElement = '화' | '토' | '금' | '수' | '목';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. 컬러 ID → 오행 매핑 (내부 전용)
@@ -65,6 +66,8 @@ const CARD_COLOR_TO_OHANG: Record<CardColorType, OhangElement> = {
   black:  '수',
 };
 
+const OHANG_ELEMENTS: OhangElement[] = ['화', '토', '금', '수', '목'];
+
 /** 도형 → 에너지 강도 가중치 (1.0 기본, 1.3 강화, 0.8 약화) */
 const SHAPE_WEIGHT: Record<string, number> = {
   triangle:          1.3,  // 삼각형: 긴장·집중·강화
@@ -80,8 +83,128 @@ const SHAPE_WEIGHT: Record<string, number> = {
 // 3. 오행 점수 계산 (내부 전용)
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface OhangScore {
+export interface OhangScore {
   화: number; 토: number; 금: number; 수: number; 목: number;
+}
+
+export interface OhangSource {
+  label: string;
+  element: OhangElement;
+  priority: number;
+  colorName?: string;
+}
+
+export interface FiveElementsResult {
+  /** 빈도와 위치 우선순위로 선정한 1~2개 오행 */
+  elements: OhangElement[];
+  /** 현재 주요 오행과 보완오행을 분리 관리하는 요소별 출현 수 */
+  score: OhangScore;
+  /** 기존 컬러·심리카드 위치별 산출 근거 */
+  sources: OhangSource[];
+  /** 기존 데이터에 실제로 있던 보완 컬러 이름 */
+  complementColors?: string[];
+}
+
+function emptyOhangScore(): OhangScore {
+  return { 화: 0, 토: 0, 금: 0, 수: 0, 목: 0 };
+}
+
+function colorNameToId(name: string): string | undefined {
+  const aliases: Record<string, string> = {
+    '네이비': 'indigo',
+    '퍼플': 'violet',
+    '보라': 'violet',
+    '스카이 블루': 'skyblue',
+    '세이지 그린': 'sage',
+  };
+  return COLOR_DATA.find((color) => color.korName === name || color.name === name)?.id ?? aliases[name];
+}
+
+function chooseRepeatedElements(sources: OhangSource[]): FiveElementsResult {
+  const score = emptyOhangScore();
+  sources.forEach((source) => {
+    score[source.element] += 1;
+  });
+
+  const firstPriority = new Map<OhangElement, number>();
+  sources.forEach((source) => {
+    const existing = firstPriority.get(source.element);
+    if (existing === undefined || source.priority < existing) {
+      firstPriority.set(source.element, source.priority);
+    }
+  });
+
+  const ranked = OHANG_ELEMENTS
+    .filter((element) => score[element] > 0)
+    .sort((a, b) => {
+      if (score[b] !== score[a]) return score[b] - score[a];
+      return (firstPriority.get(a) ?? Number.MAX_SAFE_INTEGER) - (firstPriority.get(b) ?? Number.MAX_SAFE_INTEGER);
+    });
+
+  const first = ranked[0];
+  const second = ranked.slice(1).find((element) => score[element] >= 2 || score[element] === score[first]);
+  return {
+    elements: [first, second].filter((element): element is OhangElement => Boolean(element)),
+    score,
+    sources,
+  };
+}
+
+/**
+ * 현재 주요 오행은 주기질·보조기질·무의식·현재 흐름만 종합한다.
+ * 동점은 현재 흐름 → 무의식 → 주기질 → 보조기질 순으로 판정한다.
+ */
+export function deriveCurrentFiveElements(
+  primaryColorId: string,
+  secondaryColorId: string,
+  unconsciousCardColor: CardColorType,
+  currentCardColor: CardColorType,
+): FiveElementsResult {
+  const sources: OhangSource[] = [];
+  const append = (label: string, element: OhangElement | undefined, priority: number) => {
+    if (element) sources.push({ label, element, priority });
+  };
+
+  append('현재 흐름', CARD_COLOR_TO_OHANG[currentCardColor], 0);
+  append('무의식', CARD_COLOR_TO_OHANG[unconsciousCardColor], 1);
+  append('주기질', COLOR_ID_TO_OHANG[primaryColorId], 2);
+  append('보조기질', COLOR_ID_TO_OHANG[secondaryColorId], 3);
+  return chooseRepeatedElements(sources);
+}
+
+/**
+ * 보완오행은 A(3번 심리카드 보완 컬러)를 먼저, B(1단계 3번 회복방향 컬러의
+ * 기존 보완 컬러)를 다음으로 읽는다. 현재 주요 오행과 점수를 합산하지 않는다.
+ */
+export function deriveComplementaryFiveElements(
+  recoveryCardComplementColors: ReadonlyArray<{ name: string }>,
+  recoveryDirectionColorId: string,
+): FiveElementsResult {
+  const sources: OhangSource[] = [];
+  const appendColor = (name: string, label: string, priority: number) => {
+    const colorId = colorNameToId(name);
+    const element = colorId ? COLOR_ID_TO_OHANG[colorId] : undefined;
+    if (!element) return;
+    sources.push({ label, element, priority, colorName: name });
+  };
+
+  recoveryCardComplementColors.forEach((color, index) => {
+    appendColor(color.name, '3번 심리카드 보완 컬러', index);
+  });
+  COLOR_DATA.find((color) => color.id === recoveryDirectionColorId)?.complementColors.forEach((name, index) => {
+    appendColor(name, '1단계 회복방향 보완 컬러', 10 + index);
+  });
+
+  const selected = chooseRepeatedElements(sources);
+  const complementColors = sources
+    .filter((source) => selected.elements.includes(source.element))
+    .sort((a, b) => a.priority - b.priority)
+    .map((source) => source.colorName)
+    .filter((name): name is string => Boolean(name))
+    .filter((name, index, all) => all.indexOf(name) === index)
+    .slice(0, 2);
+
+  return { ...selected, complementColors };
 }
 
 /**
@@ -556,8 +679,12 @@ export interface LifeEnergyResult {
   archetypes: LifeArchetype[];
   /** 종합 Archetype 코칭 문장 */
   archetypeCoaching: string;
-  /** 몸·감정 에너지 흐름 해석 */
+  /** 삶·감정 에너지 흐름 해석 */
   energyFlow: EnergyFlowResult;
+  /** 주기질·보조기질·무의식·현재 흐름만 종합한 현재 주요 오행 */
+  currentFiveElements: FiveElementsResult;
+  /** 3번 카드(A)와 1단계 회복방향(B)의 보완 컬러만 종합한 보완오행 */
+  complementaryFiveElements: FiveElementsResult;
   /** Archetype + 오행 흐름 조합 맞춤 회복 루틴 */
   routines: ContextualRoutine;
   /** 오행 흐름 유형 (성경구절 매칭용 내부값) */
@@ -585,11 +712,10 @@ function detectFlowType(score: OhangScore): FlowType {
  * Archetype 키 + 오행 흐름 유형 조합으로 맞춤 회복 루틴 생성
  * 오행 용어는 사용자에게 노출하지 않음
  */
-export function buildContextualRoutines(
+function buildContextualRoutinesForFlow(
   archetypes: LifeArchetype[],
-  score: OhangScore,
+  flowType: FlowType,
 ): ContextualRoutine {
-  const flowType = detectFlowType(score);
   const mainKey = archetypes[0]?.key ?? 'connector';
 
   // 흐름 유형별 기본 루틴 풀 (오행 용어 미노출)
@@ -716,6 +842,33 @@ export function buildContextualRoutines(
   };
 }
 
+/** 기존 단일 오행 점수 기반 흐름 루틴. 다른 기존 호출 경로와 호환을 유지한다. */
+export function buildContextualRoutines(
+  archetypes: LifeArchetype[],
+  score: OhangScore,
+): ContextualRoutine {
+  return buildContextualRoutinesForFlow(archetypes, detectFlowType(score));
+}
+
+/**
+ * 보완오행은 과다 상태가 아니라 필요한 회복 에너지이므로,
+ * 기존 루틴 풀 가운데 해당 에너지를 돕는 흐름을 골라 재사용한다.
+ */
+export function buildComplementaryContextualRoutines(
+  archetypes: LifeArchetype[],
+  elements: OhangElement[],
+): ContextualRoutine {
+  const recoveryFlowByElement: Record<OhangElement, FlowType> = {
+    화: '침잠', // 햇빛·짧은 걸음·연결로 활력을 돕는 기존 항목
+    토: '성장', // 한 가지 집중·우선순위로 중심을 돕는 기존 항목
+    금: '예민', // 자극 줄이기·조용한 환경으로 정돈을 돕는 기존 항목
+    수: '진장', // 속도 낮추기·호흡으로 안쪽 쉼을 돕는 기존 항목
+    목: '정체', // 작은 움직임·변화로 흐름을 돕는 기존 항목
+  };
+  const primaryElement = elements[0] ?? '토';
+  return buildContextualRoutinesForFlow(archetypes, recoveryFlowByElement[primaryElement]);
+}
+
 /**
  * 심화 결과 화면에서 호출하는 메인 함수
  * @param colorIds 콜러 3장 ID (colorData.ts 기준)
@@ -724,18 +877,29 @@ export function buildContextualRoutines(
 export function buildLifeEnergyResult(
   colorIds: string[],
   cards: { color: CardColorType; shape: string }[],
+  recoveryCardComplementColors: ReadonlyArray<{ name: string }> = [],
 ): LifeEnergyResult {
-  const ohangScore = calcOhangScore(colorIds, cards);
+  const currentFiveElements = deriveCurrentFiveElements(
+    colorIds[0] ?? cards[0]?.color ?? 'red',
+    colorIds[1] ?? cards[1]?.color ?? 'yellow',
+    cards[0]?.color ?? 'red',
+    cards[1]?.color ?? 'yellow',
+  );
+  const complementaryFiveElements = deriveComplementaryFiveElements(
+    recoveryCardComplementColors,
+    colorIds[2] ?? cards[2]?.color ?? 'green',
+  );
   const archetypes = deriveLifeArchetypes(colorIds, cards);
   const archetypeCoaching = buildArchetypeCoaching(archetypes);
-  const energyFlow = interpretEnergyFlow(ohangScore);
-  const routines = buildContextualRoutines(archetypes, ohangScore);
+  // 현재 주요 오행은 몸·마음 흐름에, 보완오행은 회복 루틴에만 사용한다.
+  const energyFlow = interpretEnergyFlow(currentFiveElements.score);
+  const routines = buildComplementaryContextualRoutines(archetypes, complementaryFiveElements.elements);
   // 오행 흐름 유형 계산 (성경구절 매칭용)
-  const dom = (Object.keys(ohangScore) as Array<keyof typeof ohangScore>).reduce((a, b) =>
-    ohangScore[a] >= ohangScore[b] ? a : b
+  const dom = (Object.keys(currentFiveElements.score) as Array<keyof typeof currentFiveElements.score>).reduce((a, b) =>
+    currentFiveElements.score[a] >= currentFiveElements.score[b] ? a : b
   );
-  const total = Object.values(ohangScore).reduce((a, b) => a + b, 0);
-  const domRatio = total === 0 ? 0 : ohangScore[dom] / total;
+  const total = Object.values(currentFiveElements.score).reduce((a, b) => a + b, 0);
+  const domRatio = total === 0 ? 0 : currentFiveElements.score[dom] / total;
   let flowType = '균형';
   if (domRatio >= 0.35) {
     if (dom === '화') flowType = '진장';
@@ -744,5 +908,5 @@ export function buildLifeEnergyResult(
     else if (dom === '금') flowType = '예민';
     else if (dom === '목') flowType = '성장';
   }
-  return { archetypes, archetypeCoaching, energyFlow, routines, flowType };
+  return { archetypes, archetypeCoaching, energyFlow, currentFiveElements, complementaryFiveElements, routines, flowType };
 }
