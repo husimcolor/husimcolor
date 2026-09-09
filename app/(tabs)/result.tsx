@@ -369,7 +369,7 @@ export default function ResultScreen() {
           {/* 성격 흐름 */}
           <ResultCard
             icon="🌿"
-            title="보조기질 — 나를 보완하는 성향"
+            title="보조기질 — 나의 또 다른 성향"
             content={interpretation.personalityFlow}
             bgColor="#F2EFE7"
             borderColor="#DDD8CE"
@@ -378,7 +378,7 @@ export default function ResultScreen() {
             colorContext={{
               card: card2,
               role: '보조기질',
-              description: '나를 보완하는 성향',
+              description: '나의 또 다른 성향',
             }}
             personalityTraits={COLOR_PERSONALITY_TRAITS[card2.id]}
           />
