@@ -266,7 +266,7 @@ const INTEGRATION_BALANCE: Record<BalanceDirection, string> = {
 const NARRATIVE_CORE: Record<PrimaryMotive, string> = {
   action: "할 일이 생기면 먼저 방향을 정하고", connection: "사람과 함께할 때 기운을 얻고", understanding: "궁금한 점은 끝까지 확인하고",
   harmony: "주변 사람이 불편하지 않은지 살피고", trust: "말보다 꾸준한 행동으로 믿음을 확인하고", insight: "겉으로 보이는 답보다 이유를 더 살피고",
-  meaning: "내가 중요하게 여기는 이유가 있어야 움직이고", care: "상대 마음을 먼저 살피고", devotion: "중요한 일과 사람에게 오래 마음을 쓰고",
+  meaning: "내가 중요하게 여기는 이유가 있어야 움직이고", care: "상대가 어떤 기분인지 먼저 생각하고", devotion: "중요한 일과 사람에게 오래 정성을 들이고",
   achievement: "분명한 결과를 만들고 싶어 하고", stability: "맡은 일을 꾸준히 해내고", peace: "불필요한 갈등 없이 지내고 싶어 하고",
   clarity: "복잡한 일을 정리해 기준을 세우고", boundary: "쉽게 휘둘리지 않으려 하고", perspective: "한쪽으로 치우치지 않게 상황을 보고",
   novelty: "새로운 방법을 찾아보고", freedom: "내가 고를 수 있는 방법을 남겨 두고", sensitivity: "상대가 편한지 세심하게 살피고",
@@ -276,7 +276,7 @@ const NARRATIVE_EXPRESSION: Record<SupportStyle, string> = {
   direct: "할 일을 미루지 않는", lively: "밝은 반응으로 분위기를 여는", curious: "궁금한 점을 직접 확인해 보는",
   considerate: "주변의 입장을 함께 헤아리는", thoughtful: "말을 충분히 듣고 판단하는", reflective: "한 번 더 생각해 본 뒤 움직이는",
   expressive: "느낀 점을 자기 방식으로 표현하는", warm: "다정한 관심을 먼저 건네는", wholehearted: "중요한 일에 오래 집중하는",
-  responsive: "상황 변화에 맞춰 대응하는", principled: "자신의 기준을 지키는", practical: "지금 할 수 있는 일부터 챙기는",
+  responsive: "달라진 상황을 보고 바로 움직이는", principled: "자신의 기준을 지키는", practical: "지금 할 수 있는 일부터 챙기는",
   accommodating: "상대가 편안한지 먼저 살피는", organizing: "필요한 것을 순서대로 정리하는", guarded: "충분히 확인한 뒤에야 마음을 보이는",
   analytical: "사실과 이유를 확인하는", mediating: "서로 다른 의견을 조율하는", flexible: "상황에 맞춰 방법을 바꾸는",
   exploring: "낯선 것을 직접 해 보는", unhurried: "필요한 정보를 확인한 뒤 판단하는",
@@ -296,64 +296,93 @@ const NARRATIVE_DIRECTION: Record<BalanceDirection, string> = {
   peaceful: "시끄럽고 복잡하지 않은 쪽을 선택합니다", standards: "기준이 분명할 때 생각을 정리합니다",
 };
 
+/** 3번 보완방향 컬러의 고유한 기질을 통합문의 마무리에 반영한다. */
+const THIRD_COLOR_DIRECTION: Record<string, string> = {
+  red: "마지막까지 해낼 수 있는 속도를 찾습니다",
+  orange: "즐겁게 이어 갈 수 있는 자리를 고릅니다",
+  yellow: "생각이 정리된 뒤 다음 선택을 합니다",
+  green: "모두가 무리 없는 방향을 찾습니다",
+  blue: "오래 지킬 수 있는 방식을 택합니다",
+  indigo: "스스로 납득되는 결론을 따릅니다",
+  violet: "마음에 맞고 현실적인 방법을 찾습니다",
+  pink: "한쪽만 힘들지 않은 관계를 바랍니다",
+  magenta: "꾸밈없이 말할 수 있는 자리를 고릅니다",
+  coral: "함께 웃을 수 있는 분위기를 만들고 싶어 합니다",
+  gold: "해낸 일을 인정하고 다음을 준비합니다",
+  brown: "생활에 필요한 기본부터 차근차근 챙깁니다",
+  beige: "무리하지 않아도 되는 길을 고릅니다",
+  white: "정돈된 순서가 보일 때 안심합니다",
+  black: "나에게 맞는 거리와 기준을 지킵니다",
+  silver: "한걸음 떨어져 상황을 바라봅니다",
+  olive: "어느 한쪽으로 치우치지 않는 길을 찾습니다",
+  mint: "답답하지 않은 선택의 여지를 남겨 둡니다",
+  skyblue: "새로운 선택지가 남아 있을 때 여유가 생깁니다",
+  lavender: "내가 따라갈 수 있는 속도를 지킵니다",
+  peach: "다정한 관심을 받으며 마음을 엽니다",
+  terracotta: "익숙한 일상을 지키며 천천히 나아갑니다",
+  sage: "시끄럽고 복잡하지 않은 쪽을 고릅니다",
+  teal: "기준이 분명할 때 생각이 정리됩니다",
+  cream: "내가 감당할 수 있는 속도로 일을 이어갑니다",
+};
+
 const PSYCHOLOGY_VALUE: Record<PrimaryMotive, string> = {
-  action: "결과가 제자리걸음 하는 느낌에 민감한", connection: "사람들 사이 분위기가 가라앉으면 금방 알아차리는",
-  understanding: "설명이 빠진 상황에서 불안해지는", harmony: "누군가 불편해 보이면 먼저 신경 쓰는",
+  action: "결과가 제자리걸음 하는 느낌에 민감한", connection: "활기 없이 지내는 시간이 길어지면 기분이 가라앉는",
+  understanding: "설명이 빠진 상황에서 불안해지는", harmony: "주변이 어수선하면 기운이 쉽게 빠지는",
   trust: "말과 행동이 다를 때 마음이 멀어지는", insight: "겉으로 보이는 답만으로는 충분하지 않은",
-  meaning: "내 마음에 맞는 이유가 있어야 움직일 수 있는", care: "내 마음이 전해지지 않으면 서운해지는",
+  meaning: "내 마음에 맞는 이유가 있어야 움직일 수 있는", care: "따뜻한 말과 관심을 받고 싶어 하는",
   devotion: "소중한 일의 무게를 가볍게 넘기기 어려운", achievement: "내가 세운 기준에 닿지 않으면 아쉬워하는",
-  stability: "갑자기 계획이 바뀌면 불안해하는", peace: "거친 말이 오가면 쉽게 지치는",
+  stability: "갑자기 계획이 바뀌면 불안해하는", peace: "거친 분위기 속에 오래 있으면 쉽게 지치는",
   clarity: "생각이 복잡하게 얽히면 답답해지는", boundary: "내 선을 넘는 요구에 예민해지는",
   perspective: "한쪽 이야기만 들을 때 쉽게 결론 내리지 않는", novelty: "매일 같은 방식만 반복되면 답답해지는",
-  freedom: "선택할 수 있는 방법이 줄어들면 답답해지는", sensitivity: "말투와 표정의 작은 변화까지 오래 기억하는",
+  freedom: "선택할 수 있는 방법이 줄어들면 답답해지는", sensitivity: "말투와 표정의 작은 변화에도 마음이 오래 쓰이는",
   calm: "급한 분위기와 과한 자극에 쉽게 피로해지는",
 };
 const PSYCHOLOGY_FILTER: Record<SupportStyle, string> = {
-  direct: "직접 해 본 뒤 생각을 정리합니다", lively: "사람들의 표정과 반응을 보며 분위기를 읽습니다", curious: "새로운 정보를 찾아야 생각이 정리됩니다",
-  considerate: "누구 하나 소외되지 않는지를 함께 살핍니다", thoughtful: "말하지 않은 부분까지 생각해 봅니다", reflective: "혼자 생각하며 내 감정을 정리합니다",
-  expressive: "느낀 점을 말로 꺼내야 답답함이 풀립니다", warm: "상대가 다정하게 반응하는지 보며 가까워졌다고 느낍니다", wholehearted: "상대가 진심인지 오래 살핍니다",
-  responsive: "상대의 표정과 말투에 즉시 반응합니다", principled: "내 기준과 맞는지부터 확인합니다", practical: "현실적으로 가능한지 확인해야 안심합니다",
-  accommodating: "상대가 편안한지를 먼저 헤아립니다", organizing: "할 일이 정리되어야 마음이 가벼워집니다", guarded: "확신이 생긴 뒤에야 속을 보입니다",
-  analytical: "감정보다 사실을 확인해야 안심합니다", mediating: "양쪽이 납득할 수 있는지를 생각합니다", flexible: "막히면 다른 방법을 찾아 답답함을 풉니다",
+  direct: "직접 해 본 뒤 생각을 정리합니다", lively: "주변 분위기가 밝을 때 마음이 한결 가벼워집니다", curious: "새로운 정보를 찾아야 생각이 정리됩니다",
+  considerate: "여러 일이 겹치면 무엇부터 할지 먼저 생각합니다", thoughtful: "말하지 않은 부분까지 생각해 봅니다", reflective: "혼자 생각하며 내 감정을 정리합니다",
+  expressive: "느낀 점을 말로 꺼내야 답답함이 풀립니다", warm: "다정한 말을 들으면 기분이 한결 풀립니다", wholehearted: "중요한 일은 쉽게 넘기고 싶지 않습니다",
+  responsive: "예상 밖의 변화가 생기면 바로 반응합니다", principled: "내 기준과 맞는지부터 확인합니다", practical: "현실적으로 가능한지 확인해야 안심합니다",
+  accommodating: "일이 순서대로 진행돼야 숨이 놓입니다", organizing: "할 일이 정리되어야 숨이 놓입니다", guarded: "확신이 생긴 뒤에야 속을 보입니다",
+  analytical: "감정보다 사실을 확인해야 안심합니다", mediating: "여러 선택지 중 어느 쪽이 맞는지 생각합니다", flexible: "막히면 다른 방법을 찾아 답답함을 풉니다",
   exploring: "새로운 경험을 하면 답답함이 줄어듭니다", unhurried: "천천히 생각할 시간이 있어야 편안합니다",
 };
 const PSYCHOLOGY_STABILITY: Record<BalanceDirection, string> = {
-  pace: "숨 돌릴 틈이 있을 때 안정됩니다", warmth: "다정한 반응이 오갈 때 안정됩니다", clarity: "생각의 답이 보일 때 안정됩니다",
-  mutual: "서로의 경계가 지켜질 때 안정됩니다", reliability: "약속이 꾸준히 이어질 때 안정됩니다", meaningful: "스스로 납득할 수 있을 때 안정됩니다",
-  realistic: "현실적인 가능성이 보일 때 안정됩니다", reciprocal: "상대가 내 마음을 알아줄 때 안정됩니다", authentic: "상대의 진심이 느껴질 때 안정됩니다",
-  together: "사람들과 즐거움을 나눌 때 안정됩니다", satisfaction: "내가 한 일을 받아들일 때 안정됩니다", grounded: "하루 일과가 안정될 때 안정됩니다",
+  pace: "숨 돌릴 틈이 있을 때 안정됩니다", warmth: "다정한 말을 들을 때 안정됩니다", clarity: "생각의 답이 보일 때 안정됩니다",
+  mutual: "내가 지킬 범위가 분명할 때 안정됩니다", reliability: "예측할 수 있는 일정이 이어질 때 안정됩니다", meaningful: "스스로 납득할 수 있을 때 안정됩니다",
+  realistic: "현실적인 가능성이 보일 때 안정됩니다", reciprocal: "내 마음을 편하게 말할 수 있을 때 안정됩니다", authentic: "꾸밈없이 말해도 된다고 느낄 때 안정됩니다",
+  together: "좋아하는 일을 하며 웃을 때 안정됩니다", satisfaction: "내가 한 일을 받아들일 때 안정됩니다", grounded: "하루 일과가 안정될 때 안정됩니다",
   ease: "부드러운 분위기 안에서 안정됩니다", order: "할 일의 순서가 보일 때 안정됩니다", autonomy: "나만의 공간이 있을 때 안정됩니다",
-  distance: "혼자 생각할 자리가 있을 때 안정됩니다", fairness: "할 일이 한쪽으로 몰리지 않을 때 안정됩니다", freedom: "고를 수 있는 여지가 있을 때 안정됩니다",
+  distance: "혼자 생각할 자리가 있을 때 안정됩니다", fairness: "해야 할 일이 한꺼번에 몰리지 않을 때 안정됩니다", freedom: "고를 수 있는 여지가 있을 때 안정됩니다",
   openness: "새로운 선택지가 보일 때 안정됩니다", innerPace: "생각을 정리할 시간이 있어야 안정됩니다", tenderness: "따뜻한 관심을 받을 때 안정됩니다",
   continuity: "일상이 일정하게 이어질 때 안정됩니다", peaceful: "조용한 시간이 있을 때 안정됩니다", standards: "기준이 또렷할 때 안정됩니다",
 };
 
 const DECISION_START: Record<PrimaryMotive, string> = {
-  action: "일의 우선순위를 빠르게 잡습니다", connection: "함께할 사람과 분위기부터 살핍니다", understanding: "필요한 정보를 먼저 찾아봅니다",
-  harmony: "주변에 미칠 영향을 함께 생각합니다", trust: "약속을 지킬 수 있는지부터 따집니다", insight: "겉보다 핵심이 무엇인지 확인합니다",
-  meaning: "내가 왜 이 일을 하는지부터 생각합니다", care: "상대가 어떤 마음일지 먼저 떠올립니다", devotion: "중요한 일에는 깊이 들어갑니다",
-  achievement: "목표와 기준을 분명히 세웁니다", stability: "계획이 오래 갈 수 있는지 먼저 따집니다", peace: "갈등을 줄일 방법을 먼저 찾습니다",
+  action: "일의 우선순위를 빠르게 잡습니다", connection: "즐겁게 해낼 수 있는 방법부터 찾습니다", understanding: "필요한 정보를 먼저 찾아봅니다",
+  harmony: "여러 선택이 충돌하면 전체에 무리가 없는 쪽을 고릅니다", trust: "끝까지 지킬 수 있는지부터 따집니다", insight: "겉보다 핵심이 무엇인지 확인합니다",
+  meaning: "내가 왜 이 일을 하는지부터 생각합니다", care: "마음이 불편하지 않은 방식을 먼저 떠올립니다", devotion: "중요한 일에는 깊이 들어갑니다",
+  achievement: "목표와 기준을 분명히 세웁니다", stability: "계획이 오래 갈 수 있는지 먼저 따집니다", peace: "부담이 적은 방법을 먼저 찾습니다",
   clarity: "복잡한 일을 순서대로 나눕니다", boundary: "나에게 맞는 범위인지부터 판단합니다", perspective: "여러 가능성을 비교한 뒤 정합니다",
-  novelty: "새로운 방법이 있는지 먼저 봅니다", freedom: "선택지를 충분히 열어 둡니다", sensitivity: "주변 분위기를 읽고 판단합니다",
+  novelty: "새로운 방법이 있는지 먼저 봅니다", freedom: "선택지를 충분히 열어 둡니다", sensitivity: "작은 차이도 놓치지 않고 살핀 뒤 정합니다",
   calm: "서두르기보다 자기 속도에 맞춰 정합니다",
 };
 const WORK_PROCESS: Record<SupportStyle, string> = {
-  direct: "결정이 서면 바로 행동으로 옮깁니다", lively: "사람들과 나누며 일을 풀어갑니다", curious: "여러 방법을 비교해 봅니다",
-  considerate: "각자의 상황을 확인하며 조정합니다", thoughtful: "듣고 생각한 뒤 답을 냅니다", reflective: "혼자 정리한 뒤 움직입니다",
-  expressive: "자기 방식으로 아이디어를 풀어냅니다", warm: "사람의 마음을 살피며 진행합니다", wholehearted: "중요한 부분에 집중해 몰입합니다",
-  responsive: "상황의 반응에 맞춰 빠르게 바꿉니다", principled: "정해 둔 기준을 지키며 진행합니다", practical: "할 수 있는 일부터 차근차근 처리합니다",
-  accommodating: "주변과 무리 없이 맞추며 진행합니다", organizing: "필요한 것을 정리해 하나씩 끝냅니다", guarded: "확신이 생길 때까지 충분히 확인합니다",
-  analytical: "근거를 확인하며 차분히 처리합니다", mediating: "서로의 차이를 조정하며 풀어갑니다", flexible: "상황에 맞는 새 방식을 시도합니다",
+  direct: "결정이 서면 바로 행동으로 옮깁니다", lively: "진행이 막히면 분위기를 바꾸어 다시 풀어갑니다", curious: "여러 방법을 비교해 봅니다",
+  considerate: "여러 조건을 살핀 뒤 조정합니다", thoughtful: "듣고 생각한 뒤 답을 냅니다", reflective: "혼자 정리한 뒤 움직입니다",
+  expressive: "자기 방식으로 아이디어를 풀어냅니다", warm: "상황이 거칠어지지 않도록 속도를 조절하며 진행합니다", wholehearted: "중요한 부분에 집중해 몰입합니다",
+  responsive: "상황 변화에 맞춰 빠르게 바꿉니다", principled: "정해 둔 기준을 지키며 진행합니다", practical: "할 수 있는 일부터 차근차근 처리합니다",
+  accommodating: "무리 없는 쪽으로 순서를 조정하며 진행합니다", organizing: "필요한 것을 정리해 하나씩 끝냅니다", guarded: "확신이 생길 때까지 충분히 확인합니다",
+  analytical: "근거를 확인하며 차분히 처리합니다", mediating: "엇갈린 조건을 조정하며 풀어갑니다", flexible: "상황에 맞는 새 방식을 시도합니다",
   exploring: "새로운 시도를 하며 나만의 방식을 만들어갑니다", unhurried: "빠진 일이 없는지 확인하며 진행합니다",
 };
 const FINISH_STYLE: Record<BalanceDirection, string> = {
-  pace: "무리 없는 일정으로 일을 이어갑니다", warmth: "사람들과 편안히 협력하는 방식으로 마무리합니다", clarity: "머릿속이 정리된 뒤에 결론을 냅니다",
-  mutual: "서로 불편하지 않은 선에서 끝을 냅니다", reliability: "꾸준히 이어 갈 수 있는 방법을 택합니다", meaningful: "스스로 납득한 결론으로 마무리합니다",
-  realistic: "현실에서 오래 갈 수 있는 방법을 택합니다", reciprocal: "서로의 배려가 한쪽으로 기울지 않았는지 살핍니다", authentic: "마음에 맞는 방식인지 살핍니다",
-  together: "함께할 사람과 기분 좋게 끝낼 길을 찾습니다", satisfaction: "해낸 부분을 확인하며 다음으로 넘어갑니다", grounded: "생활에 바로 이어질 수 있게 정리합니다",
+  pace: "무리 없는 일정으로 일을 이어갑니다", warmth: "부드럽게 조율하며 마무리합니다", clarity: "머릿속이 정리된 뒤에 결론을 냅니다",
+  mutual: "결과와 과정 모두 무리가 없게 끝을 냅니다", reliability: "꾸준히 이어 갈 수 있는 방법을 택합니다", meaningful: "스스로 납득한 결론으로 마무리합니다",
+  realistic: "현실에서 오래 갈 수 있는 방법을 택합니다", reciprocal: "내 노력과 기대가 한쪽으로 치우치지 않았는지 살핍니다", authentic: "내 뜻에 맞는 방식인지 확인합니다",
+  together: "즐거움이 남는 방식으로 마무리합니다", satisfaction: "해낸 부분을 확인하며 다음으로 넘어갑니다", grounded: "생활에 바로 이어질 수 있게 정리합니다",
   ease: "과하지 않은 속도로 끝을 냅니다", order: "마지막 단계까지 깔끔하게 마무리합니다", autonomy: "내가 감당할 수 있는 범위에서 마무리합니다",
   distance: "한걸음 물러나 다시 확인합니다", fairness: "할 일을 한쪽에 몰지 않도록 나눕니다", freedom: "다음 선택을 열어 둔 채 마무리합니다",
-  openness: "새로운 가능성을 남긴 채 끝을 냅니다", innerPace: "내가 소화할 수 있는 만큼씩 차근차근 정리합니다", tenderness: "상대가 편안한지 살피며 끝을 냅니다",
+  openness: "새로운 가능성을 남긴 채 끝을 냅니다", innerPace: "내가 소화할 수 있는 만큼씩 차근차근 정리합니다", tenderness: "마무리한 뒤에도 찜찜한 점이 없는지 확인합니다",
   continuity: "평소 하던 방식이 크게 바뀌지 않게 마무리합니다", peaceful: "조용하고 안정된 방식으로 마무리합니다", standards: "정한 기준을 확인한 뒤 끝을 냅니다",
 };
 
@@ -483,11 +512,68 @@ const AMBIGUOUS_KOREAN_PATTERNS: ReadonlyArray<RegExp> = [
   /마음과 현실이 함께 갈/, /마음의 온도/, /정서적 거리/, /흐름이 함께 보이/, /힘을 이어주/,
 ];
 
-function polishKoreanOutput(text: string): string {
-  return KOREAN_NATURAL_REPLACEMENTS.reduce(
+function countMatches(text: string, pattern: RegExp): number {
+  return [...text.matchAll(pattern)].length;
+}
+
+/** 한 문장 안에서 같은 어근·부사가 이어지는 경우만 자연스럽게 바꾼다. */
+function softenInternalRepetition(text: string): string {
+  return text
+    .replace(/먼저([^.!?]{0,80})먼저/g, (_match, between: string) => `먼저${between}차분히`)
+    .replace(/살피고([^.!?]{0,80})살피는/g, (_match, between: string) => `살피고${between}헤아리는`)
+    .replace(/확인하고([^.!?]{0,80})확인하는/g, (_match, between: string) => `확인하고${between}살펴보는`);
+}
+
+/** 앞선 영역에 같은 어휘가 몰릴 때에만 현재 영역의 표현을 최소한으로 분산한다. */
+function diversifyRepeatedVocabulary(candidate: string, previousSections: string[]): string {
+  const combined = `${previousSections.join(" ")} ${candidate}`;
+  let diversified = candidate;
+
+  if (countMatches(combined, /살피/g) >= 3) {
+    diversified = diversified
+      .replace(/살핍니다/g, "확인합니다")
+      .replace(/살피며/g, "고려하며")
+      .replace(/살핀 뒤/g, "확인한 뒤")
+      .replace(/살피는/g, "생각하는");
+  }
+  if (countMatches(combined, /챙기/g) >= 3) {
+    diversified = diversified
+      .replace(/챙깁니다/g, "처리합니다")
+      .replace(/챙기며/g, "마무리하며")
+      .replace(/챙기는/g, "처리하는");
+  }
+  if (countMatches(combined, /편안/g) >= 3) {
+    diversified = diversified
+      .replace(/편안합니다/g, "부담이 적습니다")
+      .replace(/편안한/g, "부담 없는")
+      .replace(/편안하게/g, "부담 없이");
+  }
+  if (countMatches(combined, /균형/g) >= 3) {
+    diversified = diversified
+      .replace(/균형을/g, "고른 방향을")
+      .replace(/균형이/g, "조화가");
+  }
+  if (countMatches(combined, /마음/g) >= 5) {
+    diversified = diversified
+      .replace(/내 마음을/g, "내 생각을")
+      .replace(/마음에 맞는/g, "내 뜻에 맞는")
+      .replace(/마음이 불편하지 않게/g, "찜찜하지 않게")
+      .replace(/마음을 엽니다/g, "경계를 풉니다")
+      .replace(/마음을 전합니다/g, "고마움을 전합니다")
+      .replace(/마음을 꺼냅니다/g, "생각을 말합니다")
+      .replace(/속마음을/g, "속얘기를")
+      .replace(/마음이 오래 쓰이는/g, "신경이 오래 쓰이는");
+  }
+
+  return diversified;
+}
+
+function polishKoreanOutput(text: string, previousSections: string[] = []): string {
+  const polished = KOREAN_NATURAL_REPLACEMENTS.reduce(
     (polished, [pattern, replacement]) => polished.replace(pattern, replacement),
     text,
   ).replace(/\s{2,}/g, " ").trim();
+  return softenInternalRepetition(diversifyRepeatedVocabulary(polished, previousSections));
 }
 
 function wordTrigrams(text: string): Set<string> {
@@ -516,16 +602,16 @@ function ensureUniqueTags(tags: string[]): string[] {
 function buildIntegrationBridge(
   primary: ColorEngineProfile,
   support: ColorEngineProfile,
-  balance: ColorEngineProfile,
+  thirdColor: ColorData,
 ): string {
   return polishKoreanOutput(
-    `${NARRATIVE_CORE[primary.motive]} ${NARRATIVE_EXPRESSION[support.support]} 편입니다. ${NARRATIVE_DIRECTION[balance.balance]}.`,
+    `${NARRATIVE_CORE[primary.motive]} ${NARRATIVE_EXPRESSION[support.support]} 편입니다. ${THIRD_COLOR_DIRECTION[thirdColor.id]}.`,
   );
 }
 
 /** 각 영역 문장을 개별적으로 다듬고, 앞선 영역과 겹치지 않는 후보만 선택한다. */
 function chooseNaturalNonOverlapping(candidates: string[], previousSections: string[]): string {
-  const polishedCandidates = candidates.map(polishKoreanOutput);
+  const polishedCandidates = candidates.map((candidate) => polishKoreanOutput(candidate, previousSections));
   return polishedCandidates.find((candidate) => passesKoreanQualityCheck(candidate, previousSections))
     ?? polishedCandidates.find((candidate) => !AMBIGUOUS_KOREAN_PATTERNS.some((pattern) => pattern.test(candidate))
     )
@@ -544,7 +630,7 @@ export function buildPremiumStage1Interpretation(colors: readonly ColorData[]): 
   const [p1, p2, p3] = colors.map(profileFor);
   const [e1, e2, e3] = colors.map(engineFor);
 
-  const integrationBridge = buildIntegrationBridge(e1, e2, e3);
+  const integrationBridge = buildIntegrationBridge(e1, e2, colors[2]);
   const psychologyTendency = chooseNaturalNonOverlapping(
     [
       `${PSYCHOLOGY_VALUE[e1.motive]} 편입니다. ${PSYCHOLOGY_FILTER[e2.support]}. ${PSYCHOLOGY_STABILITY[e3.balance]}.`,
@@ -575,8 +661,8 @@ export function buildPremiumStage1Interpretation(colors: readonly ColorData[]): 
         hex: color.hex,
         keywords: color.keywords.slice(0, 3),
         description: polishKoreanOutput(`${profile.psychology} 편입니다. ${profile.behavior} 모습이 보입니다.`),
-        strengths: profile.strengths.slice(0, 2).map(polishKoreanOutput),
-        tiredStates: profile.tiredStates.slice(0, 2).map(polishKoreanOutput),
+        strengths: profile.strengths.slice(0, 2).map((strength) => polishKoreanOutput(strength)),
+        tiredStates: profile.tiredStates.slice(0, 2).map((tiredState) => polishKoreanOutput(tiredState)),
       };
     });
   const strengths = ensureUniqueTags([
@@ -584,12 +670,12 @@ export function buildPremiumStage1Interpretation(colors: readonly ColorData[]): 
       SUPPORT_STRENGTH[e2.support],
       BALANCE_STRENGTH[e3.balance],
       FUSION_STRENGTH[e1.motive],
-    ].map(polishKoreanOutput));
+    ].map((strength) => polishKoreanOutput(strength)));
   const growthPossibility = ensureUniqueTags([
       PRIMARY_GROWTH[e1.motive],
       SUPPORT_GROWTH[e2.support],
       BALANCE_GROWTH[e3.balance],
-    ].map(polishKoreanOutput));
+    ].map((growth) => polishKoreanOutput(growth)));
 
   return {
     miniInterpretations,

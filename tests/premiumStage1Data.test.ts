@@ -20,9 +20,22 @@ function hasSharedLongPhrase(left: string, right: string): boolean {
 }
 
 const ABSTRACT_OUTPUT_PATTERNS = /마음이 남는|마음의 여유|내면의 여백|마음의 속도를 따라|한쪽에 부담이 쏠리지|마음과 현실이 함께 갈|마음의 온도|정서적 거리|흐름이 함께 보이|힘을 이어주|답답했던 답답함/;
+const RELATION_FOCUS_PATTERNS = /상대|사람|관계|서로|대화|신뢰|약속|안부|친밀|가까워|애정|거리|반응을 주고받/;
 
 function lastWord(tag: string): string {
   return tag.trim().split(/\s+/).at(-1) ?? tag;
+}
+
+const REPETITION_ROOTS = [/먼저/g, /살피/g, /챙기/g, /편안/g, /균형/g];
+
+function hasRepeatedRootInSentence(text: string): boolean {
+  return text
+    .split(/[.!?]/)
+    .some((sentence) => REPETITION_ROOTS.some((root) => (sentence.match(root) ?? []).length > 1));
+}
+
+function countRoot(text: string, root: string): number {
+  return text.split(root).length - 1;
 }
 
 describe('유료 심화 1단계 컬러 에너지 흐름', () => {
@@ -73,6 +86,18 @@ describe('유료 심화 1단계 컬러 에너지 흐름', () => {
           expect(hasSharedLongPhrase(result.psychologyTendency, result.relationshipTendency)).toBe(false);
           expect(hasSharedLongPhrase(result.personalityTendency, result.relationshipTendency)).toBe(false);
           expect(result.psychologyTendency).not.toMatch(/무의식|내면에서는|회복 방향|지금은/);
+          expect(result.psychologyTendency).not.toMatch(RELATION_FOCUS_PATTERNS);
+          expect(result.personalityTendency).not.toMatch(RELATION_FOCUS_PATTERNS);
+          expect(hasRepeatedRootInSentence(result.integrationBridge)).toBe(false);
+          expect(hasRepeatedRootInSentence(result.psychologyTendency)).toBe(false);
+          expect(hasRepeatedRootInSentence(result.personalityTendency)).toBe(false);
+          expect(hasRepeatedRootInSentence(result.relationshipTendency)).toBe(false);
+          expect(countRoot([
+            result.integrationBridge,
+            result.psychologyTendency,
+            result.personalityTendency,
+            result.relationshipTendency,
+          ].join(' '), '마음')).toBeLessThanOrEqual(4);
           expect(result.growthPossibility.join(' ')).not.toMatch(/해보세요|해야 합니다|연습이 필요/);
           expect([
             result.integrationBridge,
@@ -119,5 +144,27 @@ describe('유료 심화 1단계 컬러 에너지 흐름', () => {
     expect(result.growthPossibility).toContain('혼자 생각하느라 대화를 미루는 편');
     expect(result.growthPossibility).toContain('바쁠수록 내 리듬을 지키려다 연락을 늦게 하는 편');
     expect(result.relationshipTendency).toContain('서로의 생각을 분명히 나누며 방향을 맞추고 싶어 합니다');
+  });
+
+  it('관계성이 강한 컬러 조합도 내면·행동·관계 영역을 분리한다', () => {
+    const colors = ['pink', 'peach', 'green'].map((id) =>
+      COLOR_DATA.find((color) => color.id === id)!,
+    );
+    const result = buildPremiumStage1Interpretation(colors);
+
+    expect(result.psychologyTendency).not.toMatch(RELATION_FOCUS_PATTERNS);
+    expect(result.personalityTendency).not.toMatch(RELATION_FOCUS_PATTERNS);
+    expect(result.relationshipTendency).toMatch(/상대|관계|마음|안부|가까워/);
+  });
+
+  it('3번 보완방향 컬러마다 통합문의 마무리 방향이 고유하게 달라진다', () => {
+    const primary = COLOR_DATA.find((color) => color.id === 'red')!;
+    const support = COLOR_DATA.find((color) => color.id === 'teal')!;
+    const thirdDirections = COLOR_DATA.map((third) =>
+      buildPremiumStage1Interpretation([primary, support, third]).integrationBridge.split('.').at(-2)?.trim(),
+    );
+
+    expect(thirdDirections.every(Boolean)).toBe(true);
+    expect(new Set(thirdDirections).size).toBe(COLOR_DATA.length);
   });
 });
