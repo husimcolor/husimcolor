@@ -222,10 +222,43 @@ export default function PremiumColorSelectScreen() {
                   <View key={c.id} style={styles.colorSummaryItem}>
                     <View style={[styles.colorDot, { backgroundColor: c.hex }, getLightColorBorder(c.hex)]} />
                     <Text style={[styles.colorSummaryName, { color: '#3D3530' }]}>{c.korName}</Text>
-                    <Text style={[styles.colorSummaryKeyword, { color: '#8A7A68' }]}>{c.keywords[0]}</Text>
+                    <Text style={[styles.colorSummaryKeyword, { color: '#8A7A68' }]} numberOfLines={2}>
+                      {c.keywords.slice(0, 3).join(" · ")}
+                    </Text>
                   </View>
                 ))}
               </View>
+            </View>
+
+            {/* 선택 컬러 미니 해석 */}
+            <View style={[styles.miniInterpretations, { backgroundColor: '#F8F6F0', borderColor: '#DDD8CE' }]}>
+              <Text style={[styles.miniInterpretationsTitle, { color: '#3D3530' }]}>선택한 컬러 미니 해석</Text>
+              {interpretation.miniInterpretations.map((item) => (
+                <View key={item.colorId} style={[styles.miniColorCard, { borderColor: '#DDD8CE' }]}>
+                  <View style={styles.miniColorHeader}>
+                    <View style={[styles.miniColorDot, { backgroundColor: item.hex }, getLightColorBorder(item.hex)]} />
+                    <View style={styles.miniColorHeading}>
+                      <Text style={[styles.miniColorName, { color: '#3D3530' }]}>{item.colorName}</Text>
+                      <Text style={[styles.miniColorKeywords, { color: '#8A7A68' }]}>{item.keywords.join(" · ")}</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.miniColorDescription, { color: '#4B4037' }]}>{item.description}</Text>
+                  <View style={styles.miniMetaRow}>
+                    <Text style={[styles.miniMetaLabel, { color: '#7A4A10' }]}>강점</Text>
+                    <Text style={[styles.miniMetaText, { color: '#5F4B3B' }]}>{item.strengths.join(" · ")}</Text>
+                  </View>
+                  <View style={styles.miniMetaRow}>
+                    <Text style={[styles.miniMetaLabel, { color: '#2A5A80' }]}>마음이 지칠 때</Text>
+                    <Text style={[styles.miniMetaText, { color: '#5F4B3B' }]}>{item.tiredStates.join(" · ")}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* 세 컬러 연결 문구 */}
+            <View style={[styles.integrationBridge, { backgroundColor: '#8BAF8B12', borderColor: '#8BAF8B44' }]}>
+              <Text style={[styles.integrationBridgeTitle, { color: '#3D6B3D' }]}>세 컬러가 함께 나타날 때</Text>
+              <Text style={[styles.integrationBridgeText, { color: '#4B4037' }]}>{interpretation.integrationBridge}</Text>
             </View>
 
             {/* 심리 성향 */}
@@ -271,14 +304,9 @@ export default function PremiumColorSelectScreen() {
                 <View style={[styles.sectionDot, { backgroundColor: "#2A5A80" }]} />
                 <Text style={[styles.sectionLabel, { color: "#2A5A80" }]}>성장 가능성</Text>
               </View>
-              <Text style={[{ color: '#8A7A68', fontSize: 11, marginBottom: 8, lineHeight: 16 }]}>이 성향을 이해하면 더 자연스러운 성장의 방향이 보입니다</Text>
-              <View style={styles.tagRow}>
-                {interpretation.shadows.map(s => (
-                  <View key={s} style={[styles.tag, { backgroundColor: "#7B9FBF18", borderColor: "#7B9FBF44" }]}>
-                    <Text style={[styles.tagText, { color: "#2A5A80" }]}>{s}</Text>
-                  </View>
-                ))}
-              </View>
+              <Text style={[styles.sectionText, { color: '#3D3530' }]}>
+                {interpretation.growthPossibility}
+              </Text>
             </View>
 
             {/* 관계 성향 */}
@@ -468,6 +496,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
   },
   colorSummaryItem: {
+    flex: 1,
     alignItems: "center",
     gap: 4,
   },
@@ -482,6 +511,80 @@ const styles = StyleSheet.create({
   },
   colorSummaryKeyword: {
     fontSize: 10,
+    lineHeight: 14,
+    textAlign: "center",
+  },
+  miniInterpretations: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    gap: 10,
+  },
+  miniInterpretationsTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  miniColorCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+    backgroundColor: "#FFFFFFAA",
+  },
+  miniColorHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+  miniColorDot: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+  },
+  miniColorHeading: {
+    flex: 1,
+    gap: 1,
+  },
+  miniColorName: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  miniColorKeywords: {
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  miniColorDescription: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  miniMetaRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  miniMetaLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    width: 76,
+  },
+  miniMetaText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  integrationBridge: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    gap: 6,
+  },
+  integrationBridgeTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  integrationBridgeText: {
+    fontSize: 13,
+    lineHeight: 20,
   },
   sectionCard: {
     borderRadius: 14,
