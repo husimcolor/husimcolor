@@ -18,6 +18,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { type CardData, CARD_DATA } from "@/constants/cardData";
 import { type ColorData } from "@/constants/colorData";
+import { buildStage2CardInterpretations, buildStage2ColorBridge } from "@/constants/premiumStage2CardInterpretation";
 import { type UserProfile } from "./profile";
 import { trpc } from "@/lib/trpc";
 import { buildLifeEnergyResult, type LifeEnergyResult, type ContextualRoutine } from "@/constants/lifeArchetype";
@@ -575,6 +576,8 @@ export default function PremiumResultScreen() {
   }
 
   const [card1, card2, card3] = cards;
+  const stage2Cards = buildStage2CardInterpretations([card1, card2, card3]);
+  const stage2Bridge = buildStage2ColorBridge(prevColors);
 
   // 삶의 역할 Archetype + 오행 기반 에너지 흐름 해석 (jobCoaching보다 먼저 계산)
   const lifeEnergyResult: LifeEnergyResult = buildLifeEnergyResult(
@@ -716,97 +719,42 @@ export default function PremiumResultScreen() {
           ))}
         </View>
 
-        {/* 카드별 상세 해석 */}
-        {cards.map((card, i) => (
+        {/* 1단계 성향에서 2단계 심리카드로 이어지는 짧은 연결 */}
+        <View style={styles.stage2BridgeBox}>
+          <Text style={styles.stage2BridgeTitle}>🌿 1단계 컬러에서 이어지는 심리카드 흐름</Text>
+          <Text style={styles.stage2BridgeText}>{stage2Bridge}</Text>
+        </View>
+
+        {/* 카드별 상세 해석: 1번=내면 욕구, 2번=현재 흐름, 3번=다음 방향 */}
+        {cards.map((card, i) => {
+          const interpretation = stage2Cards[i];
+          return (
           <SectionCard
             key={card.id}
-            title={`${POSITION_LABELS[i].label} · ${card.colorKor} ${card.shapeKor}`}
+            title={`${POSITION_LABELS[i].label} · ${interpretation.roleTitle}`}
             accentColor={POSITION_LABELS[i].color}
             colors={colors}
           >
             <View style={styles.cardDetailContent}>
-              {/* 오각형 안내 배지 */}
-              {card.shape === 'pentagon' && (
-                <View style={[styles.pentagonBadge, { backgroundColor: POSITION_LABELS[i].color + '18', borderColor: POSITION_LABELS[i].color + '40' }]}>
-                  <Text style={[styles.pentagonBadgeText, { color: POSITION_LABELS[i].color }]}>
-                    ⬠ 오각형 에너지 · 연결 · 통합 · 의미 확장
-                  </Text>
+              <View style={[styles.cardEvidenceBox, { borderColor: POSITION_LABELS[i].color + '44' }]}>
+                <Text style={[styles.cardEvidenceName, { color: POSITION_LABELS[i].color }]}>{interpretation.cardLabel}</Text>
+                <View style={styles.cardEvidenceRow}>
+                  <Text style={styles.cardEvidenceLabel}>컬러 키워드</Text>
+                  <Text style={styles.cardEvidenceText}>{interpretation.colorKeywords.join(' · ')}</Text>
                 </View>
-              )}
-              {/* 1번 카드: 무의식/내면 에너지 흐름 */}
-              {i === 0 && (
-                <View style={styles.detailRow}>
-                  <Text style={[styles.detailLabel, { color: '#555555' }]}>
-                    무의식 에너지 흐름
-                  </Text>
-                  <Text style={[styles.detailText, { color: '#3D3530' }]}>
-                    {card.psychologyFlow}
-                  </Text>
+                <View style={styles.cardEvidenceRow}>
+                  <Text style={styles.cardEvidenceLabel}>도형 키워드</Text>
+                  <Text style={styles.cardEvidenceText}>{interpretation.shapeKeywords.join(' · ')}</Text>
                 </View>
-              )}
-              {/* 2번 카드: 현재 에너지 흐름 */}
-              {i === 1 && (
-                <View style={styles.detailRow}>
-                  <Text style={[styles.detailLabel, { color: '#555555' }]}>
-                    현재 에너지 흐름
-                  </Text>
-                  <Text style={[styles.detailText, { color: '#3D3530' }]}>
-                    {card.personalityFlow}
-                  </Text>
-                </View>
-              )}
-              {/* 3번 카드: 회복 방향 */}
-              {i === 2 && (
-                <View style={styles.detailRow}>
-                  <Text style={[styles.detailLabel, { color: '#555555' }]}>
-                    회복 방향
-                  </Text>
-                  <Text style={[styles.detailText, { color: '#3D3530' }]}>
-                    {extractFirstSentence(sanitizeRecovery(card.recoveryDirection, profile?.faith ?? ''))}
-                  </Text>
-                </View>
-              )}
-              {/* 감정 패턴 - 공통 */}
-              <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: '#555555' }]}>
-                  감정 패턴
-                </Text>
-                <Text style={[styles.detailText, { color: '#3D3530' }]}>
-                  {card.emotionPattern}
-                </Text>
               </View>
-              {/* 장점 - 공통 */}
               <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: '#555555' }]}>
-                  장점
-                </Text>
-                <View style={styles.tagsRow}>
-                  {(card.strengths ?? []).map((s) => (
-                    <View
-                      key={s}
-                      style={[
-                        styles.tag,
-                        {
-                          backgroundColor: POSITION_LABELS[i].color + "22",
-                          borderColor: POSITION_LABELS[i].color + "55",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.tagText,
-                          { color: POSITION_LABELS[i].color },
-                        ]}
-                      >
-                        {s}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
+                <Text style={[styles.detailLabel, { color: '#555555' }]}>{interpretation.roleLabel}</Text>
+                <Text style={[styles.detailText, { color: '#3D3530' }]}>{interpretation.narrative}</Text>
               </View>
             </View>
           </SectionCard>
-        ))}
+          );
+        })}
 
         {/* 보완 컬러 */}
         <SectionCard
@@ -1601,6 +1549,55 @@ function generateCombinedCoaching(card1: CardData, card2: CardData, card3: CardD
 }
 
 const styles = StyleSheet.create({
+  stage2BridgeBox: {
+    backgroundColor: '#F3F7F1',
+    borderWidth: 1,
+    borderColor: '#BFD1BA',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 14,
+    gap: 6,
+  },
+  stage2BridgeTitle: {
+    color: '#3D6B3D',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  stage2BridgeText: {
+    color: '#4A5846',
+    fontSize: 15,
+    lineHeight: 23,
+  },
+  cardEvidenceBox: {
+    backgroundColor: '#FBFAF7',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    gap: 5,
+  },
+  cardEvidenceName: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  cardEvidenceRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  cardEvidenceLabel: {
+    color: '#6A5F54',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  cardEvidenceText: {
+    color: '#4C443B',
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '600',
+  },
   colorFlowSection: {
     borderRadius: 14,
     borderWidth: 1,
