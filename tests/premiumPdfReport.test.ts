@@ -6,6 +6,7 @@ import { COLOR_DATA } from "../constants/colorData";
 import { buildCustomRecoveryRoutine, buildLifeEnergyResult } from "../constants/lifeArchetype";
 import { buildLifeRoleEnergyReport } from "../constants/lifeRoleEnergy";
 import { buildPremiumPdfHtml } from "../lib/premium-pdf-report";
+import { buildPremiumShareCardData } from "../lib/premium-share-card";
 import { buildStage2CardInterpretations, buildStage2ColorBridge } from "../constants/premiumStage2CardInterpretation";
 
 const getCard = (id: string): CardData => {
@@ -70,5 +71,29 @@ describe("유료 결과 PDF 리포트", () => {
     expect(source).toContain("PDF 리포트 다운로드");
     expect(source).toContain("buildPremiumPdfHtml");
     expect(source).toContain("Print.printToFileAsync");
+    expect(source).toContain("outputPdf('blob')");
+    expect(source).toContain("shareOrDownloadWebFile");
+    expect(source).toContain("downloadWebFile(pdfBlob");
+    expect(source).toContain("PremiumShareSummaryCard");
+  });
+
+  it("요약 공유카드는 화면의 최종 카드·역할·오행·회복 값을 개인정보 없이 압축한다", () => {
+    const shareCard = buildPremiumShareCardData({
+      selectedColors: colors,
+      cards,
+      stage2Cards,
+      combinedCoaching: "웹 화면에 표시되는 지금 마음의 흐름입니다.",
+      lifeRoleReport: lifeRole,
+      lifeEnergyResult: energy,
+      recoveryMessage: routine.message,
+    });
+    expect(shareCard.colors).toHaveLength(3);
+    expect(shareCard.cards[0].summary).toContain(stage2Cards[0].narrative.split(/[.!?]/)[0]);
+    expect(shareCard.currentFlow).toContain("웹 화면에 표시되는");
+    expect(shareCard.role.title).toBe(lifeRole.coreRole.title);
+    expect(shareCard.currentElements).toEqual(energy.currentFiveElements.elements);
+    expect(shareCard.complementaryElements).toEqual(energy.complementaryFiveElements.elements);
+    expect(shareCard.recoveryMessage).toContain(routine.message.split(/[.!?]/)[0]);
+    expect(Object.keys(shareCard)).not.toContain("profile");
   });
 });

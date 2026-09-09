@@ -1,5 +1,5 @@
 "use no memo";
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Linking } from "react-native";
 import {
   View,
@@ -24,11 +24,14 @@ import { trpc } from "@/lib/trpc";
 import { buildCustomRecoveryRoutine, buildLifeEnergyResult, type LifeEnergyResult } from "@/constants/lifeArchetype";
 import { buildLifeRoleEnergyReport } from "@/constants/lifeRoleEnergy";
 import { buildPremiumPdfHtml } from "@/lib/premium-pdf-report";
+import { buildPremiumShareCardData } from "@/lib/premium-share-card";
+import { PremiumShareSummaryCard } from "@/components/premium-share-summary-card";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
+import ViewShot, { captureRef, type ViewShotRef } from 'react-native-view-shot';
 
 // 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
 function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
@@ -475,6 +478,8 @@ export default function PremiumResultScreen() {
   const [reviewText, setReviewText] = useState("");
   const [reviewTags, setReviewTags] = useState<string[]>([]);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const shareCardRef = useRef<ViewShotRef>(null);
+  const [isCreatingShareCard, setIsCreatingShareCard] = useState(false);
   const REVIEW_TAGS = ["성향 해석", "관계 흐름", "무의식 흐름", "회복 방향", "코칭 메시지", "보완 루틴"];
 
   const createReviewMutation = trpc.reviews.create.useMutation();
@@ -658,6 +663,51 @@ export default function PremiumResultScreen() {
   // 하단 여운 문장: 3번 카드(회복 방향) 기준
   const closingLine = card3.closingLine;
   const displayComplementColors = selectDisplayComplementColors(card1, card2, card3);
+  const shareCardData = buildPremiumShareCardData({
+    selectedColors: prevColors,
+    cards: [card1, card2, card3],
+    stage2Cards,
+    combinedCoaching,
+    lifeRoleReport,
+    lifeEnergyResult,
+    recoveryMessage: customRecoveryRoutine.message,
+  });
+
+  const downloadWebFile = (blob: Blob, filename: string) => {
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 15_000);
+  };
+
+  const shareOrDownloadWebFile = async (blob: Blob, filename: string, title: string, text: string) => {
+    const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      try {
+        await navigator.share({ title, text, files: [file] });
+        return;
+      } catch (error) {
+        if ((error as Error)?.name === 'AbortError') return;
+      }
+    }
+    downloadWebFile(blob, filename);
+  };
+
+  const captureShareCard = async () => {
+    let uri: string | undefined;
+    if (shareCardRef.current && typeof shareCardRef.current.capture === 'function') {
+      uri = await shareCardRef.current.capture();
+    } else {
+      uri = await captureRef(shareCardRef, { format: 'png', quality: 0.96 });
+    }
+    if (!uri) throw new Error('공유카드 캡처에 실패했습니다.');
+    return uri;
+  };
 
   const handlePdfDownload = async () => {
     const colorFlowDescription = prevColors.length >= 3
@@ -702,7 +752,7 @@ export default function PremiumResultScreen() {
           if (!reportElement) {
             throw new Error('PDF report content was not created');
           }
-          await html2pdf()
+          const pdfBlob = await html2pdf()
             .set({
               margin: 0,
               filename: `husimcolor_report_${new Date().toISOString().slice(0, 10)}.pdf`,
@@ -712,7 +762,8 @@ export default function PremiumResultScreen() {
               pagebreak: { mode: ['css', 'legacy'], avoid: ['section', '.report-card', '.direction-card', '.cta'] },
             } as any)
             .from(reportElement)
-            .save();
+            .outputPdf('blob') as Blob;
+          downloadWebFile(pdfBlob, `husimcolor_report_${new Date().toISOString().slice(0, 10)}.pdf`);
         } finally {
           exportRoot.remove();
         }
@@ -724,8 +775,8 @@ export default function PremiumResultScreen() {
         height: 842,
         margins: { left: 36, right: 36, top: 42, bottom: 42 },
       });
-      const savedUri = `${FileSystem.documentDirectory}husimcolor_report_${Date.now()}.pdf`;
-      await FileSystem.copyAsync({ from: uri, to: savedUri });
+      const savedUri = `${FileSystem.documentDirectory ?? FileSystem.cacheDirectory}husimcolor_report_${Date.now()}.pdf`;
+      await FileSystem.moveAsync({ from: uri, to: savedUri });
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(savedUri, {
           mimeType: 'application/pdf',
@@ -741,48 +792,27 @@ export default function PremiumResultScreen() {
   };
 
   const handleShare = async () => {
-    // 보완 루틴 텍스트 구성 (card3 wellness 기준)
-    const routineLines = card3.wellness.routine
-      .slice(0, 2)
-      .map((r: string) => `  · ${sanitizeRecovery(r, profile?.faith ?? '')}`);
-    const wellnessText =
-      `🌿 오늘의 보완 루틴\n` +
-      `  · 추천 차: ${card3.wellness.tea}\n` +
-      `  · 추천 호흡: ${card3.wellness.breath}\n` +
-      routineLines.join('\n');
-
-    const shareText = `[휴심컬러 나의 컬러 심리 해석]\n\n` +
-      `1번(내면): ${card1.colorKor} ${card1.shapeKor} - ${card1.energyTitle}\n` +
-      `2번(현재): ${card2.colorKor} ${card2.shapeKor} - ${card2.energyTitle}\n` +
-      `3번(회복): ${card3.colorKor} ${card3.shapeKor} - ${card3.energyTitle}\n\n` +
-      `${combinedCoaching}\n\n` +
-      `${wellnessText}\n\nhusimcolor.vercel.app`;
-
-    if (Platform.OS === "web") {
-      // 웹: navigator.share 또는 클립보드 복사
-      if (typeof navigator !== "undefined" && navigator.share) {
-        try {
-          await navigator.share({ text: shareText, title: "휴심COLOR 나의 콜러 심리 해석" });
-        } catch {}
-      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(shareText);
-        Alert.alert("복사 완료", "결과가 클립보드에 복사되었습니다.");
+    if (isCreatingShareCard) return;
+    setIsCreatingShareCard(true);
+    try {
+      const uri = await captureShareCard();
+      const shareText = '휴심컬러가 읽어준 오늘의 나를 공유합니다. husimcolor.vercel.app';
+      if (Platform.OS === 'web') {
+        const blob = await (await fetch(uri)).blob();
+        await shareOrDownloadWebFile(blob, `husimcolor_summary_${Date.now()}.png`, '휴심컬러 나의 컬러 심리 해석', shareText);
+        return;
       }
-    } else {
-      // 네이티브(iOS/Android): expo-sharing 사용
-      try {
-        const available = await Sharing.isAvailableAsync();
-        if (available) {
-          // 텍스트를 임시 파일로 저장 후 공유
-          const fileUri = `${FileSystem.cacheDirectory}husimcolor_share_${Date.now()}.txt`;
-          await FileSystem.writeAsStringAsync(fileUri, shareText, { encoding: FileSystem.EncodingType.UTF8 });
-          await Sharing.shareAsync(fileUri, { mimeType: 'text/plain', dialogTitle: '휴심COLOR 결과 공유' });
-        } else {
-          Alert.alert('공유', shareText, [{ text: '확인' }]);
-        }
-      } catch {
-        Alert.alert('공유 오류', '결과 공유에 실패했습니다. 다시 시도해 주세요.');
+      const savedUri = `${FileSystem.cacheDirectory}husimcolor_summary_${Date.now()}.png`;
+      await FileSystem.copyAsync({ from: uri, to: savedUri });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(savedUri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: '휴심컬러 요약카드 공유' });
+      } else {
+        Alert.alert('공유카드 저장', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
       }
+    } catch {
+      Alert.alert('공유 오류', '요약카드를 준비하지 못했습니다. 다시 시도해 주세요.');
+    } finally {
+      setIsCreatingShareCard(false);
     }
   };
 
@@ -1222,7 +1252,7 @@ export default function PremiumResultScreen() {
           activeOpacity={0.7}
         >
           <Text style={[styles.shareButtonText, { color: '#3D3530' }]}>
-            결과 공유하기
+            {isCreatingShareCard ? '요약카드 준비 중...' : '결과 공유하기'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -1230,7 +1260,7 @@ export default function PremiumResultScreen() {
           onPress={handlePdfDownload}
           activeOpacity={0.8}
         >
-          <MaterialIcons name="picture-as-pdf" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+          <Text style={styles.pdfButtonIcon}>↓</Text>
           <Text style={styles.pdfButtonText}>PDF 리포트 다운로드</Text>
         </TouchableOpacity>
 
@@ -1442,6 +1472,11 @@ export default function PremiumResultScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+      <View style={styles.shareCardCaptureHost} pointerEvents="none">
+        <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 0.96 }}>
+          <PremiumShareSummaryCard data={shareCardData} />
+        </ViewShot>
+      </View>
     </ScreenContainer>
   );
 }
@@ -1956,6 +1991,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  pdfButtonIcon: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '700',
+    lineHeight: 24,
+    marginRight: 7,
+  },
+  shareCardCaptureHost: {
+    position: 'absolute',
+    left: -10000,
+    top: 0,
+    width: 360,
   },
   coachingSection: {
     gap: 10,
