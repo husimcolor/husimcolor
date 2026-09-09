@@ -5,6 +5,20 @@ import {
   PREMIUM_STAGE1_PROFILES,
 } from '../constants/premiumStage1Data';
 
+function wordTrigrams(sentence: string): Set<string> {
+  const words = sentence
+    .replace(/[.,]/g, ' ')
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter((word) => word.length > 1);
+  return new Set(words.slice(0, -2).map((_, index) => words.slice(index, index + 3).join(' ')));
+}
+
+function hasSharedLongPhrase(left: string, right: string): boolean {
+  const leftPhrases = wordTrigrams(left);
+  return [...wordTrigrams(right)].some((phrase) => leftPhrases.has(phrase));
+}
+
 describe('유료 심화 1단계 컬러 에너지 흐름', () => {
   it('25컬러 모두 역할별 조합 프로필을 제공한다', () => {
     expect(Object.keys(PREMIUM_STAGE1_PROFILES)).toHaveLength(25);
@@ -21,31 +35,37 @@ describe('유료 심화 1단계 컬러 에너지 흐름', () => {
     }
   });
 
-  it('서로 다른 3컬러의 모든 조합에서 다섯 해석 영역을 역할별로 생성한다', () => {
+  it('25컬러의 모든 15,625개 순서 조합에서 역할별 통합 해석을 생성한다', () => {
     for (const c1 of COLOR_DATA) {
       for (const c2 of COLOR_DATA) {
-        if (c2.id === c1.id) continue;
         for (const c3 of COLOR_DATA) {
-          if (c3.id === c1.id || c3.id === c2.id) continue;
-
           const result = buildPremiumStage1Interpretation([c1, c2, c3]);
           expect(result.psychologyTendency).toBeTruthy();
           expect(result.personalityTendency).toBeTruthy();
           expect(result.relationshipTendency).toBeTruthy();
-          expect(result.psychologyTendency.length).toBeLessThanOrEqual(90);
-          expect(result.personalityTendency.length).toBeLessThanOrEqual(92);
-          expect(result.relationshipTendency.length).toBeLessThanOrEqual(100);
+          expect(result.psychologyTendency.length).toBeLessThanOrEqual(125);
+          expect(result.personalityTendency.length).toBeLessThanOrEqual(125);
+          expect(result.relationshipTendency.length).toBeLessThanOrEqual(135);
           expect(result.miniInterpretations).toHaveLength(3);
           expect(result.miniInterpretations.every((mini) => mini.keywords.length === 3)).toBe(true);
           expect(result.miniInterpretations.every((mini) => mini.strengths.length === 2)).toBe(true);
           expect(result.miniInterpretations.every((mini) => mini.tiredStates.length === 2)).toBe(true);
           expect(result.integrationBridge).toBeTruthy();
           expect(result.strengths).toHaveLength(4);
-          expect(result.growthPossibility).toBeTruthy();
+          expect(new Set(result.strengths).size).toBe(4);
+          expect(result.growthPossibility).toHaveLength(3);
+          expect(result.growthPossibility.every((pattern) => pattern.endsWith('편'))).toBe(true);
+          expect(new Set(result.growthPossibility).size).toBe(3);
           expect(result.psychologyTendency).not.toBe(result.personalityTendency);
           expect(result.personalityTendency).not.toBe(result.relationshipTendency);
-          expect(result.psychologyTendency).not.toMatch(/무의식|회복 방향|지금은/);
-          expect(result.growthPossibility).not.toMatch(/해보세요|해야 합니다|연습이 필요/);
+          expect(hasSharedLongPhrase(result.integrationBridge, result.psychologyTendency)).toBe(false);
+          expect(hasSharedLongPhrase(result.integrationBridge, result.personalityTendency)).toBe(false);
+          expect(hasSharedLongPhrase(result.integrationBridge, result.relationshipTendency)).toBe(false);
+          expect(hasSharedLongPhrase(result.psychologyTendency, result.personalityTendency)).toBe(false);
+          expect(hasSharedLongPhrase(result.psychologyTendency, result.relationshipTendency)).toBe(false);
+          expect(hasSharedLongPhrase(result.personalityTendency, result.relationshipTendency)).toBe(false);
+          expect(result.psychologyTendency).not.toMatch(/무의식|내면에서는|회복 방향|지금은/);
+          expect(result.growthPossibility.join(' ')).not.toMatch(/해보세요|해야 합니다|연습이 필요/);
         }
       }
     }
@@ -60,20 +80,27 @@ describe('유료 심화 1단계 컬러 에너지 흐름', () => {
     expect(result.miniInterpretations[0].keywords).toHaveLength(3);
     expect(result.miniInterpretations[0].description).toContain('마음의 작은 변화를 세심하게 느끼는');
     expect(result.miniInterpretations[0].tiredStates).toEqual(['생각이 많아짐', '감정 소모']);
-    expect(result.integrationBridge).toContain('마음을 깊이 이해하려는 힘');
-    expect(result.growthPossibility).not.toMatch(/해보세요|해야 합니다/);
-    expect(result.relationshipTendency).toContain('말하지 않은 마음까지 이해받고 싶어 하는');
+    expect(result.integrationBridge).toContain('작은 마음의 변화를 놓치지 않는 감각');
+    expect(result.growthPossibility).toHaveLength(3);
+    expect(result.growthPossibility).not.toContain('혼자만의 시간');
+    expect(result.relationshipTendency).toContain('말하지 않은 마음까지 이해하고 싶어 합니다');
   });
 
-  it('대표 조합에서 융합 문장에 맞는 조사를 사용한다', () => {
+  it('대표 조합에서 융합 강점과 3개의 생활 패턴을 역할별로 생성한다', () => {
     const colors = ['red', 'lavender', 'cream'].map((id) =>
       COLOR_DATA.find((color) => color.id === id)!,
     );
     const result = buildPremiumStage1Interpretation(colors);
 
-    expect(result.strengths).toContain('분명한 의사를 살린 실행');
-    expect(result.strengths).toContain('차분한 태도를 지키는 태도');
-    expect(result.growthPossibility).toContain('차분한 태도를 지키는 흐름');
-    expect(result.relationshipTendency).toContain('차분한 태도를 함께 중요하게 여깁니다');
+    expect(result.strengths).toEqual([
+      '분명한 추진력',
+      '깊은 성찰',
+      '자기 리듬 유지',
+      '속도를 다루는 힘',
+    ]);
+    expect(result.growthPossibility).toContain('일이 급하면 속도를 먼저 내는 편');
+    expect(result.growthPossibility).toContain('혼자 생각하느라 대화를 미루는 편');
+    expect(result.growthPossibility).toContain('바쁠수록 내 리듬을 지키려다 연락을 늦게 하는 편');
+    expect(result.relationshipTendency).toContain('서로의 생각을 분명히 나누며 방향을 맞추고 싶어 합니다');
   });
 });

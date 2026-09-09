@@ -304,9 +304,13 @@ export default function PremiumColorSelectScreen() {
                 <View style={[styles.sectionDot, { backgroundColor: "#2A5A80" }]} />
                 <Text style={[styles.sectionLabel, { color: "#2A5A80" }]}>성장 가능성</Text>
               </View>
-              <Text style={[styles.sectionText, { color: '#3D3530' }]}>
-                {interpretation.growthPossibility}
-              </Text>
+              <View style={styles.tagRow}>
+                {interpretation.growthPossibility.map((pattern) => (
+                  <View key={pattern} style={[styles.tag, { backgroundColor: "#7B9FBF18", borderColor: "#7B9FBF44" }]}>
+                    <Text style={[styles.tagText, { color: "#2A5A80" }]}>{pattern}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
 
             {/* 관계 성향 */}
