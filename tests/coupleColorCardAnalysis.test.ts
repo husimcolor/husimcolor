@@ -7,7 +7,7 @@ import { COLOR_DATA } from "../constants/colorData";
 import { buildCoupleColorCardIntegratedAnalysis } from "../lib/couple-color-card-analysis";
 
 describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
-  it("선택한 컬러 3개와 심리카드 3장의 흐름을 네 개의 짧은 문단으로 함께 연결한다", () => {
+  it("선택한 컬러 3개와 심리카드 3장의 흐름을 세 개의 새로운 의미 단위로 함께 연결한다", () => {
     const colors = ["pink", "lavender", "green"]
       .map((id) => COLOR_DATA.find((color) => color.id === id))
       .filter(Boolean) as (typeof COLOR_DATA)[number][];
@@ -16,14 +16,14 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     const analysis = buildCoupleColorCardIntegratedAnalysis(colors, cards);
     const paragraphs = analysis.split("\n\n");
 
-    expect(paragraphs).toHaveLength(4);
+    expect(paragraphs).toHaveLength(3);
     expect(analysis).toContain("핑크 · 라벤더 · 그린");
-    expect(analysis).toContain(`${cards[0].colorKor} ${cards[0].shapeKor}`);
-    expect(analysis).toContain(`${cards[1].colorKor} ${cards[1].shapeKor}`);
-    expect(analysis).toContain(`${cards[2].colorKor} ${cards[2].shapeKor}`);
-    expect(analysis).toContain("핵심 욕구");
-    expect(analysis).toContain("속으로는");
-    expect(analysis).toContain("관계 안에서");
+    expect(analysis).toContain(cards[0].energyTitle);
+    expect(analysis).toContain(cards[1].energyTitle);
+    expect(analysis).toContain(cards[2].energyTitle);
+    expect(analysis).toContain("핵심은");
+    expect(analysis).toContain("실제보다");
+    expect(analysis).toContain("서로를 이해하고 성장");
   });
 
   it("선택 조합이 달라지면 컬러와 카드 근거도 함께 달라진다", () => {
@@ -43,6 +43,10 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
 
     expect(screenSource).toContain("🌿 컬러 × 심리카드 통합 분석");
     expect(screenSource).toContain("buildCoupleColorCardIntegratedAnalysis(colors, cards)");
+    expect(screenSource).toContain("핵심 심리와 욕구");
+    expect(screenSource).toContain("겉모습과 내면의 흐름");
+    expect(screenSource).toContain("관계·회복·성장 방향");
+    expect(screenSource).toContain("integratedSectionText");
     expect(screenSource).toContain("pathname: '/(tabs)/couple-select'");
     expect(screenSource).toContain("router.push('/(tabs)/couple-result'");
   });

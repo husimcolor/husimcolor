@@ -362,6 +362,13 @@ export default function CoupleCardResultScreen() {
     selectedCards[1]?.personalityFlow,
     selectedCards[2]?.recoveryDirection,
   ];
+  const integratedAnalysisSections = cardFlow?.flow
+    .split(/\n{2,}/)
+    .filter(Boolean)
+    .map((text, index) => ({
+      title: ["핵심 심리와 욕구", "겉모습과 내면의 흐름", "관계·회복·성장 방향"][index] ?? "통합 해석",
+      text,
+    })) ?? [];
 
   return (
     <ScreenContainer>
@@ -443,7 +450,15 @@ export default function CoupleCardResultScreen() {
               <View style={[styles.flowCard, { borderColor: accentColor + '44', backgroundColor: accentBg }]}>
                 <Text style={[styles.flowCardLabel, { color: accentColor }]}>🌿 컬러 × 심리카드 통합 분석</Text>
                 <Text style={[styles.flowCardTitle, { color: '#3D3530' }]}>선택 컬러 · 무의식 → 현재 → 다음 방향</Text>
-                <Text style={styles.flowCardText}>{cardFlow.flow}</Text>
+                {integratedAnalysisSections.map((section, index) => (
+                  <View
+                    key={section.title}
+                    style={[styles.integratedSection, index > 0 && styles.integratedSectionDivider]}
+                  >
+                    <Text style={[styles.integratedSectionTitle, { color: accentColor }]}>{section.title}</Text>
+                    <Text style={styles.integratedSectionText}>{section.text}</Text>
+                  </View>
+                ))}
               </View>
 
               {/* 코칭 메시지 */}
@@ -541,11 +556,14 @@ const styles = StyleSheet.create({
   readingBox: { borderRadius: 10, padding: 12 },
   readingText: { fontSize: 14, color: '#3D3530', lineHeight: 22 },
   flowCard: {
-    borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 12, gap: 8,
+    borderRadius: 14, borderWidth: 1, padding: 18, marginBottom: 14, gap: 10,
   },
   flowCardLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
-  flowCardTitle: { fontSize: 15, fontWeight: '800', marginBottom: 2 },
-  flowCardText: { fontSize: 14, color: '#3D3530', lineHeight: 23 },
+  flowCardTitle: { fontSize: 15, fontWeight: '800', marginBottom: 4 },
+  integratedSection: { gap: 7, paddingVertical: 4 },
+  integratedSectionDivider: { borderTopWidth: 1, borderTopColor: '#3D6B3D1C', paddingTop: 16, marginTop: 8 },
+  integratedSectionTitle: { fontSize: 14, fontWeight: '800', letterSpacing: 0.1 },
+  integratedSectionText: { fontSize: 16, color: '#3D3530', lineHeight: 27 },
   coachingCard: {
     borderRadius: 14, borderWidth: 1.5, padding: 18, marginBottom: 12, gap: 8,
   },
