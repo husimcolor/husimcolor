@@ -2,11 +2,13 @@
   "outputDirectory": "dist",
   "functions": {
     "api/trpc/[...trpc].ts": {
-      "runtime": "@vercel/node@3.2.7",
       "maxDuration": 30
     },
     "api/pdf-report.ts": {
-      "runtime": "@vercel/node@3.2.7",
+      "maxDuration": 30,
+      "includeFiles": "server/assets/HusimPdfKorean.ttf"
+    },
+    "api/couple-pdf-report.ts": {
       "maxDuration": 30,
       "includeFiles": "server/assets/HusimPdfKorean.ttf"
     }
@@ -14,6 +16,7 @@
   "rewrites": [
     { "source": "/api/trpc/:path*", "destination": "/api/trpc/[...trpc]" },
     { "source": "/api/pdf-report", "destination": "/api/pdf-report" },
+    { "source": "/api/couple-pdf-report", "destination": "/api/couple-pdf-report" },
     { "source": "/((?!_expo/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
