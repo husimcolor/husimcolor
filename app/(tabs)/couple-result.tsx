@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import {
-  View, Text, ScrollView, StyleSheet, Pressable, Platform, Alert, TouchableOpacity,
+  View, Text, ScrollView, StyleSheet, Pressable, Platform, Alert, TouchableOpacity, ActivityIndicator,
 } from 'react-native';
 import ViewShot, { captureRef, type ViewShotRef } from 'react-native-view-shot';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLOR_DATA } from '@/constants/colorData';
+import { COLOR_DATA, COLOR_ROLE_CONTENT } from '@/constants/colorData';
 import { CARD_DATA } from '@/constants/cardData';
 import {
   generatePersonAnalysis, generateCoupleAnalysis, getRelationArchetype, getLightArchetype,
@@ -19,6 +19,8 @@ import {
 } from '@/constants/coupleData';
 import { buildRomanticRelationTraits } from '@/lib/couple-romantic-relation-traits';
 import { buildRomanticRelationshipRoles } from '@/lib/couple-romantic-relationship-roles';
+import { buildCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
+import { buildCouplePdfDownloadPayload } from '@/lib/couple-pdf-download';
 
 // ─── SectionCard ─────────────────────────────────────────────────────────────
 const sectionStyles = StyleSheet.create({
@@ -63,13 +65,27 @@ export default function CoupleResultScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [couplePdfDownloadState, setCouplePdfDownloadState] = useState<'idle' | 'preparing' | 'requesting' | 'delayed' | 'failed'>('idle');
+  const [couplePdfDownloadMessage, setCouplePdfDownloadMessage] = useState<string | null>(null);
   const shareCardRef = useRef<ViewShotRef>(null);
+  const couplePdfDownloadLockRef = useRef(false);
+  const couplePdfDownloadPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const couplePdfDownloadTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const logVisitor = trpc.visitors.log.useMutation();
 
   useEffect(() => {
     loadSession();
   }, []);
+
+  useEffect(() => () => clearCouplePdfDownloadTimers(), []);
+
+  function clearCouplePdfDownloadTimers() {
+    if (couplePdfDownloadPollRef.current) clearInterval(couplePdfDownloadPollRef.current);
+    couplePdfDownloadPollRef.current = null;
+    couplePdfDownloadTimersRef.current.forEach((timer) => clearTimeout(timer));
+    couplePdfDownloadTimersRef.current = [];
+  }
 
   async function loadSession() {
     try {
@@ -307,6 +323,179 @@ export default function CoupleResultScreen() {
         cardsB,
       })
     : null;
+  const definedColorsA = colorsA.filter((color): color is NonNullable<typeof color> => Boolean(color));
+  const definedColorsB = colorsB.filter((color): color is NonNullable<typeof color> => Boolean(color));
+  const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
+  const definedCardsB = cardsB.filter((card): card is NonNullable<typeof card> => Boolean(card));
+  const personAIntegratedAnalysis = buildCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA);
+  const personBIntegratedAnalysis = buildCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB);
+
+  const getCouplePdfColorRows = (selectedColors: typeof colorsA) => selectedColors
+    .filter((color): color is NonNullable<typeof color> => Boolean(color))
+    .slice(0, 3)
+    .map((color, index) => {
+    const content = COLOR_ROLE_CONTENT[color.id];
+    const role = index === 0 ? '주기질' : index === 1 ? '보조기질' : '회복 방향';
+    const interpretation = index === 0
+      ? content?.primaryTrait
+      : index === 1
+        ? content?.secondaryTrait
+        : content?.recoveryDirection;
+    return {
+      role,
+      name: color.korName,
+      hex: color.hex,
+      keywords: color.keywords.slice(0, 3).join(' · '),
+      interpretation: interpretation ?? color.recovery,
+    };
+    });
+
+  const getCouplePdfCardRows = (selectedCards: typeof cardsA) => selectedCards
+    .filter((card): card is NonNullable<typeof card> => Boolean(card))
+    .slice(0, 3)
+    .map((card, index) => ({
+    position: index === 0 ? '1번 카드 · 무의식' : index === 1 ? '2번 카드 · 현재 흐름' : '3번 카드 · 다음 방향',
+    colorName: card.colorKor,
+    shapeName: card.shapeKor,
+    colorHex: card.colorHex,
+    shape: card.shape,
+    title: card.energyTitle,
+    narrative: index === 0 ? card.psychologyFlow : index === 1 ? card.personalityFlow : card.recoveryDirection,
+    }));
+
+  const submitCouplePdfDownload = (payload: ReturnType<typeof buildCouplePdfDownloadPayload>, requestId: string) => {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/couple-pdf-report';
+    form.style.display = 'none';
+    [
+      ['payload', JSON.stringify(payload)],
+      ['requestId', requestId],
+    ].forEach(([name, value]) => {
+      const field = document.createElement('input');
+      field.type = 'hidden';
+      field.name = name;
+      field.value = value;
+      form.appendChild(field);
+    });
+    document.body.appendChild(form);
+    form.submit();
+    window.setTimeout(() => form.remove(), 1_000);
+  };
+
+  const handleCouplePdfDownload = () => {
+    if (couplePdfDownloadLockRef.current || !isRomanticRel) return;
+    const unified = archetypeResult.unifiedSections;
+    if (!unified || !romanticRelationshipRoles) {
+      setCouplePdfDownloadState('failed');
+      setCouplePdfDownloadMessage('PDF 리포트 데이터를 준비하지 못했습니다. 다시 시도해주세요.');
+      return;
+    }
+    couplePdfDownloadLockRef.current = true;
+    clearCouplePdfDownloadTimers();
+    setCouplePdfDownloadState('preparing');
+    setCouplePdfDownloadMessage('PDF 리포트를 준비하고 있습니다.');
+    try {
+      const hasFaith = personA.info.faith === '기독교' || personB.info.faith === '기독교';
+      const recommendedColors = archetypeResult.recommendedColors ?? coupleAnalysis.coupleRoutine.recommendedColors;
+      const payload = buildCouplePdfDownloadPayload({
+        relationType,
+        couple: {
+          typeName: archetypeResult.typeName,
+          coreSummary: archetypeResult.coreSummary,
+          tensionDescription: archetypeResult.tensionDescription,
+        },
+        personA: {
+          label: '첫 번째 사람',
+          colors: getCouplePdfColorRows(colorsA),
+          cards: getCouplePdfCardRows(cardsA),
+          integratedAnalysis: personAIntegratedAnalysis,
+          relationshipStyle: personAAnalysis.relationshipStyle,
+          emotionExpression: personAAnalysis.emotionExpression,
+          complementColor: { name: personAAnalysis.complementColor.korName, hex: personAAnalysis.complementColor.hex, meaning: personAAnalysis.complementColor.meaning },
+          coachingMessage: personAAnalysis.coachingMessage,
+        },
+        personB: {
+          label: '두 번째 사람',
+          colors: getCouplePdfColorRows(colorsB),
+          cards: getCouplePdfCardRows(cardsB),
+          integratedAnalysis: personBIntegratedAnalysis,
+          relationshipStyle: personBAnalysis.relationshipStyle,
+          emotionExpression: personBAnalysis.emotionExpression,
+          complementColor: { name: personBAnalysis.complementColor.korName, hex: personBAnalysis.complementColor.hex, meaning: personBAnalysis.complementColor.meaning },
+          coachingMessage: personBAnalysis.coachingMessage,
+        },
+        relationship: {
+          attractionAnalysis: coupleAnalysis.profileContrast || archetypeResult.profileContrastOverride?.attractionContrast || archetypeResult.tensionDescription,
+          roles: {
+            personATitle: romanticRelationshipRoles.personA.title,
+            personADescription: romanticRelationshipRoles.personA.description,
+            personBTitle: romanticRelationshipRoles.personB.title,
+            personBDescription: romanticRelationshipRoles.personB.description,
+            together: romanticRelationshipRoles.together,
+          },
+          core: unified.coreEnergy,
+          lifePattern: unified.lifePattern,
+          conflict: unified.conflictFlow,
+          connection: {
+            headline: unified.connectionFlow.headline,
+            description: unified.connectionFlow.description,
+            actions: unified.connectionFlow.actions,
+            intimacyNote: unified.connectionFlow.skinshipNote,
+          },
+          growth: {
+            strength: unified.growthPoint.strength,
+            blindSpot: unified.growthPoint.blindSpot,
+            direction: unified.growthPoint.growthDirection,
+            tip: unified.growthPoint.tip,
+          },
+          recommendedColors: recommendedColors.map((color) => ({ name: color.korName, hex: color.hex, reason: color.reason })),
+          togetherRoutine: {
+            routines: archetypeResult.togetherRoutine.routines,
+            energyNote: archetypeResult.togetherRoutine.energyNote,
+            faithRoutine: hasFaith ? archetypeResult.togetherRoutine.faithRoutine : undefined,
+          },
+          basicPrinciples: '서로의 마음을 당연하게 여기지 않고, 감정과 필요를 차분히 확인하는 시간이 신뢰·이해·배려·존중을 함께 키워갈 수 있습니다.',
+          closingMessage: archetypeResult.closingMessage ?? coupleAnalysis.closingMessage,
+        },
+      });
+      if (Platform.OS !== 'web') {
+        throw new Error('부부·연인 PDF는 모바일 웹 브라우저에서 저장할 수 있습니다.');
+      }
+      setCouplePdfDownloadState('requesting');
+      setCouplePdfDownloadMessage('다운로드 중입니다. 잠시만 기다려 주세요.');
+      const requestId = `couple_pdf_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      document.cookie = 'husim_couple_pdf_download=; Max-Age=0; Path=/; SameSite=Lax';
+      couplePdfDownloadPollRef.current = setInterval(() => {
+        if (!document.cookie.split('; ').some((item) => item === `husim_couple_pdf_download=${requestId}`)) return;
+        clearCouplePdfDownloadTimers();
+        couplePdfDownloadLockRef.current = false;
+        setCouplePdfDownloadState('idle');
+        setCouplePdfDownloadMessage('PDF 다운로드를 시작했습니다.');
+        couplePdfDownloadTimersRef.current.push(setTimeout(() => setCouplePdfDownloadMessage(null), 3_000));
+      }, 250);
+      submitCouplePdfDownload(payload, requestId);
+      couplePdfDownloadTimersRef.current.push(
+        setTimeout(() => {
+          if (!couplePdfDownloadLockRef.current) return;
+          setCouplePdfDownloadState('delayed');
+          setCouplePdfDownloadMessage('생성에 시간이 걸리고 있습니다. 네트워크를 확인해 주세요.');
+        }, 12_000),
+        setTimeout(() => {
+          if (!couplePdfDownloadLockRef.current) return;
+          clearCouplePdfDownloadTimers();
+          couplePdfDownloadLockRef.current = false;
+          setCouplePdfDownloadState('failed');
+          setCouplePdfDownloadMessage('다운로드에 실패했습니다. 다시 시도해주세요.');
+        }, 35_000),
+      );
+    } catch (downloadError) {
+      clearCouplePdfDownloadTimers();
+      couplePdfDownloadLockRef.current = false;
+      setCouplePdfDownloadState('failed');
+      setCouplePdfDownloadMessage(downloadError instanceof Error ? downloadError.message : '다운로드에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
 
   // 밝은 컬러(화이트, 옐로우 등)일 때 배지 텍스트가 안 보이는 문제 방지
   const rawAccentA = colorsA[0]?.hex ?? colors.primary;
@@ -729,7 +918,7 @@ export default function CoupleResultScreen() {
           {/* ═══════════════════════════════════════════════════════
               관계 통합 분석 (60%)
           ═══════════════════════════════════════════════════════ */}
-                    <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 통합 분석</Text>
+                    <Text style={[isRomanticRel ? styles.sectionGroupTitleRomantic : styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 통합 분석</Text>
           {/* archetype 기반 오해 패턴 + 연결 방식 — 연인/부부 전용 */}
           {!lightArchetypeResult && (<>
 
@@ -885,7 +1074,7 @@ export default function CoupleResultScreen() {
           {archetypeResult.unifiedSections ? (
             <>
               {/* ══ 1. 관계 핵심 ══ */}
-              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 핵심</Text>
+              <Text style={[isRomanticRel ? styles.sectionGroupTitleRomantic : styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 핵심</Text>
               <SectionCard accentColor={accentCouple} label={archetypeResult.typeName} title={archetypeResult.unifiedSections.coreEnergy.headline} colors={colors}>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
                   {archetypeResult.unifiedSections.coreEnergy.keywords.map((kw: string, i: number) => (
@@ -898,7 +1087,7 @@ export default function CoupleResultScreen() {
               </SectionCard>
 
               {/* ══ 2. 생활 관계 패턴 ══ */}
-              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>생활 속 관계 패턴</Text>
+              <Text style={[isRomanticRel ? styles.sectionGroupTitleRomantic : styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>생활 속 관계 패턴</Text>
               <SectionCard accentColor="#B8A898" label={archetypeResult.typeName} title={archetypeResult.unifiedSections.lifePattern.headline} colors={colors}>
                 {archetypeResult.unifiedSections.lifePattern.items.map((item: { icon: string; label: string; personA: string; personB: string; tension: string }, idx: number) => (
                   <View key={idx}>
@@ -930,7 +1119,7 @@ export default function CoupleResultScreen() {
               </SectionCard>
 
               {/* ══ 3. 싸움 패턴 ══ */}
-              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>싸움 패턴</Text>
+              <Text style={[isRomanticRel ? styles.sectionGroupTitleRomantic : styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>싸움 패턴</Text>
               <SectionCard accentColor="#C47E8A" label={archetypeResult.typeName} title="이 관계의 갈등 흐름" colors={colors}>
                 <View style={{ marginBottom: 10 }}>
                   <Text style={{ color: '#C47E8A', fontSize: 11, fontWeight: '700', marginBottom: 4, letterSpacing: 0.5 }}>싸움이 시작되는 순간</Text>
@@ -958,7 +1147,7 @@ export default function CoupleResultScreen() {
               </SectionCard>
 
               {/* ══ 4. 연결 방식 ══ */}
-              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>연결 방식</Text>
+              <Text style={[isRomanticRel ? styles.sectionGroupTitleRomantic : styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>연결 방식</Text>
               <SectionCard accentColor="#E8A0B4" label={archetypeResult.typeName} title={archetypeResult.unifiedSections.connectionFlow.headline} colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 12 }]}>{archetypeResult.unifiedSections.connectionFlow.description}</Text>
                 <View style={{ marginBottom: 12 }}>
@@ -978,7 +1167,7 @@ export default function CoupleResultScreen() {
               </SectionCard>
 
               {/* ══ 5. 성장 포인트 ══ */}
-              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 성장 포인트</Text>
+              <Text style={[isRomanticRel ? styles.sectionGroupTitleRomantic : styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 성장 포인트</Text>
               <SectionCard accentColor="#5BC4A0" label={archetypeResult.typeName} title="이 관계가 오래가는 이유 & 성장 방향" colors={colors}>
                 <View style={{ backgroundColor: '#D8F5E8', borderRadius: 10, padding: 16, borderLeftWidth: 3, borderLeftColor: '#3A9A6A', marginBottom: 12 }}>
                   <Text style={{ color: '#1A5A3A', fontSize: 12, fontWeight: '700', marginBottom: 8, letterSpacing: 0.5 }}>이 관계의 강점</Text>
@@ -1079,76 +1268,15 @@ export default function CoupleResultScreen() {
           </SectionCard>
           {/* 연인/부부 전용 풀 archetype 블록 닫기 */}
           </>)}
-          {/* ═══════════════════════════════════════════════════════
-              커플/부부 관계 감성 안내문 (회복 루틴 위)
-          ═══════════════════════════════════════════════════════ */}
+          {/* 부부·연인 전용: 일반 안내는 한 줄로, 친밀감은 위 맞춤형 연결 방식에서만 다룬다. */}
           {isRomanticRel && (
-            <View style={{
-              marginHorizontal: 0,
-              marginBottom: 12,
-              paddingVertical: 24,
-              paddingHorizontal: 22,
-              borderRadius: 18,
-              backgroundColor: relationType === '부부' ? '#1C1A2E' : '#1A1E2C',
-              borderWidth: 1,
-              borderColor: relationType === '부부' ? '#8B7BB0' + '55' : '#7BA8C4' + '55',
-            }}>
-              {relationType === '부부' ? (
-                <>
-                  <Text style={{
-                    fontSize: 15,
-                    lineHeight: 26,
-                    color: '#E8DEFF',
-                    fontWeight: '500',
-                    textAlign: 'center',
-                    marginBottom: 16,
-                  }}>
-                    {'건강한 관계는\n신뢰, 이해, 배려, 존중 위에서 자라갑니다.'}
-                  </Text>
-                  <View style={{ height: 1, backgroundColor: '#8B7BB0' + '40', marginBottom: 16 }} />
-                  <Text style={{
-                    fontSize: 14,
-                    lineHeight: 24,
-                    color: '#C8B8E8',
-                    textAlign: 'center',
-                    marginBottom: 14,
-                  }}>
-                    {'부부관계에서 스킨십은\n서로의 마음을 연결하고\n안정감을 나누는 소통입니다.'}
-                  </Text>
-                  <Text style={{
-                    fontSize: 13,
-                    lineHeight: 22,
-                    color: '#A898C8',
-                    textAlign: 'center',
-                    fontStyle: 'italic',
-                  }}>
-                    {'따뜻한 손길과 자연스러운 스킨십은\n말로 표현되지 않는 감정을 전하고,\n서로에게 안정감과 위로를 전해주기도 합니다.'}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Text style={{
-                    fontSize: 15,
-                    lineHeight: 26,
-                    color: '#DCEEFF',
-                    fontWeight: '500',
-                    textAlign: 'center',
-                    marginBottom: 16,
-                  }}>
-                    {'건강한 관계는\n신뢰, 이해, 배려, 존중 위에서 자라갑니다.'}
-                  </Text>
-                  <View style={{ height: 1, backgroundColor: '#7BA8C4' + '40', marginBottom: 16 }} />
-                  <Text style={{
-                    fontSize: 14,
-                    lineHeight: 24,
-                    color: '#B8D4E8',
-                    textAlign: 'center',
-                    fontStyle: 'italic',
-                  }}>
-                    {'자연스러운 애정표현과 스킨십은\n서로의 마음을 더 깊이 이해하고\n안정감과 친밀감을 나누게 합니다.'}
-                  </Text>
-                </>
-              )}
+            <View style={[
+              styles.romanticPrincipleLine,
+              { backgroundColor: accentCouple + '12', borderColor: accentCouple + '45' },
+            ]}>
+              <Text style={[styles.romanticPrincipleText, { color: colors.foreground }]}>
+                신뢰와 존중을 확인하는 작은 말에서 관계가 더 편안해질 수 있습니다.
+              </Text>
             </View>
           )}
           {/* ═══════════════════════════════════════════════════════
@@ -1206,6 +1334,28 @@ export default function CoupleResultScreen() {
                 : (archetypeResult.closingMessage ?? coupleAnalysis.closingMessage)}
             </Text>
           </View>
+
+          {isRomanticRel && (
+            <View style={styles.couplePdfSection}>
+              <TouchableOpacity
+                activeOpacity={0.82}
+                disabled={couplePdfDownloadState !== 'idle'}
+                style={[styles.couplePdfButton, { backgroundColor: accentCouple, opacity: couplePdfDownloadState === 'idle' ? 1 : 0.72 }]}
+                onPress={handleCouplePdfDownload}
+              >
+                {couplePdfDownloadState === 'idle' || couplePdfDownloadState === 'failed'
+                  ? <Text style={styles.couplePdfButtonIcon}>↓</Text>
+                  : <ActivityIndicator color="#FFFFFF" size="small" />}
+                <Text style={styles.couplePdfButtonText}>
+                  {couplePdfDownloadState === 'idle' || couplePdfDownloadState === 'failed' ? 'PDF 리포트 다운로드' : '다운로드 중...'}
+                </Text>
+              </TouchableOpacity>
+              <Text style={styles.couplePdfCaption}>두 사람의 개인 결과와 관계 통합 분석을 A4 리포트로 저장합니다.</Text>
+              {couplePdfDownloadMessage ? (
+                <Text style={[styles.couplePdfNotice, couplePdfDownloadState === 'failed' && styles.couplePdfNoticeError]}>{couplePdfDownloadMessage}</Text>
+              ) : null}
+            </View>
+          )}
 
         </View>
 
@@ -1307,6 +1457,17 @@ const styles = StyleSheet.create({
     fontSize: 13, fontWeight: '700', letterSpacing: 0.8,
     textTransform: 'uppercase', marginBottom: 12, marginTop: 4,
   },
+  sectionGroupTitleRomantic: {
+    fontSize: 16, fontWeight: '800', letterSpacing: 0.9,
+    textTransform: 'uppercase', marginBottom: 12, marginTop: 4,
+  },
+  romanticPrincipleLine: {
+    borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 13,
+    marginBottom: 16,
+  },
+  romanticPrincipleText: {
+    fontSize: 14, lineHeight: 23, fontWeight: '600', textAlign: 'center',
+  },
   bodyText: { fontSize: 15, lineHeight: 28 },
   complementRow: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
@@ -1346,6 +1507,16 @@ const styles = StyleSheet.create({
   closingMessage: {
     fontSize: 16, lineHeight: 32, textAlign: 'center', fontStyle: 'italic',
   },
+  couplePdfSection: { marginBottom: 20 },
+  couplePdfButton: {
+    minHeight: 54, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', gap: 9, paddingHorizontal: 18,
+  },
+  couplePdfButtonIcon: { color: '#FFFFFF', fontSize: 23, lineHeight: 24, fontWeight: '700' },
+  couplePdfButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  couplePdfCaption: { color: '#75695D', fontSize: 12.5, lineHeight: 20, textAlign: 'center', marginTop: 8 },
+  couplePdfNotice: { color: '#5C7F68', fontSize: 13, lineHeight: 21, textAlign: 'center', marginTop: 8, fontWeight: '600' },
+  couplePdfNoticeError: { color: '#B34D4D' },
   restartBtn: {
     paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginBottom: 12,
   },

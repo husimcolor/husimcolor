@@ -169,4 +169,16 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(coupleResultSource).toContain("{!lightArchetypeResult && (");
     expect(coupleResultSource).toContain("const isRomanticRel = relationType === '연인' || relationType === '부부';");
   });
+
+  it("부부·연인 웹 안내는 일반 스킨십 설명 없이 한 줄로 축소하고 섹션 구분 제목만 강화한다", () => {
+    const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+
+    expect(coupleResultSource).toContain("신뢰와 존중을 확인하는 작은 말에서 관계가 더 편안해질 수 있습니다.");
+    expect(coupleResultSource).toContain("styles.romanticPrincipleLine");
+    expect(coupleResultSource).toContain("connectionFlow.skinshipNote");
+    expect(coupleResultSource).toContain("styles.sectionGroupTitleRomantic");
+    expect(coupleResultSource).toContain("isRomanticRel ? styles.sectionGroupTitleRomantic : styles.sectionGroupTitle");
+    expect(coupleResultSource).not.toContain("부부관계에서 스킨십은");
+    expect(coupleResultSource).not.toContain("자연스러운 애정표현과 스킨십은");
+  });
 });
