@@ -224,21 +224,21 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
 
   writeSectionTitle(document, "나의 삶의 역할 에너지", "#66557B");
   writeCard(document, payload.lifeRole.title, [{ text: payload.lifeRole.description }], "#F8F5FF");
-  document.fillColor("#6A5843").fontSize(10).text("이 역할이 더하는 가치", { width: CONTENT_WIDTH });
+  document.fillColor("#6A5843").fontSize(10.4).text("이 역할이 더하는 가치", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.4);
   writePills(document, payload.lifeRole.humanStrengths);
   document.moveDown(0.6);
-  document.fillColor("#6A5843").fontSize(10).text("사회적 쓰임새 · 진로 방향", { width: CONTENT_WIDTH });
+  document.fillColor("#6A5843").fontSize(10.4).text("사회적 쓰임새 · 진로 방향", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.4);
   payload.lifeRole.directions.forEach((direction) => writeCard(document, direction.title, [
     { text: direction.description },
     { label: "준비 방향", text: direction.preparation },
   ], "#F8F5FF"));
-  document.fillColor("#6A5843").fontSize(10).text("잘 맞는 일의 환경", { width: CONTENT_WIDTH });
+  document.fillColor("#6A5843").fontSize(10.4).text("잘 맞는 일의 환경", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.35);
   writeBullets(document, payload.lifeRole.environments);
   document.moveDown(0.5);
-  document.fillColor("#6A5843").fontSize(10).text("역할 에너지의 그림자", { width: CONTENT_WIDTH });
+  document.fillColor("#6A5843").fontSize(10.4).text("역할 에너지의 그림자", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.35);
   writeBullets(document, payload.lifeRole.shadows);
   writeCard(document, "지금의 작은 방향", [{ text: payload.lifeRole.smallDirection }], "#FCF8F0");

@@ -1,0 +1,12 @@
+cache-control: no-store, max-age=0
+content-disposition: attachment; filename="husimcolor-color-report-20260910.pdf"; filename*=UTF-8''%ED%9C%B4%EC%8B%AC%EC%BB%AC%EB%9F%AC_%EB%82%98%EC%9D%98%EC%BB%AC%EB%9F%AC%EC%8B%AC%EB%A6%AC%ED%95%B4%EC%84%9D_20260910.pdf
+content-length: 47930
+content-type: application/pdf
+date: Thu, 10 Sep 2026 03:02:13 GMT
+server: Vercel
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-vercel-cache: MISS
+x-vercel-id: sin1::iad1::btkzg-1789009332924-1de32074d118
+x-xss-protection: 1; mode=block
