@@ -46,4 +46,28 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(screenSource).toContain("pathname: '/(tabs)/couple-select'");
     expect(screenSource).toContain("router.push('/(tabs)/couple-result'");
   });
+
+  it("개인 1단계에서는 보완 컬러를 회복 방향과 관계 성향 사이에 두고, 종합 결과에서는 개인 반복 영역을 제외한다", () => {
+    const colorResultSource = readFileSync(
+      resolve(process.cwd(), "app/(tabs)/couple-color-result.tsx"),
+      "utf8",
+    );
+    const coupleResultSource = readFileSync(
+      resolve(process.cwd(), "app/(tabs)/couple-result.tsx"),
+      "utf8",
+    );
+
+    const recoveryIndex = colorResultSource.indexOf("🌱 회복 방향");
+    const complementIndex = colorResultSource.indexOf("🎨 보완 컬러");
+    const relationshipIndex = colorResultSource.indexOf("💚 관계 성향");
+
+    expect(recoveryIndex).toBeGreaterThan(-1);
+    expect(complementIndex).toBeGreaterThan(recoveryIndex);
+    expect(relationshipIndex).toBeGreaterThan(complementIndex);
+    expect(colorResultSource).toContain("analysis.complementColor.meaning");
+    expect(colorResultSource).toContain("analysis.coachingMessage");
+    expect(coupleResultSource).not.toContain("개인 마음 흐름");
+    expect(coupleResultSource).not.toContain('title="현재 마음 흐름"');
+    expect(coupleResultSource).not.toContain('title="보완 컬러"');
+  });
 });

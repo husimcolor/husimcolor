@@ -1,8 +1,8 @@
 /**
  * 커플 세션 컬러 해석 중간 결과 화면
  * - 1단계 컬러 3장 선택 후 개인별 컬러 해석 표시
- * - 심리 흐름 / 현재 감정 흐름 / 회복 방향 / 관계 성향 / 감정 표현 방식 (5가지만)
- * - 코칭 메시지·보완 컬러는 2단계로 이동
+ * - 심리 흐름 / 현재 감정 흐름 / 회복 방향 / 보완 컬러 / 관계 성향 / 감정 표현 방식
+ * - 보완 컬러와 기존 개인 코칭 문구는 1단계 결과에서 함께 확인
  * - 확인 후 2단계 심리카드 선택으로 이동
  */
 import React, { useState, useEffect, useRef } from 'react';
@@ -140,6 +140,19 @@ export default function CoupleColorResultScreen() {
                 <Text style={styles.cardContent}>{analysis.recoveryDirection}</Text>
               </View>
 
+              {/* 보완 컬러 — 기존 산출·문구를 유지한 채 회복 방향과 관계 성향 사이에 배치 */}
+              <View style={[styles.card, { borderColor: accentBorder, backgroundColor: accentBg }]}>
+                <Text style={[styles.cardLabel, { color: accentColor }]}>🎨 보완 컬러</Text>
+                <View style={[styles.complementRow, { backgroundColor: '#FBF7F2', borderColor: analysis.complementColor.hex + '60' }]}>
+                  <View style={[styles.complementDot, { backgroundColor: analysis.complementColor.hex, shadowColor: analysis.complementColor.hex }]} />
+                  <View style={styles.complementText}>
+                    <Text style={[styles.complementName, { color: analysis.complementColor.hex }]}>{analysis.complementColor.korName}</Text>
+                    <Text style={styles.complementMeaning}>{analysis.complementColor.meaning}</Text>
+                  </View>
+                </View>
+                <Text style={[styles.coachingMessage, { borderLeftColor: accentColor + '80' }]}>{analysis.coachingMessage}</Text>
+              </View>
+
               {/* 관계 성향 */}
               <View style={[styles.card, { borderColor: accentBorder, backgroundColor: accentBg }]}>
                 <Text style={[styles.cardLabel, { color: accentColor }]}>💚 관계 성향</Text>
@@ -219,6 +232,16 @@ const styles = StyleSheet.create({
   },
   cardLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
   cardContent: { fontSize: 14, color: '#3D3530', lineHeight: 22 },
+  complementRow: {
+    borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12,
+  },
+  complementDot: {
+    width: 34, height: 34, borderRadius: 17, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.28, shadowRadius: 4, elevation: 3,
+  },
+  complementText: { flex: 1, gap: 2 },
+  complementName: { fontSize: 14, fontWeight: '800' },
+  complementMeaning: { fontSize: 13, lineHeight: 20, color: '#4A3728' },
+  coachingMessage: { fontSize: 14, lineHeight: 22, color: '#3D3530', borderLeftWidth: 3, paddingLeft: 10, marginTop: 2 },
   previewBanner: {
     borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 20, gap: 8,
   },

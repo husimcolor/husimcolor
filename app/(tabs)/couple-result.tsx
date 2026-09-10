@@ -528,24 +528,6 @@ export default function CoupleResultScreen() {
                   <Text style={[shareCardStyles.btnText, { color: '#3A1D1D' }]}>💬 카카오 공유</Text>
                 </TouchableOpacity>
               </View>
-              {/* ─── 개인 마음 흐름 (lightArchetype 경로 전용) ─── */}
-              <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 4 }]}>개인 마음 흐름</Text>
-              <SectionCard accentColor={accentA} label="첫 번째 사람" title="현재 마음 흐름" colors={colors}>
-                <Text style={[styles.bodyText, { color: colors.foreground }]}>{personAAnalysis.currentFlow}</Text>
-                <View style={[sectionStyles.divider, { backgroundColor: accentA + '25', marginTop: 4 }]} />
-                <Text style={[styles.bodyText, { color: colors.foreground }]}>
-                  <Text style={{ fontWeight: '700' }}>관계 성향 </Text>
-                  {personAAnalysis.relationshipStyle}
-                </Text>
-              </SectionCard>
-              <SectionCard accentColor={accentB} label="두 번째 사람" title="현재 마음 흐름" colors={colors}>
-                <Text style={[styles.bodyText, { color: colors.foreground }]}>{personBAnalysis.currentFlow}</Text>
-                <View style={[sectionStyles.divider, { backgroundColor: accentB + '25', marginTop: 4 }]} />
-                <Text style={[styles.bodyText, { color: colors.foreground }]}>
-                  <Text style={{ fontWeight: '700' }}>관계 성향 </Text>
-                  {personBAnalysis.relationshipStyle}
-                </Text>
-              </SectionCard>
               {/* ─── archetype 섹션 (오해 패턴, 연결 방식, 루틴) — 관계 유형별 제목 분기 ─── */}
               <SectionCard accentColor={accentCouple} label={lightArchetypeResult.typeName} title={isParentChildRel ? '서로 이해하는 방식' : isFriendRel ? '편안함 속 오해 패턴' : isColleagueRel ? '함께 일하며 생기는 오해' : '이 관계의 오해 패턴'} colors={colors}>
                 <Text style={[styles.bodyText, { color: colors.foreground }]}>{lightArchetypeResult.misunderstandingPattern}</Text>
@@ -730,73 +712,6 @@ export default function CoupleResultScreen() {
             </>
           )}
 
-
-          {/* 개인 마음 흐름 — 연인/부부 전용 (기타 관계는 lightArchetype 경로 안에서 이미 렌더링됨) */}
-          {!lightArchetypeResult && (
-            <>
-          <Text style={[styles.sectionGroupTitle, { color: colors.muted }]}>개인 마음 흐름</Text>
-
-          {/* 첫 번째 사람 */}
-          <SectionCard accentColor={accentA} label="첫 번째 사람" title="현재 마음 흐름" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{personAAnalysis.currentFlow}</Text>
-            <View style={[sectionStyles.divider, { backgroundColor: accentA + '25', marginTop: 4 }]} />
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>
-              <Text style={{ fontWeight: '700' }}>관계 성향 </Text>
-              {personAAnalysis.relationshipStyle}
-            </Text>
-          </SectionCard>
-
-          <SectionCard accentColor={accentA} label="첫 번째 사람" title="보완 컬러" colors={colors}>
-            {(() => {
-              const cc = personAAnalysis.complementColor;
-              const cardBg = '#FBF7F2';
-              const borderCol = cc.hex + '60';
-              return (
-                <View style={[styles.complementRow, { backgroundColor: cardBg, borderColor: borderCol }]}>
-                  <View style={[styles.complementDot, { backgroundColor: cc.hex, shadowColor: cc.hex }]} />
-                  <View style={styles.complementText}>
-                    <Text style={[styles.complementName, { color: cc.hex }]}>{cc.korName}</Text>
-                    <Text style={[styles.complementMeaning, { color: '#4A3728', fontSize: 14, lineHeight: 24 }]}>{cc.meaning}</Text>
-                  </View>
-                </View>
-              );
-            })()}
-            <Text style={[styles.coachingMessage, { color: colors.foreground, borderLeftColor: accentA + '80' }]}>
-              {personAAnalysis.coachingMessage}
-            </Text>
-          </SectionCard>
-
-          {/* 두 번째 사람 */}
-          <SectionCard accentColor={accentB} label="두 번째 사람" title="현재 마음 흐름" colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{personBAnalysis.currentFlow}</Text>
-            <View style={[sectionStyles.divider, { backgroundColor: accentB + '25', marginTop: 4 }]} />
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>
-              <Text style={{ fontWeight: '700' }}>관계 성향 </Text>
-              {personBAnalysis.relationshipStyle}
-            </Text>
-          </SectionCard>
-
-          <SectionCard accentColor={accentB} label="두 번째 사람" title="보완 컬러" colors={colors}>
-            {(() => {
-              const cc = personBAnalysis.complementColor;
-              const cardBg = '#FBF7F2';
-              const borderCol = cc.hex + '60';
-              return (
-                <View style={[styles.complementRow, { backgroundColor: cardBg, borderColor: borderCol }]}>
-                  <View style={[styles.complementDot, { backgroundColor: cc.hex, shadowColor: cc.hex }]} />
-                  <View style={styles.complementText}>
-                    <Text style={[styles.complementName, { color: cc.hex }]}>{cc.korName}</Text>
-                    <Text style={[styles.complementMeaning, { color: '#4A3728', fontSize: 14, lineHeight: 24 }]}>{cc.meaning}</Text>
-                  </View>
-                </View>
-              );
-            })()}
-            <Text style={[styles.coachingMessage, { color: colors.foreground, borderLeftColor: accentB + '80' }]}>
-              {personBAnalysis.coachingMessage}
-            </Text>
-          </SectionCard>
-            </>
-          )}
 
           {/* ═══════════════════════════════════════════════════════
               관계 통합 분석 (60%)
