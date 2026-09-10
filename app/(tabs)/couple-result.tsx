@@ -1093,21 +1093,21 @@ export default function CoupleResultScreen() {
                   <View key={idx}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                       <Text style={{ fontSize: 18, marginRight: 8 }}>{item.icon}</Text>
-                      <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: '700' }}>{item.label}</Text>
+                      <Text style={[styles.lifePatternItemTitle, isRomanticRel && styles.lifePatternItemTitleRomantic, { color: colors.foreground }]}>{item.label}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
                       <View style={{ flex: 1, backgroundColor: '#4A3020', borderRadius: 8, padding: 12 }}>
-                        <Text style={{ color: accentA, fontSize: 11, fontWeight: '700', marginBottom: 4 }}>첫 번째 사람</Text>
+                        <Text style={[styles.lifePatternPersonLabel, isRomanticRel && styles.lifePatternPersonLabelRomantic, { color: isRomanticRel ? '#F7EBD9' : accentA }]}>첫 번째 사람</Text>
                         <Text style={{ color: '#F0E8DC', fontSize: 14, lineHeight: 22 }}>{item.personA}</Text>
                       </View>
                       <View style={{ flex: 1, backgroundColor: '#2A2040', borderRadius: 8, padding: 12 }}>
-                        <Text style={{ color: accentB, fontSize: 11, fontWeight: '700', marginBottom: 4 }}>두 번째 사람</Text>
+                        <Text style={[styles.lifePatternPersonLabel, isRomanticRel && styles.lifePatternPersonLabelRomantic, { color: isRomanticRel ? '#F7EBD9' : accentB }]}>두 번째 사람</Text>
                         <Text style={{ color: '#E8E0F8', fontSize: 14, lineHeight: 22 }}>{item.personB}</Text>
                       </View>
                     </View>
                     {item.tension ? (
                       <View style={{ backgroundColor: '#FFE8C0', borderRadius: 8, padding: 12, borderLeftWidth: 3, borderLeftColor: '#D4820A', marginBottom: 6 }}>
-                        <Text style={{ color: '#7A4A00', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>둘이 만났을 때 · 조율 포인트</Text>
+                        <Text style={[styles.lifePatternTensionLabel, isRomanticRel && styles.lifePatternTensionLabelRomantic]}>둘이 만났을 때 · 조율 포인트</Text>
                         <Text style={{ color: '#7A4A00', fontSize: 13, lineHeight: 20 }}>{item.tension}</Text>
                       </View>
                     ) : null}
@@ -1122,21 +1122,21 @@ export default function CoupleResultScreen() {
               <Text style={[isRomanticRel ? styles.sectionGroupTitleRomantic : styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>싸움 패턴</Text>
               <SectionCard accentColor="#C47E8A" label={archetypeResult.typeName} title="이 관계의 갈등 흐름" colors={colors}>
                 <View style={{ marginBottom: 10 }}>
-                  <Text style={{ color: '#C47E8A', fontSize: 11, fontWeight: '700', marginBottom: 4, letterSpacing: 0.5 }}>싸움이 시작되는 순간</Text>
+                  <Text style={[styles.analysisSubtitle, isRomanticRel && styles.analysisSubtitleRomantic, { color: '#C47E8A' }]}>싸움이 시작되는 순간</Text>
                   <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.unifiedSections.conflictFlow.trigger}</Text>
                 </View>
                 <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 10 }} />
                 <View style={{ marginBottom: 10 }}>
-                  <Text style={{ color: '#C47E8A', fontSize: 11, fontWeight: '700', marginBottom: 4, letterSpacing: 0.5 }}>갈등 직후 반응</Text>
+                  <Text style={[styles.analysisSubtitle, isRomanticRel && styles.analysisSubtitleRomantic, { color: '#C47E8A' }]}>갈등 직후 반응</Text>
                   <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{archetypeResult.unifiedSections.conflictFlow.reaction}</Text>
                 </View>
                 <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 10 }} />
                 <View style={{ backgroundColor: '#FFDDDD', borderRadius: 8, padding: 14, borderLeftWidth: 3, borderLeftColor: '#C03030', marginBottom: 12 }}>
-                  <Text style={{ color: '#801010', fontSize: 12, fontWeight: '700', marginBottom: 6 }}>⚠ 반복 위험 패턴</Text>
+                  <Text style={[styles.analysisSubtitle, isRomanticRel && styles.analysisSubtitleRomantic, { color: '#801010', marginBottom: 6 }]}>⚠ 반복 위험 패턴</Text>
                   <Text style={{ color: '#2A0A0A', fontSize: 15, lineHeight: 26 }}>{archetypeResult.unifiedSections.conflictFlow.danger}</Text>
                 </View>
                 <View>
-                  <Text style={{ color: '#A0506A', fontSize: 12, fontWeight: '700', marginBottom: 8, letterSpacing: 0.5 }}>싸울 때 하면 안 되는 말</Text>
+                  <Text style={[styles.analysisSubtitle, isRomanticRel && styles.analysisSubtitleRomantic, { color: '#A0506A', marginBottom: 8 }]}>싸울 때 하면 안 되는 말</Text>
                   {archetypeResult.unifiedSections.conflictFlow.forbiddenWords.map((word: string, i: number) => (
                     <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 }}>
                       <Text style={{ color: '#C03030', fontSize: 14, marginRight: 8, lineHeight: 24, fontWeight: '700' }}>✗</Text>
@@ -1160,7 +1160,7 @@ export default function CoupleResultScreen() {
                 </View>
                 {archetypeResult.unifiedSections.connectionFlow.skinshipNote ? (
                   <View style={{ backgroundColor: '#FFE0EC', borderRadius: 10, padding: 16, borderWidth: 1, borderColor: '#D4607880' }}>
-                    <Text style={{ color: '#8A2040', fontSize: 12, fontWeight: '700', marginBottom: 8 }}>스킨십 · 친밀감</Text>
+                    <Text style={[styles.analysisSubtitle, isRomanticRel && styles.analysisSubtitleRomantic, { color: '#8A2040', marginBottom: 8 }]}>스킨십 · 친밀감</Text>
                     <Text style={{ color: '#2A0A14', fontSize: 15, lineHeight: 26 }}>{archetypeResult.unifiedSections.connectionFlow.skinshipNote}</Text>
                   </View>
                 ) : null}
@@ -1170,19 +1170,19 @@ export default function CoupleResultScreen() {
               <Text style={[isRomanticRel ? styles.sectionGroupTitleRomantic : styles.sectionGroupTitle, { color: colors.muted, marginTop: 8 }]}>관계 성장 포인트</Text>
               <SectionCard accentColor="#5BC4A0" label={archetypeResult.typeName} title="이 관계가 오래가는 이유 & 성장 방향" colors={colors}>
                 <View style={{ backgroundColor: '#D8F5E8', borderRadius: 10, padding: 16, borderLeftWidth: 3, borderLeftColor: '#3A9A6A', marginBottom: 12 }}>
-                  <Text style={{ color: '#1A5A3A', fontSize: 12, fontWeight: '700', marginBottom: 8, letterSpacing: 0.5 }}>이 관계의 강점</Text>
+                  <Text style={[styles.analysisSubtitle, isRomanticRel && styles.analysisSubtitleRomantic, { color: '#1A5A3A', marginBottom: 8 }]}>이 관계의 강점</Text>
                   <Text style={{ color: '#1A3A2A', fontSize: 15, lineHeight: 26 }}>{archetypeResult.unifiedSections.growthPoint.strength}</Text>
                 </View>
                 <View style={{ backgroundColor: '#F5E8D0', borderRadius: 10, padding: 16, borderLeftWidth: 3, borderLeftColor: '#B08050', marginBottom: 12 }}>
-                  <Text style={{ color: '#6B4020', fontSize: 12, fontWeight: '700', marginBottom: 8, letterSpacing: 0.5 }}>조금 더 의식하면</Text>
+                  <Text style={[styles.analysisSubtitle, isRomanticRel && styles.analysisSubtitleRomantic, { color: '#6B4020', marginBottom: 8 }]}>조금 더 의식하면</Text>
                   <Text style={{ color: '#3A2010', fontSize: 15, lineHeight: 26 }}>{archetypeResult.unifiedSections.growthPoint.blindSpot}</Text>
                 </View>
                 <View style={{ backgroundColor: '#E8DCFF', borderRadius: 10, padding: 16, borderLeftWidth: 3, borderLeftColor: '#7A50C4', marginBottom: 12 }}>
-                  <Text style={{ color: '#4A2A7A', fontSize: 12, fontWeight: '700', marginBottom: 8, letterSpacing: 0.5 }}>함께 성장해야 할 방향</Text>
+                  <Text style={[styles.analysisSubtitle, isRomanticRel && styles.analysisSubtitleRomantic, { color: '#4A2A7A', marginBottom: 8 }]}>함께 성장해야 할 방향</Text>
                   <Text style={{ color: '#2A1050', fontSize: 15, lineHeight: 26 }}>{archetypeResult.unifiedSections.growthPoint.growthDirection}</Text>
                 </View>
                 <View style={{ backgroundColor: '#2A3A2A', borderRadius: 10, padding: 16, borderWidth: 1.5, borderColor: accentCouple + '60' }}>
-                  <Text style={{ color: accentCouple, fontSize: 13, fontWeight: '700', marginBottom: 6 }}>💡 오늘 해볼 수 있는 것</Text>
+                  <Text style={[styles.analysisSubtitle, isRomanticRel && styles.analysisSubtitleRomantic, { color: accentCouple, marginBottom: 6 }]}>💡 오늘 해볼 수 있는 것</Text>
                   <Text style={{ color: '#E8F4EC', fontSize: 15, lineHeight: 26 }}>{archetypeResult.unifiedSections.growthPoint.tip}</Text>
                 </View>
               </SectionCard>
@@ -1301,23 +1301,23 @@ export default function CoupleResultScreen() {
               : tr.routines;
             return (
               <View style={[styles.togetherRoutineCard, { borderColor: accentCouple + '50' }]}>
-                <Text style={[styles.togetherRoutineTitle, { color: accentCouple }]}>🌿 함께하면 좋은 회복 루틴</Text>
+                <Text style={[styles.togetherRoutineTitle, isRomanticRel && styles.togetherRoutineTitleRomantic, { color: accentCouple }]}>🌿 함께하면 좋은 회복 루틴</Text>
                 <View style={styles.togetherRoutineList}>
                   {displayRoutines.map((routine: string, i: number) => (
                     <View key={i} style={styles.togetherRoutineItem}>
                       <View style={[styles.togetherRoutineDot, { backgroundColor: accentCouple }]} />
-                      <Text style={[styles.togetherRoutineText, { color: '#F0E8DC' }]}>{routine}</Text>
+                      <Text style={[styles.togetherRoutineText, isRomanticRel && styles.togetherRoutineTextRomantic, { color: '#F0E8DC' }]}>{routine}</Text>
                     </View>
                   ))}
                   {hasFaith && tr.faithRoutine && (
                     <View style={styles.togetherRoutineItem}>
                       <View style={[styles.togetherRoutineDot, { backgroundColor: '#D4AF37' }]} />
-                      <Text style={[styles.togetherRoutineText, { color: '#F0E8DC' }]}>{tr.faithRoutine}</Text>
+                      <Text style={[styles.togetherRoutineText, isRomanticRel && styles.togetherRoutineTextRomantic, { color: '#F0E8DC' }]}>{tr.faithRoutine}</Text>
                     </View>
                   )}
                 </View>
                 <View style={[styles.togetherEnergyBox, { borderColor: accentCouple + '40' }]}>
-                  <Text style={[styles.togetherEnergyLabel, { color: accentCouple }]}>✨ 함께하면 살아나는 에너지</Text>
+                  <Text style={[styles.togetherEnergyLabel, isRomanticRel && styles.togetherEnergyLabelRomantic, { color: accentCouple }]}>✨ 함께하면 살아나는 에너지</Text>
                   <Text style={styles.togetherEnergyText}>{getLoverText(LOVER_ENERGY_MAP, archetypeResult.typeName, tr.energyNote)}</Text>
                 </View>
               </View>
@@ -1458,9 +1458,17 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase', marginBottom: 12, marginTop: 4,
   },
   sectionGroupTitleRomantic: {
-    fontSize: 16, fontWeight: '800', letterSpacing: 0.9,
+    fontSize: 17, fontWeight: '800', letterSpacing: 0.9,
     textTransform: 'uppercase', marginBottom: 12, marginTop: 4,
   },
+  lifePatternItemTitle: { fontSize: 15, fontWeight: '700' },
+  lifePatternItemTitleRomantic: { fontSize: 16, fontWeight: '800' },
+  lifePatternPersonLabel: { fontSize: 11, fontWeight: '700', marginBottom: 4 },
+  lifePatternPersonLabelRomantic: { fontSize: 13, fontWeight: '800', marginBottom: 5, letterSpacing: 0.15 },
+  lifePatternTensionLabel: { color: '#7A4A00', fontSize: 12, fontWeight: '700', marginBottom: 4 },
+  lifePatternTensionLabelRomantic: { fontSize: 13, fontWeight: '800', marginBottom: 5 },
+  analysisSubtitle: { fontSize: 12, fontWeight: '700', marginBottom: 4, letterSpacing: 0.5 },
+  analysisSubtitleRomantic: { fontSize: 13, fontWeight: '800', letterSpacing: 0.55 },
   romanticPrincipleLine: {
     borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 13,
     marginBottom: 16,
@@ -1546,6 +1554,7 @@ const styles = StyleSheet.create({
   togetherRoutineTitle: {
     fontSize: 17, fontWeight: '700', marginBottom: 4,
   },
+  togetherRoutineTitleRomantic: { fontSize: 18, fontWeight: '800', marginBottom: 6 },
   togetherRoutineList: { gap: 10 },
   togetherRoutineItem: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
@@ -1556,6 +1565,7 @@ const styles = StyleSheet.create({
   togetherRoutineText: {
     fontSize: 15, lineHeight: 26, flex: 1,
   },
+  togetherRoutineTextRomantic: { fontSize: 16, lineHeight: 28 },
   togetherEnergyBox: {
     borderRadius: 12, borderWidth: 1, padding: 16, gap: 6,
     backgroundColor: 'rgba(255,255,255,0.06)',
@@ -1564,6 +1574,7 @@ const styles = StyleSheet.create({
   togetherEnergyLabel: {
     fontSize: 13, fontWeight: '700', letterSpacing: 0.5,
   },
+  togetherEnergyLabelRomantic: { fontSize: 14, fontWeight: '800', letterSpacing: 0.55 },
   togetherEnergyText: {
     fontSize: 15, lineHeight: 26, color: '#E8DED2',
   },

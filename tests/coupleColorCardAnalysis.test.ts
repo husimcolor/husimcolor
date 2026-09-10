@@ -181,4 +181,21 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(coupleResultSource).not.toContain("부부관계에서 스킨십은");
     expect(coupleResultSource).not.toContain("자연스러운 애정표현과 스킨십은");
   });
+
+  it("부부·연인 생활 패턴 라벨과 회복 루틴의 텍스트 위계만 한 단계 높이고 본문·비연인 스타일은 유지한다", () => {
+    const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+
+    expect(coupleResultSource).toContain("lifePatternPersonLabelRomantic");
+    expect(coupleResultSource).toContain("#F7EBD9");
+    expect(coupleResultSource).toContain("isRomanticRel ? '#F7EBD9' : accentA");
+    expect(coupleResultSource).toContain("isRomanticRel ? '#F7EBD9' : accentB");
+    expect(coupleResultSource).toContain("lifePatternPersonLabelRomantic: { fontSize: 13");
+    expect(coupleResultSource).toContain("sectionGroupTitleRomantic: {");
+    expect(coupleResultSource).toContain("fontSize: 17, fontWeight: '800'");
+    expect(coupleResultSource).toContain("togetherRoutineTitleRomantic: { fontSize: 18");
+    expect(coupleResultSource).toContain("togetherRoutineTextRomantic: { fontSize: 16");
+    expect(coupleResultSource).toContain("togetherEnergyLabelRomantic: { fontSize: 14");
+    expect(coupleResultSource).toContain("togetherRoutineText: {\n    fontSize: 15");
+    expect(coupleResultSource).toContain("sectionGroupTitle: {\n    fontSize: 13");
+  });
 });
