@@ -82,4 +82,16 @@ describe("부모·자녀 전용 종합 관계 코칭", () => {
     expect(screenSource).toContain("기존 경량 관계 분석 (친구·동료·형제자매)");
     expect(screenSource).not.toContain("title={isParentChildRel ? '이 관계가 오래 이어지는 이유'");
   });
+
+  it("부모·자녀 전용 카드에만 명확한 텍스트 대비와 여유 있는 모바일 읽기 스타일을 적용한다", () => {
+    const screenSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+
+    expect(screenSource).toContain("variant=\"parentChild\"");
+    expect(screenSource).toContain("parentChildRoleTitleOnLight: { color: '#342820' }");
+    expect(screenSource).toContain("parentChildTogetherText: { color: '#3B2B50'");
+    expect(screenSource).toContain("parentChildBodyText: { fontSize: 16, lineHeight: 29");
+    expect(screenSource).toContain("isParentChildRel && styles.togetherRoutineTitleParentChild");
+    expect(screenSource).toContain("isParentChildRel && styles.closingMessageParentChild");
+    expect(screenSource).toContain("sectionGroupTitleRomantic");
+  });
 });

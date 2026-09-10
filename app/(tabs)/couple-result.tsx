@@ -29,24 +29,37 @@ const sectionStyles = StyleSheet.create({
   card: {
     borderRadius: 14, borderWidth: 1, padding: 20, marginBottom: 14, gap: 10, minHeight: 80,
   },
+  parentChildCard: {
+    padding: 22, marginBottom: 16, gap: 12,
+  },
   label: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 },
   title: { fontSize: 17, fontWeight: '700', marginBottom: 4 },
+  parentChildTitle: { fontSize: 19, fontWeight: '800', lineHeight: 27, marginBottom: 7 },
   divider: { height: 1, marginVertical: 4 },
 });
 
 function SectionCard({
-  label, title, accentColor, colors, children,
+  label, title, accentColor, colors, children, variant = 'default',
 }: {
   label?: string; title?: string; accentColor: string;
   colors: ReturnType<typeof useColors>; children: React.ReactNode;
+  variant?: 'default' | 'parentChild';
 }) {
   return (
-    <View style={[sectionStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <View style={[
+      sectionStyles.card,
+      variant === 'parentChild' && sectionStyles.parentChildCard,
+      { backgroundColor: colors.surface, borderColor: colors.border },
+    ]}>
       {label && (
         <Text style={[sectionStyles.label, { color: accentColor }]}>{label}</Text>
       )}
       {title && (
-        <Text style={[sectionStyles.title, { color: colors.foreground }]}>{title}</Text>
+        <Text style={[
+          sectionStyles.title,
+          variant === 'parentChild' && sectionStyles.parentChildTitle,
+          { color: colors.foreground },
+        ]}>{title}</Text>
       )}
       <View style={[sectionStyles.divider, { backgroundColor: accentColor + '30' }]} />
       {children}
@@ -935,49 +948,49 @@ export default function CoupleResultScreen() {
               {/* ─── 부모·자녀 전용 종합 코칭 ─── */}
               {isParentChildRel && parentChildCoaching ? (
                 <>
-                  <Text style={[styles.sectionGroupTitleParentChild, { color: colors.muted }]}>각자의 사회적 역할</Text>
-                  <SectionCard accentColor={accentA} title={`${parentChildCoaching.labels.parent}의 사회적 역할`} colors={colors}>
+                  <Text style={styles.sectionGroupTitleParentChild}>각자의 사회적 역할</Text>
+                  <SectionCard variant="parentChild" accentColor={accentA} title={`${parentChildCoaching.labels.parent}의 사회적 역할`} colors={colors}>
                     <Text style={[styles.parentChildRoleTitle, { color: accentA }]}>{parentChildCoaching.socialRoles.parent.title}</Text>
-                    <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{parentChildCoaching.socialRoles.parent.description}</Text>
+                    <Text style={[styles.parentChildBodyText, { color: colors.foreground, marginBottom: 0 }]}>{parentChildCoaching.socialRoles.parent.description}</Text>
                   </SectionCard>
-                  <SectionCard accentColor={accentB} title={`${parentChildCoaching.labels.child}의 사회적 역할`} colors={colors}>
+                  <SectionCard variant="parentChild" accentColor={accentB} title={`${parentChildCoaching.labels.child}의 사회적 역할`} colors={colors}>
                     <Text style={[styles.parentChildRoleTitle, { color: accentB }]}>{parentChildCoaching.socialRoles.child.title}</Text>
-                    <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{parentChildCoaching.socialRoles.child.description}</Text>
+                    <Text style={[styles.parentChildBodyText, { color: colors.foreground, marginBottom: 0 }]}>{parentChildCoaching.socialRoles.child.description}</Text>
                   </SectionCard>
 
-                  <Text style={[styles.sectionGroupTitleParentChild, { color: colors.muted }]}>우리 관계의 역할 에너지</Text>
-                  <SectionCard accentColor="#8A6BB8" title="부모와 자녀로 만나는 두 역할" colors={colors}>
+                  <Text style={styles.sectionGroupTitleParentChild}>우리 관계의 역할 에너지</Text>
+                  <SectionCard variant="parentChild" accentColor="#8A6BB8" title="부모와 자녀로 만나는 두 역할" colors={colors}>
                     <View style={styles.parentChildRolePairRow}>
                       <View style={[styles.parentChildRoleBox, { borderColor: accentA + '55' }]}>
                         <Text style={[styles.parentChildRolePerson, { color: accentA }]}>{parentChildCoaching.labels.parent} · 관계 속 역할</Text>
-                        <Text style={[styles.parentChildRoleTitle, { color: colors.foreground }]}>{parentChildCoaching.relationshipRoles.parent.title}</Text>
-                        <Text style={[styles.parentChildRoleDescription, { color: colors.muted }]}>{parentChildCoaching.relationshipRoles.parent.description}</Text>
+                        <Text style={[styles.parentChildRoleTitle, styles.parentChildRoleTitleOnLight]}>{parentChildCoaching.relationshipRoles.parent.title}</Text>
+                        <Text style={styles.parentChildRoleDescription}>{parentChildCoaching.relationshipRoles.parent.description}</Text>
                       </View>
                       <View style={[styles.parentChildRoleBox, { borderColor: accentB + '55' }]}>
                         <Text style={[styles.parentChildRolePerson, { color: accentB }]}>{parentChildCoaching.labels.child} · 관계 속 역할</Text>
-                        <Text style={[styles.parentChildRoleTitle, { color: colors.foreground }]}>{parentChildCoaching.relationshipRoles.child.title}</Text>
-                        <Text style={[styles.parentChildRoleDescription, { color: colors.muted }]}>{parentChildCoaching.relationshipRoles.child.description}</Text>
+                        <Text style={[styles.parentChildRoleTitle, styles.parentChildRoleTitleOnLight]}>{parentChildCoaching.relationshipRoles.child.title}</Text>
+                        <Text style={styles.parentChildRoleDescription}>{parentChildCoaching.relationshipRoles.child.description}</Text>
                       </View>
                     </View>
                     <View style={styles.parentChildTogetherBox}>
                       <Text style={styles.parentChildTogetherLabel}>두 역할이 만났을 때</Text>
-                      <Text style={[styles.parentChildTogetherText, { color: colors.foreground }]}>{parentChildCoaching.relationshipRoles.together}</Text>
-                    </View>
+                      <Text style={styles.parentChildTogetherText}>{parentChildCoaching.relationshipRoles.together}</Text>
+                  </View>
                   </SectionCard>
 
-                  <Text style={[styles.sectionGroupTitleParentChild, { color: colors.muted }]}>자녀 기질 맞춤 소통</Text>
-                  <SectionCard accentColor="#C47E8A" title={`${parentChildCoaching.labels.child}의 마음을 이해하는 방법`} colors={colors}>
+                  <Text style={styles.sectionGroupTitleParentChild}>자녀 기질 맞춤 소통</Text>
+                  <SectionCard variant="parentChild" accentColor="#C47E8A" title={`${parentChildCoaching.labels.child}의 마음을 이해하는 방법`} colors={colors}>
                     <View style={styles.parentChildCommunicationBlock}>
                       <Text style={[styles.parentChildCommunicationTitle, { color: '#8A3045' }]}>{parentChildCoaching.labels.child} · 마음을 닫기 쉬운 순간</Text>
-                      <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{parentChildCoaching.childCommunication.closesWhen}</Text>
+                      <Text style={[styles.parentChildBodyText, { color: colors.foreground, marginBottom: 0 }]}>{parentChildCoaching.childCommunication.closesWhen}</Text>
                     </View>
                     <View style={styles.parentChildCommunicationBlock}>
                       <Text style={[styles.parentChildCommunicationTitle, { color: '#356B53' }]}>{parentChildCoaching.labels.child} · 자신감을 얻는 순간</Text>
-                      <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{parentChildCoaching.childCommunication.gainsConfidenceWhen}</Text>
-                    </View>
+                      <Text style={[styles.parentChildBodyText, { color: colors.foreground, marginBottom: 0 }]}>{parentChildCoaching.childCommunication.gainsConfidenceWhen}</Text>
+                  </View>
                   </SectionCard>
 
-                  <Text style={[styles.sectionGroupTitleParentChild, { color: colors.muted }]}>부모의 대화 DO & DON'T</Text>
+                  <Text style={styles.sectionGroupTitleParentChild}>부모의 대화 DO & DON'T</Text>
                   <View style={styles.parentChildDialogueRow}>
                     <View style={[styles.parentChildDialogueCard, { backgroundColor: '#E7F3E8', borderColor: '#5B936A' }]}>
                       <Text style={[styles.parentChildDialogueTitle, { color: '#245B36' }]}>자녀에게 힘이 되는 말 · DO</Text>
@@ -999,14 +1012,14 @@ export default function CoupleResultScreen() {
                     </View>
                   </View>
 
-                  <Text style={[styles.sectionGroupTitleParentChild, { color: colors.muted }]}>갈등과 회복</Text>
-                  <SectionCard accentColor={accentCouple} title="서로 이해하는 방식" colors={colors}>
-                    <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{lightArchetypeResult.misunderstandingPattern}</Text>
+                  <Text style={styles.sectionGroupTitleParentChild}>갈등과 회복</Text>
+                  <SectionCard variant="parentChild" accentColor={accentCouple} title="서로 이해하는 방식" colors={colors}>
+                    <Text style={[styles.parentChildBodyText, { color: colors.foreground, marginBottom: 0 }]}>{lightArchetypeResult.misunderstandingPattern}</Text>
                   </SectionCard>
-                  <SectionCard accentColor={accentCouple} title="안정감을 느끼는 연결 방식" colors={colors}>
-                    <Text style={[styles.bodyText, { color: colors.foreground, marginBottom: 0 }]}>{lightArchetypeResult.connectionStyle}</Text>
+                  <SectionCard variant="parentChild" accentColor={accentCouple} title="안정감을 느끼는 연결 방식" colors={colors}>
+                    <Text style={[styles.parentChildBodyText, { color: colors.foreground, marginBottom: 0 }]}>{lightArchetypeResult.connectionStyle}</Text>
                   </SectionCard>
-                  <SectionCard accentColor={accentCouple} title="대화 흐름" colors={colors}>
+                  <SectionCard variant="parentChild" accentColor={accentCouple} title="대화 흐름" colors={colors}>
                     {lightArchetypeResult.conversationRoutine.split(' / ').map((guide, index) => (
                       <View key={index} style={styles.parentChildGuideRow}>
                         <Text style={[styles.parentChildGuideDot, { color: accentCouple }]}>•</Text>
@@ -1014,7 +1027,7 @@ export default function CoupleResultScreen() {
                       </View>
                     ))}
                   </SectionCard>
-                  <SectionCard accentColor={accentCouple} title="갈등 후 회복 방식" colors={colors}>
+                  <SectionCard variant="parentChild" accentColor={accentCouple} title="갈등 후 회복 방식" colors={colors}>
                     {lightArchetypeResult.recoveryRoutine.split(' / ').map((guide, index) => (
                       <View key={index} style={styles.parentChildGuideRow}>
                         <Text style={[styles.parentChildGuideDot, { color: accentCouple }]}>•</Text>
@@ -1025,14 +1038,14 @@ export default function CoupleResultScreen() {
 
                   {lightArchetypeResult.recommendedColors && lightArchetypeResult.recommendedColors.length > 0 && (
                     <>
-                      <Text style={[styles.sectionGroupTitleParentChild, { color: colors.muted }]}>추천 컬러</Text>
-                      <SectionCard accentColor={accentCouple} title="두 사람에게 권하는 컬러" colors={colors}>
+                      <Text style={styles.sectionGroupTitleParentChild}>추천 컬러</Text>
+                      <SectionCard variant="parentChild" accentColor={accentCouple} title="두 사람에게 권하는 컬러" colors={colors}>
                         {lightArchetypeResult.recommendedColors.map(rc => (
                           <View key={rc.id} style={[styles.complementRow, { backgroundColor: '#FBF7F2', borderColor: rc.hex + '60' }]}>
                             <View style={[styles.complementDot, { backgroundColor: rc.hex, shadowColor: rc.hex }]} />
                             <View style={styles.complementText}>
                               <Text style={[styles.complementName, { color: rc.hex }]}>{rc.korName}</Text>
-                              <Text style={[styles.complementMeaning, { color: '#4A3728', fontSize: 14, lineHeight: 24 }]}>{rc.reason}</Text>
+                              <Text style={styles.parentChildComplementMeaning}>{rc.reason}</Text>
                             </View>
                           </View>
                         ))}
@@ -1591,24 +1604,44 @@ export default function CoupleResultScreen() {
               : tr.routines;
             return (
               <View style={[styles.togetherRoutineCard, { borderColor: accentCouple + '50' }]}>
-                <Text style={[styles.togetherRoutineTitle, isRomanticRel && styles.togetherRoutineTitleRomantic, { color: accentCouple }]}>🌿 함께하면 좋은 회복 루틴</Text>
+                <Text style={[
+                  styles.togetherRoutineTitle,
+                  isRomanticRel && styles.togetherRoutineTitleRomantic,
+                  isParentChildRel && styles.togetherRoutineTitleParentChild,
+                  { color: accentCouple },
+                ]}>🌿 함께하면 좋은 회복 루틴</Text>
                 <View style={styles.togetherRoutineList}>
                   {displayRoutines.map((routine: string, i: number) => (
                     <View key={i} style={styles.togetherRoutineItem}>
                       <View style={[styles.togetherRoutineDot, { backgroundColor: accentCouple }]} />
-                      <Text style={[styles.togetherRoutineText, isRomanticRel && styles.togetherRoutineTextRomantic, { color: '#F0E8DC' }]}>{routine}</Text>
+                      <Text style={[
+                        styles.togetherRoutineText,
+                        isRomanticRel && styles.togetherRoutineTextRomantic,
+                        isParentChildRel && styles.togetherRoutineTextParentChild,
+                        { color: '#F8F1E7' },
+                      ]}>{routine}</Text>
                     </View>
                   ))}
                   {hasFaith && tr.faithRoutine && (
                     <View style={styles.togetherRoutineItem}>
                       <View style={[styles.togetherRoutineDot, { backgroundColor: '#D4AF37' }]} />
-                      <Text style={[styles.togetherRoutineText, isRomanticRel && styles.togetherRoutineTextRomantic, { color: '#F0E8DC' }]}>{tr.faithRoutine}</Text>
+                      <Text style={[
+                        styles.togetherRoutineText,
+                        isRomanticRel && styles.togetherRoutineTextRomantic,
+                        isParentChildRel && styles.togetherRoutineTextParentChild,
+                        { color: '#F8F1E7' },
+                      ]}>{tr.faithRoutine}</Text>
                     </View>
                   )}
                 </View>
                 <View style={[styles.togetherEnergyBox, { borderColor: accentCouple + '40' }]}>
-                  <Text style={[styles.togetherEnergyLabel, isRomanticRel && styles.togetherEnergyLabelRomantic, { color: accentCouple }]}>✨ 함께하면 살아나는 에너지</Text>
-                  <Text style={styles.togetherEnergyText}>{getLoverText(LOVER_ENERGY_MAP, archetypeResult.typeName, tr.energyNote)}</Text>
+                  <Text style={[
+                    styles.togetherEnergyLabel,
+                    isRomanticRel && styles.togetherEnergyLabelRomantic,
+                    isParentChildRel && styles.togetherEnergyLabelParentChild,
+                    { color: accentCouple },
+                  ]}>✨ 함께하면 살아나는 에너지</Text>
+                  <Text style={[styles.togetherEnergyText, isParentChildRel && styles.togetherEnergyTextParentChild]}>{getLoverText(LOVER_ENERGY_MAP, archetypeResult.typeName, tr.energyNote)}</Text>
                 </View>
               </View>
             );
@@ -1617,8 +1650,8 @@ export default function CoupleResultScreen() {
               마무리 코칭 메시지
           ═══════════════════════════════════════════════════════ */}
           <View style={[styles.closingCard, { backgroundColor: '#2A2420', borderColor: accentCouple + '60' }]}>
-            <Text style={[styles.closingLabel, { color: accentCouple }]}>마무리 코칭 메시지</Text>
-            <Text style={[styles.closingMessage, { color: '#F8F3EA' }]}>
+            <Text style={[styles.closingLabel, isParentChildRel && styles.closingLabelParentChild, { color: accentCouple }]}>마무리 코칭 메시지</Text>
+            <Text style={[styles.closingMessage, isParentChildRel && styles.closingMessageParentChild, { color: '#F8F3EA' }]}>
               {lightArchetypeResult
                 ? lightArchetypeResult.closingMessage
                 : (archetypeResult.closingMessage ?? coupleAnalysis.closingMessage)}
@@ -1752,28 +1785,31 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase', marginBottom: 12, marginTop: 4,
   },
   sectionGroupTitleParentChild: {
-    fontSize: 17, fontWeight: '800', letterSpacing: 0.45,
-    marginBottom: 12, marginTop: 14,
+    color: '#6A5A4A', fontSize: 19, fontWeight: '800', lineHeight: 27, letterSpacing: 0.35,
+    marginBottom: 14, marginTop: 20,
   },
-  parentChildRoleTitle: { fontSize: 16, fontWeight: '800', lineHeight: 24, marginBottom: 6 },
+  parentChildBodyText: { fontSize: 16, lineHeight: 29, fontWeight: '400' },
+  parentChildRoleTitle: { fontSize: 17, fontWeight: '800', lineHeight: 26, marginBottom: 8 },
+  parentChildRoleTitleOnLight: { color: '#342820' },
   parentChildRolePairRow: { gap: 10 },
-  parentChildRoleBox: { borderRadius: 12, borderWidth: 1, padding: 14, backgroundColor: '#FBF8F3' },
-  parentChildRolePerson: { fontSize: 13, fontWeight: '800', marginBottom: 5 },
-  parentChildRoleDescription: { fontSize: 14, lineHeight: 24 },
-  parentChildTogetherBox: { backgroundColor: '#F0EAF8', borderRadius: 12, padding: 15, borderLeftWidth: 3, borderLeftColor: '#8A6BB8', marginTop: 2 },
-  parentChildTogetherLabel: { color: '#5A417E', fontSize: 14, fontWeight: '800', marginBottom: 7 },
-  parentChildTogetherText: { fontSize: 15, lineHeight: 26 },
-  parentChildCommunicationBlock: { borderTopWidth: 1, borderTopColor: '#E5DED6', paddingTop: 13, marginTop: 2 },
-  parentChildCommunicationTitle: { fontSize: 15, lineHeight: 23, fontWeight: '800', marginBottom: 7 },
+  parentChildRoleBox: { borderRadius: 12, borderWidth: 1, padding: 17, backgroundColor: '#FFFDF8' },
+  parentChildRolePerson: { fontSize: 14, lineHeight: 21, fontWeight: '800', marginBottom: 7 },
+  parentChildRoleDescription: { color: '#5D4C42', fontSize: 15.5, lineHeight: 27 },
+  parentChildTogetherBox: { backgroundColor: '#F0EAF8', borderRadius: 12, padding: 18, borderLeftWidth: 3, borderLeftColor: '#8A6BB8', marginTop: 4 },
+  parentChildTogetherLabel: { color: '#4F386F', fontSize: 16, lineHeight: 23, fontWeight: '800', marginBottom: 9 },
+  parentChildTogetherText: { color: '#3B2B50', fontSize: 16, lineHeight: 29 },
+  parentChildCommunicationBlock: { borderTopWidth: 1, borderTopColor: '#E5DED6', paddingTop: 16, marginTop: 4 },
+  parentChildCommunicationTitle: { fontSize: 16, lineHeight: 25, fontWeight: '800', marginBottom: 9 },
   parentChildDialogueRow: { gap: 12, marginBottom: 2 },
-  parentChildDialogueCard: { borderRadius: 14, borderWidth: 1, padding: 15, gap: 8 },
-  parentChildDialogueTitle: { fontSize: 15, lineHeight: 23, fontWeight: '800', marginBottom: 2 },
-  parentChildDialogueItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
-  parentChildDialogueDot: { fontSize: 18, lineHeight: 23, fontWeight: '800' },
-  parentChildDialogueText: { flex: 1, fontSize: 14.5, lineHeight: 24, fontWeight: '500' },
-  parentChildGuideRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 7 },
-  parentChildGuideDot: { fontSize: 18, lineHeight: 25, fontWeight: '800' },
-  parentChildGuideText: { flex: 1, fontSize: 15, lineHeight: 25 },
+  parentChildDialogueCard: { borderRadius: 14, borderWidth: 1, padding: 18, gap: 10 },
+  parentChildDialogueTitle: { fontSize: 16, lineHeight: 25, fontWeight: '800', marginBottom: 4 },
+  parentChildDialogueItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  parentChildDialogueDot: { fontSize: 19, lineHeight: 26, fontWeight: '800' },
+  parentChildDialogueText: { flex: 1, fontSize: 15.5, lineHeight: 27, fontWeight: '500' },
+  parentChildGuideRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginBottom: 9 },
+  parentChildGuideDot: { fontSize: 19, lineHeight: 27, fontWeight: '800' },
+  parentChildGuideText: { flex: 1, fontSize: 16, lineHeight: 28 },
+  parentChildComplementMeaning: { color: '#4A3728', fontSize: 15.5, lineHeight: 26 },
   lifePatternItemTitle: { fontSize: 15, fontWeight: '700' },
   lifePatternItemTitleRomantic: { fontSize: 16, fontWeight: '800' },
   lifePatternPersonLabel: { fontSize: 11, fontWeight: '700', marginBottom: 4 },
@@ -1868,6 +1904,7 @@ const styles = StyleSheet.create({
     fontSize: 17, fontWeight: '700', marginBottom: 4,
   },
   togetherRoutineTitleRomantic: { fontSize: 18, fontWeight: '800', marginBottom: 6 },
+  togetherRoutineTitleParentChild: { fontSize: 19, lineHeight: 28, fontWeight: '800', marginBottom: 8 },
   togetherRoutineList: { gap: 10 },
   togetherRoutineItem: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
@@ -1879,6 +1916,7 @@ const styles = StyleSheet.create({
     fontSize: 15, lineHeight: 26, flex: 1,
   },
   togetherRoutineTextRomantic: { fontSize: 16, lineHeight: 28 },
+  togetherRoutineTextParentChild: { fontSize: 16.5, lineHeight: 29 },
   togetherEnergyBox: {
     borderRadius: 12, borderWidth: 1, padding: 16, gap: 6,
     backgroundColor: 'rgba(255,255,255,0.06)',
@@ -1888,9 +1926,13 @@ const styles = StyleSheet.create({
     fontSize: 13, fontWeight: '700', letterSpacing: 0.5,
   },
   togetherEnergyLabelRomantic: { fontSize: 14, fontWeight: '800', letterSpacing: 0.55 },
+  togetherEnergyLabelParentChild: { fontSize: 16, lineHeight: 24, fontWeight: '800', letterSpacing: 0.4 },
   togetherEnergyText: {
     fontSize: 15, lineHeight: 26, color: '#E8DED2',
   },
+  togetherEnergyTextParentChild: { fontSize: 16.5, lineHeight: 29, color: '#F4E9DA' },
+  closingLabelParentChild: { fontSize: 16, lineHeight: 24, fontWeight: '800', letterSpacing: 0.5 },
+  closingMessageParentChild: { fontSize: 17, lineHeight: 34 },
 });
 
 const shareCardStyles = StyleSheet.create({
