@@ -24,6 +24,7 @@ import { trpc } from "@/lib/trpc";
 import { buildCustomRecoveryRoutine, buildLifeEnergyResult, type LifeEnergyResult } from "@/constants/lifeArchetype";
 import { buildLifeRoleEnergyReport } from "@/constants/lifeRoleEnergy";
 import { buildPremiumPdfHtml } from "@/lib/premium-pdf-report";
+import { buildPremiumPdfDownloadPayload } from "@/lib/premium-pdf-download";
 import { buildPremiumShareCardData } from "@/lib/premium-share-card";
 import { PremiumShareSummaryCard } from "@/components/premium-share-summary-card";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -709,11 +710,26 @@ export default function PremiumResultScreen() {
     return uri;
   };
 
+  const submitServerPdfDownload = (payload: ReturnType<typeof buildPremiumPdfDownloadPayload>) => {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/pdf-report';
+    form.style.display = 'none';
+    const field = document.createElement('input');
+    field.type = 'hidden';
+    field.name = 'payload';
+    field.value = JSON.stringify(payload);
+    form.appendChild(field);
+    document.body.appendChild(form);
+    form.submit();
+    window.setTimeout(() => form.remove(), 1_000);
+  };
+
   const handlePdfDownload = async () => {
     const colorFlowDescription = prevColors.length >= 3
       ? `${prevColors[0].korName}의 ${prevColors[0].keywords[0]}·${prevColors[1].korName}의 ${prevColors[1].keywords[0]}·${prevColors[2].korName}의 ${prevColors[2].keywords[0]}이 당신의 성향을 이루고 있습니다.`
       : '';
-    const reportHtml = buildPremiumPdfHtml({
+    const reportInput = {
       profile,
       selectedColors: prevColors,
       cards,
@@ -734,41 +750,13 @@ export default function PremiumResultScreen() {
         message: customRecoveryRoutine.message,
       },
       coachingUrl: 'https://naver.me/ID3fxw2W',
-    });
+    };
     try {
       if (Platform.OS === 'web') {
-        const html2pdf = (await import('html2pdf.js')).default;
-        const parsed = new DOMParser().parseFromString(reportHtml, 'text/html');
-        const exportRoot = document.createElement('div');
-        exportRoot.style.position = 'fixed';
-        exportRoot.style.left = '-100000px';
-        exportRoot.style.top = '0';
-        exportRoot.style.width = '794px';
-        exportRoot.style.backgroundColor = '#FFFFFF';
-        exportRoot.innerHTML = `<style>${parsed.querySelector('style')?.textContent ?? ''}</style>${parsed.querySelector('main')?.innerHTML ?? ''}`;
-        document.body.appendChild(exportRoot);
-        try {
-          const reportElement = exportRoot.querySelector('main');
-          if (!reportElement) {
-            throw new Error('PDF report content was not created');
-          }
-          const pdfBlob = await html2pdf()
-            .set({
-              margin: 0,
-              filename: `husimcolor_report_${new Date().toISOString().slice(0, 10)}.pdf`,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-              pagebreak: { mode: ['css', 'legacy'], avoid: ['section', '.report-card', '.direction-card', '.cta'] },
-            } as any)
-            .from(reportElement)
-            .outputPdf('blob') as Blob;
-          downloadWebFile(pdfBlob, `husimcolor_report_${new Date().toISOString().slice(0, 10)}.pdf`);
-        } finally {
-          exportRoot.remove();
-        }
+        submitServerPdfDownload(buildPremiumPdfDownloadPayload(reportInput));
         return;
       }
+      const reportHtml = buildPremiumPdfHtml(reportInput);
       const { uri } = await Print.printToFileAsync({
         html: reportHtml,
         width: 595,

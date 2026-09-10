@@ -600,3 +600,11 @@
 - [x] 요약카드의 기기 저장·카카오톡·SNS 공유 흐름으로 기존 결과 공유 기능 교체
 - [x] PDF 저장·요약카드 생성·기존 결과·오행·회복·공유 회귀 QA
 - [x] Vercel Production 재배포 및 운영 모바일 흐름 검증
+
+## Android PDF 실파일 다운로드 복구 (2026-09-10)
+
+- [x] 기존 브라우저 Blob 다운로드 실패 원인과 Vercel 서버리스 PDF 생성 가능 범위 점검
+- [x] 결과 데이터 기반 서버 PDF 생성 API와 application/pdf attachment 응답 구현
+- [x] Android Chrome·Samsung Internet 다운로드 관리자에서 PDF 파일 생성·저장·열기 검증
+- [x] 한글·파일명·MIME type·0KB·페이지 잘림 회귀 검증 및 공유카드 비변경 확인
+- [ ] Vercel Production 재배포와 운영 attachment 다운로드 응답 검증

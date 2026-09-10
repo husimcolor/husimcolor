@@ -4,10 +4,16 @@
     "api/trpc/[...trpc].ts": {
       "runtime": "@vercel/node@3.2.7",
       "maxDuration": 30
+    },
+    "api/pdf-report.ts": {
+      "runtime": "@vercel/node@3.2.7",
+      "maxDuration": 30,
+      "includeFiles": "server/assets/NotoSansKR-400.woff"
     }
   },
   "rewrites": [
     { "source": "/api/trpc/:path*", "destination": "/api/trpc/[...trpc]" },
+    { "source": "/api/pdf-report", "destination": "/api/pdf-report" },
     { "source": "/((?!_expo/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [

@@ -6,7 +6,9 @@ import { COLOR_DATA } from "../constants/colorData";
 import { buildCustomRecoveryRoutine, buildLifeEnergyResult } from "../constants/lifeArchetype";
 import { buildLifeRoleEnergyReport } from "../constants/lifeRoleEnergy";
 import { buildPremiumPdfHtml } from "../lib/premium-pdf-report";
+import { buildPremiumPdfDownloadPayload } from "../lib/premium-pdf-download";
 import { buildPremiumShareCardData } from "../lib/premium-share-card";
+import { createPremiumPdfBuffer, validatePremiumPdfPayload } from "../server/pdf-report";
 import { buildStage2CardInterpretations, buildStage2ColorBridge } from "../constants/premiumStage2CardInterpretation";
 
 const getCard = (id: string): CardData => {
@@ -71,10 +73,10 @@ describe("유료 결과 PDF 리포트", () => {
     expect(source).toContain("PDF 리포트 다운로드");
     expect(source).toContain("buildPremiumPdfHtml");
     expect(source).toContain("Print.printToFileAsync");
-    expect(source).toContain("outputPdf('blob')");
     expect(source).toContain("shareOrDownloadWebFile");
-    expect(source).toContain("downloadWebFile(pdfBlob");
     expect(source).toContain("PremiumShareSummaryCard");
+    expect(source).toContain("submitServerPdfDownload");
+    expect(source).toContain("/api/pdf-report");
   });
 
   it("요약 공유카드는 화면의 최종 카드·역할·오행·회복 값을 개인정보 없이 압축한다", () => {
@@ -95,5 +97,36 @@ describe("유료 결과 PDF 리포트", () => {
     expect(shareCard.complementaryElements).toEqual(energy.complementaryFiveElements.elements);
     expect(shareCard.recoveryMessage).toContain(routine.message.split(/[.!?]/)[0]);
     expect(Object.keys(shareCard)).not.toContain("profile");
+  });
+
+  it("서버 PDF는 같은 최종 결과 데이터로 유효한 PDF 바이트를 생성한다", async () => {
+    const payload = buildPremiumPdfDownloadPayload({
+      profile: null,
+      selectedColors: colors,
+      cards,
+      stage2Bridge: buildStage2ColorBridge(colors),
+      stage2Cards,
+      complementColors: cards[2].complementColors,
+      colorFlowDescription: "레드·블루·화이트의 현재 성향 설명입니다.",
+      combinedCoaching: "웹 화면에 표시되는 지금 마음의 흐름입니다.",
+      scripture: { label: "🌿 오늘의 위로", text: "웹 결과의 위로 문구입니다.", ref: "" },
+      lifeRoleReport: lifeRole,
+      lifeEnergyResult: energy,
+      customRecoveryRoutine: {
+        tea: cards[2].wellness.tea,
+        food: routine.food,
+        breath: routine.breath,
+        movement: routine.movement,
+        smallPractice: routine.smallPractice,
+        message: routine.message,
+      },
+      coachingUrl: "https://naver.me/ID3fxw2W",
+    });
+    const validated = validatePremiumPdfPayload(payload);
+    const pdf = await createPremiumPdfBuffer(validated);
+    expect(pdf.subarray(0, 4).toString("utf8")).toBe("%PDF");
+    expect(pdf.length).toBeGreaterThan(2_000);
+    expect(validated.cards[0].narrative).toBe(stage2Cards[0].narrative);
+    expect(validated.energyFlow.currentElements).toEqual(energy.currentFiveElements.elements);
   });
 });
