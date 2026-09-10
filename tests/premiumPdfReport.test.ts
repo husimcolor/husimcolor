@@ -144,11 +144,11 @@ describe("유료 결과 PDF 리포트", () => {
     const source = readFileSync(resolve(process.cwd(), "server/pdf-report.ts"), "utf8");
     expect(source).toContain("writeCoverColorChip");
     expect(source).toContain("writeCardPreviewRow");
-    expect(source).toContain("BODY_TEXT_SIZE = 16");
-    expect(source).toContain("BODY_LABEL_SIZE = 14");
-    expect(source).toContain("BODY_LINE_GAP = 6.2");
+    expect(source).toContain("BODY_TEXT_SIZE = 18.5");
+    expect(source).toContain("BODY_LABEL_SIZE = 16");
+    expect(source).toContain("BODY_LINE_GAP = 7.5");
     const nativeHtmlSource = readFileSync(resolve(process.cwd(), "lib/premium-pdf-report.ts"), "utf8");
-    expect(nativeHtmlSource).toContain("font-size: 16pt; line-height: 1.78");
+    expect(nativeHtmlSource).toContain("font-size: 18.5pt; line-height: 1.9");
     expect(source).not.toContain("`• ${value}`");
   });
 
