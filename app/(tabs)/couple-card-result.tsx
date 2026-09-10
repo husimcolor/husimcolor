@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CARD_DATA } from '@/constants/cardData';
 import { COLOR_DATA } from '@/constants/colorData';
 import type { CoupleSessionData, PersonSession } from '@/constants/coupleData';
+import { buildCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
 
 const POSITION_LABELS = ['무의식 · 내면 에너지', '현재 현실 에너지', '미래 · 회복 · 희망 에너지'];
 const POSITION_DESCS = [
@@ -322,12 +323,15 @@ export default function CoupleCardResultScreen() {
       })));
 
       const colorIds = session.colors ?? [];
-      const colors = colorIds.map((id: string) => COLOR_DATA.find((c: any) => c.id === id)).filter(Boolean);
+      const colors = colorIds
+        .map((id: string) => COLOR_DATA.find((color) => color.id === id))
+        .filter((color): color is (typeof COLOR_DATA)[number] => Boolean(color));
       const prevColorsMapped = colors.map((c: any) => ({ korName: c.korName, hex: c.hex }));
       setPrevColors(prevColorsMapped);
 
-      // 통합 흐름 분석 생성
+      // 기존 코칭·보완 루틴은 유지하고, 통합 분석 본문만 1단계 컬러 3개와 2단계 카드 3개를 함께 연결한다.
       const flow = buildCardFlowAnalysis(cards as any, prevColorsMapped, session.info?.faith ?? '무교');
+      flow.flow = buildCoupleColorCardIntegratedAnalysis(colors, cards);
       setCardFlow(flow);
 
       setIsLoading(false);
@@ -433,12 +437,12 @@ export default function CoupleCardResultScreen() {
             </View>
           ))}
 
-          {/* 통합 흐름 분석 */}
+          {/* 1단계 컬러 + 2단계 심리카드 통합 분석 */}
           {cardFlow && (
             <>
               <View style={[styles.flowCard, { borderColor: accentColor + '44', backgroundColor: accentBg }]}>
-                <Text style={[styles.flowCardLabel, { color: accentColor }]}>🌊 카드 흐름 통합 분석</Text>
-                <Text style={[styles.flowCardTitle, { color: '#3D3530' }]}>무의식 → 현재 → 미래 흐름</Text>
+                <Text style={[styles.flowCardLabel, { color: accentColor }]}>🌿 컬러 × 심리카드 통합 분석</Text>
+                <Text style={[styles.flowCardTitle, { color: '#3D3530' }]}>선택 컬러 · 무의식 → 현재 → 다음 방향</Text>
                 <Text style={styles.flowCardText}>{cardFlow.flow}</Text>
               </View>
 
