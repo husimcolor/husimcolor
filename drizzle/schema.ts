@@ -82,6 +82,18 @@ export const visitorLogs = mysqlTable("visitor_logs", {
 export type VisitorLog = typeof visitorLogs.$inferSelect;
 export type InsertVisitorLog = typeof visitorLogs.$inferInsert;
 
+// 커플 결과 공유 스냅샷 테이블
+// 공유 링크가 이후의 새 검사나 다른 브라우저의 로컬 세션에 영향을 받지 않도록 결과를 고정 저장한다.
+export const coupleSharedResults = mysqlTable("couple_shared_results", {
+  id: int("id").autoincrement().primaryKey(),
+  shareId: varchar("shareId", { length: 64 }).notNull().unique(),
+  resultSnapshot: text("resultSnapshot").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CoupleSharedResult = typeof coupleSharedResults.$inferSelect;
+export type InsertCoupleSharedResult = typeof coupleSharedResults.$inferInsert;
+
 // 관리자 설정 테이블 (비밀번호 등 전역 설정 - DB 기반으로 브라우저 무관)
 export const adminSettings = mysqlTable("admin_settings", {
   id: int("id").autoincrement().primaryKey(),

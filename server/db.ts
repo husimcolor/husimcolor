@@ -213,6 +213,34 @@ export async function setAdminPassword(newPassword: string): Promise<void> {
 import { InsertVisitorLog, visitorLogs } from "../drizzle/schema";
 import { count, sql } from "drizzle-orm";
 
+// 공유 링크용 불변 결과 스냅샷 DB 함수
+import { coupleSharedResults } from "../drizzle/schema";
+
+export async function createCoupleSharedResult(resultSnapshot: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // UUID는 URL에서 안전하며, unique 제약으로 충돌 시에도 기존 공유 결과를 절대 덮어쓰지 않는다.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const shareId = crypto.randomUUID();
+    try {
+      await db.insert(coupleSharedResults).values({ shareId, resultSnapshot });
+      return { shareId };
+    } catch (error) {
+      if (attempt === 2) throw error;
+    }
+  }
+
+  throw new Error("Unable to create share id");
+}
+
+export async function getCoupleSharedResult(shareId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(coupleSharedResults).where(eq(coupleSharedResults.shareId, shareId)).limit(1);
+  return result[0];
+}
+
 export async function logVisitor(data: InsertVisitorLog) {
   const db = await getDb();
   if (!db) return;

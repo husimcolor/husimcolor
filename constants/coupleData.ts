@@ -39,6 +39,8 @@ export interface CoupleSessionData {
   relationType: RelationType;
   personA: PersonSession;
   personB: PersonSession;
+  /** 결과 도달 시 생성되는 불변 공유 식별자. 새 검사 시작 시에는 생성되지 않는다. */
+  shareId?: string;
 }
 
 // ── 컬러 에너지 계열 분류 ─────────────────────────────────────────
@@ -8027,4 +8029,3 @@ export function getLightArchetype(
   // 연인/부부는 null 반환 → 기존 getRelationArchetype 사용
   return null;
 }
-

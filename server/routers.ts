@@ -4,6 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { parseCoupleShareSnapshot } from "../shared/couple-share";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -98,6 +99,26 @@ export const appRouter = router({
     testStats: publicProcedure.query(() => {
       return db.getTestSessionStats();
     }),
+  }),
+
+  // 관계 결과 공유 API: 공유 시점의 스냅샷만 저장·조회하며 기존 결과를 수정하지 않는다.
+  coupleShares: router({
+    create: publicProcedure
+      .input(z.object({ snapshot: z.string().min(100).max(55_000) }))
+      .mutation(async ({ input }) => {
+        if (!parseCoupleShareSnapshot(input.snapshot)) {
+          throw new Error("INVALID_COUPLE_SHARE_SNAPSHOT");
+        }
+        return db.createCoupleSharedResult(input.snapshot);
+      }),
+    get: publicProcedure
+      .input(z.object({ shareId: z.string().uuid() }))
+      .query(async ({ input }) => {
+        const result = await db.getCoupleSharedResult(input.shareId);
+        if (!result) return null;
+        const snapshot = parseCoupleShareSnapshot(result.resultSnapshot);
+        return snapshot ? { snapshot } : null;
+      }),
   }),
 
   // 후기 API

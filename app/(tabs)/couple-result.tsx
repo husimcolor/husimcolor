@@ -7,7 +7,7 @@ import ViewShot, { captureRef, type ViewShotRef } from 'react-native-view-shot';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,8 +19,9 @@ import {
 } from '@/constants/coupleData';
 import { buildRomanticRelationTraits } from '@/lib/couple-romantic-relation-traits';
 import { buildRomanticRelationshipRoles } from '@/lib/couple-romantic-relationship-roles';
-import { buildRomanticCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
+import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
 import { buildCouplePdfDownloadPayload } from '@/lib/couple-pdf-download';
+import type { CoupleShareSnapshot } from '@/shared/couple-share';
 
 // ─── SectionCard ─────────────────────────────────────────────────────────────
 const sectionStyles = StyleSheet.create({
@@ -52,9 +53,62 @@ function SectionCard({
   );
 }
 
+function buildCoupleShareSnapshot(
+  sessionData: CoupleSessionData,
+  personAAnalysis: PersonAnalysis,
+  personBAnalysis: PersonAnalysis,
+  coupleAnalysis: CoupleAnalysis,
+  archetypeResult: ArchetypeResult,
+  lightArchetypeResult: LightArchetypeResult | null,
+): CoupleShareSnapshot {
+  const isRomanticRel = sessionData.relationType === '연인' || sessionData.relationType === '부부';
+  const colorsA = sessionData.personA.colors.map((id) => COLOR_DATA.find((color) => color.id === id)).filter(Boolean);
+  const colorsB = sessionData.personB.colors.map((id) => COLOR_DATA.find((color) => color.id === id)).filter(Boolean);
+  const cardsA = sessionData.personA.cards.map((id) => CARD_DATA.find((card) => card.id === id)).filter(Boolean);
+  const cardsB = sessionData.personB.cards.map((id) => CARD_DATA.find((card) => card.id === id)).filter(Boolean);
+  const definedColorsA = colorsA.filter((color): color is NonNullable<typeof color> => Boolean(color));
+  const definedColorsB = colorsB.filter((color): color is NonNullable<typeof color> => Boolean(color));
+  const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
+  const definedCardsB = cardsB.filter((card): card is NonNullable<typeof card> => Boolean(card));
+  const romanticRelationTraits = isRomanticRel
+    ? buildRomanticRelationTraits({
+        personA: personAAnalysis,
+        personB: personBAnalysis,
+        cardsA,
+        cardsB,
+        expressionDescription: archetypeResult.expressionSpeed.description,
+        recoveryDescription: archetypeResult.recoveryStyle.description,
+      })
+    : [];
+  const romanticRelationshipRoles = isRomanticRel
+    ? buildRomanticRelationshipRoles({ personA: personAAnalysis, personB: personBAnalysis, cardsA, cardsB })
+    : null;
+
+  return {
+    schemaVersion: 1,
+    sessionData,
+    personAAnalysis,
+    personBAnalysis,
+    coupleAnalysis,
+    archetypeResult,
+    lightArchetypeResult,
+    romanticRelationTraits,
+    romanticRelationshipRoles,
+    personAIntegratedAnalysis: isRomanticRel
+      ? buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA)
+      : buildCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA),
+    personBIntegratedAnalysis: isRomanticRel
+      ? buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB)
+      : buildCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB),
+    createdAt: new Date().toISOString(),
+  };
+}
+
 // ─── 메인 화면 ───────────────────────────────────────────────────────────────
 export default function CoupleResultScreen() {
   const router = useRouter();
+  const routeParams = useLocalSearchParams<{ shareId?: string | string[] }>();
+  const requestedShareId = typeof routeParams.shareId === 'string' ? routeParams.shareId : undefined;
   const colors = useColors();
   const [sessionData, setSessionData] = useState<CoupleSessionData | null>(null);
   const [personAAnalysis, setPersonAAnalysis] = useState<PersonAnalysis | null>(null);
@@ -67,16 +121,43 @@ export default function CoupleResultScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [couplePdfDownloadState, setCouplePdfDownloadState] = useState<'idle' | 'preparing' | 'requesting' | 'delayed' | 'failed'>('idle');
   const [couplePdfDownloadMessage, setCouplePdfDownloadMessage] = useState<string | null>(null);
+  const [sharedSnapshot, setSharedSnapshot] = useState<CoupleShareSnapshot | null>(null);
+  const [activeShareId, setActiveShareId] = useState<string | null>(null);
   const shareCardRef = useRef<ViewShotRef>(null);
   const couplePdfDownloadLockRef = useRef(false);
+  const coupleShareRequestRef = useRef<Promise<string> | null>(null);
   const couplePdfDownloadPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const couplePdfDownloadTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const logVisitor = trpc.visitors.log.useMutation();
+  const createCoupleShare = trpc.coupleShares.create.useMutation();
+  const sharedResultQuery = trpc.coupleShares.get.useQuery(
+    { shareId: requestedShareId ?? '' },
+    { enabled: Boolean(requestedShareId), retry: false },
+  );
 
   useEffect(() => {
-    loadSession();
-  }, []);
+    if (!requestedShareId) loadLocalSession();
+  }, [requestedShareId]);
+
+  useEffect(() => {
+    if (!requestedShareId || sharedResultQuery.isLoading) return;
+    const snapshot = sharedResultQuery.data?.snapshot;
+    if (!snapshot) {
+      setError('공유된 관계 결과를 찾을 수 없습니다.');
+      setLoading(false);
+      return;
+    }
+    setSharedSnapshot(snapshot);
+    setActiveShareId(requestedShareId);
+    setSessionData(snapshot.sessionData);
+    setPersonAAnalysis(snapshot.personAAnalysis);
+    setPersonBAnalysis(snapshot.personBAnalysis);
+    setCoupleAnalysis(snapshot.coupleAnalysis);
+    setArchetypeResult(snapshot.archetypeResult);
+    setLightArchetypeResult(snapshot.lightArchetypeResult);
+    setLoading(false);
+  }, [requestedShareId, sharedResultQuery.data, sharedResultQuery.isLoading]);
 
   useEffect(() => () => clearCouplePdfDownloadTimers(), []);
 
@@ -87,8 +168,11 @@ export default function CoupleResultScreen() {
     couplePdfDownloadTimersRef.current = [];
   }
 
-  async function loadSession() {
+  async function loadLocalSession() {
     try {
+      setSharedSnapshot(null);
+      setActiveShareId(null);
+      coupleShareRequestRef.current = null;
       const raw = await AsyncStorage.getItem('@couple_session');
       if (!raw) { setError('세션 데이터를 찾을 수 없습니다.'); setLoading(false); return; }
       const data: CoupleSessionData = JSON.parse(raw);
@@ -133,6 +217,27 @@ export default function CoupleResultScreen() {
       setArchetypeResult(archRes);
       setLightArchetypeResult(lightRes);
       setLoading(false);
+      // 결과 도달 시점에 결과 전체를 단 한 번 고정 저장한다. 새 검사가 이전 공유 결과를 덮어쓰지 않는다.
+      const isRomanticResult = data.relationType === '연인' || data.relationType === '부부';
+      if (isRomanticResult && data.shareId) {
+        setActiveShareId(data.shareId);
+      } else if (isRomanticResult) {
+        const snapshot = buildCoupleShareSnapshot(data, aAnalysis, bAnalysis, cAnalysis, archRes, lightRes);
+        const request = createCoupleShare.mutateAsync({ snapshot: JSON.stringify(snapshot) })
+          .then(async ({ shareId }) => {
+            const storedSession = { ...data, shareId };
+            await AsyncStorage.setItem('@couple_session', JSON.stringify(storedSession));
+            setSessionData(storedSession);
+            setActiveShareId(shareId);
+            return shareId;
+          })
+          .catch(() => {
+            coupleShareRequestRef.current = null;
+            throw new Error('공유 링크 생성 실패');
+          });
+        coupleShareRequestRef.current = request;
+        void request.catch(() => undefined);
+      }
       // 커플 결과 도달 추적
       try {
         const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
@@ -302,7 +407,7 @@ export default function CoupleResultScreen() {
   const cardsA = personA.cards.map(id => CARD_DATA.find(c => c.id === id)).filter(Boolean);
   const cardsB = personB.cards.map(id => CARD_DATA.find(c => c.id === id)).filter(Boolean);
   const cardLabels = ['무의식', '현재', '미래'];
-  const romanticRelationTraits = isRomanticRel
+  const calculatedRomanticRelationTraits = isRomanticRel
     ? buildRomanticRelationTraits({
         personA: personAAnalysis,
         personB: personBAnalysis,
@@ -315,7 +420,7 @@ export default function CoupleResultScreen() {
         recoveryDescription: archetypeResult.recoveryStyle.description,
       })
     : [];
-  const romanticRelationshipRoles = isRomanticRel
+  const calculatedRomanticRelationshipRoles = isRomanticRel
     ? buildRomanticRelationshipRoles({
         personA: personAAnalysis,
         personB: personBAnalysis,
@@ -327,8 +432,80 @@ export default function CoupleResultScreen() {
   const definedColorsB = colorsB.filter((color): color is NonNullable<typeof color> => Boolean(color));
   const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
   const definedCardsB = cardsB.filter((card): card is NonNullable<typeof card> => Boolean(card));
-  const personAIntegratedAnalysis = buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA);
-  const personBIntegratedAnalysis = buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB);
+  const calculatedPersonAIntegratedAnalysis = buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA);
+  const calculatedPersonBIntegratedAnalysis = buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB);
+  // 공유 링크에서는 생성 당시 저장한 서술 결과를 우선해 이후 로컬 세션·새 검사와 분리한다.
+  const romanticRelationTraits = isRomanticRel && sharedSnapshot
+    ? sharedSnapshot.romanticRelationTraits
+    : calculatedRomanticRelationTraits;
+  const romanticRelationshipRoles = isRomanticRel && sharedSnapshot
+    ? sharedSnapshot.romanticRelationshipRoles
+    : calculatedRomanticRelationshipRoles;
+  const personAIntegratedAnalysis = isRomanticRel && sharedSnapshot
+    ? sharedSnapshot.personAIntegratedAnalysis
+    : calculatedPersonAIntegratedAnalysis;
+  const personBIntegratedAnalysis = isRomanticRel && sharedSnapshot
+    ? sharedSnapshot.personBIntegratedAnalysis
+    : calculatedPersonBIntegratedAnalysis;
+
+  const getCoupleShareUrl = async () => {
+    const getUrl = (shareId: string) => {
+      const baseUrl = Platform.OS === 'web' && typeof window !== 'undefined'
+        ? window.location.origin
+        : 'https://husimcolor.vercel.app';
+      return `${baseUrl}/couple-result?shareId=${encodeURIComponent(shareId)}`;
+    };
+
+    if (activeShareId) return getUrl(activeShareId);
+    if (coupleShareRequestRef.current) return coupleShareRequestRef.current;
+
+    const snapshot = buildCoupleShareSnapshot(
+      sessionData,
+      personAAnalysis,
+      personBAnalysis,
+      coupleAnalysis,
+      archetypeResult,
+      lightArchetypeResult,
+    );
+    const request = createCoupleShare.mutateAsync({ snapshot: JSON.stringify(snapshot) })
+      .then(({ shareId }) => {
+        setActiveShareId(shareId);
+        return getUrl(shareId);
+      });
+    coupleShareRequestRef.current = request;
+    try {
+      return await request;
+    } catch (error) {
+      coupleShareRequestRef.current = null;
+      throw error;
+    }
+  };
+
+  const handleCoupleKakaoShare = async (typeName: string) => {
+    try {
+      const shareUrl = await getCoupleShareUrl();
+      const shareText = `우리 관계 유형은 ${typeName}입니다 💫`;
+      if (Platform.OS === 'web') {
+        if (typeof navigator !== 'undefined' && navigator.share) {
+          try {
+            await navigator.share({ title: '휴심컬러 커플 세션 결과', text: shareText, url: shareUrl });
+            return;
+          } catch {}
+        }
+        try {
+          await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+          Alert.alert('공유 링크 복사 완료', '카카오톡에 붙여넣기 하여 공유해보세요!');
+        } catch {
+          Alert.alert('공유 링크', `${shareText}\n${shareUrl}`);
+        }
+        return;
+      }
+      const { Share } = await import('react-native');
+      await Share.share({ message: `${shareText}\n${shareUrl}`, url: shareUrl });
+    } catch {
+      Alert.alert('공유에 실패했습니다', '공유 링크를 준비하지 못했습니다. 다시 시도해주세요.');
+    }
+  };
 
   const getCouplePdfColorRows = (selectedColors: typeof colorsA) => selectedColors
     .filter((color): color is NonNullable<typeof color> => Boolean(color))
@@ -833,23 +1010,8 @@ export default function CoupleResultScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={0.8}
-              style={[shareCardStyles.btn, { backgroundColor: '#FEE500', borderColor: '#FEE500' }]}
-              onPress={async () => {
-                if (Platform.OS === 'web') {
-                  const shareUrl = typeof window !== 'undefined' ? window.location.href : 'https://husimcolor.vercel.app';
-                  if (typeof navigator !== 'undefined' && navigator.share) {
-                    try { await navigator.share({ title: '휴심컬러 커플 세션 결과', text: `우리 관계 유형은 ${archetypeResult.typeName}입니다 💫`, url: shareUrl }); return; } catch {}
-                  }
-                  try { await navigator.clipboard.writeText(shareUrl); Alert.alert('링크 복사 완료', '카카오톡에 붙여넣기 하여 공유해보세요!'); } catch { Alert.alert('공유 링크', shareUrl); }
-                  return;
-                }
-                try {
-                  const uri = await captureRef(shareCardRef, { format: 'png', quality: 0.95 });
-                  const ok = await Sharing.isAvailableAsync();
-                  if (ok) await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '휴심컬러 결과 공유' });
-                  else Alert.alert('알림', '이 환경에서는 공유 기능을 사용할 수 없습니다.');
-                } catch { Alert.alert('오류', '공유에 실패했습니다.'); }
-              }}
+                  style={[shareCardStyles.btn, { backgroundColor: '#FEE500', borderColor: '#FEE500' }]}
+                  onPress={() => { void handleCoupleKakaoShare(archetypeResult.typeName); }}
             >
               <Text style={[shareCardStyles.btnText, { color: '#3A1D1D' }]}>💬 카카오 공유</Text>
             </TouchableOpacity>
