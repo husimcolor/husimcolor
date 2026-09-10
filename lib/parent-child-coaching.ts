@@ -28,6 +28,13 @@ export type ParentChildCoaching = {
     doMessages: string[];
     dontMessages: string[];
   };
+  conflictRecovery: {
+    conflictStart: string;
+    parentIntent: string;
+    childReception: string;
+    mismatch: string;
+    recoveryOrder: string;
+  };
 };
 
 type ParentChildCoachingInput = {
@@ -155,6 +162,33 @@ const CHILD_DONT_FOCUS: Record<RoleKey, string> = {
   expert: "아직도 모르겠어? 지금 바로 답해.",
 };
 
+const CONFLICT_START_BY_PARENT_ROLE: Record<RoleKey, string> = {
+  connector: "서로의 말이 바로 이어지지 않거나 분위기가 어색해지는 순간, 대화를 다시 잇고 싶은 마음이 앞설 수 있습니다.",
+  healer: "자녀가 힘들어 보이거나 말수가 줄어드는 순간, 걱정을 덜어 주고 싶은 마음이 커질 수 있습니다.",
+  analyst: "상황의 이유와 기준이 분명하지 않을 때, 함께 정리해 주고 싶은 마음이 앞설 수 있습니다.",
+  leader: "다음 행동이나 약속을 정해야 한다고 느껴질 때, 방향을 잡아 주려는 마음이 빨라질 수 있습니다.",
+  artist: "자녀가 새로운 방식을 택하거나 낯선 시도를 할 때, 가능성을 넓혀 주고 싶은 마음과 현실적 걱정이 함께 올라올 수 있습니다.",
+  expert: "준비나 판단이 더 필요해 보이는 순간, 경험에서 얻은 기준을 먼저 전하고 싶은 마음이 앞설 수 있습니다.",
+};
+
+const PARENT_INTENT_BY_ROLE: Record<RoleKey, string> = {
+  connector: "관계가 멀어지지 않도록 대화를 다시 연결하고 싶은 마음",
+  healer: "자녀가 혼자 힘들어하지 않도록 먼저 돌보고 싶은 마음",
+  analyst: "자녀가 복잡한 상황을 이해하고 스스로 판단하도록 돕고 싶은 마음",
+  leader: "자녀가 흔들리지 않고 다음 걸음을 찾도록 이끌어 주고 싶은 마음",
+  artist: "자녀의 가능성을 놓치지 않고 자신만의 방식을 찾도록 응원하고 싶은 마음",
+  expert: "자녀가 현실에서 자기 힘을 쓸 수 있도록 신뢰할 만한 기준을 전하고 싶은 마음",
+};
+
+const CHILD_RECEIVES_BY_ROLE: Record<RoleKey, string> = {
+  connector: "주변의 분위기와 여러 사람의 마음까지 한꺼번에 살펴야 한다는 부담으로 받아들일 수 있습니다.",
+  healer: "부모의 걱정까지 자신이 감당해야 한다는 마음이 들면, 속마음을 더 조심스럽게 감출 수 있습니다.",
+  analyst: "아직 생각을 충분히 정리하지 못했는데 답을 내야 한다는 압박으로 받아들일 수 있습니다.",
+  leader: "자신이 선택해 볼 여지 없이 방향이 정해졌다는 느낌을 받으면, 의욕이 거리두기처럼 보일 수 있습니다.",
+  artist: "자신의 방식이 평가받거나 고쳐져야 한다는 신호로 느끼면, 시도와 표현을 줄일 수 있습니다.",
+  expert: "준비가 덜 된 상태에서 바로 보여 주거나 답해야 한다는 부담을 느끼면, 더 조용해질 수 있습니다.",
+};
+
 function toRoleInput(cards: readonly CardData[]) {
   return cards.slice(0, 3).map((card) => ({ color: card.color, shape: card.shape }));
 }
@@ -187,6 +221,9 @@ export function buildParentChildCoaching(input: ParentChildCoachingInput): Paren
   const parentRelationshipRole = PARENT_RELATIONSHIP_ROLE[parentKey];
   const childRelationshipRole = CHILD_RELATIONSHIP_ROLE[childKey];
   const typeHint = input.lightArchetype.typeName.replace(/ 관계$/, "");
+  const parentConflictStart = CONFLICT_START_BY_PARENT_ROLE[parentKey];
+  const parentIntent = PARENT_INTENT_BY_ROLE[parentKey];
+  const childReception = CHILD_RECEIVES_BY_ROLE[childKey];
 
   return {
     labels,
@@ -222,6 +259,13 @@ export function buildParentChildCoaching(input: ParentChildCoachingInput): Paren
         `“내가 너를 위해 이렇게 하는데 왜 몰라?”`,
         `“다른 아이들은 다 하는데 너는 왜 못 하니?”`,
       ],
+    },
+    conflictRecovery: {
+      conflictStart: `${labels.parent}에게는 ${parentConflictStart}`,
+      parentIntent: `${labels.parent}의 말과 행동은 ${parentIntent}에서 출발할 수 있습니다.`,
+      childReception: `${labels.child}은 ${childReception}`,
+      mismatch: `${labels.parent}의 관심이 빠른 해결이나 설명으로 전달되면, ${labels.child}에게는 자신의 속도와 생각이 충분히 존중되지 않는 느낌으로 닿을 수 있습니다. 이때 두 사람 모두 ‘내 마음을 알아주지 않는다’고 느끼며 대화가 어긋나기 쉽습니다.`,
+      recoveryOrder: `먼저 ${labels.parent}가 해결보다 ${labels.child}이 무엇을 이해받고 싶어 하는지 충분히 듣고, 다음으로 ${labels.child}이 자기 생각을 정리할 여지를 남기는 순서가 좋습니다. 그다음 지금 가능한 한 가지 약속을 함께 정하면, ${typeHint} 흐름의 긴장이 서로를 배우는 시간으로 바뀔 수 있습니다.`,
     },
   };
 }

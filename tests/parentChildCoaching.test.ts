@@ -50,7 +50,7 @@ describe("부모·자녀 전용 종합 관계 코칭", () => {
     expect(getParentChildLabels("부모-자녀", "여성", "남성")).toEqual({ parent: "엄마", child: "아들" });
   });
 
-  it("기존 3컬러·3심리카드 신호로 각자 사회적 역할, 관계 역할, 자녀 소통과 대화 예문을 생성한다", () => {
+  it("기존 3컬러·3심리카드 신호로 각자 사회적 역할, 관계 역할, 자녀 소통·대화·갈등 회복 해석을 생성한다", () => {
     const coaching = buildCoaching("아빠-아들", ["red", "orange", "gold"], ["blue", "navy", "white"]);
 
     expect(coaching.labels).toEqual({ parent: "아빠", child: "아들" });
@@ -62,6 +62,11 @@ describe("부모·자녀 전용 종합 관계 코칭", () => {
     expect(coaching.childCommunication.gainsConfidenceWhen.length).toBeGreaterThan(50);
     expect(coaching.dialogue.doMessages).toHaveLength(4);
     expect(coaching.dialogue.dontMessages).toHaveLength(4);
+    expect(coaching.conflictRecovery.conflictStart).toContain("아빠");
+    expect(coaching.conflictRecovery.parentIntent).toContain("아빠");
+    expect(coaching.conflictRecovery.childReception).toContain("아들");
+    expect(coaching.conflictRecovery.mismatch.length).toBeGreaterThan(80);
+    expect(coaching.conflictRecovery.recoveryOrder).toContain("한 가지 약속");
   });
 
   it("조합이 달라지면 역할·소통 근거도 함께 달라지며, 부모·자녀 화면만 전용 구조를 사용한다", () => {
@@ -73,11 +78,18 @@ describe("부모·자녀 전용 종합 관계 코칭", () => {
     expect(second.childCommunication.closesWhen).not.toBe(first.childCommunication.closesWhen);
     expect(second.dialogue.doMessages).not.toEqual(first.dialogue.doMessages);
     expect(second.dialogue.dontMessages).not.toEqual(first.dialogue.dontMessages);
+    expect(second.conflictRecovery.conflictStart).not.toBe(first.conflictRecovery.conflictStart);
+    expect(second.conflictRecovery.childReception).not.toBe(first.conflictRecovery.childReception);
     expect(screenSource).toContain("isParentChildRel && parentChildCoaching");
     expect(screenSource).toContain("각자의 사회적 역할");
     expect(screenSource).toContain("우리 관계의 역할 에너지");
     expect(screenSource).toContain("자녀 기질 맞춤 소통");
     expect(screenSource).toContain("부모의 대화 DO & DON'T");
+    expect(screenSource).toContain("갈등이 생기는 이유와 다시 연결되는 순서");
+    expect(screenSource).toContain("회복에 필요한 순서");
+    expect(screenSource).toContain("parentChildCoaching.conflictRecovery");
+    expect(screenSource).not.toContain("lightArchetypeResult.conversationRoutine.split(' / ')");
+    expect(screenSource).not.toContain("lightArchetypeResult.recoveryRoutine.split(' / ')");
     expect(screenSource).toContain("!isParentChildRel &&");
     expect(screenSource).toContain("기존 경량 관계 분석 (친구·동료·형제자매)");
     expect(screenSource).not.toContain("title={isParentChildRel ? '이 관계가 오래 이어지는 이유'");

@@ -1013,27 +1013,30 @@ export default function CoupleResultScreen() {
                   </View>
 
                   <Text style={styles.sectionGroupTitleParentChild}>갈등과 회복</Text>
-                  <SectionCard variant="parentChild" accentColor={accentCouple} title="서로 이해하는 방식" colors={colors}>
-                    <Text style={[styles.parentChildBodyText, { color: colors.foreground, marginBottom: 0 }]}>{lightArchetypeResult.misunderstandingPattern}</Text>
-                  </SectionCard>
-                  <SectionCard variant="parentChild" accentColor={accentCouple} title="안정감을 느끼는 연결 방식" colors={colors}>
-                    <Text style={[styles.parentChildBodyText, { color: colors.foreground, marginBottom: 0 }]}>{lightArchetypeResult.connectionStyle}</Text>
-                  </SectionCard>
-                  <SectionCard variant="parentChild" accentColor={accentCouple} title="대화 흐름" colors={colors}>
-                    {lightArchetypeResult.conversationRoutine.split(' / ').map((guide, index) => (
-                      <View key={index} style={styles.parentChildGuideRow}>
-                        <Text style={[styles.parentChildGuideDot, { color: accentCouple }]}>•</Text>
-                        <Text style={[styles.parentChildGuideText, { color: colors.foreground }]}>{guide}</Text>
-                      </View>
-                    ))}
-                  </SectionCard>
-                  <SectionCard variant="parentChild" accentColor={accentCouple} title="갈등 후 회복 방식" colors={colors}>
-                    {lightArchetypeResult.recoveryRoutine.split(' / ').map((guide, index) => (
-                      <View key={index} style={styles.parentChildGuideRow}>
-                        <Text style={[styles.parentChildGuideDot, { color: accentCouple }]}>•</Text>
-                        <Text style={[styles.parentChildGuideText, { color: colors.foreground }]}>{guide}</Text>
-                      </View>
-                    ))}
+                  <SectionCard variant="parentChild" accentColor={accentCouple} title="갈등이 생기는 이유와 다시 연결되는 순서" colors={colors}>
+                    <View style={styles.parentChildConflictStep}>
+                      <Text style={[styles.parentChildConflictLabel, { color: '#9A3E4C' }]}>갈등이 시작되는 지점</Text>
+                      <Text style={styles.parentChildConflictText}>{parentChildCoaching.conflictRecovery.conflictStart}</Text>
+                    </View>
+                    <View style={styles.parentChildConflictDivider} />
+                    <View style={styles.parentChildConflictStep}>
+                      <Text style={[styles.parentChildConflictLabel, { color: '#6C4C8D' }]}>{parentChildCoaching.labels.parent}가 전하려는 마음</Text>
+                      <Text style={styles.parentChildConflictText}>{parentChildCoaching.conflictRecovery.parentIntent}</Text>
+                    </View>
+                    <View style={styles.parentChildConflictDivider} />
+                    <View style={styles.parentChildConflictStep}>
+                      <Text style={[styles.parentChildConflictLabel, { color: '#326E68' }]}>{parentChildCoaching.labels.child}이 받아들이는 방식</Text>
+                      <Text style={styles.parentChildConflictText}>{parentChildCoaching.conflictRecovery.childReception}</Text>
+                    </View>
+                    <View style={styles.parentChildConflictDivider} />
+                    <View style={styles.parentChildConflictStep}>
+                      <Text style={[styles.parentChildConflictLabel, { color: '#87562D' }]}>관계가 어긋나는 지점</Text>
+                      <Text style={styles.parentChildConflictText}>{parentChildCoaching.conflictRecovery.mismatch}</Text>
+                    </View>
+                    <View style={styles.parentChildConflictRecoveryBox}>
+                      <Text style={styles.parentChildConflictRecoveryLabel}>회복에 필요한 순서</Text>
+                      <Text style={styles.parentChildConflictRecoveryText}>{parentChildCoaching.conflictRecovery.recoveryOrder}</Text>
+                    </View>
                   </SectionCard>
 
                   {lightArchetypeResult.recommendedColors && lightArchetypeResult.recommendedColors.length > 0 && (
@@ -1806,6 +1809,13 @@ const styles = StyleSheet.create({
   parentChildDialogueItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   parentChildDialogueDot: { fontSize: 19, lineHeight: 26, fontWeight: '800' },
   parentChildDialogueText: { flex: 1, fontSize: 15.5, lineHeight: 27, fontWeight: '500' },
+  parentChildConflictStep: { paddingVertical: 4 },
+  parentChildConflictLabel: { fontSize: 16, lineHeight: 25, fontWeight: '800', marginBottom: 8 },
+  parentChildConflictText: { color: '#3E332C', fontSize: 16, lineHeight: 29 },
+  parentChildConflictDivider: { height: 1, backgroundColor: '#E2D9D0', marginVertical: 10 },
+  parentChildConflictRecoveryBox: { backgroundColor: '#F0EAF8', borderRadius: 12, borderLeftWidth: 3, borderLeftColor: '#8A6BB8', padding: 18, marginTop: 4 },
+  parentChildConflictRecoveryLabel: { color: '#4F386F', fontSize: 16, lineHeight: 24, fontWeight: '800', marginBottom: 9 },
+  parentChildConflictRecoveryText: { color: '#3B2B50', fontSize: 16, lineHeight: 29 },
   parentChildGuideRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginBottom: 9 },
   parentChildGuideDot: { fontSize: 19, lineHeight: 27, fontWeight: '800' },
   parentChildGuideText: { flex: 1, fontSize: 16, lineHeight: 28 },
