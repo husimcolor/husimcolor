@@ -11,10 +11,19 @@ const BODY_SIZE = 15.5;
 const LABEL_SIZE = 12.6;
 const BODY_LINE_GAP = 5.8;
 const SECTION_BAR_GAP = 10;
-const SUBTITLE_SIZE = 14.6;
-const SUBTITLE_LABEL_SIZE = 13.8;
+const SUBTITLE_SIZE = 16.2;
+const SUBTITLE_LABEL_SIZE = 15.1;
+const SUBTITLE_LINE_GAP = 2;
+const CARD_TITLE_BLOCK_HEIGHT = 46;
+const CARD_LABEL_BLOCK_HEIGHT = 29;
+const CARD_PARAGRAPH_GAP = 18;
 
 type PdfWriter = InstanceType<typeof PDFDocument>;
+type CardParagraph = {
+  label?: string;
+  text?: string;
+  bullets?: string[];
+};
 
 function correctPdfText(value: string) {
   return value
@@ -53,6 +62,34 @@ function heightOf(document: PdfWriter, text: string, width = CONTENT_WIDTH, size
   return document.heightOfString(clean(text) || " ", { width, lineGap: BODY_LINE_GAP });
 }
 
+function subtitleHeight(document: PdfWriter, text: string, width: number, size: number) {
+  document.fontSize(size);
+  return document.heightOfString(clean(text) || " ", { width, lineGap: SUBTITLE_LINE_GAP });
+}
+
+/** 얇은 한글 폰트에서도 카드 소제목이 본문과 구분되도록 절제된 stroke로 Semi-bold처럼 표시한다. */
+function writeSubtitle(document: PdfWriter, text: string, x: number, y: number, width: number, size: number) {
+  document
+    .fillColor("#3F3029")
+    .strokeColor("#3F3029")
+    .lineWidth(0.24)
+    .fontSize(size)
+    .text(clean(text), x, y, { width, lineGap: SUBTITLE_LINE_GAP, fill: true, stroke: true });
+}
+
+function bulletListHeight(document: PdfWriter, bullets: string[], width: number) {
+  return bullets.reduce((sum, bullet) => sum + Math.max(20, heightOf(document, bullet, width)) + 7, 0);
+}
+
+function writeBulletList(document: PdfWriter, bullets: string[], textX: number, bulletX: number, width: number) {
+  bullets.forEach((bullet) => {
+    const top = document.y;
+    document.fillColor("#8A6B4D").fontSize(BODY_SIZE).text("•", bulletX, top, { width: 14, lineGap: BODY_LINE_GAP });
+    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(bullet), textX, top, { width, lineGap: BODY_LINE_GAP });
+    document.moveDown(0.38);
+  });
+}
+
 function writeSectionTitle(document: PdfWriter, title: string, tone = "#5C7F68", minFollowingHeight = 108) {
   const needsGap = document.y > PAGE_TOP + 2;
   const requiredHeight = (needsGap ? SECTION_BAR_GAP : 0) + 39 + minFollowingHeight;
@@ -64,24 +101,34 @@ function writeSectionTitle(document: PdfWriter, title: string, tone = "#5C7F68",
   document.y = top + 39;
 }
 
-function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label?: string; text: string }>, tone = "#FCF8F1") {
+function writeCard(document: PdfWriter, title: string, paragraphs: CardParagraph[], tone = "#FCF8F1") {
   const innerWidth = CONTENT_WIDTH - 30;
   const contentHeight = paragraphs.reduce((sum, paragraph) => {
-    const labelHeight = paragraph.label ? 24 : 0;
-    return sum + labelHeight + heightOf(document, paragraph.text, innerWidth) + 14;
-  }, 38);
+    const labelHeight = paragraph.label ? CARD_LABEL_BLOCK_HEIGHT : 0;
+    const textHeight = paragraph.text ? heightOf(document, paragraph.text, innerWidth) : 0;
+    const listHeight = paragraph.bullets ? bulletListHeight(document, paragraph.bullets, innerWidth - 22) : 0;
+    const textToListGap = paragraph.text && paragraph.bullets?.length ? 5 : 0;
+    return sum + labelHeight + textHeight + textToListGap + listHeight + CARD_PARAGRAPH_GAP;
+  }, CARD_TITLE_BLOCK_HEIGHT);
   ensureSpace(document, contentHeight + 19);
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 19, 9).fill().restore();
-  document.fillColor("#3D3530").fontSize(SUBTITLE_SIZE).text(clean(title), PAGE_LEFT + 15, top + 12, { width: innerWidth });
-  document.y = top + 38;
+  writeSubtitle(document, title, PAGE_LEFT + 15, top + 12, innerWidth, SUBTITLE_SIZE);
+  document.y = top + CARD_TITLE_BLOCK_HEIGHT;
   paragraphs.forEach((paragraph) => {
     if (paragraph.label) {
-      document.fillColor("#5B4B3A").fontSize(SUBTITLE_LABEL_SIZE).text(clean(paragraph.label), PAGE_LEFT + 15, document.y, { width: innerWidth });
-      document.moveDown(0.28);
+      const labelTop = document.y;
+      writeSubtitle(document, paragraph.label, PAGE_LEFT + 15, labelTop, innerWidth, SUBTITLE_LABEL_SIZE);
+      document.y = labelTop + subtitleHeight(document, paragraph.label, innerWidth, SUBTITLE_LABEL_SIZE) + 7;
     }
-    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(paragraph.text), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
-    document.moveDown(0.64);
+    if (paragraph.text) {
+      document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(paragraph.text), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
+    }
+    if (paragraph.bullets?.length) {
+      if (paragraph.text) document.moveDown(0.28);
+      writeBulletList(document, paragraph.bullets, PAGE_LEFT + 32, PAGE_LEFT + 15, innerWidth - 22);
+    }
+    document.moveDown(0.78);
   });
   document.y = top + contentHeight + 19;
   document.moveDown(0.7);
@@ -90,15 +137,15 @@ function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label
 function writeCardWithActions(document: PdfWriter, title: string, summary: string, actions: string[], tone = "#FCF8F1") {
   const innerWidth = CONTENT_WIDTH - 30;
   const actionWidth = innerWidth - 22;
-  const contentHeight = 38
+  const contentHeight = CARD_TITLE_BLOCK_HEIGHT
     + heightOf(document, summary, innerWidth)
     + 8
     + actions.reduce((sum, action) => sum + Math.max(20, heightOf(document, action, actionWidth)) + 6, 0);
   ensureSpace(document, contentHeight + 19);
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 19, 9).fill().restore();
-  document.fillColor("#3D3530").fontSize(SUBTITLE_SIZE).text(clean(title), PAGE_LEFT + 15, top + 12, { width: innerWidth });
-  document.y = top + 38;
+  writeSubtitle(document, title, PAGE_LEFT + 15, top + 12, innerWidth, SUBTITLE_SIZE);
+  document.y = top + CARD_TITLE_BLOCK_HEIGHT;
   document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(summary), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
   document.moveDown(0.36);
   actions.forEach((action) => {
@@ -224,7 +271,7 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
   writeSectionTitle(document, "추천 컬러와 함께하는 회복 루틴", "#94723D", 130);
   writeCard(document, "두 사람에게 권하는 컬러", relation.recommendedColors.map((color) => ({ label: color.name, text: color.reason })), "#FCF8EF");
   writeCard(document, "함께하면 좋은 회복 루틴", [
-    { label: "이번 주 함께 해볼 것", text: relation.togetherRoutine.routines.join("\n") },
+    { label: "이번 주 함께 해볼 것", bullets: relation.togetherRoutine.routines },
     { label: "함께하면 살아나는 에너지", text: relation.togetherRoutine.energyNote },
     ...(relation.togetherRoutine.faithRoutine ? [{ label: "함께 나누는 루틴", text: relation.togetherRoutine.faithRoutine }] : []),
   ], "#F0F6F1");

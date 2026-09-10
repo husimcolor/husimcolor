@@ -117,4 +117,16 @@ describe("부부·연인 전용 PDF 리포트", () => {
     expect(serverSource).toContain("SUBTITLE_SIZE");
     expect(serverSource).toContain("SUBTITLE_LABEL_SIZE");
   });
+
+  it("카드 내부 핵심 소제목은 일관된 강조 스타일을 사용하고 회복 루틴 행동만 글머리표로 표시한다", () => {
+    const serverSource = readFileSync(resolve(process.cwd(), "server/couple-pdf-report.ts"), "utf8");
+
+    expect(serverSource).toContain("function writeSubtitle");
+    expect(serverSource).toContain("stroke: true");
+    expect(serverSource).toContain("SUBTITLE_SIZE = 16.2");
+    expect(serverSource).toContain("SUBTITLE_LABEL_SIZE = 15.1");
+    expect(serverSource).toContain("function writeBulletList");
+    expect(serverSource).toContain('{ label: "이번 주 함께 해볼 것", bullets: relation.togetherRoutine.routines }');
+    expect(serverSource).not.toContain('{ label: "이번 주 함께 해볼 것", text: relation.togetherRoutine.routines.join("\\n") }');
+  });
 });
