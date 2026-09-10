@@ -18,6 +18,7 @@ import {
   type CoupleSessionData, type PersonAnalysis, type CoupleAnalysis, type ArchetypeResult, type LightArchetypeResult,
 } from '@/constants/coupleData';
 import { buildRomanticRelationTraits } from '@/lib/couple-romantic-relation-traits';
+import { buildRomanticRelationshipRoles } from '@/lib/couple-romantic-relationship-roles';
 
 // ─── SectionCard ─────────────────────────────────────────────────────────────
 const sectionStyles = StyleSheet.create({
@@ -298,6 +299,14 @@ export default function CoupleResultScreen() {
         recoveryDescription: archetypeResult.recoveryStyle.description,
       })
     : [];
+  const romanticRelationshipRoles = isRomanticRel
+    ? buildRomanticRelationshipRoles({
+        personA: personAAnalysis,
+        personB: personBAnalysis,
+        cardsA,
+        cardsB,
+      })
+    : null;
 
   // 밝은 컬러(화이트, 옐로우 등)일 때 배지 텍스트가 안 보이는 문제 방지
   const rawAccentA = colorsA[0]?.hex ?? colors.primary;
@@ -676,6 +685,8 @@ export default function CoupleResultScreen() {
               </>
             )}
 
+            {/* 비연인/부부 경량 관계 유형의 표현·회복 방식은 기존대로 유지 */}
+            {!isRomanticRel && <>
             {/* 표현 속도 시각화 */}
             <Text style={archetypeStyles.sectionLabel}>{isSimilarRelation ? '두 사람의 표현 방식' : '표현 속도 차이'}</Text>
             <View style={archetypeStyles.speedRow}>
@@ -709,6 +720,7 @@ export default function CoupleResultScreen() {
                 <Text style={archetypeStyles.recoveryDesc}>{archetypeResult.recoveryStyle.description}</Text>
               </View>
             </View>
+            </>}
                     </View>
             </>
           )}
@@ -726,8 +738,29 @@ export default function CoupleResultScreen() {
             <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.profileContrast || archetypeResult?.profileContrastOverride?.attractionContrast}</Text>
           </SectionCard>
 
+          {isRomanticRel && romanticRelationshipRoles && (
+            <SectionCard accentColor="#8A6BB8" label="관계 속 역할" title="두 사람의 관계 속 역할 분석" colors={colors}>
+              <View style={archetypeStyles.rolePairRow}>
+                <View style={archetypeStyles.roleCard}>
+                  <Text style={[archetypeStyles.rolePersonLabel, { color: accentA }]}>첫 번째 사람</Text>
+                  <Text style={[archetypeStyles.roleTitle, { color: colors.foreground }]}>{romanticRelationshipRoles.personA.title}</Text>
+                  <Text style={[archetypeStyles.roleDescription, { color: colors.muted }]}>{romanticRelationshipRoles.personA.description}</Text>
+                </View>
+                <View style={archetypeStyles.roleCard}>
+                  <Text style={[archetypeStyles.rolePersonLabel, { color: accentB }]}>두 번째 사람</Text>
+                  <Text style={[archetypeStyles.roleTitle, { color: colors.foreground }]}>{romanticRelationshipRoles.personB.title}</Text>
+                  <Text style={[archetypeStyles.roleDescription, { color: colors.muted }]}>{romanticRelationshipRoles.personB.description}</Text>
+                </View>
+              </View>
+              <View style={archetypeStyles.rolesTogetherBox}>
+                <Text style={archetypeStyles.rolesTogetherLabel}>두 역할이 만났을 때</Text>
+                <Text style={[archetypeStyles.rolesTogetherText, { color: colors.foreground }]}>{romanticRelationshipRoles.together}</Text>
+              </View>
+            </SectionCard>
+          )}
+
           {/* ─── 생활 관계 섹션 (컬러+도형 조합 기반) — 왜 끌리는데 왜 힘든지 바로 다음 ─── */}
-          {archetypeResult.lifestyleSections && (
+          {archetypeResult.lifestyleSections && !archetypeResult.unifiedSections && (
             <>
               <Text style={[styles.sectionGroupTitle, { color: colors.muted, marginTop: 4 }]}>생활 속 관계 패턴</Text>
               {/* 재정 스타일 */}
@@ -885,7 +918,8 @@ export default function CoupleResultScreen() {
                     </View>
                     {item.tension ? (
                       <View style={{ backgroundColor: '#FFE8C0', borderRadius: 8, padding: 12, borderLeftWidth: 3, borderLeftColor: '#D4820A', marginBottom: 6 }}>
-                        <Text style={{ color: '#7A4A00', fontSize: 13, lineHeight: 20 }}>⚡ {item.tension}</Text>
+                        <Text style={{ color: '#7A4A00', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>둘이 만났을 때 · 조율 포인트</Text>
+                        <Text style={{ color: '#7A4A00', fontSize: 13, lineHeight: 20 }}>{item.tension}</Text>
                       </View>
                     ) : null}
                     {idx < archetypeResult.unifiedSections!.lifePattern.items.length - 1 && (
@@ -1463,6 +1497,51 @@ const archetypeStyles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 25,
     color: '#5C4A42',
+  },
+  rolePairRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  roleCard: {
+    flex: 1,
+    backgroundColor: '#FBF8FD',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9E0F2',
+    padding: 14,
+  },
+  rolePersonLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 5,
+  },
+  roleTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 22,
+    marginBottom: 7,
+  },
+  roleDescription: {
+    fontSize: 14,
+    lineHeight: 23,
+  },
+  rolesTogetherBox: {
+    backgroundColor: '#F2EDF8',
+    borderRadius: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#8A6BB8',
+    padding: 15,
+    marginTop: 2,
+  },
+  rolesTogetherLabel: {
+    color: '#6D4A9A',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 7,
+  },
+  rolesTogetherText: {
+    fontSize: 15,
+    lineHeight: 25,
   },
   graphRow: {
     gap: 10,

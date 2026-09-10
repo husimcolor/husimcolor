@@ -4,9 +4,11 @@ import { describe, expect, it } from "vitest";
 
 import { CARD_DATA } from "../constants/cardData";
 import { COLOR_DATA } from "../constants/colorData";
+import { getLightArchetype } from "../constants/coupleData";
 import { buildCoupleColorCardIntegratedAnalysis } from "../lib/couple-color-card-analysis";
 import { splitCoupleReadableParagraphs } from "../lib/couple-readable-text";
 import { buildRomanticRelationTraits } from "../lib/couple-romantic-relation-traits";
+import { buildRomanticRelationshipRoles } from "../lib/couple-romantic-relationship-roles";
 
 describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
   it("선택한 컬러 3개와 심리카드 3장의 흐름을 세 개의 새로운 의미 단위로 함께 연결한다", () => {
@@ -99,7 +101,7 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(coupleResultSource).not.toContain('title="보완 컬러"');
   });
 
-  it("부부·연인 관계 온도 숫자와 점수 바 대신 A/B 실제 카드 흐름을 읽은 세 가지 관계 특성을 표시한다", () => {
+  it("부부·연인 관계 온도 숫자와 점수 바 대신 A/B 실제 카드 흐름을 읽은 상호작용 중심 관계 특성을 표시한다", () => {
     const traits = buildRomanticRelationTraits({
       personA: { relationshipStyle: "따뜻한 말로 관계를 이어갑니다.", emotionExpression: "감정을 비교적 빠르게 표현합니다." },
       personB: { relationshipStyle: "신뢰가 쌓인 뒤 마음을 나눕니다.", emotionExpression: "생각을 정리한 뒤 표현합니다." },
@@ -108,15 +110,63 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
       expressionDescription: "두 사람의 표현 속도에는 차이가 있습니다.",
       recoveryDescription: "각자의 회복 시간을 인정하는 것이 도움이 됩니다.",
     });
+    const contrastingTraits = buildRomanticRelationTraits({
+      personA: { relationshipStyle: "관계 안에서도 각자의 공간과 리듬을 존중합니다.", emotionExpression: "생각을 정리한 뒤 여유가 생기면 표현합니다." },
+      personB: { relationshipStyle: "새로운 시도와 대화를 통해 관계를 움직이고 싶어 합니다.", emotionExpression: "감정을 비교적 빠르게 직접 표현합니다." },
+      cardsA: CARD_DATA.slice(13, 16),
+      cardsB: CARD_DATA.slice(3, 6),
+      expressionDescription: "두 사람의 표현 속도에는 차이가 있습니다.",
+      recoveryDescription: "각자의 회복 시간을 인정하는 것이 도움이 됩니다.",
+    });
     const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
 
     expect(traits.map((trait) => trait.title)).toEqual(["감정 교류", "표현 리듬", "갈등 회복"]);
     const traitDescriptions = traits.map((trait) => trait.description).join(" ");
-    expect(traitDescriptions).toContain(CARD_DATA[0].psychologyFlow.split(".")[0]);
-    expect(traitDescriptions).toContain(CARD_DATA[12].recoveryDirection.split(".")[0]);
+    expect(traitDescriptions).toContain("서로");
+    expect(traitDescriptions).toContain("관계");
+    expect(traitDescriptions).not.toContain(CARD_DATA[0].psychologyFlow.split(".")[0]);
+    expect(traitDescriptions).not.toContain(CARD_DATA[12].recoveryDirection.split(".")[0]);
+    expect(traitDescriptions).not.toContain("첫 번째 사람은");
+    expect(traitDescriptions).not.toContain("두 번째 사람은");
+    expect(traitDescriptions).not.toContain("따뜻한 말로 관계를 이어갑니다.");
+    expect(traitDescriptions).not.toContain("신뢰가 쌓인 뒤 마음을 나눕니다.");
+    expect(contrastingTraits.map((trait) => trait.description).join(" ")).not.toBe(traitDescriptions);
     expect(coupleResultSource).toContain("isRomanticRel &&");
     expect(coupleResultSource).toContain("buildRomanticRelationTraits");
     expect(coupleResultSource).not.toContain("관계 온도 지표");
     expect(coupleResultSource).not.toContain("temperatureGraph.emotionGap");
+  });
+
+  it("부부·연인 전용 역할 분석은 실제 A/B 컬러·카드 신호로 역할과 두 역할의 균형을 생성한다", () => {
+    const roles = buildRomanticRelationshipRoles({
+      personA: { relationshipStyle: "안정적이고 꾸준하게 관계를 이어갑니다.", emotionExpression: "감정을 정리한 뒤 표현합니다." },
+      personB: { relationshipStyle: "따뜻하게 배려하며 관계를 이어갑니다.", emotionExpression: "감정을 직접 표현합니다." },
+      cardsA: CARD_DATA.slice(0, 3),
+      cardsB: CARD_DATA.slice(10, 13),
+    });
+    const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+
+    expect(roles.personA.title).not.toBe(roles.personB.title);
+    expect(roles.together).toContain("역할");
+    expect(coupleResultSource).toContain("두 사람의 관계 속 역할 분석");
+    expect(coupleResultSource).toContain("두 역할이 만났을 때");
+    expect(coupleResultSource).toContain("!archetypeResult.unifiedSections");
+    expect(coupleResultSource).toContain("둘이 만났을 때 · 조율 포인트");
+  });
+
+  it("부부·연인만 심화 결과 경로를 사용하고 부모·자녀·친구·동료·형제자매는 기존 경량 결과를 유지한다", () => {
+    const familiesA: Array<"warm_active"> = ["warm_active"];
+    const familiesB: Array<"cool_deep"> = ["cool_deep"];
+    const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+
+    expect(getLightArchetype("연인", familiesA, familiesB)).toBeNull();
+    expect(getLightArchetype("부부", familiesA, familiesB)).toBeNull();
+    expect(getLightArchetype("부모-자녀", familiesA, familiesB)).not.toBeNull();
+    expect(getLightArchetype("친구", familiesA, familiesB)).not.toBeNull();
+    expect(getLightArchetype("동료", familiesA, familiesB)).not.toBeNull();
+    expect(getLightArchetype("형제자매", familiesA, familiesB)).not.toBeNull();
+    expect(coupleResultSource).toContain("{lightArchetypeResult && (");
+    expect(coupleResultSource).toContain("{!lightArchetypeResult && (");
+    expect(coupleResultSource).toContain("const isRomanticRel = relationType === '연인' || relationType === '부부';");
   });
 });
