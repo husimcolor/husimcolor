@@ -20,6 +20,7 @@ import { CARD_DATA } from '@/constants/cardData';
 import { COLOR_DATA } from '@/constants/colorData';
 import type { CoupleSessionData, PersonSession } from '@/constants/coupleData';
 import { buildCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
+import { splitCoupleReadableParagraphs } from '@/lib/couple-readable-text';
 
 const POSITION_LABELS = ['무의식 · 내면 에너지', '현재 현실 에너지', '미래 · 회복 · 희망 에너지'];
 const POSITION_DESCS = [
@@ -284,22 +285,6 @@ type CardItem = {
   recoveryDirection: string;
 };
 
-function splitReadableParagraphs(text?: string): string[] {
-  return (text ?? "")
-    .trim()
-    .split(/\n{2,}|\n(?=·)/)
-    .flatMap((block) => {
-      const sentences = block
-        .trim()
-        .split(/(?<=[.!?])\s+(?=[^\s])/)
-        .map((sentence) => sentence.trim())
-        .filter(Boolean);
-      return Array.from({ length: Math.ceil(sentences.length / 2) }, (_, index) =>
-        sentences.slice(index * 2, index * 2 + 2).join(" "),
-      );
-    });
-}
-
 function ReadableParagraphs({
   text,
   textStyle,
@@ -307,7 +292,7 @@ function ReadableParagraphs({
   text?: string;
   textStyle: object;
 }) {
-  const paragraphs = splitReadableParagraphs(text);
+  const paragraphs = splitCoupleReadableParagraphs(text);
 
   return (
     <View style={styles.readableParagraphStack}>

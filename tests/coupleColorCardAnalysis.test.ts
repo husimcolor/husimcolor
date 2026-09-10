@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { CARD_DATA } from "../constants/cardData";
 import { COLOR_DATA } from "../constants/colorData";
 import { buildCoupleColorCardIntegratedAnalysis } from "../lib/couple-color-card-analysis";
+import { splitCoupleReadableParagraphs } from "../lib/couple-readable-text";
 
 describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
   it("선택한 컬러 3개와 심리카드 3장의 흐름을 세 개의 새로운 의미 단위로 함께 연결한다", () => {
@@ -17,13 +18,13 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     const paragraphs = analysis.split("\n\n");
 
     expect(paragraphs).toHaveLength(3);
-    expect(analysis).toContain("핑크 · 라벤더 · 그린");
     expect(analysis).toContain(cards[0].energyTitle);
     expect(analysis).toContain(cards[1].energyTitle);
     expect(analysis).toContain(cards[2].energyTitle);
-    expect(analysis).toContain("핵심은");
-    expect(analysis).toContain("실제보다");
-    expect(analysis).toContain("서로를 이해하고 성장");
+    expect(analysis).not.toContain("핑크 · 라벤더 · 그린");
+    expect(analysis).not.toContain("「");
+    expect(analysis).not.toContain("」");
+    expect(paragraphs.every((paragraph) => paragraph.split(/(?<=[.!?])\s+/).length >= 2)).toBe(true);
   });
 
   it("선택 조합이 달라지면 컬러와 카드 근거도 함께 달라진다", () => {
@@ -31,8 +32,17 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     const second = buildCoupleColorCardIntegratedAnalysis(COLOR_DATA.slice(12, 15), CARD_DATA.slice(12, 15));
 
     expect(second).not.toBe(first);
-    expect(second).toContain(COLOR_DATA[12].korName);
     expect(second).toContain(CARD_DATA[12].energyTitle);
+  });
+
+  it("심리카드 실행 문장의 기존 가운데점 불릿을 안정적인 불릿으로 통일하고 문장 덩어리를 나눈다", () => {
+    const cardWithActions = CARD_DATA.find((card) => card.id === "red_triangle");
+    const paragraphs = splitCoupleReadableParagraphs(cardWithActions?.recoveryDirection);
+
+    expect(paragraphs).toHaveLength(4);
+    expect(paragraphs[0]).toContain("멈추는 용기도 필요합니다.");
+    expect(paragraphs.slice(1).every((paragraph) => paragraph.startsWith("• "))).toBe(true);
+    expect(paragraphs.join("\n")).not.toContain("\n· ");
   });
 
   it("기존 카드별 해석 아래에 새 통합 분석을 표시하고 A/B 다음 단계 흐름을 유지한다", () => {
@@ -48,6 +58,7 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(screenSource).toContain("관계·회복·성장 방향");
     expect(screenSource).toContain("integratedSectionText");
     expect(screenSource).toContain("function ReadableParagraphs");
+    expect(screenSource).toContain("splitCoupleReadableParagraphs");
     expect(screenSource).toContain("<ReadableParagraphs text={section.text}");
     expect(screenSource).toContain("<ReadableParagraphs text={cardFlow.coaching}");
     expect(screenSource).toContain("<ReadableParagraphs text={cardFlow.routine}");
