@@ -6,6 +6,7 @@ import { CARD_DATA } from "../constants/cardData";
 import { COLOR_DATA } from "../constants/colorData";
 import { buildCoupleColorCardIntegratedAnalysis } from "../lib/couple-color-card-analysis";
 import { splitCoupleReadableParagraphs } from "../lib/couple-readable-text";
+import { buildRomanticRelationTraits } from "../lib/couple-romantic-relation-traits";
 
 describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
   it("선택한 컬러 3개와 심리카드 3장의 흐름을 세 개의 새로운 의미 단위로 함께 연결한다", () => {
@@ -96,5 +97,26 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(coupleResultSource).not.toContain("개인 마음 흐름");
     expect(coupleResultSource).not.toContain('title="현재 마음 흐름"');
     expect(coupleResultSource).not.toContain('title="보완 컬러"');
+  });
+
+  it("부부·연인 관계 온도 숫자와 점수 바 대신 A/B 실제 카드 흐름을 읽은 세 가지 관계 특성을 표시한다", () => {
+    const traits = buildRomanticRelationTraits({
+      personA: { relationshipStyle: "따뜻한 말로 관계를 이어갑니다.", emotionExpression: "감정을 비교적 빠르게 표현합니다." },
+      personB: { relationshipStyle: "신뢰가 쌓인 뒤 마음을 나눕니다.", emotionExpression: "생각을 정리한 뒤 표현합니다." },
+      cardsA: CARD_DATA.slice(0, 3),
+      cardsB: CARD_DATA.slice(10, 13),
+      expressionDescription: "두 사람의 표현 속도에는 차이가 있습니다.",
+      recoveryDescription: "각자의 회복 시간을 인정하는 것이 도움이 됩니다.",
+    });
+    const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+
+    expect(traits.map((trait) => trait.title)).toEqual(["감정 교류", "표현 리듬", "갈등 회복"]);
+    const traitDescriptions = traits.map((trait) => trait.description).join(" ");
+    expect(traitDescriptions).toContain(CARD_DATA[0].psychologyFlow.split(".")[0]);
+    expect(traitDescriptions).toContain(CARD_DATA[12].recoveryDirection.split(".")[0]);
+    expect(coupleResultSource).toContain("isRomanticRel &&");
+    expect(coupleResultSource).toContain("buildRomanticRelationTraits");
+    expect(coupleResultSource).not.toContain("관계 온도 지표");
+    expect(coupleResultSource).not.toContain("temperatureGraph.emotionGap");
   });
 });

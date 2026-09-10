@@ -17,6 +17,7 @@ import {
   generatePersonAnalysis, generateCoupleAnalysis, getRelationArchetype, getLightArchetype,
   type CoupleSessionData, type PersonAnalysis, type CoupleAnalysis, type ArchetypeResult, type LightArchetypeResult,
 } from '@/constants/coupleData';
+import { buildRomanticRelationTraits } from '@/lib/couple-romantic-relation-traits';
 
 // ─── SectionCard ─────────────────────────────────────────────────────────────
 const sectionStyles = StyleSheet.create({
@@ -284,6 +285,19 @@ export default function CoupleResultScreen() {
   const cardsA = personA.cards.map(id => CARD_DATA.find(c => c.id === id)).filter(Boolean);
   const cardsB = personB.cards.map(id => CARD_DATA.find(c => c.id === id)).filter(Boolean);
   const cardLabels = ['무의식', '현재', '미래'];
+  const romanticRelationTraits = isRomanticRel
+    ? buildRomanticRelationTraits({
+        personA: personAAnalysis,
+        personB: personBAnalysis,
+        cardsA,
+        cardsB,
+        expressionDescription: getExprDescription(
+          archetypeResult.expressionSpeed.personA,
+          archetypeResult.expressionSpeed.personB,
+        ),
+        recoveryDescription: archetypeResult.recoveryStyle.description,
+      })
+    : [];
 
   // 밝은 컬러(화이트, 옐로우 등)일 때 배지 텍스트가 안 보이는 문제 방지
   const rawAccentA = colorsA[0]?.hex ?? colors.primary;
@@ -644,36 +658,23 @@ export default function CoupleResultScreen() {
           </View>
 
           {/* ═══════════════════════════════════════════════════════
-              관계 온도 그래프 + 표현 속도 시각화 + 회복 방식 아이콘
+              부부·연인 전용 관계 특성 + 표현 속도·회복 방식
           ═══════════════════════════════════════════════════════ */}
           <View style={[archetypeStyles.card, { backgroundColor: '#FAFAFA', borderColor: '#E8E0F5' }]}>
-            {/* 관계 온도 그래프 */}
-            <Text style={archetypeStyles.sectionLabel}>관계 온도 지표</Text>
-            <View style={archetypeStyles.graphRow}>
-              <View style={archetypeStyles.graphItem}>
-                <Text style={archetypeStyles.graphLabel}>감정 온도 차이</Text>
-                <View style={archetypeStyles.barBg}>
-                  <View style={[archetypeStyles.barFill, { width: `${archetypeResult.temperatureGraph.emotionGap}%` as any, backgroundColor: '#9B7FD4' }]} />
+            {isRomanticRel && (
+              <>
+                <Text style={archetypeStyles.sectionLabel}>두 사람이 함께 만드는 관계 특성</Text>
+                <View style={archetypeStyles.traitList}>
+                  {romanticRelationTraits.map((trait) => (
+                    <View key={trait.title} style={archetypeStyles.traitCard}>
+                      <Text style={[archetypeStyles.traitTitle, { color: accentCouple }]}>{trait.title}</Text>
+                      <Text style={archetypeStyles.traitDescription}>{trait.description}</Text>
+                    </View>
+                  ))}
                 </View>
-                <Text style={archetypeStyles.graphValue}>{archetypeResult.temperatureGraph.emotionGap}</Text>
-              </View>
-              <View style={archetypeStyles.graphItem}>
-                <Text style={archetypeStyles.graphLabel}>표현 강도</Text>
-                <View style={archetypeStyles.barBg}>
-                  <View style={[archetypeStyles.barFill, { width: `${archetypeResult.temperatureGraph.expressionIntensity}%` as any, backgroundColor: '#F4A882' }]} />
-                </View>
-                <Text style={archetypeStyles.graphValue}>{archetypeResult.temperatureGraph.expressionIntensity}</Text>
-              </View>
-              <View style={archetypeStyles.graphItem}>
-                <Text style={archetypeStyles.graphLabel}>회복 속도</Text>
-                <View style={archetypeStyles.barBg}>
-                  <View style={[archetypeStyles.barFill, { width: `${archetypeResult.temperatureGraph.recoverySpeed}%` as any, backgroundColor: '#5BC4A0' }]} />
-                </View>
-                <Text style={archetypeStyles.graphValue}>{archetypeResult.temperatureGraph.recoverySpeed}</Text>
-              </View>
-            </View>
-
-            <View style={archetypeStyles.divider} />
+                <View style={archetypeStyles.divider} />
+              </>
+            )}
 
             {/* 표현 속도 시각화 */}
             <Text style={archetypeStyles.sectionLabel}>{isSimilarRelation ? '두 사람의 표현 방식' : '표현 속도 차이'}</Text>
@@ -1441,6 +1442,27 @@ const archetypeStyles = StyleSheet.create({
     color: '#7A5FB0',
     textTransform: 'uppercase' as const,
     marginBottom: 8,
+  },
+  traitList: {
+    gap: 10,
+  },
+  traitCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E8E0F5',
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+  },
+  traitTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 7,
+  },
+  traitDescription: {
+    fontSize: 15,
+    lineHeight: 25,
+    color: '#5C4A42',
   },
   graphRow: {
     gap: 10,
