@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { createCouplePdfBuffer, validateCouplePdfPayload } from "../server/couple-pdf-report";
+import { createCouplePdfBuffer, splitCouplePdfCardNarrative, validateCouplePdfPayload } from "../server/couple-pdf-report";
 import type { CouplePdfDownloadPayload } from "../shared/couple-pdf-download";
 
 const payload: CouplePdfDownloadPayload = {
@@ -61,6 +61,25 @@ const payload: CouplePdfDownloadPayload = {
 };
 
 describe("부부·연인 전용 PDF 리포트", () => {
+  it("3번 카드의 실제 행동 지침만 글머리표 단위로 분리하고 지정된 띄어쓰기를 교정한다", () => {
+    const recovery = splitCouplePdfCardNarrative(
+      "3번 카드 · 다음 방향",
+      "붙어있는 시간보다 마음을 확인하는 시간이 필요합니다.\n· 짧은 포옹이나 손 잡기가 관계의 온도를 높일 수 있습니다.\n· 오늘 한 번 안부를 먼저 건네 보세요.",
+    );
+    const interpretation = splitCouplePdfCardNarrative(
+      "1번 카드 · 무의식",
+      "붙어있는 시간보다 마음을 확인하는 시간이 필요합니다.\n· 이 문장은 일반 해석으로 유지합니다.",
+    );
+
+    expect(recovery.summary).toBe("붙어 있는 시간보다 마음을 확인하는 시간이 필요합니다.");
+    expect(recovery.actions).toEqual([
+      "짧은 포옹이나 손잡기가 관계의 온도를 높일 수 있습니다.",
+      "오늘 한 번 안부를 먼저 건네 보세요.",
+    ]);
+    expect(interpretation.actions).toEqual([]);
+    expect(interpretation.summary).toContain("붙어 있는 시간보다");
+  });
+
   it("웹에서 산출한 A/B 개인·관계 데이터를 새 해석 없이 유효한 한글 PDF로 생성한다", async () => {
     const validated = validateCouplePdfPayload(payload);
     const pdf = await createCouplePdfBuffer(validated);

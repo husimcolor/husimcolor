@@ -13,12 +13,28 @@ const BODY_LINE_GAP = 5.8;
 
 type PdfWriter = InstanceType<typeof PDFDocument>;
 
-function clean(value: string) {
+function correctPdfText(value: string) {
   return value
+    .replaceAll("붙어있는 시간보다", "붙어 있는 시간보다")
+    .replaceAll("짧은 포옹이나 손 잡기가", "짧은 포옹이나 손잡기가");
+}
+
+function clean(value: string) {
+  return correctPdfText(value)
     .replace(/[☒☑✓✔☐□○△▽◇⬠⬡]/g, "")
     .replace(/\n·\s*/g, "\n")
     .replace(/\s{2,}/g, " ")
     .trim();
+}
+
+export function splitCouplePdfCardNarrative(position: string, narrative: string) {
+  const source = correctPdfText(narrative);
+  if (!position.startsWith("3번 카드")) return { summary: clean(source), actions: [] as string[] };
+  const parts = source
+    .split(/\n\s*[·•]\s*/)
+    .map((part) => clean(part))
+    .filter(Boolean);
+  return { summary: parts[0] ?? clean(source), actions: parts.slice(1) };
 }
 
 function addPage(document: PdfWriter) {
@@ -60,6 +76,30 @@ function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label
     }
     document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(paragraph.text), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
     document.moveDown(0.64);
+  });
+  document.y = top + contentHeight + 19;
+  document.moveDown(0.7);
+}
+
+function writeCardWithActions(document: PdfWriter, title: string, summary: string, actions: string[], tone = "#FCF8F1") {
+  const innerWidth = CONTENT_WIDTH - 30;
+  const actionWidth = innerWidth - 22;
+  const contentHeight = 32
+    + heightOf(document, summary, innerWidth)
+    + 8
+    + actions.reduce((sum, action) => sum + Math.max(20, heightOf(document, action, actionWidth)) + 6, 0);
+  ensureSpace(document, contentHeight + 19);
+  const top = document.y;
+  document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 19, 9).fill().restore();
+  document.fillColor("#4A3A2A").fontSize(13.5).text(clean(title), PAGE_LEFT + 15, top + 12, { width: innerWidth });
+  document.y = top + 35;
+  document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(summary), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
+  document.moveDown(0.36);
+  actions.forEach((action) => {
+    const actionTop = document.y;
+    document.fillColor("#8A6B4D").fontSize(BODY_SIZE).text("•", PAGE_LEFT + 15, actionTop, { width: 14, lineGap: BODY_LINE_GAP });
+    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(action), PAGE_LEFT + 32, actionTop, { width: actionWidth, lineGap: BODY_LINE_GAP });
+    document.moveDown(0.34);
   });
   document.y = top + contentHeight + 19;
   document.moveDown(0.7);
@@ -110,7 +150,12 @@ function writeCards(document: PdfWriter, cards: CouplePdfDownloadPayload["person
     drawShape(document, card.shape, PAGE_LEFT + 18, top + 18, 9, "#FFFDF9", "#FFFDF9");
     document.fillColor("#4A3A2A").fontSize(13.5).text(clean(`${card.position} · ${card.colorName} ${card.shapeName}`), PAGE_LEFT + 47, top + 10, { width: CONTENT_WIDTH - 47 });
     document.y = top + 43;
-    writeCard(document, card.title, [{ text: card.narrative }], "#FCF8F1");
+    const narrative = splitCouplePdfCardNarrative(card.position, card.narrative);
+    if (narrative.actions.length > 0) {
+      writeCardWithActions(document, card.title, narrative.summary, narrative.actions, "#FCF8F1");
+    } else {
+      writeCard(document, card.title, [{ text: narrative.summary }], "#FCF8F1");
+    }
   });
 }
 
