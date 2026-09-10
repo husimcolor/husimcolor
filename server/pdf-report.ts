@@ -6,7 +6,7 @@ import type { PremiumPdfDownloadPayload } from "../shared/premium-pdf-download";
 const PAGE_BOTTOM = 799;
 const PAGE_LEFT = 43;
 const CONTENT_WIDTH = 509;
-const FONT_PATH = path.join(process.cwd(), "server", "assets", "NotoSansKR-400.woff");
+const FONT_PATH = path.join(process.cwd(), "server", "assets", "HusimPdfKorean.ttf");
 
 type PdfWriter = InstanceType<typeof PDFDocument>;
 
@@ -35,9 +35,11 @@ function writeParagraph(document: PdfWriter, value: string, options: { width?: n
 
 function writeSectionTitle(document: PdfWriter, title: string, tone = "#2D6A4F") {
   ensureSpace(document, 44);
-  document.fillColor(tone).roundedRect(PAGE_LEFT, document.y, CONTENT_WIDTH, 31, 7).fill();
-  document.fillColor("#FFFFFF").fontSize(14).text(title, PAGE_LEFT + 13, document.y - 23, { width: CONTENT_WIDTH - 26 });
-  document.moveDown(1.55);
+  const top = document.y;
+  document.fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, 31, 7).fill();
+  document.fillColor("#FFFFFF").fontSize(14).text(title, PAGE_LEFT + 13, top + 8, { width: CONTENT_WIDTH - 26, lineBreak: false });
+  document.y = top + 31;
+  document.moveDown(0.7);
 }
 
 function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label?: string; text: string }>, tone = "#F4FAF6") {
@@ -102,7 +104,12 @@ export function validatePremiumPdfPayload(value: unknown): PremiumPdfDownloadPay
 
 /** 현재 화면에서 완성된 데이터만 문서 레이아웃으로 옮겨 PDF Buffer를 만든다. */
 export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload): Promise<Buffer> {
-  const document = new PDFDocument({ size: "A4", margins: { top: 43, bottom: 43, left: PAGE_LEFT, right: PAGE_LEFT }, info: { Title: "휴심컬러 나의 컬러 심리 해석" } });
+  const document = new PDFDocument({
+    size: "A4",
+    margins: { top: 43, bottom: 43, left: PAGE_LEFT, right: PAGE_LEFT },
+    font: FONT_PATH,
+    info: { Title: "휴심컬러 나의 컬러 심리 해석" },
+  });
   const chunks: Buffer[] = [];
   document.on("data", (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
   const finished = new Promise<Buffer>((resolve, reject) => {

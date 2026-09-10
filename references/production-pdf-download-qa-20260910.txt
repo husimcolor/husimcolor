@@ -1,0 +1,9 @@
+Production PDF attachment QA 기록 — 2026-09-10
+
+대상: https://husimcolor.vercel.app/api/pdf-report
+
+최종 Production 배포에서 Android Chrome 및 Samsung Internet 사용자 에이전트와 412×915 모바일 화면을 사용해 POST form 버튼 클릭을 검증했다. 두 경로 모두 Content-Type application/pdf 및 Content-Disposition attachment 응답을 받고, 다운로드 폴더에 UTF-8 파일명 `휴심컬러_나의컬러심리해석_20260910.pdf`가 실제 생성되었다.
+
+다운로드된 파일은 35,561 bytes로 0KB가 아니며, file 명령에서 application/pdf, pdfinfo에서 A4(595.28×841.89pt) 5페이지·암호화 없음으로 확인했다. pdftotext로 표지, 3장의 심리카드 해석, 삶의 역할 에너지, 맞춤 회복 루틴, 1:1 컬러코칭 제목을 확인했고, PDF 시각 검수에서 한글·섹션 제목·카드 경계·페이지 나눔이 정상 표시되는 것을 확인했다.
+
+기존 Blob 기반 클라이언트 PDF 생성은 제거했으며, 현재 최종 결과 화면에서 산출된 값만 POST로 전송해 Vercel 서버리스 함수가 내장 소형 한글 TTF로 PDF를 생성한다. 공유카드 흐름은 수정하지 않았다.

@@ -8,7 +8,7 @@
     "api/pdf-report.ts": {
       "runtime": "@vercel/node@3.2.7",
       "maxDuration": 30,
-      "includeFiles": "server/assets/NotoSansKR-400.woff"
+      "includeFiles": "server/assets/HusimPdfKorean.ttf"
     }
   },
   "rewrites": [

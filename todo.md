@@ -607,4 +607,4 @@
 - [x] 결과 데이터 기반 서버 PDF 생성 API와 application/pdf attachment 응답 구현
 - [x] Android Chrome·Samsung Internet 다운로드 관리자에서 PDF 파일 생성·저장·열기 검증
 - [x] 한글·파일명·MIME type·0KB·페이지 잘림 회귀 검증 및 공유카드 비변경 확인
-- [ ] Vercel Production 재배포와 운영 attachment 다운로드 응답 검증
+- [x] Vercel Production 재배포와 운영 attachment 다운로드 응답 검증
