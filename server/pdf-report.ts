@@ -7,8 +7,11 @@ const PAGE_BOTTOM = 799;
 const PAGE_LEFT = 43;
 const CONTENT_WIDTH = 509;
 const FONT_PATH = path.join(process.cwd(), "server", "assets", "HusimPdfKorean.ttf");
-const BODY_TEXT_SIZE = 11.7;
-const BODY_LABEL_SIZE = 10.4;
+const BODY_TEXT_SIZE = 13.5;
+const BODY_LABEL_SIZE = 12;
+const CARD_TITLE_SIZE = 12.5;
+const DETAIL_TEXT_SIZE = 11.3;
+const PILL_TEXT_SIZE = 11;
 
 type PdfWriter = InstanceType<typeof PDFDocument>;
 type PdfShape = PremiumPdfDownloadPayload["cards"][number]["shape"];
@@ -66,7 +69,7 @@ function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label
   ensureSpace(document, contentHeight + 16);
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 16, 9).fill().restore();
-  document.fillColor("#4A3A2A").fontSize(11.3).text(normalizePdfText(title), PAGE_LEFT + 14, top + 12, { width: innerWidth });
+  document.fillColor("#4A3A2A").fontSize(CARD_TITLE_SIZE).text(normalizePdfText(title), PAGE_LEFT + 14, top + 12, { width: innerWidth });
   document.y = top + 34;
   for (const paragraph of paragraphs) {
     if (paragraph.label) {
@@ -86,7 +89,7 @@ function writePills(document: PdfWriter, values: string[]) {
   let y = document.y;
   for (const value of values) {
     const safeValue = normalizePdfText(value);
-    document.fontSize(9.5);
+    document.fontSize(PILL_TEXT_SIZE);
     const width = Math.min(document.widthOfString(safeValue) + 18, available);
     if (x + width > PAGE_LEFT + available) {
       x = PAGE_LEFT;
@@ -98,7 +101,7 @@ function writePills(document: PdfWriter, values: string[]) {
       y = document.y;
     }
     document.save().fillColor("#E8F3EC").roundedRect(x, y, width, 22, 11).fill().restore();
-    document.fillColor("#376849").fontSize(9.5).text(safeValue, x + 9, y + 6, { width: width - 18, lineBreak: false });
+    document.fillColor("#376849").fontSize(PILL_TEXT_SIZE).text(safeValue, x + 9, y + 5, { width: width - 18, lineBreak: false });
     x += width + 6;
   }
   document.y = y + 31;
@@ -146,8 +149,8 @@ function writeCoverColorChip(document: PdfWriter, color: PremiumPdfDownloadPaylo
   const height = 62;
   document.save().fillColor("#FFFDF9").roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, height, 9).fill().restore();
   document.save().lineWidth(1).fillColor(color.hex).strokeColor("#CBBEAC").circle(PAGE_LEFT + 30, top + 31, 16).fillAndStroke().restore();
-  document.fillColor("#4A3A2A").fontSize(11.5).text(normalizePdfText(color.name), PAGE_LEFT + 58, top + 15, { width: CONTENT_WIDTH - 72 });
-  document.fillColor("#75695D").fontSize(9.4).text(normalizePdfText(color.keywords), PAGE_LEFT + 58, top + 34, { width: CONTENT_WIDTH - 72 });
+  document.fillColor("#4A3A2A").fontSize(12).text(normalizePdfText(color.name), PAGE_LEFT + 58, top + 14, { width: CONTENT_WIDTH - 72 });
+  document.fillColor("#75695D").fontSize(10.8).text(normalizePdfText(color.keywords), PAGE_LEFT + 58, top + 35, { width: CONTENT_WIDTH - 72 });
   document.y = top + height + 7;
 }
 
@@ -247,7 +250,7 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
   writeCard(document, "지금의 작은 방향", [{ text: payload.lifeRole.smallDirection }], "#FCF8F0");
 
   writeSectionTitle(document, "지금 몸과 마음의 흐름");
-  writeParagraph(document, `에너지 관점 · 현재 주요 흐름 ${payload.energyFlow.currentElements.join(" · ")}`, { size: 9.8, color: "#75695D" });
+  writeParagraph(document, `에너지 관점 · 현재 주요 흐름 ${payload.energyFlow.currentElements.join(" · ")}`, { size: DETAIL_TEXT_SIZE, color: "#75695D" });
   document.moveDown(0.45);
   writeCard(document, payload.energyFlow.title, [
     { text: payload.energyFlow.description },
@@ -256,7 +259,7 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
   writePills(document, payload.energyFlow.balanceKeywords);
   document.moveDown(0.6);
   writeSectionTitle(document, "오늘의 맞춤 회복 루틴", "#8B6914");
-  writeParagraph(document, `보완 에너지 · ${payload.energyFlow.complementaryElements.join(" · ")}${payload.energyFlow.complementColors.length ? ` · 보완 컬러 ${payload.energyFlow.complementColors.join(" · ")}` : ""}`, { size: 9.8, color: "#75695D" });
+  writeParagraph(document, `보완 에너지 · ${payload.energyFlow.complementaryElements.join(" · ")}${payload.energyFlow.complementColors.length ? ` · 보완 컬러 ${payload.energyFlow.complementColors.join(" · ")}` : ""}`, { size: DETAIL_TEXT_SIZE, color: "#75695D" });
   document.moveDown(0.45);
   [
     ["추천 차", payload.recoveryRoutine.tea],
@@ -266,7 +269,7 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
     ["오늘의 작은 실천", payload.recoveryRoutine.smallPractice],
     ["오늘의 회복 메시지", payload.recoveryRoutine.message],
   ].forEach(([label, text]) => writeCard(document, label, [{ text }], "#FFF9EF"));
-  ensureSpace(document, 190);
+  ensureSpace(document, 220);
   writeSectionTitle(document, "휴심컬러 1:1 컬러코칭");
   writeCard(document, "더 깊은 나눔이 필요할 때", [
     { text: "지금의 마음 흐름과 나에게 맞는 회복의 방향을 더 깊이 나누고 싶다면, 1:1 컬러코칭으로 이어갈 수 있습니다." },

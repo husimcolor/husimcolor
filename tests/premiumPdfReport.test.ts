@@ -135,7 +135,8 @@ describe("유료 결과 PDF 리포트", () => {
     const source = readFileSync(resolve(process.cwd(), "server/pdf-report.ts"), "utf8");
     expect(source).toContain("writeCoverColorChip");
     expect(source).toContain("writeCardPreviewRow");
-    expect(source).toContain("BODY_TEXT_SIZE = 11.7");
+    expect(source).toContain("BODY_TEXT_SIZE = 13.5");
+    expect(source).toContain("BODY_LABEL_SIZE = 12");
     expect(source).not.toContain("`• ${value}`");
   });
 
@@ -155,5 +156,11 @@ describe("유료 결과 PDF 리포트", () => {
     expect(recoverySource).not.toContain("식재료");
     expect(recoverySource).toContain("낮 시간에 10분 햇빛 속에 앉아 있기");
     expect(recoverySource).not.toMatch(/낙실|낙살|앜아|시간 에|꼼어|쉽히|잋는|흥수/);
+  });
+
+  it("에너지 제목의 조사는 종성에 맞게 처리해 체계을 같은 오류가 재발하지 않는다", () => {
+    const screen = readFileSync(resolve(process.cwd(), "app/(tabs)/premium-result.tsx"), "utf8");
+    expect(screen).toContain("josaCoach(base, '을', '를')");
+    expect(screen).not.toContain("`${base}을 향한 마음");
   });
 });

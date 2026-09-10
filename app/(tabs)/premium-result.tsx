@@ -1503,7 +1503,7 @@ function toFlowPhrase(title: string): string {
   }
   if (title.endsWith('에너지')) {
     const base = title.replace(/에너지$/, '').trim();
-    return `${base}을 향한 마음이 내면에서 조용히 이어지고 있습니다.`;
+    return `${base}${josaCoach(base, '을', '를')} 향한 마음이 내면에서 조용히 이어지고 있습니다.`;
   }
   if (title.endsWith('균형') || title.endsWith('조화')) {
     return `${title}을 원하는 마음이 있습니다. 그 바람 자체가 이미 회복의 시작입니다.`;
