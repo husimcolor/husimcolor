@@ -107,4 +107,14 @@ describe("부부·연인 전용 PDF 리포트", () => {
     expect(serverSource).toContain("스킨십 · 친밀감");
     expect(serverSource).toContain("두 사람의 관계 속 역할 분석");
   });
+
+  it("두 번째 사람과 관계 통합 분석은 새 페이지에서 시작하고 컬러바·핵심 소제목 위계를 유지한다", () => {
+    const serverSource = readFileSync(resolve(process.cwd(), "server/couple-pdf-report.ts"), "utf8");
+
+    expect(serverSource).toContain("writePerson(document, payload.personB, \"#5677A5\", true)");
+    expect(serverSource).toContain("addPage(document);\n  writeSectionTitle(document, \"두 사람의 관계 통합 분석\"");
+    expect(serverSource).toContain("SECTION_BAR_GAP");
+    expect(serverSource).toContain("SUBTITLE_SIZE");
+    expect(serverSource).toContain("SUBTITLE_LABEL_SIZE");
+  });
 });

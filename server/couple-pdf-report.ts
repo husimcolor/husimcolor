@@ -10,6 +10,9 @@ const FONT_PATH = path.join(process.cwd(), "server", "assets", "HusimPdfKorean.t
 const BODY_SIZE = 15.5;
 const LABEL_SIZE = 12.6;
 const BODY_LINE_GAP = 5.8;
+const SECTION_BAR_GAP = 10;
+const SUBTITLE_SIZE = 14.6;
+const SUBTITLE_LABEL_SIZE = 13.8;
 
 type PdfWriter = InstanceType<typeof PDFDocument>;
 
@@ -50,8 +53,11 @@ function heightOf(document: PdfWriter, text: string, width = CONTENT_WIDTH, size
   return document.heightOfString(clean(text) || " ", { width, lineGap: BODY_LINE_GAP });
 }
 
-function writeSectionTitle(document: PdfWriter, title: string, tone = "#5C7F68") {
-  ensureSpace(document, 45);
+function writeSectionTitle(document: PdfWriter, title: string, tone = "#5C7F68", minFollowingHeight = 108) {
+  const needsGap = document.y > PAGE_TOP + 2;
+  const requiredHeight = (needsGap ? SECTION_BAR_GAP : 0) + 39 + minFollowingHeight;
+  if (document.y + requiredHeight > PAGE_BOTTOM) addPage(document);
+  else if (needsGap) document.y += SECTION_BAR_GAP;
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, 30, 7).fill().restore();
   document.fillColor("#FFFFFF").fontSize(14).text(clean(title), PAGE_LEFT + 13, top + 8, { width: CONTENT_WIDTH - 26, lineBreak: false });
@@ -61,18 +67,18 @@ function writeSectionTitle(document: PdfWriter, title: string, tone = "#5C7F68")
 function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label?: string; text: string }>, tone = "#FCF8F1") {
   const innerWidth = CONTENT_WIDTH - 30;
   const contentHeight = paragraphs.reduce((sum, paragraph) => {
-    const labelHeight = paragraph.label ? 21 : 0;
-    return sum + labelHeight + heightOf(document, paragraph.text, innerWidth) + 12;
-  }, 32);
+    const labelHeight = paragraph.label ? 24 : 0;
+    return sum + labelHeight + heightOf(document, paragraph.text, innerWidth) + 14;
+  }, 38);
   ensureSpace(document, contentHeight + 19);
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 19, 9).fill().restore();
-  document.fillColor("#4A3A2A").fontSize(13.5).text(clean(title), PAGE_LEFT + 15, top + 12, { width: innerWidth });
-  document.y = top + 35;
+  document.fillColor("#3D3530").fontSize(SUBTITLE_SIZE).text(clean(title), PAGE_LEFT + 15, top + 12, { width: innerWidth });
+  document.y = top + 38;
   paragraphs.forEach((paragraph) => {
     if (paragraph.label) {
-      document.fillColor("#6A5843").fontSize(LABEL_SIZE).text(clean(paragraph.label), PAGE_LEFT + 15, document.y, { width: innerWidth });
-      document.moveDown(0.18);
+      document.fillColor("#5B4B3A").fontSize(SUBTITLE_LABEL_SIZE).text(clean(paragraph.label), PAGE_LEFT + 15, document.y, { width: innerWidth });
+      document.moveDown(0.28);
     }
     document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(paragraph.text), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
     document.moveDown(0.64);
@@ -84,15 +90,15 @@ function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label
 function writeCardWithActions(document: PdfWriter, title: string, summary: string, actions: string[], tone = "#FCF8F1") {
   const innerWidth = CONTENT_WIDTH - 30;
   const actionWidth = innerWidth - 22;
-  const contentHeight = 32
+  const contentHeight = 38
     + heightOf(document, summary, innerWidth)
     + 8
     + actions.reduce((sum, action) => sum + Math.max(20, heightOf(document, action, actionWidth)) + 6, 0);
   ensureSpace(document, contentHeight + 19);
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 19, 9).fill().restore();
-  document.fillColor("#4A3A2A").fontSize(13.5).text(clean(title), PAGE_LEFT + 15, top + 12, { width: innerWidth });
-  document.y = top + 35;
+  document.fillColor("#3D3530").fontSize(SUBTITLE_SIZE).text(clean(title), PAGE_LEFT + 15, top + 12, { width: innerWidth });
+  document.y = top + 38;
   document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(summary), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
   document.moveDown(0.36);
   actions.forEach((action) => {
@@ -159,11 +165,12 @@ function writeCards(document: PdfWriter, cards: CouplePdfDownloadPayload["person
   });
 }
 
-function writePerson(document: PdfWriter, person: CouplePdfDownloadPayload["personA"], tone: string) {
-  writeSectionTitle(document, `${person.label}의 컬러·심리카드 결과`, tone);
+function writePerson(document: PdfWriter, person: CouplePdfDownloadPayload["personA"], tone: string, startsOnNewPage = false) {
+  if (startsOnNewPage) addPage(document);
+  writeSectionTitle(document, `${person.label}의 컬러·심리카드 결과`, tone, 120);
   writeCard(document, "선택한 3컬러", [{ text: "선택한 컬러는 현재의 마음과 관계 안에서 중요하게 느끼는 방향을 함께 보여줍니다." }], "#F7F4EE");
   writeColorCards(document, person.colors);
-  writeSectionTitle(document, `${person.label}의 심리카드 해석`, tone);
+  writeSectionTitle(document, `${person.label}의 심리카드 해석`, tone, 155);
   writeCards(document, person.cards);
   writeCard(document, "컬러 × 심리카드 통합 분석", person.integratedAnalysis.split(/\n\n+/).filter(Boolean).map((text) => ({ text })), "#F2F7F3");
   writeCard(document, "관계 성향과 회복 방향", [
@@ -176,44 +183,45 @@ function writePerson(document: PdfWriter, person: CouplePdfDownloadPayload["pers
 
 function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayload) {
   const relation = payload.relationship;
-  writeSectionTitle(document, "두 사람의 관계 통합 분석", "#80649B");
+  addPage(document);
+  writeSectionTitle(document, "두 사람의 관계 통합 분석", "#80649B", 120);
   writeCard(document, "왜 끌리는데 왜 힘든지", [{ text: relation.attractionAnalysis }], "#F6F1FA");
   writeCard(document, "두 사람의 관계 속 역할 분석", [
     { label: `첫 번째 사람 · ${relation.roles.personATitle}`, text: relation.roles.personADescription },
     { label: `두 번째 사람 · ${relation.roles.personBTitle}`, text: relation.roles.personBDescription },
     { label: "두 역할이 만났을 때", text: relation.roles.together },
   ], "#F6F1FA");
-  writeSectionTitle(document, "관계 핵심", "#5F8069");
+  writeSectionTitle(document, "관계 핵심", "#5F8069", 120);
   writeCard(document, relation.core.headline, [
     { label: "핵심 키워드", text: relation.core.keywords.join(" · ") },
     { text: relation.core.description },
   ], "#EFF7F0");
-  writeSectionTitle(document, "생활 속 관계 패턴", "#8B7259");
+  writeSectionTitle(document, "생활 속 관계 패턴", "#8B7259", 120);
   writeCard(document, relation.lifePattern.headline, relation.lifePattern.items.flatMap((item) => [
     { label: item.label, text: `첫 번째 사람: ${item.personA}\n두 번째 사람: ${item.personB}` },
     { label: "둘이 만났을 때 · 조율 포인트", text: item.tension },
   ]), "#FBF6EF");
-  writeSectionTitle(document, "싸움 패턴", "#B16A75");
+  writeSectionTitle(document, "싸움 패턴", "#B16A75", 150);
   writeCard(document, "이 관계의 갈등 흐름", [
     { label: "싸움이 시작되는 순간", text: relation.conflict.trigger },
     { label: "갈등 직후 반응", text: relation.conflict.reaction },
     { label: "반복 위험 패턴", text: relation.conflict.danger },
     { label: "싸울 때 조심할 말", text: relation.conflict.forbiddenWords.join("\n") },
   ], "#FFF3F3");
-  writeSectionTitle(document, "연결 방식", "#B87B91");
+  writeSectionTitle(document, "연결 방식", "#B87B91", 130);
   writeCard(document, relation.connection.headline, [
     { text: relation.connection.description },
     { label: "함께 해볼 연결", text: relation.connection.actions.join("\n") },
     { label: "스킨십 · 친밀감", text: relation.connection.intimacyNote },
   ], "#FFF4F7");
-  writeSectionTitle(document, "관계 성장 포인트", "#4F8B70");
+  writeSectionTitle(document, "관계 성장 포인트", "#4F8B70", 140);
   writeCard(document, "이 관계가 오래가는 이유와 성장 방향", [
     { label: "이 관계의 강점", text: relation.growth.strength },
     { label: "조금 더 의식하면", text: relation.growth.blindSpot },
     { label: "함께 성장해야 할 방향", text: relation.growth.direction },
     { label: "오늘 해볼 수 있는 것", text: relation.growth.tip },
   ], "#F0F8F2");
-  writeSectionTitle(document, "추천 컬러와 함께하는 회복 루틴", "#94723D");
+  writeSectionTitle(document, "추천 컬러와 함께하는 회복 루틴", "#94723D", 130);
   writeCard(document, "두 사람에게 권하는 컬러", relation.recommendedColors.map((color) => ({ label: color.name, text: color.reason })), "#FCF8EF");
   writeCard(document, "함께하면 좋은 회복 루틴", [
     { label: "이번 주 함께 해볼 것", text: relation.togetherRoutine.routines.join("\n") },
@@ -265,7 +273,7 @@ export async function createCouplePdfBuffer(payload: CouplePdfDownloadPayload): 
 
   addPage(document);
   writePerson(document, payload.personA, "#A86773");
-  writePerson(document, payload.personB, "#5677A5");
+  writePerson(document, payload.personB, "#5677A5", true);
   writeRelationship(document, payload);
   document.end();
   return finished;
