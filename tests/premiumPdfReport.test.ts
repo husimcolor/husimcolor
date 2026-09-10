@@ -79,6 +79,15 @@ describe("유료 결과 PDF 리포트", () => {
     expect(source).toContain("/api/pdf-report");
     expect(source).toContain("function CardShapeMark");
     expect(source).not.toContain("{card.shapeSymbol}");
+    expect(source).toContain("pdfDownloadLockRef.current");
+    expect(source).toContain("setPdfDownloadState('preparing')");
+    expect(source).toContain("다운로드 중...");
+    expect(source).toContain("다운로드에 실패했습니다. 다시 시도해주세요.");
+    expect(source).toContain("disabled={pdfDownloadState !== 'idle'}");
+    expect(source).toContain("husim_pdf_download");
+    const pdfApiSource = readFileSync(resolve(process.cwd(), "api/pdf-report.ts"), "utf8");
+    expect(pdfApiSource).toContain('Set-Cookie');
+    expect(pdfApiSource).toContain('requestId');
   });
 
   it("요약 공유카드는 화면의 최종 카드·역할·오행·회복 값을 개인정보 없이 압축한다", () => {

@@ -11,6 +11,7 @@ import {
   Alert,
   TextInput,
   Keyboard,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -502,6 +503,11 @@ export default function PremiumResultScreen() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const shareCardRef = useRef<ViewShotRef>(null);
   const [isCreatingShareCard, setIsCreatingShareCard] = useState(false);
+  const [pdfDownloadState, setPdfDownloadState] = useState<'idle' | 'preparing' | 'requesting' | 'delayed' | 'failed'>('idle');
+  const [pdfDownloadMessage, setPdfDownloadMessage] = useState<string | null>(null);
+  const pdfDownloadLockRef = useRef(false);
+  const pdfDownloadTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const pdfDownloadPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const REVIEW_TAGS = ["성향 해석", "관계 흐름", "무의식 흐름", "회복 방향", "코칭 메시지", "보완 루틴"];
 
   const createReviewMutation = trpc.reviews.create.useMutation();
@@ -640,6 +646,17 @@ export default function PremiumResultScreen() {
 
   const isLoading = cards.length < 3;
 
+  const clearPdfDownloadTimers = () => {
+    pdfDownloadTimersRef.current.forEach((timer) => clearTimeout(timer));
+    pdfDownloadTimersRef.current = [];
+    if (pdfDownloadPollRef.current) {
+      clearInterval(pdfDownloadPollRef.current);
+      pdfDownloadPollRef.current = null;
+    }
+  };
+
+  useEffect(() => () => clearPdfDownloadTimers(), []);
+
   if (isLoading) {
     return (
       <ScreenContainer>
@@ -731,7 +748,7 @@ export default function PremiumResultScreen() {
     return uri;
   };
 
-  const submitServerPdfDownload = (payload: ReturnType<typeof buildPremiumPdfDownloadPayload>) => {
+  const submitServerPdfDownload = (payload: ReturnType<typeof buildPremiumPdfDownloadPayload>, requestId?: string) => {
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '/api/pdf-report';
@@ -741,42 +758,82 @@ export default function PremiumResultScreen() {
     field.name = 'payload';
     field.value = JSON.stringify(payload);
     form.appendChild(field);
+    if (requestId) {
+      const requestField = document.createElement('input');
+      requestField.type = 'hidden';
+      requestField.name = 'requestId';
+      requestField.value = requestId;
+      form.appendChild(requestField);
+    }
     document.body.appendChild(form);
     form.submit();
     window.setTimeout(() => form.remove(), 1_000);
   };
 
   const handlePdfDownload = async () => {
-    const colorFlowDescription = prevColors.length >= 3
-      ? `${prevColors[0].korName}의 ${prevColors[0].keywords[0]}·${prevColors[1].korName}의 ${prevColors[1].keywords[0]}·${prevColors[2].korName}의 ${prevColors[2].keywords[0]}이 당신의 성향을 이루고 있습니다.`
-      : '';
-    const reportInput = {
-      profile,
-      selectedColors: prevColors,
-      cards,
-      stage2Bridge,
-      stage2Cards,
-      complementColors: displayComplementColors,
-      colorFlowDescription,
-      combinedCoaching,
-      scripture: jobCoaching?.scriptureVerse ?? null,
-      lifeRoleReport,
-      lifeEnergyResult,
-      customRecoveryRoutine: {
-        tea: card3.wellness.tea,
-        food: customRecoveryRoutine.food,
-        breath: sanitizeRecovery(customRecoveryRoutine.breath, profile?.faith ?? ''),
-        movement: sanitizeRecovery(customRecoveryRoutine.movement, profile?.faith ?? ''),
-        smallPractice: sanitizeRecovery(customRecoveryRoutine.smallPractice, profile?.faith ?? ''),
-        message: customRecoveryRoutine.message,
-      },
-      coachingUrl: 'https://naver.me/ID3fxw2W',
-    };
+    if (pdfDownloadLockRef.current) return;
+    pdfDownloadLockRef.current = true;
+    clearPdfDownloadTimers();
+    setPdfDownloadState('preparing');
+    setPdfDownloadMessage('PDF 리포트를 준비하고 있습니다.');
     try {
+      const colorFlowDescription = prevColors.length >= 3
+        ? `${prevColors[0].korName}의 ${prevColors[0].keywords[0]}·${prevColors[1].korName}의 ${prevColors[1].keywords[0]}·${prevColors[2].korName}의 ${prevColors[2].keywords[0]}이 당신의 성향을 이루고 있습니다.`
+        : '';
+      const reportInput = {
+        profile,
+        selectedColors: prevColors,
+        cards,
+        stage2Bridge,
+        stage2Cards,
+        complementColors: displayComplementColors,
+        colorFlowDescription,
+        combinedCoaching,
+        scripture: jobCoaching?.scriptureVerse ?? null,
+        lifeRoleReport,
+        lifeEnergyResult,
+        customRecoveryRoutine: {
+          tea: card3.wellness.tea,
+          food: customRecoveryRoutine.food,
+          breath: sanitizeRecovery(customRecoveryRoutine.breath, profile?.faith ?? ''),
+          movement: sanitizeRecovery(customRecoveryRoutine.movement, profile?.faith ?? ''),
+          smallPractice: sanitizeRecovery(customRecoveryRoutine.smallPractice, profile?.faith ?? ''),
+          message: customRecoveryRoutine.message,
+        },
+        coachingUrl: 'https://naver.me/ID3fxw2W',
+      };
       if (Platform.OS === 'web') {
-        submitServerPdfDownload(buildPremiumPdfDownloadPayload(reportInput));
+        setPdfDownloadState('requesting');
+        setPdfDownloadMessage('다운로드 중입니다. 잠시만 기다려 주세요.');
+        const requestId = `pdf_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        document.cookie = 'husim_pdf_download=; Max-Age=0; Path=/; SameSite=Lax';
+        pdfDownloadPollRef.current = setInterval(() => {
+          if (!document.cookie.split('; ').some((item) => item === `husim_pdf_download=${requestId}`)) return;
+          clearPdfDownloadTimers();
+          pdfDownloadLockRef.current = false;
+          setPdfDownloadState('idle');
+          setPdfDownloadMessage('PDF 다운로드를 시작했습니다.');
+          pdfDownloadTimersRef.current.push(setTimeout(() => setPdfDownloadMessage(null), 3_000));
+        }, 250);
+        submitServerPdfDownload(buildPremiumPdfDownloadPayload(reportInput), requestId);
+        pdfDownloadTimersRef.current.push(
+          setTimeout(() => {
+            if (!pdfDownloadLockRef.current) return;
+            setPdfDownloadState('delayed');
+            setPdfDownloadMessage('생성에 시간이 걸리고 있습니다. 네트워크를 확인해 주세요.');
+          }, 12_000),
+          setTimeout(() => {
+            if (!pdfDownloadLockRef.current) return;
+            clearPdfDownloadTimers();
+            pdfDownloadLockRef.current = false;
+            setPdfDownloadState('failed');
+            setPdfDownloadMessage('다운로드에 실패했습니다. 다시 시도해주세요.');
+          }, 35_000),
+        );
         return;
       }
+      setPdfDownloadState('requesting');
+      setPdfDownloadMessage('PDF 리포트를 생성하고 있습니다.');
       const reportHtml = buildPremiumPdfHtml(reportInput);
       const { uri } = await Print.printToFileAsync({
         html: reportHtml,
@@ -795,8 +852,15 @@ export default function PremiumResultScreen() {
       } else {
         Alert.alert('PDF 생성 완료', 'PDF 리포트가 기기에 저장되었습니다.');
       }
+      pdfDownloadLockRef.current = false;
+      setPdfDownloadState('idle');
+      setPdfDownloadMessage(null);
     } catch {
-      Alert.alert('PDF 리포트', 'PDF 리포트를 만드는 중 문제가 생겼습니다. 다시 시도해 주세요.');
+      clearPdfDownloadTimers();
+      pdfDownloadLockRef.current = false;
+      setPdfDownloadState('failed');
+      setPdfDownloadMessage('다운로드에 실패했습니다. 다시 시도해주세요.');
+      Alert.alert('PDF 리포트', '다운로드에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
@@ -1260,13 +1324,23 @@ export default function PremiumResultScreen() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.pdfButton, { backgroundColor: '#3D6B5A', borderColor: '#315646' }]}
+          style={[
+            styles.pdfButton,
+            { backgroundColor: '#3D6B5A', borderColor: '#315646' },
+            pdfDownloadState !== 'idle' && styles.pdfButtonBusy,
+          ]}
           onPress={handlePdfDownload}
-          activeOpacity={0.8}
+          activeOpacity={pdfDownloadState === 'idle' ? 0.8 : 1}
+          disabled={pdfDownloadState !== 'idle'}
         >
-          <Text style={styles.pdfButtonIcon}>↓</Text>
-          <Text style={styles.pdfButtonText}>PDF 리포트 다운로드</Text>
+          {pdfDownloadState === 'idle' || pdfDownloadState === 'failed' ? <Text style={styles.pdfButtonIcon}>↓</Text> : <ActivityIndicator color="#FFFFFF" size="small" style={styles.pdfButtonSpinner} />}
+          <Text style={styles.pdfButtonText}>{pdfDownloadState === 'idle' || pdfDownloadState === 'failed' ? 'PDF 리포트 다운로드' : '다운로드 중...'}</Text>
         </TouchableOpacity>
+        {pdfDownloadMessage ? (
+          <Text style={[styles.pdfDownloadNotice, pdfDownloadState === 'failed' && styles.pdfDownloadNoticeError]}>
+            {pdfDownloadMessage}
+          </Text>
+        ) : null}
 
         {/* 1:1 코칭 연결 섹션 */}
         <View style={styles.coachingSection}>
@@ -2004,6 +2078,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 24,
     marginRight: 7,
+  },
+  pdfButtonSpinner: {
+    marginRight: 9,
+  },
+  pdfButtonBusy: {
+    opacity: 0.82,
+  },
+  pdfDownloadNotice: {
+    color: '#5A6B62',
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginTop: -6,
+    marginBottom: 14,
+    paddingHorizontal: 12,
+  },
+  pdfDownloadNoticeError: {
+    color: '#B24D40',
+    fontWeight: '600',
   },
   shareCardCaptureHost: {
     position: 'absolute',
