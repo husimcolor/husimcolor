@@ -42,6 +42,10 @@ function paragraph(value: string | null | undefined): string {
   return escapeHtml(value).replace(/\n/g, "<br />");
 }
 
+function plainPdfLabel(value: string): string {
+  return value.replace(/[🌿✝️🍵🍚🌬️🌱🏡💡☒☑✓✔☐□○△▽◇⬠⬡]/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
 function tagList(values: readonly string[]): string {
   return values.map((value) => `<span class="tag">${escapeHtml(value)}</span>`).join("");
 }
@@ -76,7 +80,7 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
     const position = ["1번 카드 · 무의식", "2번 카드 · 현재 흐름", "3번 카드 · 다음 방향"][index] ?? `${index + 1}번 카드`;
     return `<article class="report-card card-detail">
       <p class="eyebrow">${escapeHtml(position)}</p>
-      <h3>${escapeHtml(interpretation?.cardLabel ?? `${card.colorKor} ${card.shapeKor}`)}</h3>
+      <h3>${escapeHtml(`${card.colorKor} ${card.shapeKor}`)}</h3>
       <p class="keywords"><b>컬러</b> ${escapeHtml(interpretation?.colorKeywords.join(" · ") ?? "")}<br /><b>도형</b> ${escapeHtml(interpretation?.shapeKeywords.join(" · ") ?? "")}</p>
       <p><b>${escapeHtml(interpretation?.roleLabel ?? "카드 해석")}</b><br />${paragraph(interpretation?.narrative)}</p>
     </article>`;
@@ -97,7 +101,7 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
     <style>
       @page { size: A4; margin: 14mm 13mm 16mm; }
       * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; background: #fff; color: #302B27; font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif; font-size: 10.5pt; line-height: 1.68; word-break: normal; overflow-wrap: anywhere; }
+      html, body { margin: 0; padding: 0; background: #fff; color: #302B27; font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif; font-size: 11.7pt; line-height: 1.68; word-break: normal; overflow-wrap: anywhere; }
       h1, h2, h3, p { margin-top: 0; }
       h1 { font-size: 25pt; line-height: 1.28; margin-bottom: 8px; letter-spacing: -0.6px; color: #3D3530; }
       h2 { font-size: 15pt; line-height: 1.4; margin-bottom: 12px; color: #2D6A4F; }
@@ -118,7 +122,7 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
       .report-card, .direction-card { margin: 0 0 10px; padding: 13px; border: 1px solid #E4DDD3; border-radius: 9px; background: #fff; break-inside: avoid-page; page-break-inside: avoid; }
       .report-card:last-child, .direction-card:last-child { margin-bottom: 0; }
       .eyebrow { color: #4A7A4A; font-size: 8.7pt; font-weight: 700; margin-bottom: 4px; }
-      .keywords { color: #64594D; font-size: 9pt; }
+      .keywords { color: #64594D; font-size: 10.1pt; }
       .tag { display: inline-block; margin: 0 5px 5px 0; padding: 4px 8px; border-radius: 99px; background: #E8F3EC; border: 1px solid #CAE1D2; color: #376849; font-size: 9pt; }
       .note { padding: 12px 14px; background: #FCF8F0; border-left: 3px solid #C4956A; border-radius: 6px; break-inside: avoid-page; page-break-inside: avoid; }
       .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -148,7 +152,7 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
       ${section("지금 나에게 필요한 컬러", `<div class="tag-grid">${input.complementColors.map((color) => `<span class="tag"><b>${escapeHtml(color.name)}</b> · ${escapeHtml(color.meaning)}</span>`).join("")}</div>`, "gold")}
       ${section("나의 컬러 성향", `<p>${paragraph(input.colorFlowDescription)}</p>`)}
       ${section("지금 마음의 흐름", `<p>${paragraph(input.combinedCoaching)}</p>`)}
-      ${input.scripture ? section(input.scripture.label, `<p>“${paragraph(input.scripture.text)}”</p><p class="meta">— ${escapeHtml(input.scripture.ref)}</p>`, "gold") : ""}
+      ${input.scripture ? section(plainPdfLabel(input.scripture.label), `<p>“${paragraph(input.scripture.text)}”</p><p class="meta">— ${escapeHtml(input.scripture.ref)}</p>`, "gold") : ""}
 
       ${section("나의 삶의 역할 에너지", `
         <article class="report-card"><p class="eyebrow">나의 핵심 역할</p><h3>${escapeHtml(input.lifeRoleReport.coreRole.title)}</h3><p>${paragraph(input.lifeRoleReport.coreRole.description)}</p></article>
@@ -162,14 +166,14 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
         <p class="meta">에너지 관점 · 현재 주요 흐름 ${escapeHtml(input.lifeEnergyResult.currentFiveElements.elements.join(" · "))}</p>
         <article class="report-card"><h3>${escapeHtml(input.lifeEnergyResult.energyFlow.title)}</h3><p>${paragraph(input.lifeEnergyResult.energyFlow.description)}</p><p class="note"><b>지금 필요한 것</b><br />${paragraph(input.lifeEnergyResult.energyFlow.recovery)}</p><div class="tag-grid">${tagList(input.lifeEnergyResult.energyFlow.balanceKeywords)}</div></article>
       `)}
-      ${section("🌿 오늘의 맞춤 회복 루틴", `
+      ${section("오늘의 맞춤 회복 루틴", `
         <p class="meta">보완 에너지 · ${escapeHtml(input.lifeEnergyResult.complementaryFiveElements.elements.join(" · "))}${input.lifeEnergyResult.complementaryFiveElements.complementColors?.length ? ` · 보완 컬러 ${escapeHtml(input.lifeEnergyResult.complementaryFiveElements.complementColors.slice(0, 2).join(" · "))}` : ""}</p>
-        <div class="routine-row"><span class="routine-label">🍵 추천 차</span><span>${escapeHtml(input.customRecoveryRoutine.tea ?? "")}</span></div>
-        <div class="routine-row"><span class="routine-label">🍚 추천 음식</span><span>${escapeHtml(input.customRecoveryRoutine.food)}</span></div>
-        <div class="routine-row"><span class="routine-label">🌬️ 추천 호흡</span><span>${escapeHtml(input.customRecoveryRoutine.breath)}</span></div>
-        <div class="routine-row"><span class="routine-label">🌱 추천 움직임</span><span>${escapeHtml(input.customRecoveryRoutine.movement)}</span></div>
-        <div class="routine-row"><span class="routine-label">🏡 오늘의 작은 실천</span><span>${escapeHtml(input.customRecoveryRoutine.smallPractice)}</span></div>
-        <div class="note" style="margin-top:12px"><b>💡 오늘의 회복 메시지</b><br />${paragraph(input.customRecoveryRoutine.message)}</div>
+        <div class="routine-row"><span class="routine-label">추천 차</span><span>${escapeHtml(input.customRecoveryRoutine.tea ?? "")}</span></div>
+        <div class="routine-row"><span class="routine-label">추천 음식</span><span>${escapeHtml(input.customRecoveryRoutine.food)}</span></div>
+        <div class="routine-row"><span class="routine-label">추천 호흡</span><span>${escapeHtml(input.customRecoveryRoutine.breath)}</span></div>
+        <div class="routine-row"><span class="routine-label">추천 움직임</span><span>${escapeHtml(input.customRecoveryRoutine.movement)}</span></div>
+        <div class="routine-row"><span class="routine-label">오늘의 작은 실천</span><span>${escapeHtml(input.customRecoveryRoutine.smallPractice)}</span></div>
+        <div class="note" style="margin-top:12px"><b>오늘의 회복 메시지</b><br />${paragraph(input.customRecoveryRoutine.message)}</div>
       `, "gold")}
       <section class="cta">
         <h2>휴심컬러 1:1 컬러코칭</h2>

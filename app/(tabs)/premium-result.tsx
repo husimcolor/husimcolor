@@ -33,6 +33,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 import ViewShot, { captureRef, type ViewShotRef } from 'react-native-view-shot';
+import Svg, { Circle, Polygon, Rect } from 'react-native-svg';
 
 // 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
 function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
@@ -46,6 +47,26 @@ function getLightColorBorder(hex: string): { borderWidth: number; borderColor: s
     return { borderWidth: 1.5, borderColor: '#C8BFB0' };
   }
   return {};
+}
+
+/** 글꼴 의존 도형 문자를 쓰지 않고 실제 벡터 도형을 그려 Android에서도 깨지지 않게 한다. */
+function CardShapeMark({ shape, color }: { shape: CardData['shape']; color: string }) {
+  const fill = color === '#F5F5F0' || color === '#FDD835' ? '#8B6914' : '#FFFFFF';
+  const common = { fill, stroke: fill, strokeWidth: 1.4 };
+  const polygonPoints: Record<string, string> = {
+    triangle: '16,4 4,27 28,27',
+    inverted_triangle: '4,5 28,5 16,28',
+    diamond: '16,3 29,16 16,29 3,16',
+    pentagon: '16,3 29,12 24,28 8,28 3,12',
+    hexagon: '9,4 23,4 30,16 23,28 9,28 2,16',
+  };
+  return (
+    <Svg width={32} height={32} viewBox="0 0 32 32" accessibilityLabel="선택한 카드 도형">
+      {shape === 'circle' ? <Circle cx={16} cy={16} r={12} {...common} /> : null}
+      {shape === 'square' ? <Rect x={5} y={5} width={22} height={22} rx={2} {...common} /> : null}
+      {polygonPoints[shape] ? <Polygon points={polygonPoints[shape]} {...common} /> : null}
+    </Svg>
+  );
 }
 
 // 보완 컬러 칩용 한글명 → hex 매핑 (colorData.ts 기준)
@@ -103,14 +124,14 @@ type DisplayComplementColor = { name: string; meaning: string };
 
 /** 현재 결과 화면의 보완 컬러 선택 규칙을 PDF에서도 같은 값으로 재사용한다. */
 function selectDisplayComplementColors(card1: CardData, card2: CardData, card3: CardData): DisplayComplementColor[] {
-  const calmRecovery = ['화이트', '아이보리', '비이지', '그린', '세이지그린', '네이비', '블루', '라이트블루', '스카이블루', '라벤더', '퍼플', '라일락', '인디고', '실버', '미드나이트'];
+  const calmRecovery = ['화이트', '아이보리', '베이지', '그린', '세이지그린', '네이비', '블루', '라이트블루', '스카이블루', '라벤더', '퍼플', '라일락', '인디고', '실버', '미드나이트'];
   const highEnergy = ['레드', '코랄', '오렌지', '마젠타'];
   const similarGroups = [
     ['블루', '네이비', '인디고', '미드나이트'], ['레드', '코랄', '오렌지', '마젠타'],
     ['그린', '세이지그린', '올리브'], ['라벤더', '라일락', '퍼플'],
-    ['화이트', '아이보리', '크림', '비이지'], ['미트', '스카이블루', '라이트블루', '틸'],
+    ['화이트', '아이보리', '크림', '베이지'], ['민트', '스카이블루', '라이트블루', '틸'],
   ];
-  const coolStable = ['블루', '네이비', '인디고', '스카이블루', '틸', '미트', '라벤더', '실버', '화이트', '크림', '아이보리', '비이지'];
+  const coolStable = ['블루', '네이비', '인디고', '스카이블루', '틸', '민트', '라벤더', '실버', '화이트', '크림', '아이보리', '베이지'];
   const activeColors = new Set([card1.colorKor, card2.colorKor, card3.colorKor]);
   const activeGroups = new Set<number>();
   activeColors.forEach((name) => {
@@ -846,14 +867,9 @@ export default function PremiumResultScreen() {
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.cardSummarySymbol,
-                    card.colorKor === "화이트" && { color: "#D4AF37" },
-                  ]}
-                >
-                  {card.shapeSymbol}
-                </Text>
+                <View style={styles.cardSummarySymbol}>
+                  <CardShapeMark shape={card.shape} color={card.colorHex} />
+                </View>
               </View>
               <Text
                 style={[
@@ -1192,7 +1208,7 @@ export default function PremiumResultScreen() {
           </View>
           <View style={styles.wellnessDivider} />
           <View style={styles.wellnessMessageBox}>
-            <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>💡 오늘의 회복 메시지</Text>
+            <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>오늘의 회복 메시지</Text>
             <Text style={[styles.wellnessMessageText, { color: '#5C4A1E' }]}>{customRecoveryRoutine.message}</Text>
           </View>
         </View>
@@ -1805,8 +1821,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cardSummarySymbol: {
-    fontSize: 22,
-    color: "#FFFFFF",
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardSummaryPosition: {
     fontSize: 10,

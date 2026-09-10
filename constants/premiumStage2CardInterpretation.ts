@@ -180,7 +180,7 @@ export function getStage2CardInterpretation(card: CardData, role: Stage2CardRole
   return {
     role,
     ...metadata,
-    cardLabel: `${card.colorKor} × ${card.shapeKor}`,
+    cardLabel: `${card.colorKor} · ${card.shapeKor}`,
     colorKeywords: colorLens.keywords,
     shapeKeywords: shapeLens.keywords,
     narrative: fuseStage2Lenses(colorLens[role], shapeLens[role], role),

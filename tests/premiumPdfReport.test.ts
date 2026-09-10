@@ -77,6 +77,8 @@ describe("유료 결과 PDF 리포트", () => {
     expect(source).toContain("PremiumShareSummaryCard");
     expect(source).toContain("submitServerPdfDownload");
     expect(source).toContain("/api/pdf-report");
+    expect(source).toContain("function CardShapeMark");
+    expect(source).not.toContain("{card.shapeSymbol}");
   });
 
   it("요약 공유카드는 화면의 최종 카드·역할·오행·회복 값을 개인정보 없이 압축한다", () => {
@@ -133,6 +135,25 @@ describe("유료 결과 PDF 리포트", () => {
     const source = readFileSync(resolve(process.cwd(), "server/pdf-report.ts"), "utf8");
     expect(source).toContain("writeCoverColorChip");
     expect(source).toContain("writeCardPreviewRow");
+    expect(source).toContain("BODY_TEXT_SIZE = 11.7");
     expect(source).not.toContain("`• ${value}`");
+  });
+
+  it("회복 루틴은 화면·서버·네이티브 PDF에서 같은 여섯 라벨과 음식 용어를 사용한다", () => {
+    const labels = ["추천 차", "추천 음식", "추천 호흡", "추천 움직임", "오늘의 작은 실천", "오늘의 회복 메시지"];
+    const screen = readFileSync(resolve(process.cwd(), "app/(tabs)/premium-result.tsx"), "utf8");
+    const server = readFileSync(resolve(process.cwd(), "server/pdf-report.ts"), "utf8");
+    const nativeHtml = readFileSync(resolve(process.cwd(), "lib/premium-pdf-report.ts"), "utf8");
+    const recoverySource = readFileSync(resolve(process.cwd(), "constants/lifeArchetype.ts"), "utf8");
+
+    labels.forEach((label) => {
+      expect(screen).toContain(label);
+      expect(server).toContain(label);
+      expect(nativeHtml).toContain(label);
+    });
+    expect(recoverySource).toContain("검은콩·검은깨 등 검은 음식");
+    expect(recoverySource).not.toContain("식재료");
+    expect(recoverySource).toContain("낮 시간에 10분 햇빛 속에 앉아 있기");
+    expect(recoverySource).not.toMatch(/낙실|낙살|앜아|시간 에|꼼어|쉽히|잋는|흥수/);
   });
 });

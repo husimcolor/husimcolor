@@ -27,6 +27,7 @@ function lastWord(tag: string): string {
 }
 
 const REPETITION_ROOTS = [/먼저/g, /살피/g, /챙기/g, /편안/g, /균형/g];
+const PREMIUM_COPY_ERROR_PATTERN = /낙실|낙살|앜아|시간 에|식재료|꼼어|쉽히|잋는|흥수|□|☐|☑|☒|✓|✔/;
 
 function hasRepeatedRootInSentence(text: string): boolean {
   return text
@@ -108,6 +109,15 @@ describe('유료 심화 1단계 컬러 에너지 흐름', () => {
             result.growthPossibility.join(' '),
             ...result.miniInterpretations.flatMap((mini) => [mini.description, ...mini.strengths, ...mini.tiredStates]),
           ].join(' ')).not.toMatch(ABSTRACT_OUTPUT_PATTERNS);
+          expect([
+            result.integrationBridge,
+            result.psychologyTendency,
+            result.personalityTendency,
+            result.relationshipTendency,
+            result.strengths.join(' '),
+            result.growthPossibility.join(' '),
+            ...result.miniInterpretations.flatMap((mini) => [mini.description, ...mini.strengths, ...mini.tiredStates]),
+          ].join(' ')).not.toMatch(PREMIUM_COPY_ERROR_PATTERN);
         }
       }
     }

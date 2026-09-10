@@ -7,14 +7,17 @@ const PAGE_BOTTOM = 799;
 const PAGE_LEFT = 43;
 const CONTENT_WIDTH = 509;
 const FONT_PATH = path.join(process.cwd(), "server", "assets", "HusimPdfKorean.ttf");
+const BODY_TEXT_SIZE = 11.7;
+const BODY_LABEL_SIZE = 10.4;
 
 type PdfWriter = InstanceType<typeof PDFDocument>;
 type PdfShape = PremiumPdfDownloadPayload["cards"][number]["shape"];
 
 function normalizePdfText(value: string) {
   return value
-    .replaceAll("낙살 시간 에 10분 햇빛 속에 앜아있기", "낮 시간에 10분간 햇빛을 쬐며 앉아 있기")
-    .replaceAll("낙실 시간 에 10분 햇빛 속에 앉아있기", "낮 시간에 10분간 햇빛을 쬐며 앉아 있기")
+    .replaceAll("낙살 시간 에 10분 햇빛 속에 앜아있기", "낮 시간에 10분 햇빛 속에 앉아 있기")
+    .replaceAll("낙실 시간 에 10분 햇빛 속에 앉아있기", "낮 시간에 10분 햇빛 속에 앉아 있기")
+    .replaceAll("낙실 시간 에 10분 햇빛 속에 앉아 있기", "낮 시간에 10분 햇빛 속에 앉아 있기")
     .replace(/[☒☑✓✔☐□○△▽◇⬠⬡]/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
@@ -28,7 +31,7 @@ function ensureSpace(document: PdfWriter, height: number) {
   if (document.y + height > PAGE_BOTTOM) addPage(document);
 }
 
-function textHeight(document: PdfWriter, value: string, width = CONTENT_WIDTH, size = 10.5) {
+function textHeight(document: PdfWriter, value: string, width = CONTENT_WIDTH, size = BODY_TEXT_SIZE) {
   document.fontSize(size);
   return document.heightOfString(normalizePdfText(value) || " ", { width, lineGap: 4 });
 }
@@ -36,7 +39,7 @@ function textHeight(document: PdfWriter, value: string, width = CONTENT_WIDTH, s
 function writeParagraph(document: PdfWriter, value: string, options: { width?: number; size?: number; color?: string; lineGap?: number } = {}) {
   const safeValue = normalizePdfText(value);
   const width = options.width ?? CONTENT_WIDTH;
-  const size = options.size ?? 10.5;
+  const size = options.size ?? BODY_TEXT_SIZE;
   const lineGap = options.lineGap ?? 4;
   const height = textHeight(document, safeValue, width, size);
   ensureSpace(document, height + 3);
@@ -58,7 +61,7 @@ function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label
   const innerWidth = CONTENT_WIDTH - 28;
   const contentHeight = paragraphs.reduce((sum, paragraph) => {
     const label = paragraph.label ? 16 : 0;
-    return sum + label + textHeight(document, normalizePdfText(paragraph.text), innerWidth, 10.2) + 8;
+    return sum + label + textHeight(document, normalizePdfText(paragraph.text), innerWidth, BODY_TEXT_SIZE) + 8;
   }, 33);
   ensureSpace(document, contentHeight + 16);
   const top = document.y;
@@ -67,10 +70,10 @@ function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label
   document.y = top + 34;
   for (const paragraph of paragraphs) {
     if (paragraph.label) {
-      document.fillColor("#6A5843").fontSize(9.3).text(normalizePdfText(paragraph.label), PAGE_LEFT + 14, document.y, { width: innerWidth });
+      document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text(normalizePdfText(paragraph.label), PAGE_LEFT + 14, document.y, { width: innerWidth });
       document.moveDown(0.18);
     }
-    document.fillColor("#302B27").fontSize(10.2).text(normalizePdfText(paragraph.text), PAGE_LEFT + 14, document.y, { width: innerWidth, lineGap: 4 });
+    document.fillColor("#302B27").fontSize(BODY_TEXT_SIZE).text(normalizePdfText(paragraph.text), PAGE_LEFT + 14, document.y, { width: innerWidth, lineGap: 4.5 });
     document.moveDown(0.55);
   }
   document.y = top + contentHeight + 16;
@@ -104,11 +107,11 @@ function writePills(document: PdfWriter, values: string[]) {
 function writeBullets(document: PdfWriter, values: string[]) {
   values.forEach((value) => {
     const safeValue = normalizePdfText(value);
-    const height = textHeight(document, safeValue, CONTENT_WIDTH - 20, 10.5);
+    const height = textHeight(document, safeValue, CONTENT_WIDTH - 20, BODY_TEXT_SIZE);
     ensureSpace(document, height + 5);
     const top = document.y;
     document.save().fillColor("#8B6914").circle(PAGE_LEFT + 4, top + 7, 2.2).fill().restore();
-    document.fillColor("#302B27").fontSize(10.5).text(safeValue, PAGE_LEFT + 14, top, { width: CONTENT_WIDTH - 20, lineGap: 4 });
+    document.fillColor("#302B27").fontSize(BODY_TEXT_SIZE).text(safeValue, PAGE_LEFT + 14, top, { width: CONTENT_WIDTH - 20, lineGap: 4.5 });
     document.moveDown(0.25);
   });
 }
@@ -224,21 +227,21 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
 
   writeSectionTitle(document, "나의 삶의 역할 에너지", "#66557B");
   writeCard(document, payload.lifeRole.title, [{ text: payload.lifeRole.description }], "#F8F5FF");
-  document.fillColor("#6A5843").fontSize(10.4).text("이 역할이 더하는 가치", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("이 역할이 더하는 가치", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.4);
   writePills(document, payload.lifeRole.humanStrengths);
   document.moveDown(0.6);
-  document.fillColor("#6A5843").fontSize(10.4).text("사회적 쓰임새 · 진로 방향", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("사회적 쓰임새 · 진로 방향", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.4);
   payload.lifeRole.directions.forEach((direction) => writeCard(document, direction.title, [
     { text: direction.description },
     { label: "준비 방향", text: direction.preparation },
   ], "#F8F5FF"));
-  document.fillColor("#6A5843").fontSize(10.4).text("잘 맞는 일의 환경", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("잘 맞는 일의 환경", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.35);
   writeBullets(document, payload.lifeRole.environments);
   document.moveDown(0.5);
-  document.fillColor("#6A5843").fontSize(10.4).text("역할 에너지의 그림자", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("역할 에너지의 그림자", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.35);
   writeBullets(document, payload.lifeRole.shadows);
   writeCard(document, "지금의 작은 방향", [{ text: payload.lifeRole.smallDirection }], "#FCF8F0");
@@ -263,6 +266,7 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
     ["오늘의 작은 실천", payload.recoveryRoutine.smallPractice],
     ["오늘의 회복 메시지", payload.recoveryRoutine.message],
   ].forEach(([label, text]) => writeCard(document, label, [{ text }], "#FFF9EF"));
+  ensureSpace(document, 190);
   writeSectionTitle(document, "휴심컬러 1:1 컬러코칭");
   writeCard(document, "더 깊은 나눔이 필요할 때", [
     { text: "지금의 마음 흐름과 나에게 맞는 회복의 방향을 더 깊이 나누고 싶다면, 1:1 컬러코칭으로 이어갈 수 있습니다." },

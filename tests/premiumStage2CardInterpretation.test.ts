@@ -41,8 +41,8 @@ describe("premium stage 2 card interpretation engine", () => {
       "마음이 향하는 다음 방향",
     ]);
     expect(new Set(interpretations.map((item) => item.narrative)).size).toBe(3);
-    expect(interpretations[0].cardLabel).toBe("네이비 × 마름모");
-    expect(interpretations[2].cardLabel).toBe("그린 × 육각형");
+    expect(interpretations[0].cardLabel).toBe("네이비 · 마름모");
+    expect(interpretations[2].cardLabel).toBe("그린 · 육각형");
   });
 
   it("uses short 생활언어 without the former abstract or directive patterns", () => {
@@ -115,9 +115,9 @@ describe("premium stage 2 card interpretation engine", () => {
           const interpretations = buildStage2CardInterpretations([first, second, third]);
 
           expect(interpretations.map((item) => item.role)).toEqual(["unconscious", "current", "recovery"]);
-          expect(interpretations[0].cardLabel).toBe(`${first.colorKor} × ${first.shapeKor}`);
-          expect(interpretations[1].cardLabel).toBe(`${second.colorKor} × ${second.shapeKor}`);
-          expect(interpretations[2].cardLabel).toBe(`${third.colorKor} × ${third.shapeKor}`);
+          expect(interpretations[0].cardLabel).toBe(`${first.colorKor} · ${first.shapeKor}`);
+          expect(interpretations[1].cardLabel).toBe(`${second.colorKor} · ${second.shapeKor}`);
+          expect(interpretations[2].cardLabel).toBe(`${third.colorKor} · ${third.shapeKor}`);
           expect(new Set(interpretations.map((item) => item.narrative)).size).toBe(3);
           checked += 1;
         }
