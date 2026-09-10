@@ -11,12 +11,12 @@ const BODY_SIZE = 15.5;
 const LABEL_SIZE = 12.6;
 const BODY_LINE_GAP = 5.8;
 const SECTION_BAR_GAP = 10;
-const SUBTITLE_SIZE = 16.2;
-const SUBTITLE_LABEL_SIZE = 15.1;
-const SUBTITLE_LINE_GAP = 2;
-const CARD_TITLE_BLOCK_HEIGHT = 46;
-const CARD_LABEL_BLOCK_HEIGHT = 29;
-const CARD_PARAGRAPH_GAP = 18;
+const SUBTITLE_SIZE = 19.2;
+const SUBTITLE_LABEL_SIZE = 17.4;
+const SUBTITLE_LINE_GAP = 3.1;
+const CARD_TITLE_BLOCK_HEIGHT = 60;
+const CARD_LABEL_BLOCK_HEIGHT = 40;
+const CARD_PARAGRAPH_GAP = 24;
 
 type PdfWriter = InstanceType<typeof PDFDocument>;
 type CardParagraph = {
@@ -67,12 +67,12 @@ function subtitleHeight(document: PdfWriter, text: string, width: number, size: 
   return document.heightOfString(clean(text) || " ", { width, lineGap: SUBTITLE_LINE_GAP });
 }
 
-/** 얇은 한글 폰트에서도 카드 소제목이 본문과 구분되도록 절제된 stroke로 Semi-bold처럼 표시한다. */
+/** 얇은 한글 폰트에서도 카드 소제목이 본문과 분명히 구분되도록 절제된 stroke로 Semi-bold처럼 표시한다. */
 function writeSubtitle(document: PdfWriter, text: string, x: number, y: number, width: number, size: number) {
   document
-    .fillColor("#3F3029")
-    .strokeColor("#3F3029")
-    .lineWidth(0.24)
+    .fillColor("#2F2019")
+    .strokeColor("#2F2019")
+    .lineWidth(0.5)
     .fontSize(size)
     .text(clean(text), x, y, { width, lineGap: SUBTITLE_LINE_GAP, fill: true, stroke: true });
 }
@@ -119,7 +119,7 @@ function writeCard(document: PdfWriter, title: string, paragraphs: CardParagraph
     if (paragraph.label) {
       const labelTop = document.y;
       writeSubtitle(document, paragraph.label, PAGE_LEFT + 15, labelTop, innerWidth, SUBTITLE_LABEL_SIZE);
-      document.y = labelTop + subtitleHeight(document, paragraph.label, innerWidth, SUBTITLE_LABEL_SIZE) + 7;
+      document.y = labelTop + subtitleHeight(document, paragraph.label, innerWidth, SUBTITLE_LABEL_SIZE) + 12;
     }
     if (paragraph.text) {
       document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(paragraph.text), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
@@ -128,7 +128,7 @@ function writeCard(document: PdfWriter, title: string, paragraphs: CardParagraph
       if (paragraph.text) document.moveDown(0.28);
       writeBulletList(document, paragraph.bullets, PAGE_LEFT + 32, PAGE_LEFT + 15, innerWidth - 22);
     }
-    document.moveDown(0.78);
+    document.moveDown(1.02);
   });
   document.y = top + contentHeight + 19;
   document.moveDown(0.7);

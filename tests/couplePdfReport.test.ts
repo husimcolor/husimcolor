@@ -123,8 +123,11 @@ describe("부부·연인 전용 PDF 리포트", () => {
 
     expect(serverSource).toContain("function writeSubtitle");
     expect(serverSource).toContain("stroke: true");
-    expect(serverSource).toContain("SUBTITLE_SIZE = 16.2");
-    expect(serverSource).toContain("SUBTITLE_LABEL_SIZE = 15.1");
+    expect(serverSource).toContain("SUBTITLE_SIZE = 19.2");
+    expect(serverSource).toContain("SUBTITLE_LABEL_SIZE = 17.4");
+    expect(serverSource).toContain('fillColor("#2F2019")');
+    expect(serverSource).toContain("CARD_TITLE_BLOCK_HEIGHT = 60");
+    expect(serverSource).toContain("CARD_LABEL_BLOCK_HEIGHT = 40");
     expect(serverSource).toContain("function writeBulletList");
     expect(serverSource).toContain('{ label: "이번 주 함께 해볼 것", bullets: relation.togetherRoutine.routines }');
     expect(serverSource).not.toContain('{ label: "이번 주 함께 해볼 것", text: relation.togetherRoutine.routines.join("\\n") }');
