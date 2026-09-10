@@ -284,6 +284,42 @@ type CardItem = {
   recoveryDirection: string;
 };
 
+function splitReadableParagraphs(text?: string): string[] {
+  return (text ?? "")
+    .trim()
+    .split(/\n{2,}|\n(?=·)/)
+    .flatMap((block) => {
+      const sentences = block
+        .trim()
+        .split(/(?<=[.!?])\s+(?=[^\s])/)
+        .map((sentence) => sentence.trim())
+        .filter(Boolean);
+      return Array.from({ length: Math.ceil(sentences.length / 2) }, (_, index) =>
+        sentences.slice(index * 2, index * 2 + 2).join(" "),
+      );
+    });
+}
+
+function ReadableParagraphs({
+  text,
+  textStyle,
+}: {
+  text?: string;
+  textStyle: object;
+}) {
+  const paragraphs = splitReadableParagraphs(text);
+
+  return (
+    <View style={styles.readableParagraphStack}>
+      {paragraphs.map((paragraph, index) => (
+        <Text key={`${index}-${paragraph.slice(0, 16)}`} style={textStyle}>
+          {paragraph}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 export default function CoupleCardResultScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -439,7 +475,7 @@ export default function CoupleCardResultScreen() {
                 </View>
               </View>
               <View style={[styles.readingBox, { backgroundColor: POSITION_COLORS[i] + '0D' }]}>
-                <Text style={styles.readingText}>{readings[i]}</Text>
+                <ReadableParagraphs text={readings[i]} textStyle={styles.readingText} />
               </View>
             </View>
           ))}
@@ -456,7 +492,7 @@ export default function CoupleCardResultScreen() {
                     style={[styles.integratedSection, index > 0 && styles.integratedSectionDivider]}
                   >
                     <Text style={[styles.integratedSectionTitle, { color: accentColor }]}>{section.title}</Text>
-                    <Text style={styles.integratedSectionText}>{section.text}</Text>
+                    <ReadableParagraphs text={section.text} textStyle={styles.integratedSectionText} />
                   </View>
                 ))}
               </View>
@@ -464,13 +500,13 @@ export default function CoupleCardResultScreen() {
               {/* 코칭 메시지 */}
               <View style={[styles.coachingCard, { borderColor: accentColor + '55', backgroundColor: accentColor + '0F' }]}>
                 <Text style={[styles.coachingLabel, { color: accentColor }]}>🌿 오늘의 코칭 메시지</Text>
-                <Text style={styles.coachingText}>{cardFlow.coaching}</Text>
+                <ReadableParagraphs text={cardFlow.coaching} textStyle={styles.coachingText} />
               </View>
 
               {/* 보완 루틴 */}
               <View style={[styles.routineCard, { borderColor: '#C4956A44' }]}>
                 <Text style={[styles.routineLabel, { color: '#C4956A' }]}>✨ 회복을 위한 보완 루틴</Text>
-                <Text style={styles.routineText}>{cardFlow.routine}</Text>
+                <ReadableParagraphs text={cardFlow.routine} textStyle={styles.routineText} />
               </View>
             </>
           )}
@@ -537,7 +573,7 @@ const styles = StyleSheet.create({
   prevColorDot: { width: 18, height: 18, borderRadius: 9 },
   prevColorName: { fontSize: 12, fontWeight: '600' },
   cardSection: {
-    borderRadius: 16, borderWidth: 1.5, padding: 16, marginBottom: 14, gap: 12,
+    borderRadius: 16, borderWidth: 1.5, padding: 22, marginBottom: 18, gap: 16,
     backgroundColor: '#FAFAF8',
   },
   cardHeader: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
@@ -552,29 +588,30 @@ const styles = StyleSheet.create({
   cardHeaderInfo: { flex: 1, gap: 4 },
   positionLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
   cardName: { fontSize: 15, fontWeight: '700', color: '#3D3530' },
-  positionDesc: { fontSize: 12, color: '#5F4B3B', lineHeight: 18 },
-  readingBox: { borderRadius: 10, padding: 12 },
-  readingText: { fontSize: 14, color: '#3D3530', lineHeight: 22 },
+  positionDesc: { fontSize: 13, color: '#5F4B3B', lineHeight: 22 },
+  readingBox: { borderRadius: 10, padding: 18 },
+  readableParagraphStack: { gap: 14 },
+  readingText: { fontSize: 18, color: '#3D3530', lineHeight: 32 },
   flowCard: {
-    borderRadius: 14, borderWidth: 1, padding: 18, marginBottom: 14, gap: 10,
+    borderRadius: 14, borderWidth: 1, padding: 24, marginBottom: 18, gap: 14,
   },
   flowCardLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
   flowCardTitle: { fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  integratedSection: { gap: 7, paddingVertical: 4 },
-  integratedSectionDivider: { borderTopWidth: 1, borderTopColor: '#3D6B3D1C', paddingTop: 16, marginTop: 8 },
-  integratedSectionTitle: { fontSize: 14, fontWeight: '800', letterSpacing: 0.1 },
-  integratedSectionText: { fontSize: 16, color: '#3D3530', lineHeight: 27 },
+  integratedSection: { gap: 12, paddingVertical: 8 },
+  integratedSectionDivider: { borderTopWidth: 1, borderTopColor: '#3D6B3D1C', paddingTop: 22, marginTop: 12 },
+  integratedSectionTitle: { fontSize: 15, fontWeight: '800', letterSpacing: 0.1 },
+  integratedSectionText: { fontSize: 18, color: '#3D3530', lineHeight: 32 },
   coachingCard: {
-    borderRadius: 14, borderWidth: 1.5, padding: 18, marginBottom: 12, gap: 8,
+    borderRadius: 14, borderWidth: 1.5, padding: 24, marginBottom: 16, gap: 12,
   },
   coachingLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
-  coachingText: { fontSize: 15, color: '#3D3530', lineHeight: 24, fontWeight: '500' },
+  coachingText: { fontSize: 18, color: '#3D3530', lineHeight: 32, fontWeight: '500' },
   routineCard: {
-    borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 20,
-    backgroundColor: '#FDF8F2', gap: 8,
+    borderRadius: 14, borderWidth: 1, padding: 22, marginBottom: 24,
+    backgroundColor: '#FDF8F2', gap: 12,
   },
   routineLabel: { fontSize: 12, fontWeight: '700' },
-  routineText: { fontSize: 14, color: '#5F4B3B', lineHeight: 22 },
+  routineText: { fontSize: 18, color: '#5F4B3B', lineHeight: 32 },
   nextHint: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16, gap: 6 },
   nextHintTitle: { fontSize: 12, fontWeight: '700' },
   nextHintText: { fontSize: 13, color: '#5F4B3B', lineHeight: 21 },

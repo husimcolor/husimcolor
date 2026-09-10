@@ -21,6 +21,34 @@ import {
   type PersonAnalysis,
 } from '@/constants/coupleData';
 
+function splitReadableParagraphs(text?: string): string[] {
+  return (text ?? "")
+    .trim()
+    .split(/\n{2,}/)
+    .flatMap((block) => {
+      const sentences = block
+        .trim()
+        .split(/(?<=[.!?])\s+(?=[^\s])/)
+        .map((sentence) => sentence.trim())
+        .filter(Boolean);
+      return Array.from({ length: Math.ceil(sentences.length / 2) }, (_, index) =>
+        sentences.slice(index * 2, index * 2 + 2).join(" "),
+      );
+    });
+}
+
+function ReadableParagraphs({ text, textStyle }: { text?: string; textStyle: object }) {
+  return (
+    <View style={styles.readableParagraphStack}>
+      {splitReadableParagraphs(text).map((paragraph, index) => (
+        <Text key={`${index}-${paragraph.slice(0, 16)}`} style={textStyle}>
+          {paragraph}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 export default function CoupleColorResultScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -125,19 +153,19 @@ export default function CoupleColorResultScreen() {
               {/* 심리 흐름 */}
               <View style={[styles.card, { borderColor: accentBorder, backgroundColor: accentBg }]}>
                 <Text style={[styles.cardLabel, { color: accentColor }]}>🌿 현재 심리 흐름</Text>
-                <Text style={styles.cardContent}>{analysis.psychologyFlow}</Text>
+                <ReadableParagraphs text={analysis.psychologyFlow} textStyle={styles.cardContent} />
               </View>
 
               {/* 현재 감정 흐름 */}
               <View style={[styles.card, { borderColor: accentBorder, backgroundColor: accentBg }]}>
                 <Text style={[styles.cardLabel, { color: accentColor }]}>🎨 현재 감정 흐름</Text>
-                <Text style={styles.cardContent}>{analysis.currentFlow}</Text>
+                <ReadableParagraphs text={analysis.currentFlow} textStyle={styles.cardContent} />
               </View>
 
               {/* 회복 방향 */}
               <View style={[styles.card, { borderColor: accentBorder, backgroundColor: accentBg }]}>
                 <Text style={[styles.cardLabel, { color: accentColor }]}>🌱 회복 방향</Text>
-                <Text style={styles.cardContent}>{analysis.recoveryDirection}</Text>
+                <ReadableParagraphs text={analysis.recoveryDirection} textStyle={styles.cardContent} />
               </View>
 
               {/* 보완 컬러 — 기존 산출·문구를 유지한 채 회복 방향과 관계 성향 사이에 배치 */}
@@ -147,22 +175,24 @@ export default function CoupleColorResultScreen() {
                   <View style={[styles.complementDot, { backgroundColor: analysis.complementColor.hex, shadowColor: analysis.complementColor.hex }]} />
                   <View style={styles.complementText}>
                     <Text style={[styles.complementName, { color: analysis.complementColor.hex }]}>{analysis.complementColor.korName}</Text>
-                    <Text style={styles.complementMeaning}>{analysis.complementColor.meaning}</Text>
+                    <ReadableParagraphs text={analysis.complementColor.meaning} textStyle={styles.complementMeaning} />
                   </View>
                 </View>
-                <Text style={[styles.coachingMessage, { borderLeftColor: accentColor + '80' }]}>{analysis.coachingMessage}</Text>
+                <View style={[styles.coachingMessage, { borderLeftColor: accentColor + '80' }]}>
+                  <ReadableParagraphs text={analysis.coachingMessage} textStyle={styles.coachingMessageText} />
+                </View>
               </View>
 
               {/* 관계 성향 */}
               <View style={[styles.card, { borderColor: accentBorder, backgroundColor: accentBg }]}>
                 <Text style={[styles.cardLabel, { color: accentColor }]}>💚 관계 성향</Text>
-                <Text style={styles.cardContent}>{analysis.relationshipStyle}</Text>
+                <ReadableParagraphs text={analysis.relationshipStyle} textStyle={styles.cardContent} />
               </View>
 
               {/* 감정 표현 방식 */}
               <View style={[styles.card, { borderColor: accentBorder, backgroundColor: accentBg }]}>
                 <Text style={[styles.cardLabel, { color: accentColor }]}>🧩 감정 표현 방식</Text>
-                <Text style={styles.cardContent}>{analysis.emotionExpression}</Text>
+                <ReadableParagraphs text={analysis.emotionExpression} textStyle={styles.cardContent} />
               </View>
 
               {/* 2단계 예고 배너 */}
@@ -228,20 +258,22 @@ const styles = StyleSheet.create({
   colorName: { fontSize: 13, fontWeight: '700', color: '#3D3530' },
   colorOrder: { fontSize: 11, fontWeight: '600' },
   card: {
-    borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 12, gap: 8,
+    borderRadius: 14, borderWidth: 1, padding: 22, marginBottom: 16, gap: 12,
   },
   cardLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
-  cardContent: { fontSize: 14, color: '#3D3530', lineHeight: 22 },
+  readableParagraphStack: { gap: 14 },
+  cardContent: { fontSize: 18, color: '#3D3530', lineHeight: 32 },
   complementRow: {
-    borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12,
+    borderWidth: 1, borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14,
   },
   complementDot: {
     width: 34, height: 34, borderRadius: 17, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.28, shadowRadius: 4, elevation: 3,
   },
-  complementText: { flex: 1, gap: 2 },
-  complementName: { fontSize: 14, fontWeight: '800' },
-  complementMeaning: { fontSize: 13, lineHeight: 20, color: '#4A3728' },
-  coachingMessage: { fontSize: 14, lineHeight: 22, color: '#3D3530', borderLeftWidth: 3, paddingLeft: 10, marginTop: 2 },
+  complementText: { flex: 1, gap: 6 },
+  complementName: { fontSize: 16, fontWeight: '800' },
+  complementMeaning: { fontSize: 18, lineHeight: 32, color: '#4A3728' },
+  coachingMessage: { borderLeftWidth: 3, paddingLeft: 14, marginTop: 6 },
+  coachingMessageText: { fontSize: 18, lineHeight: 32, color: '#3D3530' },
   previewBanner: {
     borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 20, gap: 8,
   },

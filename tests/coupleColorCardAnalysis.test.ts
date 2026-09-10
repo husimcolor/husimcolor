@@ -47,6 +47,13 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(screenSource).toContain("겉모습과 내면의 흐름");
     expect(screenSource).toContain("관계·회복·성장 방향");
     expect(screenSource).toContain("integratedSectionText");
+    expect(screenSource).toContain("function ReadableParagraphs");
+    expect(screenSource).toContain("<ReadableParagraphs text={section.text}");
+    expect(screenSource).toContain("<ReadableParagraphs text={cardFlow.coaching}");
+    expect(screenSource).toContain("<ReadableParagraphs text={cardFlow.routine}");
+    expect(screenSource).toContain("readingText: { fontSize: 18");
+    expect(screenSource).toContain("integratedSectionText: { fontSize: 18");
+    expect(screenSource).toContain("lineHeight: 32");
     expect(screenSource).toContain("pathname: '/(tabs)/couple-select'");
     expect(screenSource).toContain("router.push('/(tabs)/couple-result'");
   });
@@ -70,6 +77,11 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(relationshipIndex).toBeGreaterThan(complementIndex);
     expect(colorResultSource).toContain("analysis.complementColor.meaning");
     expect(colorResultSource).toContain("analysis.coachingMessage");
+    expect(colorResultSource).toContain("function ReadableParagraphs");
+    expect(colorResultSource).toContain("text={analysis.complementColor.meaning}");
+    expect(colorResultSource).toContain("text={analysis.coachingMessage}");
+    expect(colorResultSource).toContain("cardContent: { fontSize: 18");
+    expect(colorResultSource).toContain("complementMeaning: { fontSize: 18");
     expect(coupleResultSource).not.toContain("개인 마음 흐름");
     expect(coupleResultSource).not.toContain('title="현재 마음 흐름"');
     expect(coupleResultSource).not.toContain('title="보완 컬러"');
