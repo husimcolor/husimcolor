@@ -1,11 +1,15 @@
 export type PremiumPdfDownloadPayload = {
   profileLine: string;
   generatedAt: string;
-  selectedColors: Array<{ name: string; keywords: string }>;
+  selectedColors: Array<{ name: string; keywords: string; hex: string }>;
   stage2Bridge: string;
   cards: Array<{
     position: string;
     label: string;
+    colorName: string;
+    shapeName: string;
+    colorHex: string;
+    shape: "circle" | "triangle" | "inverted_triangle" | "square" | "diamond" | "pentagon" | "hexagon";
     colorKeywords: string;
     shapeKeywords: string;
     roleLabel: string;

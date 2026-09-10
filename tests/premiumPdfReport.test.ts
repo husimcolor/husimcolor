@@ -128,5 +128,11 @@ describe("유료 결과 PDF 리포트", () => {
     expect(pdf.length).toBeGreaterThan(2_000);
     expect(validated.cards[0].narrative).toBe(stage2Cards[0].narrative);
     expect(validated.energyFlow.currentElements).toEqual(energy.currentFiveElements.elements);
+    expect(validated.selectedColors[0].hex).toBe(colors[0].hex);
+    expect(validated.cards[0]).toMatchObject({ colorHex: cards[0].colorHex, shape: cards[0].shape });
+    const source = readFileSync(resolve(process.cwd(), "server/pdf-report.ts"), "utf8");
+    expect(source).toContain("writeCoverColorChip");
+    expect(source).toContain("writeCardPreviewRow");
+    expect(source).not.toContain("`• ${value}`");
   });
 });

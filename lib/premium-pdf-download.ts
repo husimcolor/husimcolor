@@ -6,11 +6,8 @@ import type { PremiumPdfDownloadPayload } from "@/shared/premium-pdf-download";
  * 이 함수는 해석·오행·회복 데이터를 재계산하거나 새 문장을 생성하지 않는다.
  */
 export function buildPremiumPdfDownloadPayload(input: PremiumPdfReportInput): PremiumPdfDownloadPayload {
-  const generatedAt = new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(new Date());
+  const now = new Date();
+  const generatedAt = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
   const profileLine = input.profile
     ? [input.profile.age ? `${input.profile.age}세` : "", input.profile.job, input.profile.faith].filter(Boolean).join(" · ")
     : "휴심컬러 개인 심화해석";
@@ -22,6 +19,7 @@ export function buildPremiumPdfDownloadPayload(input: PremiumPdfReportInput): Pr
     selectedColors: input.selectedColors.slice(0, 3).map((color) => ({
       name: "korName" in color ? color.korName : "",
       keywords: "keywords" in color ? color.keywords.slice(0, 3).join(" · ") : "",
+      hex: "hex" in color && typeof color.hex === "string" ? color.hex : "#D7C9B5",
     })),
     stage2Bridge: input.stage2Bridge,
     cards: input.cards.slice(0, 3).map((card, index) => {
@@ -29,6 +27,10 @@ export function buildPremiumPdfDownloadPayload(input: PremiumPdfReportInput): Pr
       return {
         position: positions[index] ?? `${index + 1}번 카드`,
         label: interpretation?.cardLabel ?? `${card.colorKor} ${card.shapeKor}`,
+        colorName: card.colorKor,
+        shapeName: card.shapeKor,
+        colorHex: card.colorHex,
+        shape: card.shape,
         colorKeywords: interpretation?.colorKeywords.join(" · ") ?? "",
         shapeKeywords: interpretation?.shapeKeywords.join(" · ") ?? "",
         roleLabel: interpretation?.roleLabel ?? "카드 해석",
