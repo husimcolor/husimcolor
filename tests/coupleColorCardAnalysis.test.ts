@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { CARD_DATA } from "../constants/cardData";
 import { COLOR_DATA } from "../constants/colorData";
 import { getLightArchetype } from "../constants/coupleData";
-import { buildCoupleColorCardIntegratedAnalysis } from "../lib/couple-color-card-analysis";
+import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from "../lib/couple-color-card-analysis";
 import { splitCoupleReadableParagraphs } from "../lib/couple-readable-text";
 import { buildRomanticRelationTraits } from "../lib/couple-romantic-relation-traits";
 import { buildRomanticRelationshipRoles } from "../lib/couple-romantic-relationship-roles";
@@ -17,13 +17,16 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
       .filter(Boolean) as (typeof COLOR_DATA)[number][];
     const cards = CARD_DATA.slice(0, 3);
 
-    const analysis = buildCoupleColorCardIntegratedAnalysis(colors, cards);
+    const analysis = buildRomanticCoupleColorCardIntegratedAnalysis(colors, cards);
     const paragraphs = analysis.split("\n\n");
 
     expect(paragraphs).toHaveLength(3);
-    expect(analysis).toContain(cards[0].energyTitle);
-    expect(analysis).toContain(cards[1].energyTitle);
-    expect(analysis).toContain(cards[2].energyTitle);
+    expect(analysis).toContain("따뜻한 마음을 주고받는 일");
+    expect(analysis).toContain("섬세한 감정을 살피며 진심 어린 관계를 바라는 일");
+    expect(analysis).toContain("작은 약속과 꾸준한 돌봄으로 편안함을 다시 쌓아보세요");
+    expect(analysis).not.toContain(cards[0].energyTitle);
+    expect(analysis).not.toContain(cards[1].energyTitle);
+    expect(analysis).not.toContain(cards[2].energyTitle);
     expect(analysis).not.toContain("핑크 · 라벤더 · 그린");
     expect(analysis).not.toContain("「");
     expect(analysis).not.toContain("」");
@@ -31,11 +34,23 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
   });
 
   it("선택 조합이 달라지면 컬러와 카드 근거도 함께 달라진다", () => {
-    const first = buildCoupleColorCardIntegratedAnalysis(COLOR_DATA.slice(0, 3), CARD_DATA.slice(0, 3));
-    const second = buildCoupleColorCardIntegratedAnalysis(COLOR_DATA.slice(12, 15), CARD_DATA.slice(12, 15));
+    const first = buildRomanticCoupleColorCardIntegratedAnalysis(COLOR_DATA.slice(0, 3), CARD_DATA.slice(0, 3));
+    const second = buildRomanticCoupleColorCardIntegratedAnalysis(COLOR_DATA.slice(12, 15), CARD_DATA.slice(12, 15));
 
     expect(second).not.toBe(first);
-    expect(second).toContain(CARD_DATA[12].energyTitle);
+    expect(second).not.toContain(CARD_DATA[12].energyTitle);
+    expect(second).not.toContain("보호를 소중히 여기고");
+  });
+
+  it("부모·자녀·친구·동료·형제자매의 개인 통합 분석은 기존 생성 문구를 유지한다", () => {
+    const colors = COLOR_DATA.slice(0, 3);
+    const cards = CARD_DATA.slice(0, 3);
+    const legacy = buildCoupleColorCardIntegratedAnalysis(colors, cards);
+    const romantic = buildRomanticCoupleColorCardIntegratedAnalysis(colors, cards);
+
+    expect(legacy).toContain(cards[0].energyTitle);
+    expect(legacy).toContain(colors[0].keywords[0]);
+    expect(romantic).not.toBe(legacy);
   });
 
   it("심리카드 실행 문장의 기존 가운데점 불릿을 안정적인 불릿으로 통일하고 문장 덩어리를 나눈다", () => {

@@ -19,7 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CARD_DATA } from '@/constants/cardData';
 import { COLOR_DATA } from '@/constants/colorData';
 import type { CoupleSessionData, PersonSession } from '@/constants/coupleData';
-import { buildCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
+import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
 import { splitCoupleReadableParagraphs } from '@/lib/couple-readable-text';
 
 const POSITION_LABELS = ['무의식 · 내면 에너지', '현재 현실 에너지', '미래 · 회복 · 희망 에너지'];
@@ -352,7 +352,10 @@ export default function CoupleCardResultScreen() {
 
       // 기존 코칭·보완 루틴은 유지하고, 통합 분석 본문만 1단계 컬러 3개와 2단계 카드 3개를 함께 연결한다.
       const flow = buildCardFlowAnalysis(cards as any, prevColorsMapped, session.info?.faith ?? '무교');
-      flow.flow = buildCoupleColorCardIntegratedAnalysis(colors, cards);
+      const isRomanticRel = data.relationType === '연인' || data.relationType === '부부';
+      flow.flow = isRomanticRel
+        ? buildRomanticCoupleColorCardIntegratedAnalysis(colors, cards)
+        : buildCoupleColorCardIntegratedAnalysis(colors, cards);
       setCardFlow(flow);
 
       setIsLoading(false);

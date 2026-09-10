@@ -19,7 +19,7 @@ import {
 } from '@/constants/coupleData';
 import { buildRomanticRelationTraits } from '@/lib/couple-romantic-relation-traits';
 import { buildRomanticRelationshipRoles } from '@/lib/couple-romantic-relationship-roles';
-import { buildCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
+import { buildRomanticCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
 import { buildCouplePdfDownloadPayload } from '@/lib/couple-pdf-download';
 
 // ─── SectionCard ─────────────────────────────────────────────────────────────
@@ -327,8 +327,8 @@ export default function CoupleResultScreen() {
   const definedColorsB = colorsB.filter((color): color is NonNullable<typeof color> => Boolean(color));
   const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
   const definedCardsB = cardsB.filter((card): card is NonNullable<typeof card> => Boolean(card));
-  const personAIntegratedAnalysis = buildCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA);
-  const personBIntegratedAnalysis = buildCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB);
+  const personAIntegratedAnalysis = buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA);
+  const personBIntegratedAnalysis = buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB);
 
   const getCouplePdfColorRows = (selectedColors: typeof colorsA) => selectedColors
     .filter((color): color is NonNullable<typeof color> => Boolean(color))
