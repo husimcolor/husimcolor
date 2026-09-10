@@ -7,11 +7,12 @@ const PAGE_BOTTOM = 799;
 const PAGE_LEFT = 43;
 const CONTENT_WIDTH = 509;
 const FONT_PATH = path.join(process.cwd(), "server", "assets", "HusimPdfKorean.ttf");
-const BODY_TEXT_SIZE = 13.5;
-const BODY_LABEL_SIZE = 12;
-const CARD_TITLE_SIZE = 12.5;
-const DETAIL_TEXT_SIZE = 11.3;
-const PILL_TEXT_SIZE = 11;
+const BODY_TEXT_SIZE = 16;
+const BODY_LABEL_SIZE = 14;
+const CARD_TITLE_SIZE = 13.5;
+const DETAIL_TEXT_SIZE = 13.3;
+const PILL_TEXT_SIZE = 12;
+const BODY_LINE_GAP = 6.2;
 
 type PdfWriter = InstanceType<typeof PDFDocument>;
 type PdfShape = PremiumPdfDownloadPayload["cards"][number]["shape"];
@@ -34,17 +35,17 @@ function ensureSpace(document: PdfWriter, height: number) {
   if (document.y + height > PAGE_BOTTOM) addPage(document);
 }
 
-function textHeight(document: PdfWriter, value: string, width = CONTENT_WIDTH, size = BODY_TEXT_SIZE) {
+function textHeight(document: PdfWriter, value: string, width = CONTENT_WIDTH, size = BODY_TEXT_SIZE, lineGap = BODY_LINE_GAP) {
   document.fontSize(size);
-  return document.heightOfString(normalizePdfText(value) || " ", { width, lineGap: 4 });
+  return document.heightOfString(normalizePdfText(value) || " ", { width, lineGap });
 }
 
 function writeParagraph(document: PdfWriter, value: string, options: { width?: number; size?: number; color?: string; lineGap?: number } = {}) {
   const safeValue = normalizePdfText(value);
   const width = options.width ?? CONTENT_WIDTH;
   const size = options.size ?? BODY_TEXT_SIZE;
-  const lineGap = options.lineGap ?? 4;
-  const height = textHeight(document, safeValue, width, size);
+  const lineGap = options.lineGap ?? BODY_LINE_GAP;
+  const height = textHeight(document, safeValue, width, size, lineGap);
   ensureSpace(document, height + 3);
   document.fillColor(options.color ?? "#302B27").fontSize(size).text(safeValue, { width, lineGap });
   return height;
@@ -63,8 +64,8 @@ function writeSectionTitle(document: PdfWriter, title: string, tone = "#2D6A4F")
 function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label?: string; text: string }>, tone = "#F4FAF6") {
   const innerWidth = CONTENT_WIDTH - 28;
   const contentHeight = paragraphs.reduce((sum, paragraph) => {
-    const label = paragraph.label ? 16 : 0;
-    return sum + label + textHeight(document, normalizePdfText(paragraph.text), innerWidth, BODY_TEXT_SIZE) + 8;
+    const label = paragraph.label ? 21 : 0;
+    return sum + label + textHeight(document, normalizePdfText(paragraph.text), innerWidth, BODY_TEXT_SIZE, BODY_LINE_GAP) + 10;
   }, 33);
   ensureSpace(document, contentHeight + 16);
   const top = document.y;
@@ -74,10 +75,10 @@ function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label
   for (const paragraph of paragraphs) {
     if (paragraph.label) {
       document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text(normalizePdfText(paragraph.label), PAGE_LEFT + 14, document.y, { width: innerWidth });
-      document.moveDown(0.18);
+      document.moveDown(0.22);
     }
-    document.fillColor("#302B27").fontSize(BODY_TEXT_SIZE).text(normalizePdfText(paragraph.text), PAGE_LEFT + 14, document.y, { width: innerWidth, lineGap: 4.5 });
-    document.moveDown(0.55);
+    document.fillColor("#302B27").fontSize(BODY_TEXT_SIZE).text(normalizePdfText(paragraph.text), PAGE_LEFT + 14, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
+    document.moveDown(0.68);
   }
   document.y = top + contentHeight + 16;
   document.moveDown(0.7);
@@ -110,12 +111,12 @@ function writePills(document: PdfWriter, values: string[]) {
 function writeBullets(document: PdfWriter, values: string[]) {
   values.forEach((value) => {
     const safeValue = normalizePdfText(value);
-    const height = textHeight(document, safeValue, CONTENT_WIDTH - 20, BODY_TEXT_SIZE);
+    const height = textHeight(document, safeValue, CONTENT_WIDTH - 20, BODY_TEXT_SIZE, BODY_LINE_GAP);
     ensureSpace(document, height + 5);
     const top = document.y;
     document.save().fillColor("#8B6914").circle(PAGE_LEFT + 4, top + 7, 2.2).fill().restore();
-    document.fillColor("#302B27").fontSize(BODY_TEXT_SIZE).text(safeValue, PAGE_LEFT + 14, top, { width: CONTENT_WIDTH - 20, lineGap: 4.5 });
-    document.moveDown(0.25);
+    document.fillColor("#302B27").fontSize(BODY_TEXT_SIZE).text(safeValue, PAGE_LEFT + 14, top, { width: CONTENT_WIDTH - 20, lineGap: BODY_LINE_GAP });
+    document.moveDown(0.35);
   });
 }
 
@@ -149,8 +150,8 @@ function writeCoverColorChip(document: PdfWriter, color: PremiumPdfDownloadPaylo
   const height = 62;
   document.save().fillColor("#FFFDF9").roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, height, 9).fill().restore();
   document.save().lineWidth(1).fillColor(color.hex).strokeColor("#CBBEAC").circle(PAGE_LEFT + 30, top + 31, 16).fillAndStroke().restore();
-  document.fillColor("#4A3A2A").fontSize(12).text(normalizePdfText(color.name), PAGE_LEFT + 58, top + 14, { width: CONTENT_WIDTH - 72 });
-  document.fillColor("#75695D").fontSize(10.8).text(normalizePdfText(color.keywords), PAGE_LEFT + 58, top + 35, { width: CONTENT_WIDTH - 72 });
+  document.fillColor("#4A3A2A").fontSize(13).text(normalizePdfText(color.name), PAGE_LEFT + 58, top + 12, { width: CONTENT_WIDTH - 72 });
+  document.fillColor("#75695D").fontSize(12).text(normalizePdfText(color.keywords), PAGE_LEFT + 58, top + 34, { width: CONTENT_WIDTH - 72 });
   document.y = top + height + 7;
 }
 
@@ -204,7 +205,7 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
   document.fillColor("#685C51").fontSize(12).text("색과 도형으로 살펴본 현재의 마음, 삶의 역할, 회복 리듬", PAGE_LEFT, 247, { width: CONTENT_WIDTH });
   document.y = 315;
   payload.selectedColors.slice(0, 3).forEach((color) => writeCoverColorChip(document, color));
-  document.fillColor("#75695D").fontSize(9.5).text(`${payload.profileLine}\n리포트 생성일 · ${payload.generatedAt}`, PAGE_LEFT, 736, { width: CONTENT_WIDTH, lineGap: 4 });
+  document.fillColor("#75695D").fontSize(10.5).text(`${payload.profileLine}\n리포트 생성일 · ${payload.generatedAt}`, PAGE_LEFT, 736, { width: CONTENT_WIDTH, lineGap: 4.5 });
 
   addPage(document);
   writeSectionTitle(document, "3장의 심리카드 해석");
@@ -275,7 +276,7 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
     { text: "지금의 마음 흐름과 나에게 맞는 회복의 방향을 더 깊이 나누고 싶다면, 1:1 컬러코칭으로 이어갈 수 있습니다." },
     { text: payload.coachingUrl },
   ], "#F2F7F1");
-  writeParagraph(document, "본 리포트는 현재 선택 결과를 바탕으로 한 자기이해·생활 웰니스 참고 자료이며, 의료적 진단이나 치료를 대신하지 않습니다.", { size: 8.6, color: "#8B8176" });
+  writeParagraph(document, "본 리포트는 현재 선택 결과를 바탕으로 한 자기이해·생활 웰니스 참고 자료이며, 의료적 진단이나 치료를 대신하지 않습니다.", { size: 10, color: "#8B8176", lineGap: 4.8 });
 
   document.end();
   return finished;

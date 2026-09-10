@@ -101,7 +101,7 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
     <style>
       @page { size: A4; margin: 14mm 13mm 16mm; }
       * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; background: #fff; color: #302B27; font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif; font-size: 13.5pt; line-height: 1.68; word-break: normal; overflow-wrap: anywhere; }
+      html, body { margin: 0; padding: 0; background: #fff; color: #302B27; font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif; font-size: 16pt; line-height: 1.78; word-break: normal; overflow-wrap: anywhere; }
       h1, h2, h3, p { margin-top: 0; }
       h1 { font-size: 25pt; line-height: 1.28; margin-bottom: 8px; letter-spacing: -0.6px; color: #3D3530; }
       h2 { font-size: 15pt; line-height: 1.4; margin-bottom: 12px; color: #2D6A4F; }
@@ -109,11 +109,11 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
       .cover { min-height: 255mm; display: flex; flex-direction: column; justify-content: center; padding: 20mm 10mm; background: linear-gradient(150deg, #F8F4EE, #F0F7F4); page-break-after: always; }
       .brand { color: #4C7A58; font-size: 11pt; font-weight: 700; letter-spacing: 1.2px; margin-bottom: 12px; }
       .subtitle { color: #685C51; font-size: 12pt; margin-bottom: 28px; }
-      .meta { color: #75695D; font-size: 9.5pt; }
+      .meta { color: #75695D; font-size: 11.3pt; }
       .color-grid, .tag-grid { display: flex; flex-wrap: wrap; gap: 7px; }
       .color-chip { min-width: 30%; flex: 1; border: 1px solid #DDCFBD; background: #FFFDF9; border-radius: 10px; padding: 10px; break-inside: avoid; }
       .color-chip strong, .color-chip span { display: block; }
-      .color-chip span { color: #766B60; font-size: 10.1pt; margin-top: 3px; }
+      .color-chip span { color: #766B60; font-size: 12pt; margin-top: 3px; }
       .report-section { margin: 0 0 18px; padding: 16px; border: 1px solid #D7E6DC; border-radius: 12px; break-inside: avoid-page; page-break-inside: avoid; }
       .role-section { break-inside: auto; page-break-inside: auto; }
       .report-section.green { background: #F4FAF6; }
@@ -121,18 +121,18 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
       .report-section.purple { background: #F8F5FF; border-color: #DDD2F0; }
       .report-card, .direction-card { margin: 0 0 10px; padding: 13px; border: 1px solid #E4DDD3; border-radius: 9px; background: #fff; break-inside: avoid-page; page-break-inside: avoid; }
       .report-card:last-child, .direction-card:last-child { margin-bottom: 0; }
-      .eyebrow { color: #4A7A4A; font-size: 10pt; font-weight: 700; margin-bottom: 4px; }
-      .keywords { color: #64594D; font-size: 11.6pt; }
-      .tag { display: inline-block; margin: 0 5px 5px 0; padding: 4px 8px; border-radius: 99px; background: #E8F3EC; border: 1px solid #CAE1D2; color: #376849; font-size: 10.4pt; }
+      .eyebrow { color: #4A7A4A; font-size: 11.7pt; font-weight: 700; margin-bottom: 4px; }
+      .keywords { color: #64594D; font-size: 13.5pt; }
+      .tag { display: inline-block; margin: 0 5px 5px 0; padding: 4px 8px; border-radius: 99px; background: #E8F3EC; border: 1px solid #CAE1D2; color: #376849; font-size: 12pt; }
       .note { padding: 12px 14px; background: #FCF8F0; border-left: 3px solid #C4956A; border-radius: 6px; break-inside: avoid-page; page-break-inside: avoid; }
       .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       .small-title { color: #6A5843; font-weight: 700; margin-bottom: 4px; }
-      .preparation { color: #66557B; font-size: 11pt; margin-bottom: 0; }
+      .preparation { color: #66557B; font-size: 12.7pt; margin-bottom: 0; }
       .routine-row { display: grid; grid-template-columns: 23mm 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid #E9DDC8; break-inside: avoid; }
       .routine-row:last-child { border-bottom: 0; }
       .routine-label { color: #8B6914; font-weight: 700; }
       .page-break { break-before: page; page-break-before: always; }
-      .footer { margin-top: 16px; text-align: center; color: #8B8176; font-size: 8.5pt; }
+      .footer { margin-top: 16px; text-align: center; color: #8B8176; font-size: 10pt; }
       .cta { padding: 20px; background: #F2F7F1; border: 1px solid #C7DEC8; border-radius: 12px; break-inside: avoid-page; page-break-inside: avoid; }
       .cta a { color: #287A43; font-weight: 700; text-decoration: none; word-break: break-all; }
       @media print { .page-break { break-before: page; page-break-before: always; } }
