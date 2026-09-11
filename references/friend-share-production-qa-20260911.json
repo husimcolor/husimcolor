@@ -1,0 +1,39 @@
+{
+  "verifiedAt": "2026-09-11T12:21:26.223Z",
+  "shareId": "c5d1a8ea-4cb8-4d49-a424-48c1572dd36e",
+  "session": {
+    "relationType": "친구",
+    "personA": {
+      "info": {
+        "gender": "남성",
+        "faith": "무교"
+      },
+      "colors": [
+        "blue",
+        "yellow",
+        "green"
+      ],
+      "cards": [
+        "blue_circle",
+        "yellow_square",
+        "green_hexagon"
+      ]
+    },
+    "personB": {
+      "info": {
+        "gender": "여성",
+        "faith": "무교"
+      },
+      "colors": [
+        "pink",
+        "peach",
+        "lavender"
+      ],
+      "cards": [
+        "pink_circle",
+        "peach_diamond",
+        "purple_triangle"
+      ]
+    }
+  }
+}

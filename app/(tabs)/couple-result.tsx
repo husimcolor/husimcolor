@@ -590,11 +590,14 @@ export default function CoupleResultScreen() {
   const handleCoupleKakaoShare = async (typeName: string) => {
     try {
       const shareUrl = await getCoupleShareUrl();
-      const shareText = `우리 관계 유형은 ${typeName}입니다 💫`;
+      const shareTitle = isFriendRel ? '휴심컬러 친구 관계 분석 결과' : '휴심컬러 커플 세션 결과';
+      const shareText = isFriendRel
+        ? `우리 우정의 관계 유형은 ${typeName}입니다 🤝`
+        : `우리 관계 유형은 ${typeName}입니다 💫`;
       if (Platform.OS === 'web') {
         if (typeof navigator !== 'undefined' && navigator.share) {
           try {
-            await navigator.share({ title: '휴심컬러 커플 세션 결과', text: shareText, url: shareUrl });
+            await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
             return;
           } catch {}
         }
@@ -1938,7 +1941,13 @@ export default function CoupleResultScreen() {
           style={[styles.restartBtn, { backgroundColor: accentCouple }]}
           onPress={() => router.push('/(tabs)/couple-start' as any)}
         >
-          <Text style={styles.restartBtnText}>{isParentChildRel ? '새로운 부모·자녀 분석 시작' : '새로운 커플 세션 시작'}</Text>
+          <Text style={styles.restartBtnText}>
+            {isParentChildRel
+              ? '새로운 부모·자녀 분석 시작'
+              : isFriendRel
+                ? '새로운 친구 관계 분석 시작'
+                : '새로운 커플 세션 시작'}
+          </Text>
         </Pressable>
 
         <Pressable
@@ -1953,7 +1962,11 @@ export default function CoupleResultScreen() {
           onPress={async () => {
             try {
               const { Share } = await import('react-native');
-              await Share.share({ message: '휴심컬러 커플 세션 결과를 확인해보세요!' });
+              await Share.share({
+                message: isFriendRel
+                  ? '휴심컬러 친구 관계 분석 결과를 확인해보세요!'
+                  : '휴심컬러 커플 세션 결과를 확인해보세요!',
+              });
             } catch {}
           }}
         >
