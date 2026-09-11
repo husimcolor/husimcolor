@@ -41,9 +41,23 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="premium-info"
+        options={{
+          title: "심화 정보 입력",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="premium-select"
         options={{
           title: "심화 카드 선택",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="couple-info"
+        options={{
+          title: "관계 정보 입력",
           href: null,
         }}
       />

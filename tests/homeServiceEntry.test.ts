@@ -17,7 +17,7 @@ describe('첫 진입 화면의 서비스 선택 UX', () => {
 
   it('각 서비스가 기존 무료·개인 심화·관계 분석 경로로 연결된다', () => {
     expect(homeScreen).toContain("router.push({ pathname: '/(tabs)/select', params: { step: '0' } })");
-    expect(homeScreen).toContain("router.push('/payment' as any)");
+    expect(homeScreen).toContain("router.push('/(tabs)/premium-info' as any)");
     expect(homeScreen).toContain("router.push('/(tabs)/couple-start' as any)");
   });
 

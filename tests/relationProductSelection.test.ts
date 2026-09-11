@@ -43,11 +43,11 @@ describe('관계 분석 상품 선택 노출 구조', () => {
     expect(visibleRelationTypes).not.toContain('동료');
   });
 
-  it('관계 시작 화면은 세 상품 목록으로만 렌더링하고 기존 개인 분석 진입은 유지한다', () => {
+  it('관계 시작 화면은 세 상품 목록으로만 렌더링하고 개인 분석은 정보 입력 단계로 진입한다', () => {
     expect(relationStartScreen).toContain('VISIBLE_RELATION_PRODUCTS.map((product) => (');
     expect(relationStartScreen).toContain('const ROMANTIC_RELATION_TYPES');
     expect(relationStartScreen).toContain("const isParentChild = relationType === '부모-자녀';");
     expect(homeScreen).toContain('onPress={handleStart}');
-    expect(homeScreen).toContain("router.push('/payment' as any)");
+    expect(homeScreen).toContain("router.push('/(tabs)/premium-info' as any)");
   });
 });

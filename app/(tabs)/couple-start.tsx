@@ -1,6 +1,6 @@
 /**
  * 커플 세션 시작 화면
- * 관계 유형, 성별(A/B), 종교(A/B) 선택
+ * 관계 상품 및 관계 조합 선택. 두 사람의 정보 입력은 couple-info 화면에서 이어진다.
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { RelationType, GenderType, FaithType } from '@/constants/coupleData';
+import type { RelationType } from '@/constants/coupleData';
 import {
   VISIBLE_RELATION_PRODUCTS,
   type VisibleRelationProduct,
@@ -32,17 +32,6 @@ const PARENT_CHILD_COMBOS: { value: RelationType; label: string }[] = [
   { value: '엄마-딸', label: '엄마 ↔ 딸' },
 ];
 
-const GENDERS: { value: GenderType; label: string }[] = [
-  { value: '남성', label: '남성' },
-  { value: '여성', label: '여성' },
-];
-
-const FAITHS: { value: FaithType; label: string }[] = [
-  { value: '기독교', label: '기독교' },
-  { value: '무교', label: '무교' },
-  { value: '기타', label: '기타' },
-];
-
 export default function CoupleStartScreen() {
   const router = useRouter();
   const colors = useColors();
@@ -51,10 +40,6 @@ export default function CoupleStartScreen() {
   const [selectedProductId, setSelectedProductId] = useState<VisibleRelationProduct['id'] | null>(null);
   // 부모-자녀 선택 시 세부 조합 상태
   const [parentChildCombo, setParentChildCombo] = useState<RelationType | null>(null);
-  const [genderA, setGenderA] = useState<GenderType | null>(null);
-  const [faithA, setFaithA] = useState<FaithType | null>(null);
-  const [genderB, setGenderB] = useState<GenderType | null>(null);
-  const [faithB, setFaithB] = useState<FaithType | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
@@ -83,17 +68,11 @@ export default function CoupleStartScreen() {
     ? parentChildCombo
     : relationType;
 
-  const canProceed = effectiveRelationType && genderA && faithA && genderB && faithB;
+  const canProceed = Boolean(effectiveRelationType);
 
-  const handleStart = async () => {
-    if (!canProceed) return;
-    const sessionData = {
-      relationType: effectiveRelationType,
-      personA: { info: { gender: genderA, faith: faithA }, colors: [], cards: [] },
-      personB: { info: { gender: genderB, faith: faithB }, colors: [], cards: [] },
-    };
-    await AsyncStorage.setItem('@couple_session', JSON.stringify(sessionData));
-    router.push({ pathname: '/(tabs)/couple-select', params: { person: 'A' } } as any);
+  const handleStart = () => {
+    if (!effectiveRelationType) return;
+    router.push({ pathname: '/(tabs)/couple-info', params: { relationType: effectiveRelationType } } as any);
   };
 
   const handleRelationTypeSelect = (value: RelationType) => {
@@ -243,49 +222,7 @@ export default function CoupleStartScreen() {
             </View>
           )}
 
-          {/* A 정보 */}
-          <View style={[styles.personSection, { borderColor: '#4A3A30', backgroundColor: '#2A2420' }]}>
-            <View style={[styles.personBadge, { backgroundColor: colors.primary + '30' }]}>
-              <Text style={[styles.personBadgeText, { color: colors.primary }]}>첫 번째 사람</Text>
-            </View>
-
-            <Text style={[styles.sectionTitle, { color: '#F0E8DC' }]}>성별</Text>
-            <View style={styles.chipRow}>
-              {GENDERS.map(g =>
-                renderChip(g.label, genderA === g.value, () => setGenderA(g.value))
-              )}
-            </View>
-
-            <Text style={[styles.sectionTitle, { color: '#F0E8DC', marginTop: 16 }]}>종교</Text>
-            <View style={styles.chipRow}>
-              {FAITHS.map(f =>
-                renderChip(f.label, faithA === f.value, () => setFaithA(f.value))
-              )}
-            </View>
-          </View>
-
-          {/* B 정보 */}
-          <View style={[styles.personSection, { borderColor: '#3A4A3A', backgroundColor: '#222A22' }]}>
-            <View style={[styles.personBadge, { backgroundColor: '#7EC8A430' }]}>
-              <Text style={[styles.personBadgeText, { color: '#7EC8A4' }]}>두 번째 사람</Text>
-            </View>
-
-            <Text style={[styles.sectionTitle, { color: '#E0F0E4' }]}>성별</Text>
-            <View style={styles.chipRow}>
-              {GENDERS.map(g =>
-                renderChip(g.label, genderB === g.value, () => setGenderB(g.value))
-              )}
-            </View>
-
-            <Text style={[styles.sectionTitle, { color: '#E0F0E4', marginTop: 16 }]}>종교</Text>
-            <View style={styles.chipRow}>
-              {FAITHS.map(f =>
-                renderChip(f.label, faithB === f.value, () => setFaithB(f.value))
-              )}
-            </View>
-          </View>
-
-          {/* 시작 버튼 */}
+          {/* 상품 선택 후 정보 입력 단계로 이동 */}
           <Pressable
             style={({ pressed }) => [
               styles.startBtn,
@@ -296,7 +233,7 @@ export default function CoupleStartScreen() {
             disabled={!canProceed}
           >
             <Text style={[styles.startBtnText, { color: canProceed ? '#fff' : colors.muted }]}>
-              첫 번째 사람 시작하기 →
+              다음 · 두 사람 정보 입력하기 →
             </Text>
           </Pressable>
 
@@ -347,14 +284,6 @@ const styles = StyleSheet.create({
   },
   chipEmoji: { fontSize: 14 },
   chipText: { fontSize: 14, fontWeight: '500' },
-  personSection: {
-    borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 20,
-  },
-  personBadge: {
-    alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 10, marginBottom: 14,
-  },
-  personBadgeText: { fontSize: 12, fontWeight: '600' },
   startBtn: {
     paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginTop: 8,
   },

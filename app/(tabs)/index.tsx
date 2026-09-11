@@ -207,7 +207,7 @@ export default function HomeScreen() {
               styles.individualServiceCard,
               pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
             ]}
-            onPress={() => router.push('/payment' as any)}
+            onPress={() => router.push('/(tabs)/premium-info' as any)}
           >
             <View style={styles.serviceHeadingRow}>
               <Text style={styles.serviceTitle}>🎨 컬러 + 심리카드 개인 심화분석</Text>
