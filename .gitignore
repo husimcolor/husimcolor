@@ -7,7 +7,10 @@ node_modules/
 .expo/
 web-build/
 expo-env.d.ts
-# dist/ is committed for pre-built static deployment on Vercel
+
+# Vercel build output is generated in the cloud from GitHub main.
+# Do not commit prebuilt output, which would bypass the configured Build Command.
+.vercel/output/
 
 # Native
 .kotlin/
