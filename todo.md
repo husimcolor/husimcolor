@@ -888,4 +888,4 @@
 
 - [x] 친구 관계 결과의 커플·연인·부부 잔존 표현을 친구 관계 문구로 최소 수정
 - [x] 친구 관계의 현재 세션 shareId·이미지 저장·카카오 공유 독립 복원 검증
-- [ ] GitHub main→Vercel 자동 배포로 친구 관계 문구 정리 Production 반영 확인
+- [x] GitHub main→Vercel 자동 배포로 친구 관계 문구 정리 Production 반영 확인
