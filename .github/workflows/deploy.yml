@@ -55,7 +55,7 @@ jobs:
           VCEOF
 
       - name: Write Vercel output config
-          run: |
+        run: |
           cat > .vercel/output/config.json << 'CFGEOF'
           {
             "version": 3,
@@ -65,7 +65,7 @@ jobs:
               { "src": "/_expo/static/css/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/_expo/static/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/assets/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
-               { "src": "/index.html", "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }, "continue": true },
+              { "src": "/index.html", "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }, "continue": true },
               { "handle": "filesystem" },
               { "src": "/((?!_expo/|assets/).*)", "dest": "/index.html" }
             ]
