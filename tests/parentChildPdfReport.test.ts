@@ -95,5 +95,8 @@ describe("부모·자녀 전용 PDF 리포트", () => {
     expect(screen).toContain("isParentChildRel && parentChildCoaching && parentChildSummary");
     expect(api).toContain("husim_parent_child_pdf_download");
     expect(api).toContain("Content-Disposition");
+    const workflow = readFileSync(resolve(process.cwd(), ".github/workflows/deploy.yml"), "utf8");
+    expect(workflow).toContain("parent-child-pdf-report.func/index.js");
+    expect(workflow).toContain("parent-child-pdf-report.func/HusimPdfKorean.ttf");
   });
 });

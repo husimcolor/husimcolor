@@ -1,4 +1,5 @@
 import path from "node:path";
+import { existsSync } from "node:fs";
 import PDFDocument from "pdfkit";
 import type { CouplePdfDownloadPayload, CouplePdfShape } from "../shared/couple-pdf-download";
 
@@ -6,7 +7,10 @@ const PAGE_LEFT = 43;
 const PAGE_TOP = 43;
 const PAGE_BOTTOM = 798;
 const CONTENT_WIDTH = 509;
-const FONT_PATH = path.join(process.cwd(), "server", "assets", "HusimPdfKorean.ttf");
+const BUNDLED_FONT_PATH = path.join(__dirname, "HusimPdfKorean.ttf");
+const FONT_PATH = existsSync(BUNDLED_FONT_PATH)
+  ? BUNDLED_FONT_PATH
+  : path.join(process.cwd(), "server", "assets", "HusimPdfKorean.ttf");
 const BODY_SIZE = 15.5;
 const LABEL_SIZE = 12.6;
 const BODY_LINE_GAP = 5.8;
