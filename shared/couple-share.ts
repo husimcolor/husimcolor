@@ -25,7 +25,7 @@ export type CoupleShareSnapshot = {
 };
 
 const RELATION_TYPES = new Set([
-  "연인", "부부",
+  "연인", "부부", "친구", "부모-자녀", "아빠-아들", "아빠-딸", "엄마-아들", "엄마-딸", "형제자매", "동료",
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {

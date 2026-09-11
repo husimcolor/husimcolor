@@ -28,7 +28,26 @@ describe("커플 결과 고유 공유 링크", () => {
     expect(isCoupleShareSnapshot(snapshot)).toBe(true);
     expect(parseCoupleShareSnapshot(JSON.stringify(snapshot))).toEqual(snapshot);
     expect(isCoupleShareSnapshot({ ...snapshot, sessionData: { ...snapshot.sessionData, personA: { ...snapshot.sessionData.personA, cards: ["one"] } } })).toBe(false);
-    expect(isCoupleShareSnapshot({ ...snapshot, sessionData: { ...snapshot.sessionData, relationType: "아빠-딸" } })).toBe(false);
+    expect(isCoupleShareSnapshot({ ...snapshot, sessionData: { ...snapshot.sessionData, relationType: "아빠-딸" } })).toBe(true);
+  });
+
+  it("서로 다른 관계 세션은 색·카드·관계 유형을 가진 별도 불변 스냅샷으로 파싱된다", () => {
+    const parentChildSnapshot = {
+      ...snapshot,
+      sessionData: {
+        relationType: "엄마-딸" as const,
+        personA: { info: { gender: "여성" as const, faith: "무교" as const }, colors: ["green", "sage", "lavender"], cards: ["red_circle", "white_square", "blue_diamond"] },
+        personB: { info: { gender: "여성" as const, faith: "무교" as const }, colors: ["yellow", "pink", "coral"], cards: ["yellow_circle", "purple_diamond", "green_hexagon"] },
+      },
+    };
+
+    const parsedCouple = parseCoupleShareSnapshot(JSON.stringify(snapshot));
+    const parsedParentChild = parseCoupleShareSnapshot(JSON.stringify(parentChildSnapshot));
+    expect(parsedCouple?.sessionData.relationType).toBe("부부");
+    expect(parsedParentChild?.sessionData.relationType).toBe("엄마-딸");
+    expect(parsedParentChild?.sessionData.personA.colors).toEqual(["green", "sage", "lavender"]);
+    expect(parsedParentChild?.sessionData.personB.cards).toEqual(["yellow_circle", "purple_diamond", "green_hexagon"]);
+    expect(parsedCouple?.sessionData).not.toEqual(parsedParentChild?.sessionData);
   });
 
   it("공유 시점 결과를 새 검사 결과와 분리하는 shareId 저장·조회 API를 사용한다", () => {
@@ -51,16 +70,13 @@ describe("커플 결과 고유 공유 링크", () => {
     expect(screenSource).toContain("useLocalSearchParams");
     expect(screenSource).toContain("trpc.coupleShares.get.useQuery");
     expect(screenSource).toContain("createCoupleShare.mutateAsync");
-    expect(screenSource).toContain("결과 도달 시점에 결과 전체를 단 한 번 고정 저장한다");
-    expect(screenSource).toContain("const isRomanticResult = data.relationType === '연인' || data.relationType === '부부';");
-    expect(screenSource).toContain("if (isRomanticResult && data.shareId)");
-    expect(screenSource).toContain("await AsyncStorage.setItem('@couple_session', JSON.stringify(storedSession))");
     expect(screenSource).toContain("/couple-result?shareId=${encodeURIComponent(shareId)}");
     expect(screenSource).toContain("setSessionData(snapshot.sessionData)");
     expect(screenSource).toContain("sharedSnapshot.romanticRelationTraits");
     expect(screenSource).toContain("handleCoupleKakaoShare(archetypeResult.typeName)");
-    expect(screenSource).not.toContain("handleCoupleKakaoShare(lightArchetypeResult.typeName)");
-    expect(screenSource).toContain("await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '휴심컬러 결과 공유' })");
-    expect(screenSource).toContain("const shareUrl = typeof window !== 'undefined' ? window.location.href");
+    expect(screenSource).toContain("handleCoupleKakaoShare(lightArchetypeResult.typeName)");
+    expect(screenSource).toContain("카카오 공유를 누른 바로 그 시점의 화면 데이터를 새 불변 스냅샷으로 저장한다");
+    expect(screenSource).toContain("이전 검사에서 AsyncStorage에 남아 있을 수 있는 shareId는 새 공유 스냅샷에 재사용하지 않는다.");
+    expect(screenSource).not.toContain("if (activeShareId) return getUrl(activeShareId);");
   });
 });

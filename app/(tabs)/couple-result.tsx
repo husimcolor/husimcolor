@@ -105,9 +105,16 @@ function buildCoupleShareSnapshot(
     ? buildRomanticRelationshipRoles({ personA: personAAnalysis, personB: personBAnalysis, cardsA, cardsB })
     : null;
 
+  const immutableSessionData: CoupleSessionData = {
+    relationType: sessionData.relationType,
+    personA: sessionData.personA,
+    personB: sessionData.personB,
+  };
+
   return {
     schemaVersion: 1,
-    sessionData,
+    // 이전 검사에서 AsyncStorage에 남아 있을 수 있는 shareId는 새 공유 스냅샷에 재사용하지 않는다.
+    sessionData: immutableSessionData,
     personAAnalysis,
     personBAnalysis,
     coupleAnalysis,
@@ -261,27 +268,8 @@ export default function CoupleResultScreen() {
       setArchetypeResult(archRes);
       setLightArchetypeResult(lightRes);
       setLoading(false);
-      // 결과 도달 시점에 결과 전체를 단 한 번 고정 저장한다. 새 검사가 이전 공유 결과를 덮어쓰지 않는다.
-      const isRomanticResult = data.relationType === '연인' || data.relationType === '부부';
-      if (isRomanticResult && data.shareId) {
-        setActiveShareId(data.shareId);
-      } else if (isRomanticResult) {
-        const snapshot = buildCoupleShareSnapshot(data, aAnalysis, bAnalysis, cAnalysis, archRes, lightRes);
-        const request = createCoupleShare.mutateAsync({ snapshot: JSON.stringify(snapshot) })
-          .then(async ({ shareId }) => {
-            const storedSession = { ...data, shareId };
-            await AsyncStorage.setItem('@couple_session', JSON.stringify(storedSession));
-            setSessionData(storedSession);
-            setActiveShareId(shareId);
-            return shareId;
-          })
-          .catch(() => {
-            coupleShareRequestRef.current = null;
-            throw new Error('공유 링크 생성 실패');
-          });
-        coupleShareRequestRef.current = request;
-        void request.catch(() => undefined);
-      }
+      // 공유 링크는 결과 도달 시점이나 이전 세션의 shareId를 재사용하지 않는다.
+      // 카카오 공유를 누른 바로 그 시점의 화면 데이터를 새 불변 스냅샷으로 저장한다.
       // 커플 결과 도달 추적
       try {
         const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
@@ -569,7 +557,6 @@ export default function CoupleResultScreen() {
       return `${baseUrl}/couple-result?shareId=${encodeURIComponent(shareId)}`;
     };
 
-    if (activeShareId) return getUrl(activeShareId);
     if (coupleShareRequestRef.current) return coupleShareRequestRef.current;
 
     const snapshot = buildCoupleShareSnapshot(
@@ -584,6 +571,12 @@ export default function CoupleResultScreen() {
       .then(({ shareId }) => {
         setActiveShareId(shareId);
         return getUrl(shareId);
+      })
+      .catch(() => {
+        throw new Error('공유 링크 생성 실패');
+      })
+      .finally(() => {
+        coupleShareRequestRef.current = null;
       });
     coupleShareRequestRef.current = request;
     try {
@@ -1117,20 +1110,7 @@ export default function CoupleResultScreen() {
                   activeOpacity={0.8}
                   style={[shareCardStyles.btn, { backgroundColor: '#FEE500', borderColor: '#FEE500' }]}
                   onPress={async () => {
-                    if (Platform.OS === 'web') {
-                      const shareUrl = typeof window !== 'undefined' ? window.location.href : 'https://husimcolor.vercel.app';
-                      if (typeof navigator !== 'undefined' && navigator.share) {
-                        try { await navigator.share({ title: '휴심컬러 커플 세션 결과', text: `우리 관계 유형은 ${lightArchetypeResult.typeName}입니다 💫`, url: shareUrl }); return; } catch {}
-                      }
-                      try { await navigator.clipboard.writeText(shareUrl); Alert.alert('링크 복사 완료', '카카오톡에 붙여넣기 하여 공유해보세요!'); } catch { Alert.alert('공유 링크', shareUrl); }
-                      return;
-                    }
-                    try {
-                      const uri = await captureRef(shareCardRef, { format: 'png', quality: 0.95 });
-                      const ok = await Sharing.isAvailableAsync();
-                      if (ok) await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '휴심컬러 결과 공유' });
-                      else Alert.alert('알림', '이 환경에서는 공유 기능을 사용할 수 없습니다.');
-                    } catch { Alert.alert('오류', '공유에 실패했습니다.'); }
+                    await handleCoupleKakaoShare(lightArchetypeResult.typeName);
                   }}
                 >
                   <Text style={[shareCardStyles.btnText, { color: '#3A1D1D' }]}>💬 카카오 공유</Text>
