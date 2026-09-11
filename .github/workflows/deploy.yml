@@ -33,8 +33,10 @@ jobs:
       - name: Prepare Vercel output structure
         run: |
           mkdir -p .vercel/output/static
-          cp -r dist/. .vercel/output/static/
+          cp -r dist/. .vercel/ouutput/static/
           mkdir -p ".vercel/output/functions/api/trpc/[...trpc].func"
+          mkdir -p ".vercel/output/functions/api/couple-pdf-report.func"
+          mkdir -p ".vercel/output/functions/api/parent-child-pdf-report.func"
 
       - name: Build tRPC API function (with mysql2 bundled)
         run: |
@@ -44,6 +46,23 @@ jobs:
             --target=node20 \
             --format=cjs \
             --outfile=".vercel/output/functions/api/trpc/[...trpc].func/index.js"
+
+      - name: Build PDF report API functions
+        run: |
+          npx esbuild "api/couple-pdf-report.ts" \
+            --bundle \
+            --platform=node \
+            --target=node20 \
+            --format=cjs \
+            --outfile=".vercel/output/functions/api/couple-pdf-report.func/index.js"
+          npx esbuild "api/parent-child-pdf-report.ts" \
+            --bundle \
+            --platform=node \
+            --target=node20 \
+            --format=cjs \
+            --outfile=".vercel/ouutput/functions/api/parent-child-pdf-report.func/index.js"
+          cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/couple-pdf-report.func/HusimPdfKorean.ttf"
+          cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/parent-child-pdf-report.func/HusimPdfKorean.ttf"
 
       - name: Write function config
         run: |
@@ -55,6 +74,8 @@ jobs:
             "shouldAddHelpers": true
           }
           VCEOF
+          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/couple-pdf-report.func/.vc-config.json"
+          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/parent-child-pdf-report.func/.vc-config.json"
 
       - name: Write Vercel output config
         run: |
@@ -62,14 +83,16 @@ jobs:
           {
             "version": 3,
             "routes": [
-              { "src": "/api/trpc/(.*)", "dest": "/api/trpc/[...trpc]" },
+              { "src": "/api/trpc/(.*)", "dest": "/api/trpc/[...trpc]"},
+              { "src": "/api/couple-pdf-report", "dest": "/api/couple-pdf-report" },
+              { "src": "/api/parent-child-pdf-report", "dest": "/api/parent-child-pdf-report" },
               { "src": "/_expo/static/js/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/_expo/static/css/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/_expo/static/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/assets/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/index.html", "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }, "continue": true },
               { "handle": "filesystem" },
-              { "src": "/((?!_expo/|assets/).*)", "dest": "/index.html" }
+              { "src": "/(?(_expo/|assets/).*)", "dest": "/index.html" }
             ]
           }
           CFGEOF
