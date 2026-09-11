@@ -33,7 +33,7 @@ jobs:
       - name: Prepare Vercel output structure
         run: |
           mkdir -p .vercel/output/static
-          cp -r dist/. .vercel/ouutput/static/
+          cp -r dist/. .vercel/output/static/
           mkdir -p ".vercel/output/functions/api/trpc/[...trpc].func"
           mkdir -p ".vercel/output/functions/api/couple-pdf-report.func"
           mkdir -p ".vercel/output/functions/api/parent-child-pdf-report.func"
@@ -60,7 +60,7 @@ jobs:
             --platform=node \
             --target=node20 \
             --format=cjs \
-            --outfile=".vercel/ouutput/functions/api/parent-child-pdf-report.func/index.js"
+            --outfile=".vercel/output/functions/api/parent-child-pdf-report.func/index.js"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/couple-pdf-report.func/HusimPdfKorean.ttf"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/parent-child-pdf-report.func/HusimPdfKorean.ttf"
 
@@ -92,7 +92,7 @@ jobs:
               { "src": "/assets/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/index.html", "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }, "continue": true },
               { "handle": "filesystem" },
-              { "src": "/(?(_expo/|assets/).*)", "dest": "/index.html" }
+              { "src": "/((?!_expo/|assets/).*)", "dest": "/index.html" }
             ]
           }
           CFGEOF
