@@ -21,6 +21,28 @@ function analyze(parentColors: string[], childColors: string[]) {
   });
 }
 
+function cardsFor(ids: [string, string, string]) {
+  return ids.map((id) => CARD_DATA.find((card) => card.id === id)!) as [typeof CARD_DATA[number], typeof CARD_DATA[number], typeof CARD_DATA[number]];
+}
+
+function analyzeRelationship(input: {
+  relationType: "아빠-아들" | "아빠-딸" | "엄마-아들" | "엄마-딸";
+  parentGender: "남성" | "여성";
+  childGender: "남성" | "여성";
+  parentColors: string[];
+  childColors: string[];
+  parentCards?: [string, string, string];
+  childCards?: [string, string, string];
+}) {
+  return buildParentChildRelationshipAnalysis({
+    relationType: input.relationType,
+    parentGender: input.parentGender,
+    childGender: input.childGender,
+    parent: { colors: input.parentColors, cards: input.parentCards ? cardsFor(input.parentCards) : cards },
+    child: { colors: input.childColors, cards: input.childCards ? cardsFor(input.childCards) : cards },
+  });
+}
+
 describe("부모·자녀 1·2순위 컬러 관계 분석", () => {
   it("7개 관계 유형이 서로 다른 1·2순위 대표 조합에서 모두 도달 가능하다", () => {
     const representativeCases: Array<{ expected: ParentChildRelationshipTypeId; parent: string[]; child: string[] }> = [
@@ -88,7 +110,11 @@ describe("부모·자녀 1·2순위 컬러 관계 분석", () => {
       result.coaching.relationshipRoles.parent.title,
       result.coaching.relationshipRoles.child.title,
       result.coaching.relationshipRoles.together,
+      result.coaching.childCommunication.closesWhen,
+      result.coaching.childCommunication.gainsConfidenceWhen,
       result.coaching.conflictRecovery.mismatch,
+      result.coaching.conflictRecovery.conflictStart,
+      ...result.coaching.dialogue.dontMessages,
       ...result.coaching.practices,
     ].join(" ");
 
@@ -152,5 +178,87 @@ describe("부모·자녀 1·2순위 컬러 관계 분석", () => {
     expect(cardShifted.coaching.dialogue.dontMessages.join(" ")).not.toBe(base.coaching.dialogue.dontMessages.join(" "));
     expect(cardShifted.coaching.conflictRecovery.conflictStart).not.toBe(base.coaching.conflictRecovery.conflictStart);
     expect(cardShifted.coaching.practices[1]).not.toBe(base.coaching.practices[1]);
+  });
+
+  it("네 부모·자녀 관계와 유사·상이 컬러·심리카드 흐름에서 트리거·강점 조건·교차 오해를 분리한다", () => {
+    const similarColors = analyzeRelationship({
+      relationType: "아빠-아들",
+      parentGender: "남성",
+      childGender: "남성",
+      parentColors: ["green", "sage", "lavender"],
+      childColors: ["olive", "beige", "coral"],
+      parentCards: ["green_circle", "navy_square", "blue_diamond"],
+      childCards: ["green_hexagon", "orange_circle", "blue_diamond"],
+    });
+    const differentColors = analyzeRelationship({
+      relationType: "아빠-딸",
+      parentGender: "남성",
+      childGender: "여성",
+      parentColors: ["red", "gold", "green"],
+      childColors: ["green", "blue", "lavender"],
+      parentCards: ["red_triangle", "red_circle", "green_hexagon"],
+      childCards: ["blue_diamond", "white_square", "purple_diamond"],
+    });
+    const similarColorsDifferentCards = analyzeRelationship({
+      relationType: "엄마-아들",
+      parentGender: "여성",
+      childGender: "남성",
+      parentColors: ["pink", "peach", "blue"],
+      childColors: ["orange", "pink", "green"],
+      parentCards: ["purple_diamond", "black_hexagon", "blue_diamond"],
+      childCards: ["yellow_circle", "red_triangle", "green_hexagon"],
+    });
+    const differentColorsSimilarCards = analyzeRelationship({
+      relationType: "엄마-딸",
+      parentGender: "여성",
+      childGender: "여성",
+      parentColors: ["green", "sage", "lavender"],
+      childColors: ["yellow", "pink", "coral"],
+      parentCards: ["red_circle", "white_square", "blue_diamond"],
+      childCards: ["yellow_circle", "white_square", "blue_diamond"],
+    });
+
+    const results = [similarColors, differentColors, similarColorsDifferentCards, differentColorsSimilarCards];
+    const closes = results.map((item) => item.coaching.childCommunication.closesWhen);
+    const confidence = results.map((item) => item.coaching.childCommunication.gainsConfidenceWhen);
+    const mismatches = results.map((item) => item.coaching.conflictRecovery.mismatch);
+
+    expect(new Set(closes).size).toBe(4);
+    expect(new Set(confidence).size).toBe(4);
+    expect(new Set(mismatches).size).toBe(4);
+    for (const result of results) {
+      expect(result.coaching.childCommunication.closesWhen).not.toBe(result.coaching.childCommunication.gainsConfidenceWhen);
+      expect(result.coaching.childCommunication.closesWhen).not.toBe(result.coaching.conflictRecovery.mismatch);
+    }
+    expect(similarColors.coaching.labels).toEqual({ parent: "아빠", child: "아들" });
+    expect(differentColors.coaching.labels).toEqual({ parent: "아빠", child: "딸" });
+    expect(similarColorsDifferentCards.coaching.labels).toEqual({ parent: "엄마", child: "아들" });
+    expect(differentColorsSimilarCards.coaching.labels).toEqual({ parent: "엄마", child: "딸" });
+  });
+
+  it("컬러가 같은 조합에서 심리카드 흐름을 바꾸면 관계 유형은 유지하고 트리거·강점 조건의 보조 맥락만 달라진다", () => {
+    const base = analyzeRelationship({
+      relationType: "엄마-딸",
+      parentGender: "여성",
+      childGender: "여성",
+      parentColors: ["green", "sage", "lavender"],
+      childColors: ["yellow", "pink", "coral"],
+      parentCards: ["red_circle", "white_square", "blue_diamond"],
+      childCards: ["yellow_circle", "white_square", "blue_diamond"],
+    });
+    const cardChanged = analyzeRelationship({
+      relationType: "엄마-딸",
+      parentGender: "여성",
+      childGender: "여성",
+      parentColors: ["green", "sage", "lavender"],
+      childColors: ["yellow", "pink", "coral"],
+      parentCards: ["red_circle", "orange_triangle", "blue_diamond"],
+      childCards: ["purple_diamond", "black_hexagon", "green_hexagon"],
+    });
+
+    expect(cardChanged.relationshipSummary.id).toBe(base.relationshipSummary.id);
+    expect(cardChanged.coaching.childCommunication.closesWhen).not.toBe(base.coaching.childCommunication.closesWhen);
+    expect(cardChanged.coaching.childCommunication.gainsConfidenceWhen).not.toBe(base.coaching.childCommunication.gainsConfidenceWhen);
+    expect(cardChanged.coaching.conflictRecovery.mismatch).not.toBe(base.coaching.conflictRecovery.mismatch);
   });
 });

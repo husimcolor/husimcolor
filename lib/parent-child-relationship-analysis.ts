@@ -196,6 +196,14 @@ function object(value: string): string {
   return `${value}${hasBatchim(value) ? "을" : "를"}`;
 }
 
+function withRo(value: string): string {
+  const lastCharacter = value.trim().slice(-1);
+  const code = lastCharacter.charCodeAt(0) - 0xac00;
+  const hasFinalConsonant = code >= 0 && code <= 11171 ? code % 28 !== 0 : false;
+  const hasRieulFinal = code >= 0 && code <= 11171 ? code % 28 === 8 : false;
+  return `${value}${hasFinalConsonant && !hasRieulFinal ? "으로" : "로"}`;
+}
+
 function pairSubject(first: string, second: string): string {
   return `${withLabel(first)} ${subject(second)}`;
 }
@@ -473,13 +481,13 @@ const DIMENSION_NEED: Record<RelationDimension, string> = {
 };
 
 const CURRENT_CARD_ACTION: Record<CardData["shape"], string> = {
-  circle: "감정을 한 단어로 먼저 말하기",
-  triangle: "지금 지키고 싶은 방향을 한 가지로 말하기",
-  inverted_triangle: "더 정리할 시간이 필요하다고 알리기",
-  square: "현실적으로 지킬 조건 하나를 정하기",
-  diamond: "여러 이유 중 더 중요한 한 가지를 고르기",
-  pentagon: "새로 해 볼 방법 하나를 제안하기",
-  hexagon: "관계를 이어 줄 짧은 안부를 남기기",
+  circle: "감정을 한 단어로 먼저 말합니다",
+  triangle: "지금 지키고 싶은 방향을 한 가지로 말합니다",
+  inverted_triangle: "더 정리할 시간이 필요하다고 알립니다",
+  square: "현실적으로 지킬 조건 하나를 정합니다",
+  diamond: "여러 이유 중 더 중요한 한 가지를 고릅니다",
+  pentagon: "새로 해 볼 방법 하나를 제안합니다",
+  hexagon: "관계를 이어 줄 짧은 안부를 남깁니다",
 };
 
 function colorPair(profile: PersonProfile): string {
@@ -488,8 +496,8 @@ function colorPair(profile: PersonProfile): string {
 
 function currentCardAction(profile: PersonProfile, label: string): string {
   const card = profile.cards[1];
-  if (!card) return `${subject(label)} 지금 가장 중요하게 보는 한 가지를 말하기`;
-  return `${subject(label)} ${card.colorKor} ${card.shapeKor} 카드의 현재 흐름을 살피며 ${CURRENT_CARD_ACTION[card.shape]}`;
+  if (!card) return `${topic(label)} 지금 가장 중요하게 보는 한 가지를 말합니다.`;
+  return `${topic(label)} ${card.colorKor} ${card.shapeKor} 카드의 현재 흐름을 살피며 ${CURRENT_CARD_ACTION[card.shape]}.`;
 }
 
 function buildPersonalizedDontMessages(
@@ -505,11 +513,11 @@ function buildPersonalizedDontMessages(
   const parentPrimaryNeed = DIMENSION_NEED[parent.primaryDimension];
   const typeSpecific: Record<ParentChildRelationshipTypeId, string> = {
     steady_recovery: `${childPrimaryNeed}을 먼저 살피기보다, 늘 해 오던 약속에 바로 맞춰야 해.`,
-    emotional_connection: `우리 사이가 불편해지지 않게 하려면, 네 ${childPrimaryNeed}은 지금 접어 둬.`,
+    emotional_connection: `우리 사이가 불편해지지 않게 하려면, 네 ${topic(childPrimaryNeed)} 지금 접어 둬.`,
     clarity_balance: `네가 더 알아보고 싶은 이유보다 지금 기준에 맞는지만 말해.`,
     vital_expansion: `결과가 바로 보이지 않으면 네가 해 보고 싶은 일도 더 이상 이어 갈 필요 없어.`,
     space_respect: `혼자 정리할 시간은 그만 갖고, 지금 바로 네 생각을 설명해.`,
-    trust_exploration: `더 살펴보고 싶은 마음보다, ${parentLabel}이 정한 약속부터 따라.`,
+    trust_exploration: `더 살펴보고 싶은 마음보다, ${subject(parentLabel)} 정한 약속부터 따라.`,
     pace_adjustment: `지금 속도에 바로 맞추지 못하면 더 기다려 줄 수 없어.`,
   };
   const childPressure: Record<RelationDimension, string> = {
@@ -526,13 +534,13 @@ function buildPersonalizedDontMessages(
   const childCard = child.cards[1];
   const parentCardPressure = parentCard
     ? `${parentLabel}도 지금 ${parentCard.colorKor} ${parentCard.shapeKor} 카드처럼 ${CURRENT_CARD_COLOR[parentCard.color]} 흐름이고, ${childCard ? `${childLabel}은 ${childCard.colorKor} ${childCard.shapeKor} 카드처럼 ${CURRENT_CARD_COLOR[childCard.color]} 흐름이니` : ""} 네 ${childSecondaryNeed}까지는 들을 여유가 없어.`
-    : `${parentLabel}이 지키려는 ${parentPrimaryNeed}이 더 중요하니, 네 ${childSecondaryNeed}은 나중에 말해.`;
+    : `${subject(parentLabel)} 지키려는 ${subject(parentPrimaryNeed)} 더 중요하니, 네 ${topic(childSecondaryNeed)} 나중에 말해.`;
 
   return [
     `“${childLabel}아, ${typeSpecific[type]}”`,
     `“${childLabel}아, ${childPressure[child.primaryDimension]}”`,
     `“${parentCardPressure}”`,
-    `“${childLabel}의 ${childPrimaryNeed}보다 ${parentLabel}의 ${parentPrimaryNeed}이 항상 먼저야.”`,
+    `“${childLabel}의 ${childPrimaryNeed}보다 ${parentLabel}의 ${subject(parentPrimaryNeed)} 항상 먼저야.”`,
   ];
 }
 
@@ -549,15 +557,15 @@ function buildConflictStart(
   const parentNeed = DIMENSION_NEED[parent.primaryDimension];
   const childNeed = DIMENSION_NEED[child.primaryDimension];
   const typeStart: Record<ParentChildRelationshipTypeId, string> = {
-    steady_recovery: `${parentLabel}의 ${parentColors}이 익숙한 약속과 일상의 안정부터 지키려는 때, ${childLabel}의 ${childColors}이 마음의 온도와 자신의 방식도 함께 반영되길 바랄 때`,
-    emotional_connection: `${parentLabel}과 ${childLabel} 모두 관계의 온도를 중요하게 여기지만, ${parentLabel}이 빠른 공감과 반응을 기대하고 ${childLabel}이 자신의 감정을 먼저 고르는 순간`,
-    clarity_balance: `${parentLabel}의 ${parentColors}이 기준과 순서를 분명히 하려는 때, ${childLabel}의 ${childColors}이 이유와 가능성을 더 비교하려는 순간`,
-    vital_expansion: `${parentLabel}의 ${parentColors}과 ${childLabel}의 ${childColors}이 새 시도와 표현을 향하지만, 한쪽의 속도나 결과 기대가 다른 쪽의 방식보다 앞서는 순간`,
-    space_respect: `${parentLabel}이 연결이나 정리를 위해 말을 이어 가려는 때, ${childLabel}이 자신의 리듬대로 생각을 정리할 여백이 먼저 필요해지는 순간`,
-    trust_exploration: `${parentLabel}의 ${parentColors}이 약속과 신뢰의 기준을 먼저 세우려는 때, ${childLabel}의 ${childColors}이 납득할 이유와 더 살필 가능성을 확인하려는 순간`,
-    pace_adjustment: `${parentLabel}의 ${parentColors}이 방향이나 반응을 앞당기려는 때, ${childLabel}의 ${childColors}이 자신의 속도로 기준과 이유를 맞추려는 순간`,
+    steady_recovery: `${parentLabel}의 ${subject(parentColors)} 익숙한 약속과 일상의 안정부터 지키려는 때, ${childLabel}의 ${subject(childColors)} 마음의 온도와 자신의 방식도 함께 반영되길 바랄 때`,
+    emotional_connection: `${withLabel(parentLabel)} ${subject(childLabel)} 모두 관계의 온도를 중요하게 여기지만, ${subject(parentLabel)} 빠른 공감과 반응을 기대하고 ${subject(childLabel)} 자신의 감정을 먼저 고르는 순간`,
+    clarity_balance: `${parentLabel}의 ${subject(parentColors)} 기준과 순서를 분명히 하려는 때, ${childLabel}의 ${subject(childColors)} 이유와 가능성을 더 비교하려는 순간`,
+    vital_expansion: `${parentLabel}의 ${withLabel(parentColors)} ${childLabel}의 ${subject(childColors)} 새 시도와 표현을 향하지만, 한쪽의 속도나 결과 기대가 다른 쪽의 방식보다 앞서는 순간`,
+    space_respect: `${subject(parentLabel)} 연결이나 정리를 위해 말을 이어 가려는 때, ${subject(childLabel)} 자신의 리듬대로 생각을 정리할 여백이 먼저 필요해지는 순간`,
+    trust_exploration: `${parentLabel}의 ${subject(parentColors)} 약속과 신뢰의 기준을 먼저 세우려는 때, ${childLabel}의 ${subject(childColors)} 납득할 이유와 더 살필 가능성을 확인하려는 순간`,
+    pace_adjustment: `${parentLabel}의 ${subject(parentColors)} 방향이나 반응을 앞당기려는 때, ${childLabel}의 ${subject(childColors)} 자신의 속도로 기준과 이유를 맞추려는 순간`,
   };
-  return `${TYPE_META[type].name}에서는 ${typeStart[type]} ${tension.title}이 시작될 수 있습니다. 이는 ${parentLabel}이 ${parentNeed}을 지키려는 흐름과 ${childLabel}이 ${childNeed}을 확인하려는 흐름이 다르기 때문입니다. ${currentCardSupport(parent.cards[1])} ${currentCardSupport(child.cards[1])}`;
+  return `${TYPE_META[type].name}에서는 ${typeStart[type]} ${subject(tension.title)} 시작될 수 있습니다. 이는 ${subject(parentLabel)} ${object(parentNeed)} 지키려는 흐름과 ${subject(childLabel)} ${object(childNeed)} 확인하려는 흐름이 다르기 때문입니다. ${currentCardSupport(parent.cards[1])} ${currentCardSupport(child.cards[1])}`;
 }
 
 function buildPersonalizedPractices(
@@ -593,9 +601,112 @@ function buildPersonalizedPractices(
 
   return [
     typePractice[type],
-    `${subject(tension.title)} 느껴질 때, ${currentCardAction(parent, parentLabel)} 하고 ${currentCardAction(child, childLabel)} 하며, 상대의 말을 바로 해석하거나 고치지 않기`,
+    `${subject(tension.title)} 느껴질 때, ${currentCardAction(parent, parentLabel)} 이어서 ${currentCardAction(child, childLabel)} 그동안 상대의 말을 바로 해석하거나 고치지 않기`,
     `${recoveryLead[type]} ${topic(parentLabel)} ${parentRecovery}이 필요한 순간을, ${topic(childLabel)} ${childRecovery}이 필요한 순간을 한 문장으로 말한 뒤 두 사람의 미래 카드가 가리키는 다음 행동을 한 가지만 정하기`,
   ];
+}
+
+const TRIGGER_BY_DIMENSION: Record<RelationDimension, string> = {
+  stability: "함께 지키기로 한 흐름이 자주 바뀌거나 약속의 기준이 흔들릴 때",
+  care: "감정을 설명하기도 전에 부담이 되거나 누군가를 실망시킨 사람처럼 다뤄질 때",
+  inquiry: "이유를 충분히 살피기도 전에 결론·정답·평가부터 요구받을 때",
+  connection: "관계의 온도나 마음을 나눌 자리가 빠진 채 결과만 확인될 때",
+  expression: "자기 생각을 꺼낸 직후 바로 고쳐지거나 과하다고 판단될 때",
+  action: "직접 시도해 볼 기회 없이 준비가 덜 됐다는 이유로 멈춰 세워질 때",
+  structure: "무엇을 왜 해야 하는지 모호한 채 책임이나 순응만 요구받을 때",
+  space: "생각을 정리할 틈 없이 감정과 답을 바로 설명하라는 요구가 이어질 때",
+};
+
+const STRENGTH_CONDITION_BY_DIMENSION: Record<RelationDimension, string> = {
+  stability: "자신이 맡은 약속을 차분히 끝까지 지키고, 그 꾸준함을 구체적으로 인정받을 때",
+  care: "사람의 마음을 알아차린 방식이나 관계를 편안하게 만든 기여를 알아봐 줄 때",
+  inquiry: "여러 가능성을 살핀 과정과 자신이 세운 이유를 설명할 기회를 얻을 때",
+  connection: "누군가와 함께 의미를 만들거나 자신의 관심을 나누며 관계의 반응을 느낄 때",
+  expression: "생각·감정·표현을 자신다운 방식으로 보여 주고, 결과보다 그 시도를 반갑게 받아들여 줄 때",
+  action: "작은 선택을 직접 실행해 보고 그 결과에서 다음 방법을 찾아볼 때",
+  structure: "역할과 순서가 분명한 과제에서 자신이 정리한 기준을 실제로 적용해 볼 때",
+  space: "스스로 준비한 생각을 자신의 타이밍에 꺼내고, 그 깊이를 존중받을 때",
+};
+
+const DIMENSION_CONTRIBUTION: Record<RelationDimension, string> = {
+  stability: "흐름을 지속시키는 약속",
+  care: "관계의 마음을 살피는 배려",
+  inquiry: "이유와 가능성을 비교하는 탐색",
+  connection: "함께 의미를 만드는 연결",
+  expression: "생각과 감정을 밖으로 꺼내는 표현",
+  action: "직접 해 보며 방향을 찾는 시도",
+  structure: "기준과 순서를 세우는 정리",
+  space: "자기 호흡으로 판단을 익히는 여백",
+};
+
+function cardFlowAt(card: CardData | undefined, position: "inner" | "current" | "future", label: string): string {
+  if (!card) return "선택된 심리카드 흐름";
+  const colorFlow = CURRENT_CARD_COLOR[card.color];
+  const shapeFlow = CURRENT_CARD_SHAPE[card.shape];
+  if (position === "inner") return `${topic(label)} 무의식에서는 ${colorFlow} 마음을 ${shapeFlow} 방식으로 지키려는 흐름`;
+  if (position === "current") return `${topic(label)} 지금 ${colorFlow} 반응이 ${shapeFlow} 태도와 함께 나타나는 흐름`;
+  return `${topic(label)} 앞으로 ${colorFlow} 마음을 ${shapeFlow} 방식으로 회복해 갈 필요가 있는 흐름`;
+}
+
+function futureCardCue(card: CardData | undefined): string {
+  if (!card) return "선택한 미래 심리카드가 가리키는 회복 흐름";
+  return `${card.colorKor} ${card.shapeKor} 카드가 보완하는 회복 방향`;
+}
+
+function buildChildCommunication(
+  parentLabel: string,
+  childLabel: string,
+  parent: PersonProfile,
+  child: PersonProfile,
+): ParentChildCoaching["childCommunication"] {
+  const primaryTrigger = TRIGGER_BY_DIMENSION[child.primaryDimension];
+  const secondaryTrigger = TRIGGER_BY_DIMENSION[child.secondaryDimension];
+  const strengthCondition = STRENGTH_CONDITION_BY_DIMENSION[child.primaryDimension];
+  const secondaryContribution = DIMENSION_CONTRIBUTION[child.secondaryDimension];
+  const innerFlow = cardFlowAt(child.cards[0], "inner", childLabel);
+  const currentFlow = cardFlowAt(child.cards[1], "current", childLabel);
+  const futureFlow = futureCardCue(child.cards[2]);
+  const parentPressure = DIMENSION_CONTRIBUTION[parent.primaryDimension];
+  const childColorPair = `${child.colors[0].korName}·${child.colors[1].korName}`;
+  const recoveryNote = child.recoveryColor
+    ? `${topic(child.recoveryColor.korName)} 회복 방향에서 마음을 다시 정돈할 여백이 필요하다는 신호로만 보완합니다.`
+    : "";
+
+  return {
+    closesWhen: `${childLabel}의 1·2순위인 ${topic(childColorPair)} ${primaryTrigger} 특히 예민하게 느낄 수 있습니다. ${innerFlow}이 있고, ${currentFlow}이라 ${subject(parentLabel)} ${object(parentPressure)} 앞세우면 자신의 이유나 감정이 잘려 나간 듯 받아들일 수 있습니다. ${recoveryNote}`,
+    gainsConfidenceWhen: `${childLabel}의 강점은 ${strengthCondition} 살아날 수 있습니다. 이때 ${subject(child.colors[1].korName)} 보태는 ${object(secondaryContribution)} 스스로 활용할 수 있으면, 단순히 기다려 준다는 느낌을 넘어 자신의 역량을 관계 안에서 써 볼 기회가 됩니다. 앞으로의 회복에서는 ${object(futureFlow)} 보완 근거로 삼아, 자신이 만든 다음 선택을 돌아보는 시간이 힘이 될 수 있습니다.`,
+  };
+}
+
+function buildRelationshipMismatch(
+  parentLabel: string,
+  childLabel: string,
+  parent: PersonProfile,
+  child: PersonProfile,
+  type: ParentChildRelationshipTypeId,
+): string {
+  const parentContribution = DIMENSION_CONTRIBUTION[parent.primaryDimension];
+  const childContribution = DIMENSION_CONTRIBUTION[child.primaryDimension];
+  const parentSecondaryContribution = DIMENSION_CONTRIBUTION[parent.secondaryDimension];
+  const childSecondaryContribution = DIMENSION_CONTRIBUTION[child.secondaryDimension];
+  const parentInner = cardFlowAt(parent.cards[0], "inner", parentLabel);
+  const childInner = cardFlowAt(child.cards[0], "inner", childLabel);
+  const parentCurrent = cardFlowAt(parent.cards[1], "current", parentLabel);
+  const childCurrent = cardFlowAt(child.cards[1], "current", childLabel);
+  const parentFuture = futureCardCue(parent.cards[2]);
+  const childFuture = futureCardCue(child.cards[2]);
+  const parentRecovery = parent.recoveryColor?.korName ?? "부모의 3순위 컬러";
+  const childRecovery = child.recoveryColor?.korName ?? "자녀의 3순위 컬러";
+  const mismatchFocus: Record<ParentChildRelationshipTypeId, string> = {
+    steady_recovery: `${topic(parentLabel)} 관계를 흔들리지 않게 하려는 마음으로 ${parentContribution}을 앞세우고, ${topic(childLabel)} 그 안에서 자신의 ${childContribution}도 함께 남기고 싶어 할 수 있습니다. 그래서 보호나 배려가 한쪽에는 익숙한 돌봄으로, 다른 쪽에는 변화할 여지가 적은 틀로 읽힐 수 있습니다.`,
+    emotional_connection: `${topic(parentLabel)} 마음이 이어져 있다는 확인을 먼저 하고 싶고, ${topic(childLabel)} 자신의 감정을 선택해 꺼내야 연결이 편안해질 수 있습니다. 같은 연결 욕구가 한쪽에는 빠른 공감의 요청으로, 다른 쪽에는 감정의 주도권을 빼앗기는 느낌으로 엇갈릴 수 있습니다.`,
+    clarity_balance: `${topic(parentLabel)} ${parentContribution}으로 상황을 분명히 하고 싶고, ${topic(childLabel)} ${childContribution}을 통해 스스로 납득하고 싶을 수 있습니다. 이때 설명은 한쪽에는 도움의 기준이지만, 다른 쪽에는 이미 답이 정해진 대화처럼 닿을 수 있습니다.`,
+    vital_expansion: `${topic(parentLabel)} ${withRo(parentContribution)} 관계를 앞으로 움직이고 싶고, ${topic(childLabel)} ${object(childContribution)} 자신의 방식으로 펼치고 싶을 수 있습니다. 격려가 한쪽에는 추진의 힘이지만, 다른 쪽에는 결과를 빨리 보여야 한다는 기대처럼 느껴질 수 있습니다.`,
+    space_respect: `${topic(parentLabel)} ${withRo(parentContribution)} 관계를 놓치지 않으려 하고, ${topic(childLabel)} ${object(childContribution)} 지켜야 다시 관계에 편안히 참여할 수 있습니다. 안부와 해결의 제안이 한쪽에는 관심이지만, 다른 쪽에는 생각의 경계를 넘는 개입으로 해석될 수 있습니다.`,
+    trust_exploration: `${topic(parentLabel)} ${withRo(parentContribution)} 신뢰할 수 있는 약속을 만들고 싶고, ${topic(childLabel)} ${object(childContribution)} 거쳐야 그 약속을 자기 것으로 받아들일 수 있습니다. 기준을 세우는 말이 한쪽에는 책임의 표현이지만, 다른 쪽에는 질문과 선택을 미리 닫는 말처럼 들릴 수 있습니다.`,
+    pace_adjustment: `${topic(parentLabel)} ${withRo(parentContribution)} 다음 방향을 앞당기고 싶고, ${topic(childLabel)} ${object(childContribution)} 자신의 호흡으로 맞추고 싶을 수 있습니다. 같은 목표를 향해도 한쪽의 속도 제안이 다른 쪽에는 준비할 시간을 빼앗는 요구로 다가올 수 있습니다.`,
+  };
+  return `${mismatchFocus[type]} ${parentLabel}의 2순위 ${parent.colors[1].korName}은 ${object(parentSecondaryContribution)}, ${childLabel}의 2순위 ${child.colors[1].korName}은 ${object(childSecondaryContribution)} 보태므로, 한쪽의 보완 방식도 상대에게는 다른 요구처럼 닿을 수 있습니다. ${parentInner}과 ${subject(childInner)} 바탕에 있고, ${parentCurrent}인 점과 ${childCurrent}인 점이 겹치면, ${topic(parentLabel)} ${childLabel}의 반응을 협력하지 않는 신호로, ${topic(childLabel)} ${parentLabel}의 말을 자신의 방식이 존중되지 않는 신호로 읽는 오해가 생길 수 있습니다. 회복 단계에서는 ${withLabel(parentRecovery)} ${subject(childRecovery)} 방향과 ${withLabel(parentFuture)} ${subject(childFuture)} 서로를 설득하는 근거가 아니라 갈등 뒤 각자 정돈할 방식을 이해하는 보조 신호로만 사용합니다.`;
 }
 
 function buildTensionScene(parentLabel: string, childLabel: string, parent: PersonProfile, child: PersonProfile, tension: TensionPattern): LifeScene {
@@ -648,6 +759,8 @@ function buildCoaching(
   const dontMessages = buildPersonalizedDontMessages(labels.parent, labels.child, parent, child, type, tension);
   const conflictStart = buildConflictStart(labels.parent, labels.child, parent, child, type, tension);
   const practices = buildPersonalizedPractices(labels.parent, labels.child, parent, child, type, tension);
+  const childCommunication = buildChildCommunication(labels.parent, labels.child, parent, child);
+  const mismatch = buildRelationshipMismatch(labels.parent, labels.child, parent, child, type);
 
   return {
     labels,
@@ -672,10 +785,7 @@ function buildCoaching(
       },
       together: `${subject(labels.parent)} ${object(DIMENSION_LABEL[parent.primaryDimension])} 먼저 세우고 ${subject(labels.child)} ${object(DIMENSION_LABEL[child.primaryDimension])} 충분히 말할 수 있을 때, 두 사람은 ${object(shared ? DIMENSION_LABEL[shared] : "서로 다른 기준을 확인하는 대화")} 관계의 자원으로 만들 수 있습니다. 이번 조합에서는 ${tension.title}에 해당하는 차이가 보이므로, 무엇을 바로 정할지와 무엇을 더 살필지를 구분하는 편이 잘 맞습니다.`,
     },
-    childCommunication: {
-      closesWhen: `${subject(labels.child)} ${object(DIMENSION_LABEL[child.primaryDimension])} 확인하기 전에 ${DIMENSION_LABEL[parent.primaryDimension]}의 기준만 먼저 제시되면, 자신의 이유나 마음이 빠진 느낌을 받을 수 있습니다. ${childCurrent}`,
-      gainsConfidenceWhen: `${subject(labels.child)} ${child.colors[0].korName}에서 중요하게 느끼는 ${object(DIMENSION_LABEL[child.primaryDimension])} 설명하고, ${subject(labels.parent)} 그 안에서 현실적으로 지킬 한 가지만 함께 정해 줄 때 자신감이 살아날 수 있습니다.`,
-    },
+    childCommunication,
     dialogue: {
       doMessages: [
         ...doMessages,
@@ -692,7 +802,7 @@ function buildCoaching(
       conflictStart,
       parentIntent: `${labels.parent}의 말과 행동은 ${parent.colors[0].korName}·${parent.colors[1].korName}에서 드러난 ${object(DIMENSION_LABEL[parent.primaryDimension])} 관계 안에 지키고 싶은 마음에서 출발할 수 있습니다. ${parentCurrent}`,
       childReception: `${topic(labels.child)} ${child.colors[0].korName}·${child.colors[1].korName}의 ${object(DIMENSION_LABEL[child.primaryDimension])} 충분히 반영되지 않으면, 도움보다 자신의 방식이 밀려난 신호로 받아들일 수 있습니다. ${childCurrent}`,
-      mismatch: `${topic(labels.parent)} ${labels.child}의 반응을 관계의 리듬을 늦추는 모습으로 읽을 수 있고, ${topic(labels.child)} ${labels.parent}의 기준을 자신의 이유를 건너뛴 정리로 읽을 수 있습니다. 이는 부모·자녀나 성별의 특성이 아니라, 이번 1·2순위 컬러에서 우선하는 관계 기준이 다를 때 생길 수 있는 해석의 차이입니다.`,
+      mismatch,
       recoveryOrder: `먼저 ${pairSubject(labels.parent, labels.child)} 각각 무엇을 지키고 싶었는지 한 문장으로 확인합니다. 다음으로 이번에 바로 정할 일과 다시 살펴볼 일을 나눕니다. ${recoverySupport(parent, labels.parent)} ${recoverySupport(child, labels.child)}`,
     },
     practices,
