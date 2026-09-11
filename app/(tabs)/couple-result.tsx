@@ -1693,7 +1693,7 @@ export default function CoupleResultScreen() {
           style={[styles.restartBtn, { backgroundColor: accentCouple }]}
           onPress={() => router.push('/(tabs)/couple-start' as any)}
         >
-          <Text style={styles.restartBtnText}>새로운 커플 세션 시작</Text>
+          <Text style={styles.restartBtnText}>{isParentChildRel ? '새로운 부모·자녀 분석 시작' : '새로운 커플 세션 시작'}</Text>
         </Pressable>
 
         <Pressable

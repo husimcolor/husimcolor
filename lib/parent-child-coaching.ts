@@ -190,35 +190,61 @@ const CHILD_RECEIVES_BY_ROLE: Record<RoleKey, string> = {
   expert: "준비가 덜 된 상태에서 바로 보여 주거나 답해야 한다는 부담을 느끼면, 더 조용해질 수 있습니다.",
 };
 
-const PARENT_PRACTICE_BY_ROLE: Record<RoleKey, string> = {
-  connector: "하루 중 마음에 남은 장면 하나를 번갈아 나누고, 상대의 말을 끊지 않고 끝까지 들어 보기",
-  healer: "말을 길게 꺼내기 어려운 날에는 ‘오늘은 곁에 있을게’라고 먼저 전하고 10분 함께 있기",
-  analyst: "의견이 다른 주제 하나를 골라 각자 생각의 이유를 한 줄씩 적은 뒤 바꿔 읽어 보기",
-  leader: "이번 주에 자녀가 스스로 고를 수 있는 작은 선택 한 가지를 정하고, 결과는 함께 돌아보기",
-  artist: "평가 없는 20분을 정해 자녀가 좋아하는 방식으로 만든 것이나 떠올린 생각을 소개해 보기",
-  expert: "관심 있는 주제 하나를 각자 찾아보고, 새로 알게 된 점을 서로 한 가지씩 설명해 보기",
-};
+function hasFinalConsonant(label: string): boolean {
+  const lastCode = label.charCodeAt(label.length - 1);
+  return lastCode >= 0xac00 && lastCode <= 0xd7a3 && (lastCode - 0xac00) % 28 !== 0;
+}
 
-const CHILD_PRACTICE_BY_ROLE: Record<RoleKey, string> = {
-  connector: "가족 안에서 고마웠던 행동 하나를 서로에게 짧게 남기며 관계의 온도를 확인하기",
-  healer: "말 대신 오늘의 마음 상태를 색이나 숫자로 가볍게 나누고, 서로의 반응을 기다려 주기",
-  analyst: "함께 정해야 할 일 하나를 두고 장점과 걱정을 하나씩 적어 본 뒤 차분히 비교해 보기",
-  leader: "자녀가 정한 이번 주 작은 목표의 진행만 함께 확인하고, 방법 선택은 자녀에게 맡겨 보기",
-  artist: "자녀가 고른 음악·그림·사진 하나를 함께 보고, 좋았던 점만 한 가지씩 말해 보기",
-  expert: "같은 주제에 대해 서로 궁금한 점 하나를 찾아보고, 주말에 짧게 설명해 주는 시간 만들기",
-};
+function withTopic(label: string): string {
+  return `${label}${hasFinalConsonant(label) ? "은" : "는"}`;
+}
 
-function buildRelationshipPractice(typeName: string, parentLabel: string, childLabel: string): string {
+function withSubject(label: string): string {
+  return `${label}${hasFinalConsonant(label) ? "이" : "가"}`;
+}
+
+function withAnd(label: string): string {
+  return `${label}${hasFinalConsonant(label) ? "과" : "와"}`;
+}
+
+function buildParentConflictPractice(parentKey: RoleKey, parentLabel: string, childLabel: string): string {
+  const parentTopic = withTopic(parentLabel);
+  const practices: Record<RoleKey, string> = {
+    connector: `${childLabel}의 반응이 평소와 다르게 느껴지는 날, ${parentTopic} 대화를 이어 가려 하기보다 메모에 ‘나중에 이야기하고 싶어’라고 남기고 ${withSubject(childLabel)} 먼저 시간을 고르게 하기`,
+    healer: `${childLabel}의 말수가 줄어든 날, ${parentTopic} 해결책을 바로 제안하지 않고 따뜻한 음료나 간식을 건넨 뒤 15분 동안 같은 공간에 조용히 있기`,
+    analyst: `의견이 부딪히는 순간 종이 한 장을 반으로 나눠 ${parentTopic} ‘내가 걱정하는 점’ 하나, ${withTopic(childLabel)} ‘더 생각할 점’ 하나만 적고 5분 뒤 함께 보기`,
+    leader: `약속을 정해야 하는 날, ${parentTopic} 선택지 두 가지를 적고 ${withSubject(childLabel)} 오늘 해볼 한 가지를 표시하게 한 뒤 저녁에 결과만 확인하기`,
+    artist: `${childLabel}의 새로운 시도가 걱정되는 날, ${parentTopic} 수정 의견을 말하기 전에 ${withSubject(childLabel)} 만든 것에서 좋았던 점을 한 문장으로 메모해 전달하기`,
+    expert: `준비가 더 필요해 보이는 날, ${parentTopic} 설명이나 조언을 미루고 ${withSubject(childLabel)} 보여 줄 준비가 된 시간을 직접 정하게 하기`,
+  };
+  return practices[parentKey];
+}
+
+function buildChildConflictPractice(childKey: RoleKey, parentLabel: string, childLabel: string): string {
+  const childTopic = withTopic(childLabel);
+  const parentTopic = withTopic(parentLabel);
+  const practices: Record<RoleKey, string> = {
+    connector: `분위기가 어색해진 날 ${childTopic} 말 대신 ‘지금은 잠깐 쉬고 싶어’라는 표시를 남기고, ${parentTopic} 그 신호 뒤에 20분 동안 기다려 주기`,
+    healer: `마음이 무거운 날 ${childTopic} 감정을 길게 설명하지 않고 오늘의 기분을 색 하나로 고르고, ${parentTopic} 그 색을 판단 없이 받아 적어 두기`,
+    analyst: `생각이 정리되지 않을 때 ${childTopic} 필요한 시간을 ‘5분’ 또는 ‘저녁’ 중 하나로 표시하고, ${parentTopic} 정한 시간 뒤에만 다시 확인하기`,
+    leader: `하고 싶은 방식이 있을 때 ${childTopic} 종이에 ‘내가 해 볼 방법’을 한 줄로 적고, ${parentTopic} 그 방법을 하루 동안 지켜볼 기회를 주기`,
+    artist: `표현하기 어려운 날 ${childTopic} 사진·그림·음악 중 하나를 골라 마음을 대신 보여 주고, ${parentTopic} 해석보다 느낀 점 하나만 말해 주기`,
+    expert: `답을 바로 내기 어려운 날 ${childTopic} 궁금한 점 하나를 적어 두고, ${parentTopic} 함께 찾아볼 자료나 시간을 하나만 정해 주기`,
+  };
+  return practices[childKey];
+}
+
+function buildRelationshipConflictPractice(typeName: string, parentLabel: string, childLabel: string): string {
   if (typeName.includes("거리")) {
-    return `${parentLabel}와 ${childLabel}이 함께 있는 시간과 각자 쉬는 시간을 하나씩 정한 뒤, 편했던 점을 한 문장으로 나누기`;
+    return `이번 주 일정표에 ${withAnd(parentLabel)} ${withSubject(childLabel)} 함께 있는 20분과 각자 쉬는 20분을 각각 표시하고, 지킨 날에만 편했던 점을 한 줄로 적기`;
   }
   if (typeName.includes("성장") || typeName.includes("지원")) {
-    return `${childLabel}이 새로 시도한 일 하나를 ${parentLabel}이 결과보다 과정 중심으로 함께 돌아봐 주기`;
+    return `${withSubject(childLabel)} 새로 시도할 일 하나를 정한 뒤, ${withSubject(parentLabel)} 도와줄 범위와 ${withSubject(childLabel)} 결정할 범위를 포스트잇 두 장에 나눠 적기`;
   }
   if (typeName.includes("감정") || typeName.includes("공감")) {
-    return `하루에 한 번 ‘고마웠던 일’ 또는 ‘마음에 남은 일’ 하나를 짧게 나누며 서로의 감정을 확인하기`;
+    return `감정이 높아진 날에는 바로 결론을 내리지 않고, 저녁에 각자 ‘오늘 가장 서운했던 순간’ 한 가지를 적은 뒤 종이를 바꿔 읽기`;
   }
-  return `${parentLabel}와 ${childLabel}이 이번 주 함께 하고 싶은 일 한 가지를 정하고, 끝난 뒤 좋았던 점을 한 문장씩 나누기`;
+  return `이번 주 자주 부딪히는 주제 하나를 정해, ${withAnd(parentLabel)} ${withSubject(childLabel)} 각각 바라는 점을 한 줄씩 적고 함께 볼 시간 10분을 정하기`;
 }
 
 function toRoleInput(cards: readonly CardData[]) {
@@ -300,9 +326,9 @@ export function buildParentChildCoaching(input: ParentChildCoachingInput): Paren
       recoveryOrder: `먼저 ${labels.parent}가 해결보다 ${labels.child}이 무엇을 이해받고 싶어 하는지 충분히 듣고, 다음으로 ${labels.child}이 자기 생각을 정리할 여지를 남기는 순서가 좋습니다. 그다음 지금 가능한 한 가지 약속을 함께 정하면, ${typeHint} 흐름의 긴장이 서로를 배우는 시간으로 바뀔 수 있습니다.`,
     },
     practices: [
-      PARENT_PRACTICE_BY_ROLE[parentKey],
-      CHILD_PRACTICE_BY_ROLE[childKey],
-      buildRelationshipPractice(input.lightArchetype.typeName, labels.parent, labels.child),
+      buildParentConflictPractice(parentKey, labels.parent, labels.child),
+      buildChildConflictPractice(childKey, labels.parent, labels.child),
+      buildRelationshipConflictPractice(input.lightArchetype.typeName, labels.parent, labels.child),
     ],
   };
 }
