@@ -61,3 +61,13 @@ GitHub 웹 편집에서 첫 저장 커밋 `73c92b1`은 CodeMirror 가상 편집�
 YAML 보정 커밋 `1340a86`은 실행을 시작했으나 새 GitHub runner에서 `react-native-css-interop/.cache/web.css`가 Metro 초기 파일 스캔 이후 생성되어 SHA-1을 계산하지 못했다. 같은 상태를 로컬에서 재현한 뒤, Expo export 직전에 해당 cache directory와 빈 `web.css`를 만들면 export가 성공함을 확인했다. 이 사전 생성은 결과 코드가 아닌 CI 빌드 준비 단계이며, 최신 web bundle 생성 명령 앞에만 추가한다.
 
 최종 workflow 커밋 `3eefb22`에서 CSS cache 초기 생성 단계를 적용한 자동 배포 run `34584039740`은 2026-09-11에 성공했다. Checkout → Node.js 22 → pnpm 설치 → 최신 Expo export → prebuilt Vercel Production 배포의 모든 단계가 통과했다. `husimcolor.vercel.app/couple-result?autoDeployRestored=3eefb22&v=202609110926`에서 기존 아빠-아들 세션을 읽기 전용으로 확인한 결과, 실제 호칭, 부모·자녀 전용 관계 역할, DO & DON'T, 갈등 시작·회복 순서, 우리 관계를 위한 3가지 실천, 새로운 부모·자녀 분석 시작 버튼이 모두 렌더링됐다. 관계 설명에는 최신 컬러 교차 문장인 `약속을 확정하는 순간의 속도 차이`도 확인됐다.
+
+## 부모·자녀 PDF 서버리스 런타임 보정
+
+운영 API 직접 검증에서 부모·자녀 PDF 함수가 `FUNCTION_INVOCATION_FAILED`로 500을 반환했다. Vercel 런타임 로그는 esbuild CJS 번들 안의 PDFKit 0.20.2가 `./data/sRGB_IEC61966_2_1.icc`를 `import.meta.url` 기준으로 읽으려다 `ERR_INVALID_URL`이 발생했음을 보였다.
+
+해결안은 PDFKit을 CJS 함수 번들에서 외부 의존성으로 유지하고, PDFKit·Fontkit·Unicode·암호화 전이 의존성과 한글 폰트를 각 PDF 함수 디렉터리에 포함하는 방식이다. 동일 구조를 임시 부모·자녀 서버리스 함수에 적용해 실제 엄마·딸 payload에서 `application/pdf`, PDF 시그니처, 66,778바이트 응답을 확인했다. 함수별 추가 런타임 node_modules 크기는 약 26MB다.
+
+GitHub Actions 편집기에서 두 PDF 함수의 `pdfkit`을 외부 CJS 의존성으로 설정하고, 두 함수 디렉터리에 동일한 최소 런타임 의존성 트리를 복사하는 단계를 저장 전 반영했다. 편집기 문서에서 `--external:pdfkit`이 정확히 2회, `Include PDFKit serverless runtime` 단계가 1회 존재함을 확인했다.
+
+위 자동 배포 워크플로 보정은 `fix: include PDFKit runtime in report functions` 커밋 메시지로 기존 GitHub `main`에 직접 저장을 시작했다. 이 커밋은 새 PDF 코드와 함께 실행될 자동 Production 배포에서만 PDF 함수 런타임 구성을 바꾼다.

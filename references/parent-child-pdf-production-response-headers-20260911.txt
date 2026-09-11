@@ -1,0 +1,11 @@
+HTTP/2 500 
+cache-control: public, max-age=0, must-revalidate
+content-type: text/plain; charset=utf-8
+date: Fri, 11 Sep 2026 11:08:20 GMT
+server: Vercel
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+x-vercel-cache: MISS
+x-vercel-error: FUNCTION_INVOCATION_FAILED
+x-vercel-id: sin1::4bzvz-1789124899183-25dad3ec026e
+content-length: 96
+
