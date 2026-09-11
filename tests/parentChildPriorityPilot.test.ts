@@ -20,8 +20,12 @@ describe("엄마·딸 우선순위 기반 시범 결과 UI", () => {
     expect(PARENT_CHILD_PRIORITY_PILOT.basis.child).toContain("옐로우·핑크");
     expect(PARENT_CHILD_PRIORITY_PILOT.basis.recovery).toContain("라벤더");
     expect(PARENT_CHILD_PRIORITY_PILOT.basis.recovery).toContain("코랄");
-    expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.strengths).toHaveLength(2);
-    expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.tensions).toHaveLength(2);
+    expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.strengths).toHaveLength(1);
+    expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.tensions).toHaveLength(1);
+    expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.strengths[0].title).toContain("하루의 경험");
+    expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.tensions[0].title).toContain("약속");
+    expect(PARENT_CHILD_PRIORITY_PILOT.relationshipSummary.typeName).toBe("신뢰와 탐색의 조율 관계");
+    expect(PARENT_CHILD_PRIORITY_PILOT.sectionEvidence).toHaveLength(8);
   });
 
   it("시범 UI는 개발 환경의 고정 QA 경로에서만 부모·자녀 결과 UI에 표시한다", () => {
@@ -30,6 +34,10 @@ describe("엄마·딸 우선순위 기반 시범 결과 UI", () => {
     expect(screenSource).toContain("process.env.NODE_ENV !== 'production'");
     expect(screenSource).toContain("PARENT_CHILD_PRIORITY_PILOT_QUERY");
     expect(screenSource).toContain("로컬 시범 분석 · Production에는 적용되지 않음");
+    expect(screenSource).toContain("priorityPilot?.relationshipSummary.typeName");
+    expect(screenSource).toContain("priorityPilot?.relationshipSummary.recommendedColors");
+    expect(screenSource).toContain("priorityPilot?.relationshipSummary.closingMessage");
+    expect(screenSource).toContain("QA 섹션별 근거표");
     expect(screenSource).toContain("실제 생활에서 만나는 지점");
     expect(screenSource).toContain("잘 맞는 부분과 부딪히는 부분");
   });

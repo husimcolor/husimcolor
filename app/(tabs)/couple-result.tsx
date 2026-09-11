@@ -532,6 +532,9 @@ export default function CoupleResultScreen() {
     : null;
   const priorityPilot = isPriorityPilot && isParentChildRel ? PARENT_CHILD_PRIORITY_PILOT : null;
   const parentChildCoaching = priorityPilot?.coaching ?? generatedParentChildCoaching;
+  const parentChildRecommendedColors = priorityPilot?.relationshipSummary.recommendedColors
+    ?? lightArchetypeResult?.recommendedColors
+    ?? [];
 
   const getCoupleShareUrl = async () => {
     const getUrl = (shareId: string) => {
@@ -783,7 +786,8 @@ export default function CoupleResultScreen() {
   const accentA = hexLuminance(rawAccentA) > 0.75 ? '#7B5E3A' : rawAccentA;
   const accentB = hexLuminance(rawAccentB) > 0.75 ? '#7B5E3A' : rawAccentB;
   // archetype 유형별 대표 컬러 연동 (없으면 기본 세이지)
-  const accentCouple = archetypeResult?.accentColor
+  const accentCouple = priorityPilot?.relationshipSummary.accentColor
+    ?? archetypeResult?.accentColor
     ?? lightArchetypeResult?.accentColor
     ?? '#8FA68E';
   // 상단 archetype 카드는 항상 라이트 배경 고정 → 어두운 텍스트 고정
@@ -932,11 +936,11 @@ export default function CoupleResultScreen() {
                   <View style={[archetypeStyles.typeBadge, { backgroundColor: accentCouple }]}>
                     <Text style={archetypeStyles.typeBadgeText}>관계 유형</Text>
                   </View>
-                  <Text style={[archetypeStyles.typeName, { color: accentCouple }]}>{lightArchetypeResult.typeName}</Text>
+                  <Text style={[archetypeStyles.typeName, { color: accentCouple }]}>{priorityPilot?.relationshipSummary.typeName ?? lightArchetypeResult.typeName}</Text>
                 </View>
-                <Text style={[archetypeStyles.coreSummary, { color: accentCouple }]}>❝ {lightArchetypeResult.coreSummary} ❞</Text>
+                <Text style={[archetypeStyles.coreSummary, { color: accentCouple }]}>❝ {priorityPilot?.relationshipSummary.coreSummary ?? lightArchetypeResult.coreSummary} ❞</Text>
                 <View style={[archetypeStyles.divider, { backgroundColor: accentCouple + '40' }]} />
-                <Text style={{ fontSize: 13.5, lineHeight: 24, color: '#5C4A42', opacity: 1 }}>{lightArchetypeResult.description}</Text>
+                <Text style={{ fontSize: 13.5, lineHeight: 24, color: '#5C4A42', opacity: 1 }}>{priorityPilot?.relationshipSummary.description ?? lightArchetypeResult.description}</Text>
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
                   <Text style={{ fontSize: 10, color: accentCouple + 'AA', fontWeight: '600', letterSpacing: 0.5 }}>휴심컬러 · 관계 심리코칭</Text>
                 </View>
@@ -1015,6 +1019,17 @@ export default function CoupleResultScreen() {
                         <Text style={styles.priorityPilotBasis}>{priorityPilot.basis.recovery}</Text>
                         <Text style={[styles.priorityPilotBasis, { marginBottom: 0 }]}>{priorityPilot.basis.cards}</Text>
                       </SectionCard>
+                      <Text style={styles.sectionGroupTitleParentChild}>QA 섹션별 근거표</Text>
+                      <SectionCard variant="parentChild" accentColor="#6A8E61" title="출력 문장이 나온 컬러·심리카드 근거" colors={colors}>
+                        {priorityPilot.sectionEvidence.map((item) => (
+                          <View key={item.section} style={styles.priorityPilotScene}>
+                            <Text style={styles.priorityPilotSceneTitle}>{item.section}</Text>
+                            <Text style={styles.parentChildBodyText}>{item.colorBasis}</Text>
+                            <Text style={styles.priorityPilotEvidence}>심리카드 보완 · {item.cardSupport}</Text>
+                            {item.recoveryUse ? <Text style={styles.priorityPilotEvidence}>회복 방향 · {item.recoveryUse}</Text> : null}
+                          </View>
+                        ))}
+                      </SectionCard>
                     </>
                   )}
                   <Text style={styles.sectionGroupTitleParentChild}>각자의 사회적 역할</Text>
@@ -1056,8 +1071,32 @@ export default function CoupleResultScreen() {
                     <View style={styles.parentChildCommunicationBlock}>
                       <Text style={[styles.parentChildCommunicationTitle, { color: '#356B53' }]}>{parentChildCoaching.labels.child} · 자신감을 얻는 순간</Text>
                       <Text style={[styles.parentChildBodyText, { color: colors.foreground, marginBottom: 0 }]}>{parentChildCoaching.childCommunication.gainsConfidenceWhen}</Text>
-                  </View>
+                    </View>
                   </SectionCard>
+
+                  {priorityPilot && (
+                    <>
+                      <Text style={styles.sectionGroupTitleParentChild}>실제 생활에서 만나는 지점</Text>
+                      <SectionCard variant="parentChild" accentColor="#C47E8A" title="잘 맞는 부분과 부딪히는 부분" colors={colors}>
+                        <Text style={styles.priorityPilotSceneGroupTitle}>잘 맞는 부분</Text>
+                        {priorityPilot.lifeScenes.strengths.map((scene) => (
+                          <View key={scene.title} style={styles.priorityPilotScene}>
+                            <Text style={styles.priorityPilotSceneTitle}>{scene.title}</Text>
+                            <Text style={styles.parentChildBodyText}>{scene.description}</Text>
+                            <Text style={styles.priorityPilotEvidence}>{scene.evidence}</Text>
+                          </View>
+                        ))}
+                        <Text style={[styles.priorityPilotSceneGroupTitle, styles.priorityPilotTensionTitle]}>부딪히는 부분</Text>
+                        {priorityPilot.lifeScenes.tensions.map((scene) => (
+                          <View key={scene.title} style={styles.priorityPilotScene}>
+                            <Text style={[styles.priorityPilotSceneTitle, { color: '#925143' }]}>{scene.title}</Text>
+                            <Text style={styles.parentChildBodyText}>{scene.description}</Text>
+                            <Text style={styles.priorityPilotEvidence}>{scene.evidence}</Text>
+                          </View>
+                        ))}
+                      </SectionCard>
+                    </>
+                  )}
 
                   <Text style={styles.sectionGroupTitleParentChild}>부모의 대화 DO & DON'T</Text>
                   <View style={styles.parentChildDialogueRow}>
@@ -1108,35 +1147,11 @@ export default function CoupleResultScreen() {
                     </View>
                   </SectionCard>
 
-                  {priorityPilot && (
-                    <>
-                      <Text style={styles.sectionGroupTitleParentChild}>실제 생활에서 만나는 지점</Text>
-                      <SectionCard variant="parentChild" accentColor="#C47E8A" title="잘 맞는 부분과 부딪히는 부분" colors={colors}>
-                        <Text style={styles.priorityPilotSceneGroupTitle}>잘 맞는 부분</Text>
-                        {priorityPilot.lifeScenes.strengths.map((scene) => (
-                          <View key={scene.title} style={styles.priorityPilotScene}>
-                            <Text style={styles.priorityPilotSceneTitle}>{scene.title}</Text>
-                            <Text style={styles.parentChildBodyText}>{scene.description}</Text>
-                            <Text style={styles.priorityPilotEvidence}>{scene.evidence}</Text>
-                          </View>
-                        ))}
-                        <Text style={[styles.priorityPilotSceneGroupTitle, styles.priorityPilotTensionTitle]}>부딪히는 부분</Text>
-                        {priorityPilot.lifeScenes.tensions.map((scene) => (
-                          <View key={scene.title} style={styles.priorityPilotScene}>
-                            <Text style={[styles.priorityPilotSceneTitle, { color: '#925143' }]}>{scene.title}</Text>
-                            <Text style={styles.parentChildBodyText}>{scene.description}</Text>
-                            <Text style={styles.priorityPilotEvidence}>{scene.evidence}</Text>
-                          </View>
-                        ))}
-                      </SectionCard>
-                    </>
-                  )}
-
-                  {lightArchetypeResult.recommendedColors && lightArchetypeResult.recommendedColors.length > 0 && (
+                  {parentChildRecommendedColors.length > 0 && (
                     <>
                       <Text style={styles.sectionGroupTitleParentChild}>추천 컬러</Text>
                       <SectionCard variant="parentChild" accentColor={accentCouple} title="두 사람에게 권하는 컬러" colors={colors}>
-                        {lightArchetypeResult.recommendedColors.map(rc => (
+                        {parentChildRecommendedColors.map(rc => (
                           <View key={rc.id} style={[styles.complementRow, { backgroundColor: '#FBF7F2', borderColor: rc.hex + '60' }]}>
                             <View style={[styles.complementDot, { backgroundColor: rc.hex, shadowColor: rc.hex }]} />
                             <View style={styles.complementText}>
@@ -1751,9 +1766,10 @@ export default function CoupleResultScreen() {
           <View style={[styles.closingCard, { backgroundColor: '#2A2420', borderColor: accentCouple + '60' }]}>
             <Text style={[styles.closingLabel, isParentChildRel && styles.closingLabelParentChild, { color: accentCouple }]}>마무리 코칭 메시지</Text>
             <Text style={[styles.closingMessage, isParentChildRel && styles.closingMessageParentChild, { color: '#F8F3EA' }]}>
-              {lightArchetypeResult
-                ? lightArchetypeResult.closingMessage
-                : (archetypeResult.closingMessage ?? coupleAnalysis.closingMessage)}
+              {priorityPilot?.relationshipSummary.closingMessage
+                ?? lightArchetypeResult?.closingMessage
+                ?? archetypeResult.closingMessage
+                ?? coupleAnalysis.closingMessage}
             </Text>
           </View>
 
