@@ -1,0 +1,80 @@
+{
+  "verifiedAt": "2026-09-11T12:10:22.677Z",
+  "romantic": {
+    "shareId": "f222b49f-8cad-44a8-a38e-54fb4682d285",
+    "session": {
+      "relationType": "부부",
+      "personA": {
+        "info": {
+          "gender": "여성",
+          "faith": "무교"
+        },
+        "colors": [
+          "pink",
+          "green",
+          "lavender"
+        ],
+        "cards": [
+          "red_triangle",
+          "blue_circle",
+          "green_square"
+        ]
+      },
+      "personB": {
+        "info": {
+          "gender": "남성",
+          "faith": "기독교"
+        },
+        "colors": [
+          "blue",
+          "yellow",
+          "brown"
+        ],
+        "cards": [
+          "yellow_circle",
+          "purple_diamond",
+          "white_hexagon"
+        ]
+      }
+    }
+  },
+  "parentChild": {
+    "shareId": "18dcec20-592c-4134-9e70-6bac928e1088",
+    "session": {
+      "relationType": "엄마-딸",
+      "personA": {
+        "info": {
+          "gender": "여성",
+          "faith": "무교"
+        },
+        "colors": [
+          "green",
+          "sage",
+          "lavender"
+        ],
+        "cards": [
+          "red_circle",
+          "white_square",
+          "blue_diamond"
+        ]
+      },
+      "personB": {
+        "info": {
+          "gender": "여성",
+          "faith": "무교"
+        },
+        "colors": [
+          "yellow",
+          "pink",
+          "coral"
+        ],
+        "cards": [
+          "yellow_circle",
+          "purple_diamond",
+          "green_hexagon"
+        ]
+      }
+    }
+  },
+  "independent": true
+}
