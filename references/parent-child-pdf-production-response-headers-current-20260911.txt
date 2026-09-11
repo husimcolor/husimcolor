@@ -1,0 +1,12 @@
+HTTP/2 200 
+cache-control: no-store, max-age=0
+content-disposition: attachment; filename="husimcolor-parent-child-report-20260911.pdf"; filename*=UTF-8''%ED%9C%B4%EC%8B%AC%EC%BB%AC%EB%9F%AC_%EC%97%84%EB%A7%88-%EB%94%B8_%EA%B0%90%EC%84%B1%EC%8B%AC%EB%A6%AC%EC%BD%94%EC%B9%AD%EB%A6%AC%ED%8F%AC%ED%8A%B8_20260911.pdf
+content-type: application/pdf
+date: Fri, 11 Sep 2026 11:31:08 GMT
+server: Vercel
+set-cookie: husim_parent_child_pdf_download=production_mother_daughter_20260911; Max-Age=90; Path=/; SameSite=Lax
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+x-vercel-cache: MISS
+x-vercel-id: sin1::iad1::9xhns-1789126261569-ef3c6e34d189
+content-length: 66778
+

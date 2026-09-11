@@ -876,4 +876,4 @@
 - [x] 현재 부모·자녀 세션 데이터를 사용하는 관계 분석 우선 PDF 리포트 생성기 구현
 - [x] 실제 관계 호칭·새 페이지 개인 분석·한글 페이지 나눔을 갖춘 PDF 다운로드 버튼 연결
 - [x] 부모·자녀 PDF 샘플 생성으로 순서·폰트·줄바꿈·데이터 일치 검증
-- [ ] GitHub main→Vercel 자동 배포로 PDF 기능 Production 반영 및 운영 URL 검증
+- [x] GitHub main→Vercel 자동 배포로 PDF 기능 Production 반영 및 운영 URL 검증
