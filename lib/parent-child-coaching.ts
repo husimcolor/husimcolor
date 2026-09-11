@@ -35,6 +35,7 @@ export type ParentChildCoaching = {
     mismatch: string;
     recoveryOrder: string;
   };
+  practices: string[];
 };
 
 type ParentChildCoachingInput = {
@@ -189,6 +190,37 @@ const CHILD_RECEIVES_BY_ROLE: Record<RoleKey, string> = {
   expert: "준비가 덜 된 상태에서 바로 보여 주거나 답해야 한다는 부담을 느끼면, 더 조용해질 수 있습니다.",
 };
 
+const PARENT_PRACTICE_BY_ROLE: Record<RoleKey, string> = {
+  connector: "하루 중 마음에 남은 장면 하나를 번갈아 나누고, 상대의 말을 끊지 않고 끝까지 들어 보기",
+  healer: "말을 길게 꺼내기 어려운 날에는 ‘오늘은 곁에 있을게’라고 먼저 전하고 10분 함께 있기",
+  analyst: "의견이 다른 주제 하나를 골라 각자 생각의 이유를 한 줄씩 적은 뒤 바꿔 읽어 보기",
+  leader: "이번 주에 자녀가 스스로 고를 수 있는 작은 선택 한 가지를 정하고, 결과는 함께 돌아보기",
+  artist: "평가 없는 20분을 정해 자녀가 좋아하는 방식으로 만든 것이나 떠올린 생각을 소개해 보기",
+  expert: "관심 있는 주제 하나를 각자 찾아보고, 새로 알게 된 점을 서로 한 가지씩 설명해 보기",
+};
+
+const CHILD_PRACTICE_BY_ROLE: Record<RoleKey, string> = {
+  connector: "가족 안에서 고마웠던 행동 하나를 서로에게 짧게 남기며 관계의 온도를 확인하기",
+  healer: "말 대신 오늘의 마음 상태를 색이나 숫자로 가볍게 나누고, 서로의 반응을 기다려 주기",
+  analyst: "함께 정해야 할 일 하나를 두고 장점과 걱정을 하나씩 적어 본 뒤 차분히 비교해 보기",
+  leader: "자녀가 정한 이번 주 작은 목표의 진행만 함께 확인하고, 방법 선택은 자녀에게 맡겨 보기",
+  artist: "자녀가 고른 음악·그림·사진 하나를 함께 보고, 좋았던 점만 한 가지씩 말해 보기",
+  expert: "같은 주제에 대해 서로 궁금한 점 하나를 찾아보고, 주말에 짧게 설명해 주는 시간 만들기",
+};
+
+function buildRelationshipPractice(typeName: string, parentLabel: string, childLabel: string): string {
+  if (typeName.includes("거리")) {
+    return `${parentLabel}와 ${childLabel}이 함께 있는 시간과 각자 쉬는 시간을 하나씩 정한 뒤, 편했던 점을 한 문장으로 나누기`;
+  }
+  if (typeName.includes("성장") || typeName.includes("지원")) {
+    return `${childLabel}이 새로 시도한 일 하나를 ${parentLabel}이 결과보다 과정 중심으로 함께 돌아봐 주기`;
+  }
+  if (typeName.includes("감정") || typeName.includes("공감")) {
+    return `하루에 한 번 ‘고마웠던 일’ 또는 ‘마음에 남은 일’ 하나를 짧게 나누며 서로의 감정을 확인하기`;
+  }
+  return `${parentLabel}와 ${childLabel}이 이번 주 함께 하고 싶은 일 한 가지를 정하고, 끝난 뒤 좋았던 점을 한 문장씩 나누기`;
+}
+
 function toRoleInput(cards: readonly CardData[]) {
   return cards.slice(0, 3).map((card) => ({ color: card.color, shape: card.shape }));
 }
@@ -267,5 +299,10 @@ export function buildParentChildCoaching(input: ParentChildCoachingInput): Paren
       mismatch: `${labels.parent}의 관심이 빠른 해결이나 설명으로 전달되면, ${labels.child}에게는 자신의 속도와 생각이 충분히 존중되지 않는 느낌으로 닿을 수 있습니다. 이때 두 사람 모두 ‘내 마음을 알아주지 않는다’고 느끼며 대화가 어긋나기 쉽습니다.`,
       recoveryOrder: `먼저 ${labels.parent}가 해결보다 ${labels.child}이 무엇을 이해받고 싶어 하는지 충분히 듣고, 다음으로 ${labels.child}이 자기 생각을 정리할 여지를 남기는 순서가 좋습니다. 그다음 지금 가능한 한 가지 약속을 함께 정하면, ${typeHint} 흐름의 긴장이 서로를 배우는 시간으로 바뀔 수 있습니다.`,
     },
+    practices: [
+      PARENT_PRACTICE_BY_ROLE[parentKey],
+      CHILD_PRACTICE_BY_ROLE[childKey],
+      buildRelationshipPractice(input.lightArchetype.typeName, labels.parent, labels.child),
+    ],
   };
 }

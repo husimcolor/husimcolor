@@ -1591,6 +1591,7 @@ export default function CoupleResultScreen() {
           {(lightArchetypeResult?.togetherRoutine ?? archetypeResult.togetherRoutine) && (() => {
             const tr = lightArchetypeResult?.togetherRoutine ?? archetypeResult.togetherRoutine;
             const hasFaith = sessionData?.personA.info.faith === '기독교' || sessionData?.personB.info.faith === '기독교';
+            const isParentChildPractice = isParentChildRel && Boolean(parentChildCoaching);
             // 연인/부부 루틴 분기: 연인은 동거 전제 표현을 자연스러운 데이트 표현으로 교체
             const isLover = relationType === '연인';
             const LOVER_ROUTINE_MAP: Record<string, string> = {
@@ -1604,7 +1605,9 @@ export default function CoupleResultScreen() {
             };
             const displayRoutines = isLover
               ? tr.routines.map((r: string) => LOVER_ROUTINE_MAP[r] ?? r)
-              : tr.routines;
+              : isParentChildPractice
+                ? parentChildCoaching?.practices ?? tr.routines
+                : tr.routines;
             return (
               <View style={[styles.togetherRoutineCard, { borderColor: accentCouple + '50' }]}>
                 <Text style={[
@@ -1612,7 +1615,7 @@ export default function CoupleResultScreen() {
                   isRomanticRel && styles.togetherRoutineTitleRomantic,
                   isParentChildRel && styles.togetherRoutineTitleParentChild,
                   { color: accentCouple },
-                ]}>🌿 함께하면 좋은 회복 루틴</Text>
+                ]}>{isParentChildPractice ? '우리 관계를 위한 3가지 실천' : '🌿 함께하면 좋은 회복 루틴'}</Text>
                 <View style={styles.togetherRoutineList}>
                   {displayRoutines.map((routine: string, i: number) => (
                     <View key={i} style={styles.togetherRoutineItem}>
@@ -1625,7 +1628,7 @@ export default function CoupleResultScreen() {
                       ]}>{routine}</Text>
                     </View>
                   ))}
-                  {hasFaith && tr.faithRoutine && (
+                  {!isParentChildPractice && hasFaith && tr.faithRoutine && (
                     <View style={styles.togetherRoutineItem}>
                       <View style={[styles.togetherRoutineDot, { backgroundColor: '#D4AF37' }]} />
                       <Text style={[
@@ -1637,7 +1640,7 @@ export default function CoupleResultScreen() {
                     </View>
                   )}
                 </View>
-                <View style={[styles.togetherEnergyBox, { borderColor: accentCouple + '40' }]}>
+                {!isParentChildPractice && <View style={[styles.togetherEnergyBox, { borderColor: accentCouple + '40' }]}>
                   <Text style={[
                     styles.togetherEnergyLabel,
                     isRomanticRel && styles.togetherEnergyLabelRomantic,
@@ -1645,7 +1648,7 @@ export default function CoupleResultScreen() {
                     { color: accentCouple },
                   ]}>✨ 함께하면 살아나는 에너지</Text>
                   <Text style={[styles.togetherEnergyText, isParentChildRel && styles.togetherEnergyTextParentChild]}>{getLoverText(LOVER_ENERGY_MAP, archetypeResult.typeName, tr.energyNote)}</Text>
-                </View>
+                </View>}
               </View>
             );
           })()}

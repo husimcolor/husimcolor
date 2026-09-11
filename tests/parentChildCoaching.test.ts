@@ -67,6 +67,9 @@ describe("부모·자녀 전용 종합 관계 코칭", () => {
     expect(coaching.conflictRecovery.childReception).toContain("아들");
     expect(coaching.conflictRecovery.mismatch.length).toBeGreaterThan(80);
     expect(coaching.conflictRecovery.recoveryOrder).toContain("한 가지 약속");
+    expect(coaching.practices).toHaveLength(3);
+    expect(coaching.practices.join(" ")).not.toContain("내가 말한 대로");
+    expect(coaching.practices.join(" ")).not.toContain("한 가지 약속");
   });
 
   it("조합이 달라지면 역할·소통 근거도 함께 달라지며, 부모·자녀 화면만 전용 구조를 사용한다", () => {
@@ -80,6 +83,7 @@ describe("부모·자녀 전용 종합 관계 코칭", () => {
     expect(second.dialogue.dontMessages).not.toEqual(first.dialogue.dontMessages);
     expect(second.conflictRecovery.conflictStart).not.toBe(first.conflictRecovery.conflictStart);
     expect(second.conflictRecovery.childReception).not.toBe(first.conflictRecovery.childReception);
+    expect(second.practices).not.toEqual(first.practices);
     expect(screenSource).toContain("isParentChildRel && parentChildCoaching");
     expect(screenSource).toContain("각자의 사회적 역할");
     expect(screenSource).toContain("우리 관계의 역할 에너지");
@@ -93,6 +97,9 @@ describe("부모·자녀 전용 종합 관계 코칭", () => {
     expect(screenSource).toContain("!isParentChildRel &&");
     expect(screenSource).toContain("기존 경량 관계 분석 (친구·동료·형제자매)");
     expect(screenSource).not.toContain("title={isParentChildRel ? '이 관계가 오래 이어지는 이유'");
+    expect(screenSource).toContain("우리 관계를 위한 3가지 실천");
+    expect(screenSource).toContain("parentChildCoaching?.practices");
+    expect(screenSource).toContain("!isParentChildPractice &&");
   });
 
   it("부모·자녀 전용 카드에만 명확한 텍스트 대비와 여유 있는 모바일 읽기 스타일을 적용한다", () => {
