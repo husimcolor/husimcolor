@@ -461,6 +461,143 @@ const TENSION_PATTERNS: Record<TensionPattern["id"], TensionPattern> = {
   },
 };
 
+const DIMENSION_NEED: Record<RelationDimension, string> = {
+  stability: "익숙한 흐름과 약속",
+  care: "마음이 안전하다는 느낌",
+  inquiry: "충분히 이유를 살필 시간",
+  connection: "관계가 이어진다는 신호",
+  expression: "자기 생각을 드러낼 자리",
+  action: "직접 해 볼 움직임",
+  structure: "납득할 수 있는 기준과 순서",
+  space: "혼자 정리할 여백",
+};
+
+const CURRENT_CARD_ACTION: Record<CardData["shape"], string> = {
+  circle: "감정을 한 단어로 먼저 말하기",
+  triangle: "지금 지키고 싶은 방향을 한 가지로 말하기",
+  inverted_triangle: "더 정리할 시간이 필요하다고 알리기",
+  square: "현실적으로 지킬 조건 하나를 정하기",
+  diamond: "여러 이유 중 더 중요한 한 가지를 고르기",
+  pentagon: "새로 해 볼 방법 하나를 제안하기",
+  hexagon: "관계를 이어 줄 짧은 안부를 남기기",
+};
+
+function colorPair(profile: PersonProfile): string {
+  return `${profile.colors[0].korName}·${profile.colors[1].korName}`;
+}
+
+function currentCardAction(profile: PersonProfile, label: string): string {
+  const card = profile.cards[1];
+  if (!card) return `${subject(label)} 지금 가장 중요하게 보는 한 가지를 말하기`;
+  return `${subject(label)} ${card.colorKor} ${card.shapeKor} 카드의 현재 흐름을 살피며 ${CURRENT_CARD_ACTION[card.shape]}`;
+}
+
+function buildPersonalizedDontMessages(
+  parentLabel: string,
+  childLabel: string,
+  parent: PersonProfile,
+  child: PersonProfile,
+  type: ParentChildRelationshipTypeId,
+  tension: TensionPattern,
+): string[] {
+  const childPrimaryNeed = DIMENSION_NEED[child.primaryDimension];
+  const childSecondaryNeed = DIMENSION_NEED[child.secondaryDimension];
+  const parentPrimaryNeed = DIMENSION_NEED[parent.primaryDimension];
+  const typeSpecific: Record<ParentChildRelationshipTypeId, string> = {
+    steady_recovery: `${childPrimaryNeed}을 먼저 살피기보다, 늘 해 오던 약속에 바로 맞춰야 해.`,
+    emotional_connection: `우리 사이가 불편해지지 않게 하려면, 네 ${childPrimaryNeed}은 지금 접어 둬.`,
+    clarity_balance: `네가 더 알아보고 싶은 이유보다 지금 기준에 맞는지만 말해.`,
+    vital_expansion: `결과가 바로 보이지 않으면 네가 해 보고 싶은 일도 더 이상 이어 갈 필요 없어.`,
+    space_respect: `혼자 정리할 시간은 그만 갖고, 지금 바로 네 생각을 설명해.`,
+    trust_exploration: `더 살펴보고 싶은 마음보다, ${parentLabel}이 정한 약속부터 따라.`,
+    pace_adjustment: `지금 속도에 바로 맞추지 못하면 더 기다려 줄 수 없어.`,
+  };
+  const childPressure: Record<RelationDimension, string> = {
+    stability: `약속을 지키기 어렵다면 네가 더 맞춰야 해.`,
+    care: `네 마음을 먼저 말하면 모두가 더 힘들어져.`,
+    inquiry: `이유를 더 따지는 건 핑계야.`,
+    connection: `관계를 생각한다면 네 마음은 잠시 접어 둬.`,
+    expression: `네 생각을 그렇게 드러내는 건 문제야.`,
+    action: `해 보기 전에 말부터 듣는 게 맞아.`,
+    structure: `왜 순서를 따져? 그냥 시키는 대로 하면 돼.`,
+    space: `혼자 정리할 시간은 필요 없어. 지금 답해.`,
+  };
+  const parentCard = parent.cards[1];
+  const childCard = child.cards[1];
+  const parentCardPressure = parentCard
+    ? `${parentLabel}도 지금 ${parentCard.colorKor} ${parentCard.shapeKor} 카드처럼 ${CURRENT_CARD_COLOR[parentCard.color]} 흐름이고, ${childCard ? `${childLabel}은 ${childCard.colorKor} ${childCard.shapeKor} 카드처럼 ${CURRENT_CARD_COLOR[childCard.color]} 흐름이니` : ""} 네 ${childSecondaryNeed}까지는 들을 여유가 없어.`
+    : `${parentLabel}이 지키려는 ${parentPrimaryNeed}이 더 중요하니, 네 ${childSecondaryNeed}은 나중에 말해.`;
+
+  return [
+    `“${childLabel}아, ${typeSpecific[type]}”`,
+    `“${childLabel}아, ${childPressure[child.primaryDimension]}”`,
+    `“${parentCardPressure}”`,
+    `“${childLabel}의 ${childPrimaryNeed}보다 ${parentLabel}의 ${parentPrimaryNeed}이 항상 먼저야.”`,
+  ];
+}
+
+function buildConflictStart(
+  parentLabel: string,
+  childLabel: string,
+  parent: PersonProfile,
+  child: PersonProfile,
+  type: ParentChildRelationshipTypeId,
+  tension: TensionPattern,
+): string {
+  const parentColors = colorPair(parent);
+  const childColors = colorPair(child);
+  const parentNeed = DIMENSION_NEED[parent.primaryDimension];
+  const childNeed = DIMENSION_NEED[child.primaryDimension];
+  const typeStart: Record<ParentChildRelationshipTypeId, string> = {
+    steady_recovery: `${parentLabel}의 ${parentColors}이 익숙한 약속과 일상의 안정부터 지키려는 때, ${childLabel}의 ${childColors}이 마음의 온도와 자신의 방식도 함께 반영되길 바랄 때`,
+    emotional_connection: `${parentLabel}과 ${childLabel} 모두 관계의 온도를 중요하게 여기지만, ${parentLabel}이 빠른 공감과 반응을 기대하고 ${childLabel}이 자신의 감정을 먼저 고르는 순간`,
+    clarity_balance: `${parentLabel}의 ${parentColors}이 기준과 순서를 분명히 하려는 때, ${childLabel}의 ${childColors}이 이유와 가능성을 더 비교하려는 순간`,
+    vital_expansion: `${parentLabel}의 ${parentColors}과 ${childLabel}의 ${childColors}이 새 시도와 표현을 향하지만, 한쪽의 속도나 결과 기대가 다른 쪽의 방식보다 앞서는 순간`,
+    space_respect: `${parentLabel}이 연결이나 정리를 위해 말을 이어 가려는 때, ${childLabel}이 자신의 리듬대로 생각을 정리할 여백이 먼저 필요해지는 순간`,
+    trust_exploration: `${parentLabel}의 ${parentColors}이 약속과 신뢰의 기준을 먼저 세우려는 때, ${childLabel}의 ${childColors}이 납득할 이유와 더 살필 가능성을 확인하려는 순간`,
+    pace_adjustment: `${parentLabel}의 ${parentColors}이 방향이나 반응을 앞당기려는 때, ${childLabel}의 ${childColors}이 자신의 속도로 기준과 이유를 맞추려는 순간`,
+  };
+  return `${TYPE_META[type].name}에서는 ${typeStart[type]} ${tension.title}이 시작될 수 있습니다. 이는 ${parentLabel}이 ${parentNeed}을 지키려는 흐름과 ${childLabel}이 ${childNeed}을 확인하려는 흐름이 다르기 때문입니다. ${currentCardSupport(parent.cards[1])} ${currentCardSupport(child.cards[1])}`;
+}
+
+function buildPersonalizedPractices(
+  parentLabel: string,
+  childLabel: string,
+  parent: PersonProfile,
+  child: PersonProfile,
+  type: ParentChildRelationshipTypeId,
+  tension: TensionPattern,
+): string[] {
+  const parentNeed = DIMENSION_NEED[parent.primaryDimension];
+  const childNeed = DIMENSION_NEED[child.primaryDimension];
+  const typePractice: Record<ParentChildRelationshipTypeId, string> = {
+    steady_recovery: `이번 주 함께 지킬 약속을 한 가지로 줄이고, ${topic(parentLabel)} ${object(parentNeed)} 위해 지킬 부분을, ${topic(childLabel)} ${object(childNeed)} 위해 조정이 필요한 부분을 각각 한 줄로 적기`,
+    emotional_connection: `마음이 서운해진 날, ${pairSubject(parentLabel, childLabel)} 상대의 감정을 해석하기 전에 ‘지금 나는 연결이 필요한지, 잠시 정리가 필요한지’를 한 번씩 말하기`,
+    clarity_balance: `선택할 일이 생기면 ${topic(parentLabel)} 먼저 확인할 기준 하나를, ${topic(childLabel)} 더 살펴보고 싶은 이유 하나를 적어 두고 둘 다 확인한 뒤 결론 내리기`,
+    vital_expansion: `새로 해 보고 싶은 일이 생기면 ${pairSubject(parentLabel, childLabel)} 각각 기대하는 변화 한 가지와 멈춰야 할 신호 한 가지를 말한 뒤 작은 범위에서만 시작하기`,
+    space_respect: `대화가 무거워질 때 ${topic(childLabel)} 다시 이야기할 시간을 직접 정하고, ${topic(parentLabel)} 그 시간 전에는 해결안을 덧붙이지 않기`,
+    trust_exploration: `약속을 정하기 전 ${topic(parentLabel)} 꼭 지키고 싶은 기준 하나를, ${topic(childLabel)} 납득을 위해 더 확인할 이유 하나를 말하고 두 문장을 함께 남기기`,
+    pace_adjustment: `결정을 서두르게 될 때 ${pairSubject(parentLabel, childLabel)} ‘지금 정할 일’과 ‘조금 더 살필 일’을 한 가지씩 나눠 적고 서로의 칸을 바꾸지 않기`,
+  };
+  const recoveryLead: Record<ParentChildRelationshipTypeId, string> = {
+    steady_recovery: "다음 약속을 고치기 전에는",
+    emotional_connection: "다시 마음을 잇기 전에는",
+    clarity_balance: "다음 결론을 내리기 전에는",
+    vital_expansion: "다음 시도를 정하기 전에는",
+    space_respect: "다시 대화를 이어가기 전에는",
+    trust_exploration: "다음 약속을 확정하기 전에는",
+    pace_adjustment: "다음 결정을 서두르기 전에는",
+  };
+  const parentRecovery = parent.recoveryColor ? `${parent.recoveryColor.korName}의 ${parent.recoveryColor.recovery}` : "선택한 회복 컬러의 방향";
+  const childRecovery = child.recoveryColor ? `${child.recoveryColor.korName}의 ${child.recoveryColor.recovery}` : "선택한 회복 컬러의 방향";
+
+  return [
+    typePractice[type],
+    `${subject(tension.title)} 느껴질 때, ${currentCardAction(parent, parentLabel)} 하고 ${currentCardAction(child, childLabel)} 하며, 상대의 말을 바로 해석하거나 고치지 않기`,
+    `${recoveryLead[type]} ${topic(parentLabel)} ${parentRecovery}이 필요한 순간을, ${topic(childLabel)} ${childRecovery}이 필요한 순간을 한 문장으로 말한 뒤 두 사람의 미래 카드가 가리키는 다음 행동을 한 가지만 정하기`,
+  ];
+}
+
 function buildTensionScene(parentLabel: string, childLabel: string, parent: PersonProfile, child: PersonProfile, tension: TensionPattern): LifeScene {
   return {
     title: tension.title,
@@ -508,7 +645,9 @@ function buildCoaching(
   const childCurrent = currentCardSupport(child.cards[1]);
   const sharedScene = buildStrengthScene(labels.parent, labels.child, parent, child);
   const doMessages = tension.doMessages(labels.parent, labels.child);
-  const dontMessages = tension.dontMessages(labels.parent, labels.child);
+  const dontMessages = buildPersonalizedDontMessages(labels.parent, labels.child, parent, child, type, tension);
+  const conflictStart = buildConflictStart(labels.parent, labels.child, parent, child, type, tension);
+  const practices = buildPersonalizedPractices(labels.parent, labels.child, parent, child, type, tension);
 
   return {
     labels,
@@ -547,24 +686,16 @@ function buildCoaching(
       ],
       dontMessages: [
         ...dontMessages,
-        `“${labels.child}아, 네 기분이나 이유는 지금 중요하지 않아.”`,
-        "“서로 다른 방식은 틀린 것이니 한쪽만 따라야 해.”",
       ],
     },
     conflictRecovery: {
-      conflictStart: `${tension.title}은 ${subject(labels.parent)} ${object(DIMENSION_LABEL[parent.primaryDimension])} 지키려는 순간과 ${subject(labels.child)} ${object(DIMENSION_LABEL[child.primaryDimension])} 먼저 확인하려는 순간이 겹칠 때 시작될 수 있습니다.`,
+      conflictStart,
       parentIntent: `${labels.parent}의 말과 행동은 ${parent.colors[0].korName}·${parent.colors[1].korName}에서 드러난 ${object(DIMENSION_LABEL[parent.primaryDimension])} 관계 안에 지키고 싶은 마음에서 출발할 수 있습니다. ${parentCurrent}`,
       childReception: `${topic(labels.child)} ${child.colors[0].korName}·${child.colors[1].korName}의 ${object(DIMENSION_LABEL[child.primaryDimension])} 충분히 반영되지 않으면, 도움보다 자신의 방식이 밀려난 신호로 받아들일 수 있습니다. ${childCurrent}`,
       mismatch: `${topic(labels.parent)} ${labels.child}의 반응을 관계의 리듬을 늦추는 모습으로 읽을 수 있고, ${topic(labels.child)} ${labels.parent}의 기준을 자신의 이유를 건너뛴 정리로 읽을 수 있습니다. 이는 부모·자녀나 성별의 특성이 아니라, 이번 1·2순위 컬러에서 우선하는 관계 기준이 다를 때 생길 수 있는 해석의 차이입니다.`,
       recoveryOrder: `먼저 ${pairSubject(labels.parent, labels.child)} 각각 무엇을 지키고 싶었는지 한 문장으로 확인합니다. 다음으로 이번에 바로 정할 일과 다시 살펴볼 일을 나눕니다. ${recoverySupport(parent, labels.parent)} ${recoverySupport(child, labels.child)}`,
     },
-    practices: [
-      tension.practice(labels.parent, labels.child),
-      sharedScene
-        ? `${pairSubject(labels.parent, labels.child)} ${sharedScene.title}에서 각자 편했던 점을 한 문장씩 나누고, 상대의 말을 바로 고치지 않고 끝까지 듣기`
-        : `${pairSubject(labels.parent, labels.child)} 서로 다른 기준을 한 문장씩 말하고, 상대의 말을 바로 고치지 않고 끝까지 듣기`,
-      `갈등 뒤에는 ${pairSubject(labels.parent, labels.child)} 각자 선택한 3순위 컬러가 필요해지는 순간을 한 가지씩 말하고, ${labels.parent}의 ${parent.cards[2] ? `${parent.cards[2].colorKor} ${parent.cards[2].shapeKor}` : "미래"} 카드와 ${labels.child}의 ${child.cards[2] ? `${child.cards[2].colorKor} ${child.cards[2].shapeKor}` : "미래"} 카드가 가리키는 회복의 다음 행동을 한 가지만 정하기`,
-    ],
+    practices,
   };
 }
 
@@ -609,8 +740,8 @@ export function buildParentChildRelationshipAnalysis(input: {
       },
       {
         section: "DO & DON'T·갈등과 회복·3가지 실천",
-        colorBasis: `${tension.title}에서 발견된 실제 차이를 대화·갈등·실천으로 각각 다른 역할로 나누어 적용했습니다.`,
-        cardSupport: "심리카드는 현재 반응을 보완하며, 관계 유형이나 생활 장면을 결정하지 않습니다.",
+        colorBasis: `${TYPE_META[typeId].name}의 1·2순위 컬러 교차와 ${tension.title}의 실제 긴장을 DON'T·갈등 시작·실천에 각각 다른 역할로 적용했습니다.`,
+        cardSupport: "심리카드는 현재 반응을 보완해 DON'T의 부담 지점과 두 번째 실천의 대화 방식에만 반영하며, 관계 유형이나 생활 장면을 결정하지 않습니다.",
         recoveryUse: recoverySupport(parent, labels.parent) + " " + recoverySupport(child, labels.child),
       },
     ],
