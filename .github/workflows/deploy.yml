@@ -54,15 +54,31 @@ jobs:
             --platform=node \
             --target=node20 \
             --format=cjs \
+            --external:pdfkit \
             --outfile=".vercel/output/functions/api/couple-pdf-report.func/index.js"
           npx esbuild "api/parent-child-pdf-report.ts" \
             --bundle \
             --platform=node \
             --target=node20 \
             --format=cjs \
+            --external:pdfkit \
             --outfile=".vercel/output/functions/api/parent-child-pdf-report.func/index.js"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/couple-pdf-report.func/HusimPdfKorean.ttf"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/parent-child-pdf-report.func/HusimPdfKorean.ttf"
+
+      - name: Include PDFKit serverless runtime
+        run: |
+          for function in couple-pdf-report parent-child-pdf-report; do
+            runtime=".vercel/output/functions/api/${function}.func/node_modules"
+            mkdir -p "${runtime}/@noble" "${runtime}/@swc"
+            for package in pdfkit fflate fontkit linebreak png-js brotli clone dfa fast-deep-equal restructure tiny-inflate unicode-properties unicode-trie base64-js pako tslib; do
+              cp -RL "node_modules/${package}" "${runtime}/${package}"
+            done
+            for package in ciphers hashes; do
+              cp -RL "node_modules/@noble/${package}" "${runtime}/@noble/${package}"
+            done
+            cp -RL "node_modules/@swc/helpers" "${runtime}/@swc/helpers"
+          done
 
       - name: Write function config
         run: |
