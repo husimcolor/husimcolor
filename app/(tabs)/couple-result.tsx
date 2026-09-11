@@ -21,7 +21,8 @@ import { buildRomanticRelationTraits } from '@/lib/couple-romantic-relation-trai
 import { buildRomanticRelationshipRoles } from '@/lib/couple-romantic-relationship-roles';
 import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
 import { buildCouplePdfDownloadPayload } from '@/lib/couple-pdf-download';
-import { buildParentChildCoaching, getParentChildLabels } from '@/lib/parent-child-coaching';
+import { getParentChildLabels } from '@/lib/parent-child-coaching';
+import { buildParentChildRelationshipAnalysis } from '@/lib/parent-child-relationship-analysis';
 import {
   PARENT_CHILD_PRIORITY_PILOT,
   PARENT_CHILD_PRIORITY_PILOT_QUERY,
@@ -520,20 +521,28 @@ export default function CoupleResultScreen() {
   const personLabels = isParentChildRel
     ? { personA: parentChildLabels.parent, personB: parentChildLabels.child }
     : { personA: '첫 번째 사람', personB: '두 번째 사람' };
-  const generatedParentChildCoaching = isParentChildRel && lightArchetypeResult
-    ? buildParentChildCoaching({
+  const generatedParentChildRelationshipAnalysis = isParentChildRel
+    ? buildParentChildRelationshipAnalysis({
         relationType,
         parentGender: personA.info.gender,
         childGender: personB.info.gender,
-        parent: { colors: personA.colors, cards: definedCardsA, analysis: personAAnalysis },
-        child: { colors: personB.colors, cards: definedCardsB, analysis: personBAnalysis },
-        lightArchetype: lightArchetypeResult,
+        parent: { colors: personA.colors, cards: definedCardsA },
+        child: { colors: personB.colors, cards: definedCardsB },
       })
     : null;
   const priorityPilot = isPriorityPilot && isParentChildRel ? PARENT_CHILD_PRIORITY_PILOT : null;
-  const parentChildCoaching = priorityPilot?.coaching ?? generatedParentChildCoaching;
-  const parentChildRecommendedColors = priorityPilot?.relationshipSummary.recommendedColors
-    ?? lightArchetypeResult?.recommendedColors
+  const priorityPilotRelationshipAnalysis = priorityPilot
+    ? {
+        relationshipSummary: priorityPilot.relationshipSummary,
+        coaching: priorityPilot.coaching,
+        lifeScenes: priorityPilot.lifeScenes,
+        sectionEvidence: priorityPilot.sectionEvidence,
+      }
+    : null;
+  const parentChildRelationshipAnalysis = priorityPilotRelationshipAnalysis ?? generatedParentChildRelationshipAnalysis;
+  const parentChildCoaching = parentChildRelationshipAnalysis?.coaching ?? null;
+  const parentChildSummary = parentChildRelationshipAnalysis?.relationshipSummary;
+  const parentChildRecommendedColors = parentChildSummary?.recommendedColors
     ?? [];
 
   const getCoupleShareUrl = async () => {
@@ -786,7 +795,7 @@ export default function CoupleResultScreen() {
   const accentA = hexLuminance(rawAccentA) > 0.75 ? '#7B5E3A' : rawAccentA;
   const accentB = hexLuminance(rawAccentB) > 0.75 ? '#7B5E3A' : rawAccentB;
   // archetype 유형별 대표 컬러 연동 (없으면 기본 세이지)
-  const accentCouple = priorityPilot?.relationshipSummary.accentColor
+  const accentCouple = parentChildSummary?.accentColor
     ?? archetypeResult?.accentColor
     ?? lightArchetypeResult?.accentColor
     ?? '#8FA68E';
@@ -936,11 +945,11 @@ export default function CoupleResultScreen() {
                   <View style={[archetypeStyles.typeBadge, { backgroundColor: accentCouple }]}>
                     <Text style={archetypeStyles.typeBadgeText}>관계 유형</Text>
                   </View>
-                  <Text style={[archetypeStyles.typeName, { color: accentCouple }]}>{priorityPilot?.relationshipSummary.typeName ?? lightArchetypeResult.typeName}</Text>
+                  <Text style={[archetypeStyles.typeName, { color: accentCouple }]}>{parentChildSummary?.typeName ?? lightArchetypeResult.typeName}</Text>
                 </View>
-                <Text style={[archetypeStyles.coreSummary, { color: accentCouple }]}>❝ {priorityPilot?.relationshipSummary.coreSummary ?? lightArchetypeResult.coreSummary} ❞</Text>
+                <Text style={[archetypeStyles.coreSummary, { color: accentCouple }]}>❝ {parentChildSummary?.coreSummary ?? lightArchetypeResult.coreSummary} ❞</Text>
                 <View style={[archetypeStyles.divider, { backgroundColor: accentCouple + '40' }]} />
-                <Text style={{ fontSize: 13.5, lineHeight: 24, color: '#5C4A42', opacity: 1 }}>{priorityPilot?.relationshipSummary.description ?? lightArchetypeResult.description}</Text>
+                <Text style={{ fontSize: 13.5, lineHeight: 24, color: '#5C4A42', opacity: 1 }}>{parentChildSummary?.description ?? lightArchetypeResult.description}</Text>
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
                   <Text style={{ fontSize: 10, color: accentCouple + 'AA', fontWeight: '600', letterSpacing: 0.5 }}>휴심컬러 · 관계 심리코칭</Text>
                 </View>
@@ -1074,20 +1083,24 @@ export default function CoupleResultScreen() {
                     </View>
                   </SectionCard>
 
-                  {priorityPilot && (
+                  {parentChildRelationshipAnalysis && (
                     <>
                       <Text style={styles.sectionGroupTitleParentChild}>실제 생활에서 만나는 지점</Text>
                       <SectionCard variant="parentChild" accentColor="#C47E8A" title="잘 맞는 부분과 부딪히는 부분" colors={colors}>
-                        <Text style={styles.priorityPilotSceneGroupTitle}>잘 맞는 부분</Text>
-                        {priorityPilot.lifeScenes.strengths.map((scene) => (
-                          <View key={scene.title} style={styles.priorityPilotScene}>
-                            <Text style={styles.priorityPilotSceneTitle}>{scene.title}</Text>
-                            <Text style={styles.parentChildBodyText}>{scene.description}</Text>
-                            <Text style={styles.priorityPilotEvidence}>{scene.evidence}</Text>
-                          </View>
-                        ))}
+                        {parentChildRelationshipAnalysis.lifeScenes.strengths.length > 0 && (
+                          <>
+                            <Text style={styles.priorityPilotSceneGroupTitle}>잘 맞는 부분</Text>
+                            {parentChildRelationshipAnalysis.lifeScenes.strengths.map((scene) => (
+                              <View key={scene.title} style={styles.priorityPilotScene}>
+                                <Text style={styles.priorityPilotSceneTitle}>{scene.title}</Text>
+                                <Text style={styles.parentChildBodyText}>{scene.description}</Text>
+                                <Text style={styles.priorityPilotEvidence}>{scene.evidence}</Text>
+                              </View>
+                            ))}
+                          </>
+                        )}
                         <Text style={[styles.priorityPilotSceneGroupTitle, styles.priorityPilotTensionTitle]}>부딪히는 부분</Text>
-                        {priorityPilot.lifeScenes.tensions.map((scene) => (
+                        {parentChildRelationshipAnalysis.lifeScenes.tensions.map((scene) => (
                           <View key={scene.title} style={styles.priorityPilotScene}>
                             <Text style={[styles.priorityPilotSceneTitle, { color: '#925143' }]}>{scene.title}</Text>
                             <Text style={styles.parentChildBodyText}>{scene.description}</Text>
@@ -1766,7 +1779,7 @@ export default function CoupleResultScreen() {
           <View style={[styles.closingCard, { backgroundColor: '#2A2420', borderColor: accentCouple + '60' }]}>
             <Text style={[styles.closingLabel, isParentChildRel && styles.closingLabelParentChild, { color: accentCouple }]}>마무리 코칭 메시지</Text>
             <Text style={[styles.closingMessage, isParentChildRel && styles.closingMessageParentChild, { color: '#F8F3EA' }]}>
-              {priorityPilot?.relationshipSummary.closingMessage
+              {parentChildSummary?.closingMessage
                 ?? lightArchetypeResult?.closingMessage
                 ?? archetypeResult.closingMessage
                 ?? coupleAnalysis.closingMessage}
