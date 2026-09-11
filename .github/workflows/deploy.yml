@@ -83,7 +83,7 @@ jobs:
           {
             "version": 3,
             "routes": [
-              { "src": "/api/trpc/(.*)", "dest": "/api/trpc/[...trpc]" },
+              { "src": "/api/trpc/(.*)", "dest": "/api/trpc/[...trpc]"},
               { "src": "/api/couple-pdf-report", "dest": "/api/couple-pdf-report" },
               { "src": "/api/parent-child-pdf-report", "dest": "/api/parent-child-pdf-report" },
               { "src": "/_expo/static/js/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
