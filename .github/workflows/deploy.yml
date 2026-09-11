@@ -26,6 +26,8 @@ jobs:
       - name: Build latest Expo web bundle
         run: |
           rm -rf dist .vercel/output
+          mkdir -p node_modules/react-native-css-interop/.cache
+          : > node_modules/react-native-css-interop/.cache/web.css
           EXPO_USE_METRO_WORKSPACE_ROOT=1 pnpm exec expo export --platform web --output-dir dist
 
       - name: Prepare Vercel output structure
