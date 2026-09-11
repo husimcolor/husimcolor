@@ -2,7 +2,11 @@ import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { isCoupleShareSnapshot, parseCoupleShareSnapshot } from "../shared/couple-share";
+import {
+  getCoupleShareSessionSignature,
+  isCoupleShareSnapshot,
+  parseCoupleShareSnapshot,
+} from "../shared/couple-share";
 
 const snapshot = {
   schemaVersion: 1 as const,
@@ -50,6 +54,20 @@ describe("커플 결과 고유 공유 링크", () => {
     expect(parsedCouple?.sessionData).not.toEqual(parsedParentChild?.sessionData);
   });
 
+  it("공유 중 새 검사 세션이 열리면 이전 진행 요청의 shareId를 재사용하지 않는다", () => {
+    const nextSession = {
+      ...snapshot.sessionData,
+      relationType: "친구" as const,
+      personA: { ...snapshot.sessionData.personA, colors: ["green", "pink", "brown"] },
+      personB: { ...snapshot.sessionData.personB, cards: ["magenta_circle", "coral_triangle", "yellow_square"] },
+    };
+
+    expect(getCoupleShareSessionSignature(snapshot.sessionData))
+      .toBe(getCoupleShareSessionSignature({ ...snapshot.sessionData }));
+    expect(getCoupleShareSessionSignature(nextSession))
+      .not.toBe(getCoupleShareSessionSignature(snapshot.sessionData));
+  });
+
   it("공유 시점 결과를 새 검사 결과와 분리하는 shareId 저장·조회 API를 사용한다", () => {
     const schemaSource = readFileSync(resolve(process.cwd(), "drizzle/schema.ts"), "utf8");
     const dbSource = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
@@ -77,6 +95,8 @@ describe("커플 결과 고유 공유 링크", () => {
     expect(screenSource).toContain("handleCoupleKakaoShare(lightArchetypeResult.typeName)");
     expect(screenSource).toContain("카카오 공유를 누른 바로 그 시점의 화면 데이터를 새 불변 스냅샷으로 저장한다");
     expect(screenSource).toContain("이전 검사에서 AsyncStorage에 남아 있을 수 있는 shareId는 새 공유 스냅샷에 재사용하지 않는다.");
+    expect(screenSource).toContain("동일 세션에서만 진행 중인 스냅샷 요청을 재사용한다.");
+    expect(screenSource).toContain("getCoupleShareSessionSignature(snapshot.sessionData)");
     expect(screenSource).not.toContain("if (activeShareId) return getUrl(activeShareId);");
   });
 });

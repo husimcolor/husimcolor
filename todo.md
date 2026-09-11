@@ -889,3 +889,7 @@
 - [x] 친구 관계 결과의 커플·연인·부부 잔존 표현을 친구 관계 문구로 최소 수정
 - [x] 친구 관계의 현재 세션 shareId·이미지 저장·카카오 공유 독립 복원 검증
 - [x] GitHub main→Vercel 자동 배포로 친구 관계 문구 정리 Production 반영 확인
+- [x] 관계 통합분석 카카오 공유가 클릭 시점의 최신 immutable snapshot만 사용하는지 점검·보정
+- [x] 관계 통합분석 공통 카드의 인앱 WebView 텍스트 대비·테마·opacity 호환성 보정
+- [x] 부부·연인·부모·자녀·친구의 최신 shareId 링크와 일반·인앱 브라우저 렌더링 검증
+- [ ] GitHub main→Vercel 자동 배포로 인앱 호환성 보정 Production 반영 확인

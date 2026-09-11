@@ -87,9 +87,19 @@ export default function Root({ children }: PropsWithChildren) {
             background-color: #FAF8F3 !important;
             color: #3D3530 !important;
             color-scheme: only light !important;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            forced-color-adjust: none;
           }
           body { margin: 0; }
-          * { -webkit-text-fill-color: inherit; }
+          /*
+           * inherit 규칙은 구형 Android WebView에서 React Native Web의 Text별 color를
+           * 부모색으로 덮어써 어두운 카드·밝은 카드 모두에서 본문이 사라질 수 있다.
+           * 현재 Text 요소의 color를 그대로 쓰도록 하여 카카오·Instagram WebView와
+           * 일반 모바일 브라우저의 명도 대비를 일치시킨다.
+           */
+          .relation-result-webview,
+          .relation-result-webview * { -webkit-text-fill-color: currentColor !important; }
           /* 인앱브라우저(카카오톡/네이버) 스크롤 강제 활성화 */
           /* Expo 웹 빌드에서 #root가 overflow:hidden으로 설정되어 콘텐츠가 잘리는 문제 해결 */
           #root > div {

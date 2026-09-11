@@ -28,6 +28,26 @@ const RELATION_TYPES = new Set([
   "연인", "부부", "친구", "부모-자녀", "아빠-아들", "아빠-딸", "엄마-아들", "엄마-딸", "형제자매", "동료",
 ]);
 
+/**
+ * 공유 요청 중 새 관계 결과로 바뀌었는지 판별하기 위한 현재 입력의 안정적인 서명입니다.
+ * shareId를 담지 않아 이전 공유 링크가 다음 요청의 키가 되는 일을 막습니다.
+ */
+export function getCoupleShareSessionSignature(sessionData: CoupleSessionData): string {
+  return JSON.stringify({
+    relationType: sessionData.relationType,
+    personA: {
+      info: sessionData.personA.info,
+      colors: sessionData.personA.colors,
+      cards: sessionData.personA.cards,
+    },
+    personB: {
+      info: sessionData.personB.info,
+      colors: sessionData.personB.colors,
+      cards: sessionData.personB.cards,
+    },
+  });
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

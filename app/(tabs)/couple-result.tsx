@@ -29,7 +29,7 @@ import {
   PARENT_CHILD_PRIORITY_PILOT_QUERY,
   PARENT_CHILD_PRIORITY_PILOT_SESSION,
 } from '@/lib/parent-child-priority-pilot';
-import type { CoupleShareSnapshot } from '@/shared/couple-share';
+import { getCoupleShareSessionSignature, type CoupleShareSnapshot } from '@/shared/couple-share';
 
 // ─── SectionCard ─────────────────────────────────────────────────────────────
 const sectionStyles = StyleSheet.create({
@@ -140,7 +140,9 @@ export default function CoupleResultScreen() {
   const requestedQa = typeof routeParams.qa === 'string' ? routeParams.qa : undefined;
   const isPriorityPilot = process.env.NODE_ENV !== 'production'
     && requestedQa === PARENT_CHILD_PRIORITY_PILOT_QUERY;
-  const colors = useColors();
+  // 관계 결과의 크림·브라운 카드 팔레트는 인앱 WebView의 시스템 다크 모드와 무관하게 고정한다.
+  // 카카오·Instagram WebView가 dark scheme을 반환해도 밝은 내부 카드에 밝은 본문이 상속되지 않는다.
+  const colors = useColors('light');
   const [sessionData, setSessionData] = useState<CoupleSessionData | null>(null);
   const [personAAnalysis, setPersonAAnalysis] = useState<PersonAnalysis | null>(null);
   const [personBAnalysis, setPersonBAnalysis] = useState<PersonAnalysis | null>(null);
@@ -159,7 +161,10 @@ export default function CoupleResultScreen() {
   const shareCardRef = useRef<ViewShotRef>(null);
   const couplePdfDownloadLockRef = useRef(false);
   const parentChildPdfDownloadLockRef = useRef(false);
-  const coupleShareRequestRef = useRef<Promise<string> | null>(null);
+  const coupleShareRequestRef = useRef<{
+    sessionSignature: string;
+    request: Promise<string>;
+  } | null>(null);
   const couplePdfDownloadPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const couplePdfDownloadTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const parentChildPdfDownloadPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -333,7 +338,7 @@ export default function CoupleResultScreen() {
 
   if (loading) {
     return (
-      <ScreenContainer>
+      <ScreenContainer className="relation-result-webview">
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: colors.muted }]}>
             두 사람의 마음 흐름을{'\n'}분석하고 있습니다...
@@ -345,7 +350,7 @@ export default function CoupleResultScreen() {
 
   if (error || !sessionData || !personAAnalysis || !personBAnalysis || !coupleAnalysis || !archetypeResult) {
     return (
-      <ScreenContainer>
+      <ScreenContainer className="relation-result-webview">
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: colors.muted }]}>{error ?? '데이터를 불러올 수 없습니다.'}</Text>
           <Pressable
@@ -557,8 +562,6 @@ export default function CoupleResultScreen() {
       return `${baseUrl}/couple-result?shareId=${encodeURIComponent(shareId)}`;
     };
 
-    if (coupleShareRequestRef.current) return coupleShareRequestRef.current;
-
     const snapshot = buildCoupleShareSnapshot(
       sessionData,
       personAAnalysis,
@@ -567,22 +570,35 @@ export default function CoupleResultScreen() {
       archetypeResult,
       lightArchetypeResult,
     );
-    const request = createCoupleShare.mutateAsync({ snapshot: JSON.stringify(snapshot) })
+    const sessionSignature = getCoupleShareSessionSignature(snapshot.sessionData);
+    const inFlightRequest = coupleShareRequestRef.current;
+    // 동일 세션에서만 진행 중인 스냅샷 요청을 재사용한다.
+    // 새 검사를 시작했다면 이전 요청이 늦게 끝나도 그 shareId를 공유하지 않는다.
+    if (inFlightRequest?.sessionSignature === sessionSignature) return inFlightRequest.request;
+
+    let request: Promise<string>;
+    request = createCoupleShare.mutateAsync({ snapshot: JSON.stringify(snapshot) })
       .then(({ shareId }) => {
-        setActiveShareId(shareId);
+        if (coupleShareRequestRef.current?.request === request) {
+          setActiveShareId(shareId);
+        }
         return getUrl(shareId);
       })
       .catch(() => {
         throw new Error('공유 링크 생성 실패');
       })
       .finally(() => {
-        coupleShareRequestRef.current = null;
+        if (coupleShareRequestRef.current?.request === request) {
+          coupleShareRequestRef.current = null;
+        }
       });
-    coupleShareRequestRef.current = request;
+    coupleShareRequestRef.current = { sessionSignature, request };
     try {
       return await request;
     } catch (error) {
-      coupleShareRequestRef.current = null;
+      if (coupleShareRequestRef.current?.request === request) {
+        coupleShareRequestRef.current = null;
+      }
       throw error;
     }
   };
@@ -926,7 +942,7 @@ export default function CoupleResultScreen() {
     ? Math.max(insets.top, 16)
     : 0;
   return (
-    <ScreenContainer>
+    <ScreenContainer className="relation-result-webview">
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: topPad }}>
 
