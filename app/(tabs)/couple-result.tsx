@@ -21,6 +21,7 @@ import { buildRomanticRelationTraits } from '@/lib/couple-romantic-relation-trai
 import { buildRomanticRelationshipRoles } from '@/lib/couple-romantic-relationship-roles';
 import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
 import { buildCouplePdfDownloadPayload } from '@/lib/couple-pdf-download';
+import { buildParentChildPdfDownloadPayload } from '@/lib/parent-child-pdf-download';
 import { getParentChildLabels } from '@/lib/parent-child-coaching';
 import { buildParentChildRelationshipAnalysis } from '@/lib/parent-child-relationship-analysis';
 import {
@@ -144,13 +145,18 @@ export default function CoupleResultScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [couplePdfDownloadState, setCouplePdfDownloadState] = useState<'idle' | 'preparing' | 'requesting' | 'delayed' | 'failed'>('idle');
   const [couplePdfDownloadMessage, setCouplePdfDownloadMessage] = useState<string | null>(null);
+  const [parentChildPdfDownloadState, setParentChildPdfDownloadState] = useState<'idle' | 'preparing' | 'requesting' | 'delayed' | 'failed'>('idle');
+  const [parentChildPdfDownloadMessage, setParentChildPdfDownloadMessage] = useState<string | null>(null);
   const [sharedSnapshot, setSharedSnapshot] = useState<CoupleShareSnapshot | null>(null);
   const [activeShareId, setActiveShareId] = useState<string | null>(null);
   const shareCardRef = useRef<ViewShotRef>(null);
   const couplePdfDownloadLockRef = useRef(false);
+  const parentChildPdfDownloadLockRef = useRef(false);
   const coupleShareRequestRef = useRef<Promise<string> | null>(null);
   const couplePdfDownloadPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const couplePdfDownloadTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const parentChildPdfDownloadPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const parentChildPdfDownloadTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const logVisitor = trpc.visitors.log.useMutation();
   const createCoupleShare = trpc.coupleShares.create.useMutation();
@@ -187,13 +193,23 @@ export default function CoupleResultScreen() {
     setLoading(false);
   }, [requestedShareId, sharedResultQuery.data, sharedResultQuery.isLoading]);
 
-  useEffect(() => () => clearCouplePdfDownloadTimers(), []);
+  useEffect(() => () => {
+    clearCouplePdfDownloadTimers();
+    clearParentChildPdfDownloadTimers();
+  }, []);
 
   function clearCouplePdfDownloadTimers() {
     if (couplePdfDownloadPollRef.current) clearInterval(couplePdfDownloadPollRef.current);
     couplePdfDownloadPollRef.current = null;
     couplePdfDownloadTimersRef.current.forEach((timer) => clearTimeout(timer));
     couplePdfDownloadTimersRef.current = [];
+  }
+
+  function clearParentChildPdfDownloadTimers() {
+    if (parentChildPdfDownloadPollRef.current) clearInterval(parentChildPdfDownloadPollRef.current);
+    parentChildPdfDownloadPollRef.current = null;
+    parentChildPdfDownloadTimersRef.current.forEach((timer) => clearTimeout(timer));
+    parentChildPdfDownloadTimersRef.current = [];
   }
 
   async function loadLocalSession() {
@@ -657,6 +673,26 @@ export default function CoupleResultScreen() {
     window.setTimeout(() => form.remove(), 1_000);
   };
 
+  const submitParentChildPdfDownload = (payload: ReturnType<typeof buildParentChildPdfDownloadPayload>, requestId: string) => {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/parent-child-pdf-report';
+    form.style.display = 'none';
+    [
+      ['payload', JSON.stringify(payload)],
+      ['requestId', requestId],
+    ].forEach(([name, value]) => {
+      const field = document.createElement('input');
+      field.type = 'hidden';
+      field.name = name;
+      field.value = value;
+      form.appendChild(field);
+    });
+    document.body.appendChild(form);
+    form.submit();
+    window.setTimeout(() => form.remove(), 1_000);
+  };
+
   const handleCouplePdfDownload = () => {
     if (couplePdfDownloadLockRef.current || !isRomanticRel) return;
     const unified = archetypeResult.unifiedSections;
@@ -768,6 +804,91 @@ export default function CoupleResultScreen() {
       couplePdfDownloadLockRef.current = false;
       setCouplePdfDownloadState('failed');
       setCouplePdfDownloadMessage(downloadError instanceof Error ? downloadError.message : '다운로드에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  const handleParentChildPdfDownload = () => {
+    if (parentChildPdfDownloadLockRef.current || !isParentChildRel || !parentChildRelationshipAnalysis || !parentChildCoaching || !parentChildSummary) return;
+    parentChildPdfDownloadLockRef.current = true;
+    clearParentChildPdfDownloadTimers();
+    setParentChildPdfDownloadState('preparing');
+    setParentChildPdfDownloadMessage('부모·자녀 PDF 리포트를 준비하고 있습니다.');
+    try {
+      if (Platform.OS !== 'web') throw new Error('부모·자녀 PDF는 모바일 웹 브라우저에서 저장할 수 있습니다.');
+      const payload = buildParentChildPdfDownloadPayload({
+        relationType,
+        personA: {
+          label: `첫 번째 사람 - ${parentChildLabels.parent}`,
+          colors: getCouplePdfColorRows(colorsA),
+          cards: getCouplePdfCardRows(cardsA),
+          integratedAnalysis: buildCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA),
+          relationshipStyle: personAAnalysis.relationshipStyle,
+          emotionExpression: personAAnalysis.emotionExpression,
+          complementColor: { name: personAAnalysis.complementColor.korName, hex: personAAnalysis.complementColor.hex, meaning: personAAnalysis.complementColor.meaning },
+          coachingMessage: personAAnalysis.coachingMessage,
+        },
+        personB: {
+          label: `두 번째 사람 - ${parentChildLabels.child}`,
+          colors: getCouplePdfColorRows(colorsB),
+          cards: getCouplePdfCardRows(cardsB),
+          integratedAnalysis: buildCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB),
+          relationshipStyle: personBAnalysis.relationshipStyle,
+          emotionExpression: personBAnalysis.emotionExpression,
+          complementColor: { name: personBAnalysis.complementColor.korName, hex: personBAnalysis.complementColor.hex, meaning: personBAnalysis.complementColor.meaning },
+          coachingMessage: personBAnalysis.coachingMessage,
+        },
+        relationship: {
+          labels: parentChildCoaching.labels,
+          typeName: parentChildSummary.typeName,
+          coreSummary: parentChildSummary.coreSummary,
+          description: parentChildSummary.description,
+          cardFlowSummary: `${parentChildLabels.parent}의 현재 흐름 · ${cardsA[1]?.energyTitle ?? '현재 마음의 흐름'}\n${cardsA[1]?.personalityFlow ?? ''}\n\n${parentChildLabels.child}의 현재 흐름 · ${cardsB[1]?.energyTitle ?? '현재 마음의 흐름'}\n${cardsB[1]?.personalityFlow ?? ''}`,
+          socialRoles: parentChildCoaching.socialRoles,
+          relationshipRoles: parentChildCoaching.relationshipRoles,
+          childCommunication: parentChildCoaching.childCommunication,
+          lifeScenes: {
+            strengths: parentChildRelationshipAnalysis.lifeScenes.strengths.map(({ title, description }) => ({ title, description })),
+            tensions: parentChildRelationshipAnalysis.lifeScenes.tensions.map(({ title, description }) => ({ title, description })),
+          },
+          dialogue: parentChildCoaching.dialogue,
+          conflictRecovery: parentChildCoaching.conflictRecovery,
+          recommendedColors: parentChildRecommendedColors.map((color) => ({ name: color.korName, hex: color.hex, reason: color.reason })),
+          practices: parentChildCoaching.practices,
+          closingMessage: parentChildSummary.closingMessage,
+        },
+      });
+      setParentChildPdfDownloadState('requesting');
+      setParentChildPdfDownloadMessage('다운로드 중입니다. 잠시만 기다려 주세요.');
+      const requestId = `parent_child_pdf_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      document.cookie = 'husim_parent_child_pdf_download=; Max-Age=0; Path=/; SameSite=Lax';
+      parentChildPdfDownloadPollRef.current = setInterval(() => {
+        if (!document.cookie.split('; ').some((item) => item === `husim_parent_child_pdf_download=${requestId}`)) return;
+        clearParentChildPdfDownloadTimers();
+        parentChildPdfDownloadLockRef.current = false;
+        setParentChildPdfDownloadState('idle');
+        setParentChildPdfDownloadMessage('PDF 다운로드를 시작했습니다.');
+        parentChildPdfDownloadTimersRef.current.push(setTimeout(() => setParentChildPdfDownloadMessage(null), 3_000));
+      }, 250);
+      submitParentChildPdfDownload(payload, requestId);
+      parentChildPdfDownloadTimersRef.current.push(
+        setTimeout(() => {
+          if (!parentChildPdfDownloadLockRef.current) return;
+          setParentChildPdfDownloadState('delayed');
+          setParentChildPdfDownloadMessage('생성에 시간이 걸리고 있습니다. 네트워크를 확인해 주세요.');
+        }, 12_000),
+        setTimeout(() => {
+          if (!parentChildPdfDownloadLockRef.current) return;
+          clearParentChildPdfDownloadTimers();
+          parentChildPdfDownloadLockRef.current = false;
+          setParentChildPdfDownloadState('failed');
+          setParentChildPdfDownloadMessage('다운로드에 실패했습니다. 다시 시도해주세요.');
+        }, 35_000),
+      );
+    } catch (downloadError) {
+      clearParentChildPdfDownloadTimers();
+      parentChildPdfDownloadLockRef.current = false;
+      setParentChildPdfDownloadState('failed');
+      setParentChildPdfDownloadMessage(downloadError instanceof Error ? downloadError.message : '다운로드에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
@@ -1804,6 +1925,28 @@ export default function CoupleResultScreen() {
               <Text style={styles.couplePdfCaption}>두 사람의 개인 결과와 관계 통합 분석을 A4 리포트로 저장합니다.</Text>
               {couplePdfDownloadMessage ? (
                 <Text style={[styles.couplePdfNotice, couplePdfDownloadState === 'failed' && styles.couplePdfNoticeError]}>{couplePdfDownloadMessage}</Text>
+              ) : null}
+            </View>
+          )}
+
+          {isParentChildRel && parentChildCoaching && parentChildSummary && (
+            <View style={styles.couplePdfSection}>
+              <TouchableOpacity
+                activeOpacity={0.82}
+                disabled={parentChildPdfDownloadState !== 'idle'}
+                style={[styles.couplePdfButton, { backgroundColor: accentCouple, opacity: parentChildPdfDownloadState === 'idle' ? 1 : 0.72 }]}
+                onPress={handleParentChildPdfDownload}
+              >
+                {parentChildPdfDownloadState === 'idle' || parentChildPdfDownloadState === 'failed'
+                  ? <Text style={styles.couplePdfButtonIcon}>↓</Text>
+                  : <ActivityIndicator color="#FFFFFF" size="small" />}
+                <Text style={styles.couplePdfButtonText}>
+                  {parentChildPdfDownloadState === 'idle' || parentChildPdfDownloadState === 'failed' ? 'PDF 리포트 다운로드' : '다운로드 중...'}
+                </Text>
+              </TouchableOpacity>
+              <Text style={styles.couplePdfCaption}>현재 부모·자녀 분석과 두 사람의 개인 결과를 A4 리포트로 저장합니다.</Text>
+              {parentChildPdfDownloadMessage ? (
+                <Text style={[styles.couplePdfNotice, parentChildPdfDownloadState === 'failed' && styles.couplePdfNoticeError]}>{parentChildPdfDownloadMessage}</Text>
               ) : null}
             </View>
           )}
