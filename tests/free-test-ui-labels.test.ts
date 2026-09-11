@@ -7,8 +7,8 @@ const resultScreen = readFileSync(`${root}/app/(tabs)/result.tsx`, "utf8");
 const homeScreen = readFileSync(`${root}/app/(tabs)/index.tsx`, "utf8");
 
 describe("무료 3컬러 테스트 역할 표기", () => {
-  it("선택·홈·결과 화면에서 주기질, 보조기질, 회복방향을 사용한다", () => {
-    for (const source of [selectScreen, resultScreen, homeScreen]) {
+  it("선택·결과 화면에서 주기질, 보조기질, 회복방향을 사용한다", () => {
+    for (const source of [selectScreen, resultScreen]) {
       expect(source).toContain("주기질");
       expect(source).toContain("보조기질");
       expect(source).toContain("회복방향");
@@ -97,8 +97,8 @@ describe("무료 3컬러 테스트 역할 표기", () => {
     expect(friendShareHandler).not.toContain("share-app-25-colors.webp");
   });
 
-  it("이전 무료 테스트 역할 명칭을 화면 코드에서 사용하지 않는다", () => {
-    for (const source of [selectScreen, resultScreen, homeScreen]) {
+  it("이전 무료 테스트 역할 명칭을 선택·결과 화면에서 사용하지 않는다", () => {
+    for (const source of [selectScreen, resultScreen]) {
       expect(source).not.toContain("무의식 / 내면 흐름");
       expect(source).not.toContain("무의식 / 내면 성향");
       expect(source).not.toContain("현재 상태 / 심리 흐름");

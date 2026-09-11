@@ -14,14 +14,14 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RelationType, GenderType, FaithType } from '@/constants/coupleData';
+import {
+  VISIBLE_RELATION_PRODUCTS,
+  type VisibleRelationProduct,
+} from '@/constants/relationProducts';
 
-const RELATION_TYPES: { value: RelationType; label: string; emoji: string }[] = [
+const ROMANTIC_RELATION_TYPES: { value: Extract<RelationType, '연인' | '부부'>; label: string; emoji: string }[] = [
   { value: '연인', label: '연인', emoji: '💑' },
   { value: '부부', label: '부부', emoji: '👫' },
-  { value: '친구', label: '친구', emoji: '🤝' },
-  { value: '부모-자녀', label: '부모-자녀', emoji: '👨‍👧' },
-  { value: '형제자매', label: '형제자매', emoji: '👭' },
-  { value: '동료', label: '동료', emoji: '🌿' },
 ];
 
 // 부모-자녀 선택 시 세부 조합
@@ -48,6 +48,7 @@ export default function CoupleStartScreen() {
   const colors = useColors();
 
   const [relationType, setRelationType] = useState<RelationType | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<VisibleRelationProduct['id'] | null>(null);
   // 부모-자녀 선택 시 세부 조합 상태
   const [parentChildCombo, setParentChildCombo] = useState<RelationType | null>(null);
   const [genderA, setGenderA] = useState<GenderType | null>(null);
@@ -76,6 +77,7 @@ export default function CoupleStartScreen() {
 
   // 부모-자녀 선택 시 세부 조합이 필요함
   const isParentChild = relationType === '부모-자녀';
+  const isRomanticProduct = selectedProductId === 'romantic';
   // 실제 저장될 관계 유형: 부모-자녀 선택 시 세부 조합으로 대체
   const effectiveRelationType: RelationType | null = isParentChild
     ? parentChildCombo
@@ -100,6 +102,25 @@ export default function CoupleStartScreen() {
     if (value !== '부모-자녀') {
       setParentChildCombo(null);
     }
+  };
+
+  const handleProductSelect = (product: VisibleRelationProduct) => {
+    setSelectedProductId(product.id);
+
+    if (product.id === 'parent-child') {
+      setRelationType('부모-자녀');
+      setParentChildCombo(null);
+      return;
+    }
+
+    if (product.id === 'friend') {
+      setRelationType('친구');
+      setParentChildCombo(null);
+      return;
+    }
+
+    setRelationType(null);
+    setParentChildCombo(null);
   };
 
   const renderChip = (
@@ -146,7 +167,7 @@ export default function CoupleStartScreen() {
               <Text style={[styles.backBtnText, { color: colors.muted }]}>←</Text>
             </TouchableOpacity>
             <View style={styles.headerText}>
-              <Text style={[styles.title, { color: '#2D2420' }]}>커플 세션</Text>
+              <Text style={[styles.title, { color: '#2D2420' }]}>관계 분석</Text>
               <Text style={[styles.subtitle, { color: '#5F4B3B' }]}>
                 서로를 이해하는 감성 심리코칭
               </Text>
@@ -163,15 +184,50 @@ export default function CoupleStartScreen() {
             </Text>
           </View>
 
-          {/* 관계 유형 */}
+          {/* 관계 분석 상품 */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: '#2D2420' }]}>관계 유형</Text>
-            <View style={styles.chipRow}>
-              {RELATION_TYPES.map(r =>
-                renderChip(r.label, relationType === r.value, () => handleRelationTypeSelect(r.value), r.emoji)
-              )}
+            <Text style={[styles.sectionTitle, { color: '#2D2420' }]}>관계 분석 상품 선택</Text>
+            <View style={styles.productList}>
+              {VISIBLE_RELATION_PRODUCTS.map((product) => (
+                <Pressable
+                  key={product.id}
+                  style={({ pressed }) => [
+                    styles.productCard,
+                    {
+                      backgroundColor: selectedProductId === product.id ? '#2A2420' : '#F8F3EA',
+                      borderColor: selectedProductId === product.id ? '#2A2420' : '#D8C8B4',
+                    },
+                    pressed && { opacity: 0.86, transform: [{ scale: 0.985 }] },
+                  ]}
+                  onPress={() => handleProductSelect(product)}
+                >
+                  <Text style={[styles.productTitle, { color: selectedProductId === product.id ? '#FFF9F0' : '#2D2420' }]}>
+                    {product.title}
+                  </Text>
+                  <Text style={[styles.productPrice, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>
+                    {product.price}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
           </View>
+
+          {/* 부부·연인 상품의 기존 세부 관계 선택 */}
+          {isRomanticProduct && (
+            <View style={[styles.subSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.subSectionTitle, { color: colors.muted }]}>관계 조합을 선택해주세요</Text>
+              <View style={styles.chipRow}>
+                {ROMANTIC_RELATION_TYPES.map((relation) =>
+                  renderChip(
+                    relation.label,
+                    relationType === relation.value,
+                    () => handleRelationTypeSelect(relation.value),
+                    relation.emoji,
+                  )
+                )}
+              </View>
+            </View>
+          )}
 
           {/* 부모-자녀 세부 조합 선택 */}
           {isParentChild && (
@@ -264,6 +320,20 @@ const styles = StyleSheet.create({
   },
   infoText: { fontSize: 15, lineHeight: 26, textAlign: 'center' },
   section: { marginBottom: 24 },
+  productList: { gap: 10 },
+  productCard: {
+    minHeight: 70,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  productTitle: { flex: 1, fontSize: 16, lineHeight: 23, fontWeight: '700' },
+  productPrice: { fontSize: 16, fontWeight: '800', letterSpacing: 0.2 },
   subSection: {
     borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 20, marginTop: -12,
   },

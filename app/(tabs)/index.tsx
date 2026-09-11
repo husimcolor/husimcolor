@@ -175,84 +175,62 @@ export default function HomeScreen() {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <Text style={[styles.description, { color: colors.muted }]}>
-            25가지 컬러 중 마음이 끌리는 3가지를 선택하세요.{'\n'}
-            당신의 현재 심리와 회복 방향을{'\n'}
-            감성적으로 안내해 드립니다.
+            지금의 나와 두 사람의 관계를{'\n'}
+            원하는 방식으로 천천히 살펴보세요.
           </Text>
         </Animated.View>
 
-        {/* 카드 미리보기 */}
-        <Animated.View style={[styles.cardPreview, { opacity: fadeAnim }]}>
-          {[
-            { label: '1번 컬러', desc: '주기질', color: '#5B8DB8' },
-            { label: '2번 컬러', desc: '보조기질', color: '#E05A4E' },
-            { label: '3번 컬러', desc: '회복방향', color: '#8FA68E' },
-          ].map((card, i) => (
-            <View
-              key={i}
-              style={[
-                styles.miniCard,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <View style={[styles.miniCardDot, { backgroundColor: card.color }]} />
-              <View style={styles.miniCardText}>
-                <Text style={[styles.miniCardLabel, { color: colors.foreground }]}>{card.label}</Text>
-                <Text style={[styles.miniCardDesc, { color: colors.muted }]}>{card.desc}</Text>
-              </View>
-            </View>
-          ))}
-        </Animated.View>
-
-        {/* 시작 버튼 */}
+        {/* 세 가지 서비스 진입 */}
         <Animated.View style={[styles.buttonSection, { opacity: fadeAnim }]}>
-          {/* 무료 버전 버튼 */}
           <Pressable
             style={({ pressed }) => [
-              styles.startButton,
+              styles.serviceCard,
+              styles.freeServiceCard,
               { backgroundColor: colors.primary },
               pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
             ]}
             onPress={handleStart}
           >
-            <Text style={styles.startButtonText}>무료 체험 · 컬러 선택 시작하기</Text>
-          </Pressable>
-          <Text style={[styles.hint, { color: colors.muted }]}>
-            직관적으로 끌리는 색을 선택해 주세요
-          </Text>
-          {/* 커플 세션 버튼 - 일반 사용자 무료 테스트 오픈 (컬러+도형 위로 이동, 시각적 강조) */}
-          <TouchableOpacity
-            style={[styles.coupleButtonWrapper]}
-            onPress={() => router.push('/(tabs)/couple-start' as any)}
-            activeOpacity={0.85}
-          >
-            <View style={[styles.coupleButton, styles.coupleButtonActive]}>
-              <View style={styles.coupleButtonInner}>
-                <View style={[styles.comingBadge, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
-                  <Text style={[styles.comingBadgeText, { color: '#FFFFFF' }]}>무료 테스트</Text>
-                </View>
-                <Text style={[styles.coupleButtonText, { color: '#FFFFFF' }]}>💑 커플 세션</Text>
-              </View>
-              <Text style={[styles.coupleButtonSub, { color: 'rgba(255,255,255,0.85)' }]}>서로를 이해하는 감성 심리코칭 · 지금 무료로 체험하세요</Text>
+            <View style={styles.serviceHeadingRow}>
+              <Text style={styles.primaryServiceTitle}>🌿 무료 컬러 체험</Text>
+              <Text style={styles.primaryServicePrice}>무료</Text>
             </View>
-          </TouchableOpacity>
+            <Text style={styles.primaryServiceSummary}>3가지 컬러로 지금의 마음과 회복 방향을 살펴보세요.</Text>
+            <View style={styles.primaryServiceCta}>
+              <Text style={styles.primaryServiceCtaText}>무료로 체험하기 →</Text>
+            </View>
+          </Pressable>
 
-          {/* 컬러+도형 심층 해석 버튼 */}
           <Pressable
             style={({ pressed }) => [
-              styles.premiumButton,
+              styles.serviceCard,
+              styles.individualServiceCard,
               pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
             ]}
             onPress={() => router.push('/payment' as any)}
           >
-            <View style={styles.premiumButtonInner}>
-              <Text style={styles.premiumButtonBadge}>NEW</Text>
-              <Text style={styles.premiumButtonText}>🎨 컬러+도형 심층 해석</Text>
+            <View style={styles.serviceHeadingRow}>
+              <Text style={styles.serviceTitle}>🎨 컬러 + 심리카드 개인 심화분석</Text>
+              <Text style={styles.servicePrice}>29,000원</Text>
             </View>
-            <Text style={styles.premiumButtonSub}>63장 카드 · 초기 오픈 무료체험중 · 정식 오픈 후 유료 전환 예정</Text>
+            <Text style={styles.serviceSummary}>컬러 3개와 심리카드 3장으로 나를 깊이 살펴봅니다.</Text>
+            <Text style={styles.serviceCta}>나를 깊이 알아보기 →</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.serviceCard,
+              styles.relationshipServiceCard,
+              pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+            ]}
+            onPress={() => router.push('/(tabs)/couple-start' as any)}
+          >
+            <View style={styles.serviceHeadingRow}>
+              <Text style={styles.serviceTitle}>💞 관계 분석</Text>
+              <Text style={styles.relationshipServiceTag}>3가지 관계 상품</Text>
+            </View>
+            <Text style={styles.serviceSummary}>부부·연인 · 부모·자녀 · 친구 관계를 선택할 수 있습니다.</Text>
+            <Text style={styles.serviceCta}>두 사람의 관계 알아보기 →</Text>
           </Pressable>
          </Animated.View>
       </View>
@@ -281,7 +259,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 8,
-    gap: 20,
+    gap: 18,
   },
   decorCircle1: {
     position: 'absolute',
@@ -351,130 +329,98 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: 'center',
   },
-  cardPreview: {
-    width: '100%',
-    gap: 8,
-  },
-  miniCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 12,
-  },
-  miniCardDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  miniCardText: {
-    flex: 1,
-    gap: 2,
-  },
-  miniCardLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  miniCardDesc: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
   buttonSection: {
     width: '100%',
-    alignItems: 'center',
     gap: 10,
   },
-  startButton: {
+  serviceCard: {
     width: '100%',
-    paddingVertical: 16,
+    minHeight: 116,
     borderRadius: 16,
-    alignItems: 'center',
-  },
-  startButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  hint: {
-    fontSize: 12,
-  },
-  premiumButton: {
-    width: '100%',
-    paddingVertical: 14,
     paddingHorizontal: 18,
-    borderRadius: 16,
-    backgroundColor: '#F5F0E8',
-    borderWidth: 1.5,
-    borderColor: '#C4956A55',
-    alignItems: 'center',
-    gap: 4,
+    paddingVertical: 16,
+    justifyContent: 'center',
+    gap: 7,
   },
-  premiumButtonInner: {
+  freeServiceCard: {
+    shadowColor: '#527A5C',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  individualServiceCard: {
+    backgroundColor: '#F8F2E9',
+    borderColor: '#D8C6AA',
+    borderWidth: 1,
+  },
+  relationshipServiceCard: {
+    backgroundColor: '#F2F5EF',
+    borderColor: '#B8C9B4',
+    borderWidth: 1,
+  },
+  serviceHeadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  premiumButtonBadge: {
-    backgroundColor: '#C4956A',
+  primaryServiceTitle: {
+    flex: 1,
     color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    overflow: 'hidden',
+    fontSize: 18,
+    fontWeight: '800',
+    lineHeight: 25,
   },
-  premiumButtonText: {
-    color: '#7A5A3A',
-    fontSize: 15,
-    fontWeight: '700',
+  serviceTitle: {
+    flex: 1,
+    color: '#3D2B1F',
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 23,
   },
-  premiumButtonSub: {
-    color: '#A08060',
+  primaryServicePrice: {
+    color: '#ECF5E9',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  servicePrice: {
+    color: '#8B5D2E',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  relationshipServiceTag: {
+    color: '#577351',
     fontSize: 12,
+    fontWeight: '700',
   },
-  coupleButtonWrapper: {
-    width: '100%',
-    marginTop: 4,
+  primaryServiceSummary: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 13,
+    lineHeight: 19,
   },
-  coupleButton: {
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    gap: 4,
-    opacity: 0.7,
+  serviceSummary: {
+    color: '#6E6257',
+    fontSize: 13,
+    lineHeight: 19,
   },
-  coupleButtonActive: {
-    borderColor: '#6B8F6A',
-    backgroundColor: '#7A9E79',
-    borderStyle: 'solid',
-    opacity: 1,
+  primaryServiceCta: {
+    alignSelf: 'flex-start',
+    marginTop: 1,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 99,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
   },
-  coupleButtonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  primaryServiceCtaText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
   },
-  comingBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  comingBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  coupleButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  coupleButtonSub: {
-    fontSize: 11,
+  serviceCta: {
+    color: '#587050',
+    fontSize: 13,
+    fontWeight: '800',
   },
   adminLink: {
     alignSelf: 'center',
