@@ -1,79 +1,5 @@
 name: Deploy to Vercel
 
-
-
-on:
-
-  push:
-  
-    branches:
-    
-      - main
-      
-
-
-jobs:
-
-  deploy:
-  
-    runs-on: ubuntu-latest
-    
-    steps:
-    
-      - name: Checkout repository
-      
-        uses: actions/checkout@v4
-        
-
-
-      - name: Setup Node.js
-      
-        uses: actions/setup-node@v4
-        
-        with:
-        
-          node-version: '22'
-          
-
-
-      - name: Install pnpm
-      
-        uses: pnpm/action-setup@v4
-        
-
-
-      - name: Install dependencies
-      
-        run: pnpm install --frozen-lockfile
-        
-
-
-      - name: Build latest Expo web bundle
-      
-        run: |
-        
-          rm -rf dist .vercel/output
-          
-          EXPO_USE_METRO_WORKSPACE_ROOT=1 pnpm exec expo export --platform web --output-dir dist
-          
-
-
-      - name: Prepare Vercel output structure
-      
-        run: |
-        
-          mkdir -p .vercel/output/static
-          
-          cp -r dist/. .vercel/output/static/
-          
-          mkdir -p ".vercel/output/functions/api/trpc/[...trpc].func"
-          
-
-
-      - name: Build tRPC API function (with mysql2 bundled)
-      
-        run: |
-
 on:
   push:
     branches:
@@ -129,7 +55,7 @@ jobs:
           VCEOF
 
       - name: Write Vercel output config
-        run: |
+          run: |
           cat > .vercel/output/config.json << 'CFGEOF'
           {
             "version": 3,
@@ -139,7 +65,7 @@ jobs:
               { "src": "/_expo/static/css/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/_expo/static/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/assets/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
-              { "src": "/index.html", "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }, "continue": true },
+               { "src": "/index.html", "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }, "continue": true },
               { "handle": "filesystem" },
               { "src": "/((?!_expo/|assets/).*)", "dest": "/index.html" }
             ]
