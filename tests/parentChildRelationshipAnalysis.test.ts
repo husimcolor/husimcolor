@@ -151,7 +151,7 @@ describe("부모·자녀 1·2순위 컬러 관계 분석", () => {
     expect(new Set(donts).size).toBe(3);
     expect(new Set(starts).size).toBe(3);
     expect(new Set(practices).size).toBe(3);
-    expect(trustExploration.coaching.dialogue.dontMessages.join(" ")).toContain("더 살펴보고 싶은 마음");
+    expect(trustExploration.coaching.dialogue.dontMessages.join(" ")).toContain("질문은 나중에 해");
     expect(spaceRespect.coaching.dialogue.dontMessages.join(" ")).toContain("혼자 정리할 시간");
     expect(vitalExpansion.coaching.conflictRecovery.conflictStart).toContain("새 시도와 표현");
     expect(trustExploration.coaching.practices).toEqual(repeatedTrustExploration.coaching.practices);
@@ -175,6 +175,7 @@ describe("부모·자녀 1·2순위 컬러 관계 분석", () => {
 
     expect(cardShifted.relationshipSummary.id).toBe(base.relationshipSummary.id);
     expect(cardShifted.lifeScenes.tensions[0].title).toBe(base.lifeScenes.tensions[0].title);
+    expect(cardShifted.coaching.dialogue.doMessages.join(" ")).not.toBe(base.coaching.dialogue.doMessages.join(" "));
     expect(cardShifted.coaching.dialogue.dontMessages.join(" ")).not.toBe(base.coaching.dialogue.dontMessages.join(" "));
     expect(cardShifted.coaching.conflictRecovery.conflictStart).not.toBe(base.coaching.conflictRecovery.conflictStart);
     expect(cardShifted.coaching.practices[1]).not.toBe(base.coaching.practices[1]);
@@ -259,6 +260,38 @@ describe("부모·자녀 1·2순위 컬러 관계 분석", () => {
     expect(cardChanged.relationshipSummary.id).toBe(base.relationshipSummary.id);
     expect(cardChanged.coaching.childCommunication.closesWhen).not.toBe(base.coaching.childCommunication.closesWhen);
     expect(cardChanged.coaching.childCommunication.gainsConfidenceWhen).not.toBe(base.coaching.childCommunication.gainsConfidenceWhen);
-    expect(cardChanged.coaching.conflictRecovery.mismatch).not.toBe(base.coaching.conflictRecovery.mismatch);
+    expect(cardChanged.coaching.conflictRecovery.mismatch).toBe(base.coaching.conflictRecovery.mismatch);
+  });
+
+  it("대화 DO & DON'T와 세 가지 실천은 카드명·분석 용어 없이 실제 생활 언어로 표시한다", () => {
+    const result = analyzeRelationship({
+      relationType: "엄마-딸",
+      parentGender: "여성",
+      childGender: "여성",
+      parentColors: ["green", "sage", "lavender"],
+      childColors: ["yellow", "pink", "coral"],
+      parentCards: ["red_circle", "white_square", "blue_diamond"],
+      childCards: ["yellow_circle", "purple_diamond", "green_hexagon"],
+    });
+    const dialogueAndPractices = [
+      ...result.coaching.dialogue.doMessages,
+      ...result.coaching.dialogue.dontMessages,
+      ...result.coaching.practices,
+    ].join(" ");
+
+    expect(dialogueAndPractices).not.toMatch(/카드|컬러|무의식|현재 흐름|미래 카드|회복 방향/);
+    expect(result.coaching.dialogue.dontMessages.every((message) => message.startsWith("“") && message.endsWith("”"))).toBe(true);
+    expect(result.coaching.practices).toHaveLength(3);
+  });
+
+  it("관계가 어긋나는 지점은 핵심 오해만 설명하고 회복 방법은 회복 순서에 남긴다", () => {
+    const result = analyze(["green", "sage", "lavender"], ["yellow", "pink", "coral"]);
+    const mismatch = result.coaching.conflictRecovery.mismatch;
+    const recoveryOrder = result.coaching.conflictRecovery.recoveryOrder;
+
+    expect(mismatch.length).toBeLessThan(520);
+    expect(mismatch).not.toMatch(/회복|미래 카드|3순위 컬러|심리카드/);
+    expect(recoveryOrder).toContain("먼저");
+    expect(recoveryOrder).toContain("다음으로");
   });
 });
