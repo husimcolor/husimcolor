@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -23,13 +23,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build latest Expo web bundle
+        run: |
+          rm -rf dist .vercel/output
+          EXPO_USE_METRO_WORKSPACE_ROOT=1 pnpm exec expo export --platform web --output-dir dist
+
       - name: Prepare Vercel output structure
         run: |
           mkdir -p .vercel/output/static
-          # dist/ 폴더가 있으면 static으로 복사 (없으면 이미 커밋된 static 사용)
-          if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
-            cp -r dist/. .vercel/output/static/
-          fi
+          cp -r dist/. .vercel/output/static/
           mkdir -p ".vercel/output/functions/api/trpc/[...trpc].func"
 
       - name: Build tRPC API function (with mysql2 bundled)
