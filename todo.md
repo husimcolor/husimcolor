@@ -858,4 +858,10 @@
 - [x] 부모·자녀 자녀 기질 맞춤 소통을 정서 트리거와 강점 활성화 조건으로 분리해 개인화
 - [x] 부모·자녀 관계가 어긋나는 지점을 부모·자녀 컬러·카드·관계 역할의 교차 오해로 개인화
 - [x] 부모·자녀 결과 내 반복 의미 제어와 4가지 관계·유사/상이 컬러·카드 흐름 대표 조합 검증
-- [ ] 부모·자녀 개인화 보정의 Production 배포와 생성 예시 보고
+- [x] 부모·자녀 개인화 보정의 Production 배포와 생성 예시 보고
+- [x] 최신 체크포인트의 Vercel Production 프로젝트·브랜치·도메인 연결과 빌드 상태 점검
+- [x] husimcolor.vercel.app 최신 코드 재배포 준비 및 운영 URL 부모·자녀 결과 반영 검증
+- [x] 기존 Manus 게시→husimcolor.vercel.app Vercel Production 자동 배포 연결 단절 원인 진단
+- [x] 현재 husimcolor 프로젝트·도메인·데이터를 보존한 자동 배포 연결 복구 및 운영 URL 검증
+- [x] GitHub Actions 자동 배포가 최신 Expo 웹 번들을 생성하도록 기존 Vercel prebuilt 워크플로 복구
+- [x] GitHub main 푸시 후 husimcolor.vercel.app 최신 부모·자녀 번들 자동 반영 검증
