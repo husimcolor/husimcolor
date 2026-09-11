@@ -22,6 +22,11 @@ import { buildRomanticRelationshipRoles } from '@/lib/couple-romantic-relationsh
 import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
 import { buildCouplePdfDownloadPayload } from '@/lib/couple-pdf-download';
 import { buildParentChildCoaching, getParentChildLabels } from '@/lib/parent-child-coaching';
+import {
+  PARENT_CHILD_PRIORITY_PILOT,
+  PARENT_CHILD_PRIORITY_PILOT_QUERY,
+  PARENT_CHILD_PRIORITY_PILOT_SESSION,
+} from '@/lib/parent-child-priority-pilot';
 import type { CoupleShareSnapshot } from '@/shared/couple-share';
 
 // ─── SectionCard ─────────────────────────────────────────────────────────────
@@ -121,8 +126,11 @@ function buildCoupleShareSnapshot(
 // ─── 메인 화면 ───────────────────────────────────────────────────────────────
 export default function CoupleResultScreen() {
   const router = useRouter();
-  const routeParams = useLocalSearchParams<{ shareId?: string | string[] }>();
+  const routeParams = useLocalSearchParams<{ shareId?: string | string[]; qa?: string | string[] }>();
   const requestedShareId = typeof routeParams.shareId === 'string' ? routeParams.shareId : undefined;
+  const requestedQa = typeof routeParams.qa === 'string' ? routeParams.qa : undefined;
+  const isPriorityPilot = process.env.NODE_ENV !== 'production'
+    && requestedQa === PARENT_CHILD_PRIORITY_PILOT_QUERY;
   const colors = useColors();
   const [sessionData, setSessionData] = useState<CoupleSessionData | null>(null);
   const [personAAnalysis, setPersonAAnalysis] = useState<PersonAnalysis | null>(null);
@@ -151,8 +159,13 @@ export default function CoupleResultScreen() {
   );
 
   useEffect(() => {
-    if (!requestedShareId) loadLocalSession();
-  }, [requestedShareId]);
+    if (requestedShareId) return;
+    if (isPriorityPilot) {
+      loadPriorityPilotSession();
+      return;
+    }
+    loadLocalSession();
+  }, [requestedShareId, isPriorityPilot]);
 
   useEffect(() => {
     if (!requestedShareId || sharedResultQuery.isLoading) return;
@@ -267,6 +280,48 @@ export default function CoupleResultScreen() {
       } catch (_) {}
     } catch (e) {
       setError('분석 중 오류가 발생했습니다.');
+      setLoading(false);
+    }
+  }
+
+  function loadPriorityPilotSession() {
+    try {
+      // 개발 환경의 고정 QA 입력만 사용하며, AsyncStorage·공유 스냅샷·방문 기록은 건드리지 않는다.
+      setLoading(true);
+      setError(null);
+      setSharedSnapshot(null);
+      setActiveShareId(null);
+      coupleShareRequestRef.current = null;
+
+      const data = PARENT_CHILD_PRIORITY_PILOT_SESSION;
+      const aAnalysis = generatePersonAnalysis(data.personA, 'A');
+      const bAnalysis = generatePersonAnalysis(data.personB, 'B');
+      const cAnalysis = generateCoupleAnalysis(data, aAnalysis, bAnalysis);
+      const famsA = ['nature', 'nature', 'nature'] as any[];
+      const famsB = ['neutral', 'warm_soft', 'warm_active'] as any[];
+      const shapeA3 = CARD_DATA.find((card: any) => card.id === data.personA.cards[2])?.shape;
+      const shapeB3 = CARD_DATA.find((card: any) => card.id === data.personB.cards[2])?.shape;
+      const archRes = getRelationArchetype(
+        famsA,
+        famsB,
+        shapeA3,
+        shapeB3,
+        data.personA.colors,
+        data.personB.colors,
+        data.personA.cards,
+        data.personB.cards,
+      );
+      const lightRes = getLightArchetype(data.relationType, famsA, famsB);
+
+      setSessionData(data);
+      setPersonAAnalysis(aAnalysis);
+      setPersonBAnalysis(bAnalysis);
+      setCoupleAnalysis(cAnalysis);
+      setArchetypeResult(archRes);
+      setLightArchetypeResult(lightRes);
+      setLoading(false);
+    } catch {
+      setError('로컬 시범 분석을 준비하지 못했습니다.');
       setLoading(false);
     }
   }
@@ -465,7 +520,7 @@ export default function CoupleResultScreen() {
   const personLabels = isParentChildRel
     ? { personA: parentChildLabels.parent, personB: parentChildLabels.child }
     : { personA: '첫 번째 사람', personB: '두 번째 사람' };
-  const parentChildCoaching = isParentChildRel && lightArchetypeResult
+  const generatedParentChildCoaching = isParentChildRel && lightArchetypeResult
     ? buildParentChildCoaching({
         relationType,
         parentGender: personA.info.gender,
@@ -475,6 +530,8 @@ export default function CoupleResultScreen() {
         lightArchetype: lightArchetypeResult,
       })
     : null;
+  const priorityPilot = isPriorityPilot && isParentChildRel ? PARENT_CHILD_PRIORITY_PILOT : null;
+  const parentChildCoaching = priorityPilot?.coaching ?? generatedParentChildCoaching;
 
   const getCoupleShareUrl = async () => {
     const getUrl = (shareId: string) => {
@@ -948,6 +1005,18 @@ export default function CoupleResultScreen() {
               {/* ─── 부모·자녀 전용 종합 코칭 ─── */}
               {isParentChildRel && parentChildCoaching ? (
                 <>
+                  {priorityPilot && (
+                    <>
+                      <Text style={styles.priorityPilotNotice}>로컬 시범 분석 · Production에는 적용되지 않음</Text>
+                      <Text style={styles.sectionGroupTitleParentChild}>이번 시범 분석의 근거</Text>
+                      <SectionCard variant="parentChild" accentColor="#6A8E61" title="1·2순위 생활기질과 현재 심리 흐름" colors={colors}>
+                        <Text style={styles.priorityPilotBasis}>{priorityPilot.basis.parent}</Text>
+                        <Text style={styles.priorityPilotBasis}>{priorityPilot.basis.child}</Text>
+                        <Text style={styles.priorityPilotBasis}>{priorityPilot.basis.recovery}</Text>
+                        <Text style={[styles.priorityPilotBasis, { marginBottom: 0 }]}>{priorityPilot.basis.cards}</Text>
+                      </SectionCard>
+                    </>
+                  )}
                   <Text style={styles.sectionGroupTitleParentChild}>각자의 사회적 역할</Text>
                   <SectionCard variant="parentChild" accentColor={accentA} title={`${parentChildCoaching.labels.parent}의 사회적 역할`} colors={colors}>
                     <Text style={[styles.parentChildRoleTitle, { color: accentA }]}>{parentChildCoaching.socialRoles.parent.title}</Text>
@@ -1038,6 +1107,30 @@ export default function CoupleResultScreen() {
                       <Text style={styles.parentChildConflictRecoveryText}>{parentChildCoaching.conflictRecovery.recoveryOrder}</Text>
                     </View>
                   </SectionCard>
+
+                  {priorityPilot && (
+                    <>
+                      <Text style={styles.sectionGroupTitleParentChild}>실제 생활에서 만나는 지점</Text>
+                      <SectionCard variant="parentChild" accentColor="#C47E8A" title="잘 맞는 부분과 부딪히는 부분" colors={colors}>
+                        <Text style={styles.priorityPilotSceneGroupTitle}>잘 맞는 부분</Text>
+                        {priorityPilot.lifeScenes.strengths.map((scene) => (
+                          <View key={scene.title} style={styles.priorityPilotScene}>
+                            <Text style={styles.priorityPilotSceneTitle}>{scene.title}</Text>
+                            <Text style={styles.parentChildBodyText}>{scene.description}</Text>
+                            <Text style={styles.priorityPilotEvidence}>{scene.evidence}</Text>
+                          </View>
+                        ))}
+                        <Text style={[styles.priorityPilotSceneGroupTitle, styles.priorityPilotTensionTitle]}>부딪히는 부분</Text>
+                        {priorityPilot.lifeScenes.tensions.map((scene) => (
+                          <View key={scene.title} style={styles.priorityPilotScene}>
+                            <Text style={[styles.priorityPilotSceneTitle, { color: '#925143' }]}>{scene.title}</Text>
+                            <Text style={styles.parentChildBodyText}>{scene.description}</Text>
+                            <Text style={styles.priorityPilotEvidence}>{scene.evidence}</Text>
+                          </View>
+                        ))}
+                      </SectionCard>
+                    </>
+                  )}
 
                   {lightArchetypeResult.recommendedColors && lightArchetypeResult.recommendedColors.length > 0 && (
                     <>
@@ -1818,6 +1911,13 @@ const styles = StyleSheet.create({
   parentChildConflictDivider: { height: 1, backgroundColor: '#E2D9D0', marginVertical: 10 },
   parentChildConflictRecoveryBox: { backgroundColor: '#F0EAF8', borderRadius: 12, borderLeftWidth: 3, borderLeftColor: '#8A6BB8', padding: 18, marginTop: 4 },
   parentChildConflictRecoveryLabel: { color: '#4F386F', fontSize: 16, lineHeight: 24, fontWeight: '800', marginBottom: 9 },
+  priorityPilotNotice: { color: '#6A5A4A', backgroundColor: '#F4EAD8', borderColor: '#C9AF88', borderWidth: 1, borderRadius: 10, paddingHorizontal: 13, paddingVertical: 9, fontSize: 13, lineHeight: 20, fontWeight: '800', marginTop: 4, marginBottom: 4, textAlign: 'center' },
+  priorityPilotBasis: { color: '#4D4037', fontSize: 15, lineHeight: 26, marginBottom: 9 },
+  priorityPilotSceneGroupTitle: { color: '#356B53', fontSize: 17, lineHeight: 26, fontWeight: '800', marginBottom: 6 },
+  priorityPilotTensionTitle: { color: '#925143', marginTop: 12 },
+  priorityPilotScene: { borderTopWidth: 1, borderTopColor: '#E8DFD5', paddingTop: 13, marginTop: 9 },
+  priorityPilotSceneTitle: { color: '#356B53', fontSize: 16, lineHeight: 25, fontWeight: '800', marginBottom: 8 },
+  priorityPilotEvidence: { color: '#6F6054', fontSize: 13, lineHeight: 22, fontWeight: '500', marginTop: 9 },
   parentChildConflictRecoveryText: { color: '#3B2B50', fontSize: 16, lineHeight: 29 },
   parentChildGuideRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginBottom: 9 },
   parentChildGuideDot: { fontSize: 19, lineHeight: 27, fontWeight: '800' },
