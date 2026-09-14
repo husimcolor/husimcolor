@@ -110,15 +110,23 @@ export const getLoginUrl = () => {
  * @returns Always null, the callback is handled via deep link.
  */
 export async function startOAuthLogin(): Promise<string | null> {
-  const loginUrl = getLoginUrl();
-
   if (ReactNative.Platform.OS === "web") {
-    // On web, just redirect
+    const apiBaseUrl = getApiBaseUrl();
+    const response = await fetch(`${apiBaseUrl}/api/auth/login`, { credentials: "include" });
+    if (!response.ok) {
+      throw new Error("OAuth login URL could not be created");
+    }
+    const payload = (await response.json()) as { url?: string };
+    if (!payload.url) {
+      throw new Error("OAuth login URL is missing");
+    }
     if (typeof window !== "undefined") {
-      window.location.href = loginUrl;
+      window.location.assign(payload.url);
     }
     return null;
   }
+
+  const loginUrl = getLoginUrl();
 
   const supported = await Linking.canOpenURL(loginUrl);
   if (!supported) {

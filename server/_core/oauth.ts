@@ -16,6 +16,23 @@ function firstForwardedHeader(value: string | string[] | undefined): string | un
   return value?.split(",")[0]?.trim();
 }
 
+export function createOAuthLoginUrl({
+  appId,
+  redirectUri,
+  portalUrl = "https://manus.im",
+}: {
+  appId: string;
+  redirectUri: string;
+  portalUrl?: string;
+}): string {
+  const url = new URL("/app-auth", portalUrl);
+  url.searchParams.set("appId", appId);
+  url.searchParams.set("redirectUri", redirectUri);
+  url.searchParams.set("state", Buffer.from(redirectUri, "utf8").toString("base64"));
+  url.searchParams.set("type", "signIn");
+  return url.toString();
+}
+
 /** Production OAuth callback always returns to the host that started the login. */
 export function getProductionFrontendOrigin(req: Request): string {
   const forwardedHost = firstForwardedHeader(req.headers["x-forwarded-host"]);
@@ -83,6 +100,20 @@ function buildUserResponse(
 }
 
 export function registerOAuthRoutes(app: Express) {
+  // The Expo web bundle is static in Vercel, so OAuth settings must be read
+  // from the server rather than relying on build-time EXPO_PUBLIC variables.
+  app.get("/api/auth/login", (req: Request, res: Response) => {
+    if (!ENV.appId) {
+      res.status(503).json({ error: "OAuth application is not configured" });
+      return;
+    }
+
+    const origin = getProductionFrontendOrigin(req);
+    const redirectUri = `${origin}/api/oauth/callback`;
+    const portalUrl = process.env.OAUTH_PORTAL_URL || "https://manus.im";
+    res.json({ url: createOAuthLoginUrl({ appId: ENV.appId, redirectUri, portalUrl }) });
+  });
+
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
