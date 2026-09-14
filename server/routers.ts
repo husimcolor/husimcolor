@@ -18,13 +18,22 @@ import { isPublicPaidAnalysisEnabled } from "./commerce/release-policy";
 import { previewCoupon } from "./commerce/coupon-service";
 import { consumeEntitlementForAnalysisStart, verifyAnalysisDeliveryGrant } from "./commerce/entitlement-service";
 import { deliverPrivatePdfOutboxItem, getPrivatePdfOutboxSnapshot, retryFailedPrivatePdfOutboxItem } from "./commerce/email-outbox-service";
-import { queuePrivateAnalysisPdfDelivery } from "./commerce/pdf-delivery-service";
 import {
   confirmGuestCommerceClaim,
   createGuestCommerceClaim,
   ensureCommonAccountForAuthenticatedUser,
   getCommonAccountSnapshot,
 } from "./commerce/account-service";
+
+/**
+ * PDFKit은 Vercel 함수 번들에서 상대 ICC 파일을 해석하지 못할 수 있으므로,
+ * 일반 tRPC 요청의 초기 로딩에서는 PDF 생성기를 포함하지 않는다.
+ * 실제 PDF 전달 요청에서만 기존 생성기를 불러와 개발·심사용 흐름을 유지한다.
+ */
+export async function loadPrivatePdfDeliveryService() {
+  const moduleName = ["pdf", "delivery", "service"].join("-");
+  return import(`./commerce/${moduleName}`);
+}
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -78,6 +87,7 @@ export const appRouter = router({
             analysisRunId: input.analysisRunId,
             productCode: input.productCode,
           });
+          const { queuePrivateAnalysisPdfDelivery } = await loadPrivatePdfDeliveryService();
           const queued = await queuePrivateAnalysisPdfDelivery({
             analysisRunId: input.analysisRunId,
             kind: input.productCode,

@@ -940,3 +940,5 @@
 - [x] 무료 컬러 체험·친구 관계 분석은 정상 이용을 유지하고 유료 분석 상품은 가격·정식 오픈 준비중으로 노출
 - [x] 일반 사용자 유료 결제·검사 시작을 Production 서버와 UI에서 차단하고 심사용 테스트 경로와 향후 활성화 설정을 분리
 - [ ] 무료·준비중 유료·기존 결과/PDF/공유·심사용 경로 회귀 검증 및 GitHub main→Vercel Production 배포
+- [x] Production tRPC 번들의 PDF 색상 프로필 경로 오류를 보정하고 전체 자동검수·TypeScript·번들 검증 완료
+- [ ] 보정된 tRPC 함수를 GitHub main→Vercel Production에 재배포하고 기존 API·무료 이용·유료 공개 차단 재검증
