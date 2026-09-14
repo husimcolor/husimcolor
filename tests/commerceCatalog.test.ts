@@ -32,20 +32,20 @@ describe("commerce product catalog", () => {
       .toEqual({ discountAmountKrw: 29_000, finalAmountKrw: 0 });
   });
 
-  it("keeps future coaching prices in the same catalog while sales remain inactive", () => {
+  it("keeps coaching test-checkout prices in the shared catalog", () => {
     expect(getCommerceProduct("personal_coaching")).toMatchObject({
       fulfillmentType: "coaching",
       requiresPayment: true,
       regularAmountKrw: 120_000,
       amountKrw: 100_000,
-      active: false,
+      active: true,
     });
     expect(getCommerceProduct("couple_coaching")).toMatchObject({
       fulfillmentType: "coaching",
       requiresPayment: true,
       regularAmountKrw: 250_000,
       amountKrw: 180_000,
-      active: false,
+      active: true,
     });
   });
 });

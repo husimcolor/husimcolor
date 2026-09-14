@@ -152,6 +152,14 @@ export const appRouter = router({
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
             couponCode: z.string().min(1).max(64).optional(),
+            bookingRequest: z.object({
+              contactName: z.string().min(1).max(100),
+              contactPhone: z.string().min(8).max(40),
+              requestedWindowStart: z.string().datetime({ offset: true }),
+              requestedWindowEnd: z.string().datetime({ offset: true }),
+              sessionMode: z.enum(["online", "in_person"]),
+              notes: z.string().max(2000).optional(),
+            }).optional(),
           }),
         )
         .mutation(({ input, ctx }) => createTestCheckout({
@@ -173,6 +181,14 @@ export const appRouter = router({
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
             couponCode: z.string().min(1).max(64).optional(),
+            bookingRequest: z.object({
+              contactName: z.string().min(1).max(100),
+              contactPhone: z.string().min(8).max(40),
+              requestedWindowStart: z.string().datetime({ offset: true }),
+              requestedWindowEnd: z.string().datetime({ offset: true }),
+              sessionMode: z.enum(["online", "in_person"]),
+              notes: z.string().max(2000).optional(),
+            }).optional(),
           }),
         )
         .mutation(({ input, ctx }) => createTossTestCheckout({

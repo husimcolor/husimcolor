@@ -21,7 +21,11 @@ function getRequiredTestKey(name: "TOSS_TEST_CLIENT_KEY" | "TOSS_TEST_SECRET_KEY
 }
 
 export function isTossTestPaymentEnabled(): boolean {
-  return process.env.NODE_ENV !== "production" &&
+  // Vercel Preview는 NODE_ENV=production으로 빌드되므로 VERCEL_ENV=preview만
+  // 예외로 허용한다. Production 배포에서는 테스트 키가 있어도 절대 열리지 않는다.
+  const isPreview = process.env.VERCEL_ENV === "preview";
+  const isLocalDevelopment = process.env.NODE_ENV !== "production";
+  return (isLocalDevelopment || isPreview) && process.env.COMMERCE_TEST_MODE === "true" &&
     Boolean(process.env.TOSS_TEST_CLIENT_KEY?.trim()) &&
     Boolean(process.env.TOSS_TEST_SECRET_KEY?.trim());
 }

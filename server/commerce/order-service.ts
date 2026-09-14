@@ -56,6 +56,24 @@ type PaymentResponse = {
   alreadyProcessed: boolean;
 };
 
+export type CoachingBookingRequestInput = {
+  contactName: string;
+  contactPhone: string;
+  requestedWindowStart: string;
+  requestedWindowEnd: string;
+  sessionMode: "online" | "in_person";
+  notes?: string;
+};
+
+type NormalizedCoachingBookingRequest = {
+  contactName: string;
+  contactPhone: string;
+  requestedWindowStart: Date;
+  requestedWindowEnd: Date;
+  sessionMode: "online" | "in_person";
+  notes: string | null;
+};
+
 function newOrderNumber(): string {
   return `HC-${crypto.randomUUID().replace(/-/g, "").slice(0, 24).toUpperCase()}`;
 }
@@ -66,6 +84,129 @@ function assertCheckoutEmail(value: string): string {
     throw new Error("INVALID_CHECKOUT_EMAIL");
   }
   return email;
+}
+
+/**
+ * 예약 후 결제용 입력값을 서버에서 정규화한다. 예약 정보는 결제 전에
+ * coaching_bookings에 기록되지만, 결제 성공 전에는 확정 상태가 될 수 없다.
+ */
+export function normalizeCoachingBookingRequest(
+  input: CoachingBookingRequestInput | undefined,
+): NormalizedCoachingBookingRequest | null {
+  if (!input) return null;
+  const contactName = input.contactName.trim();
+  const contactPhone = input.contactPhone.replace(/[^0-9+\- ]/g, "").trim();
+  const requestedWindowStart = new Date(input.requestedWindowStart);
+  const requestedWindowEnd = new Date(input.requestedWindowEnd);
+  const notes = input.notes?.trim() || null;
+
+  if (!contactName || contactName.length > 100) throw new Error("COACHING_CONTACT_NAME_INVALID");
+  if (contactPhone.length < 8 || contactPhone.length > 40) throw new Error("COACHING_CONTACT_PHONE_INVALID");
+  if (Number.isNaN(requestedWindowStart.getTime()) || Number.isNaN(requestedWindowEnd.getTime())) {
+    throw new Error("COACHING_REQUESTED_TIME_INVALID");
+  }
+  if (requestedWindowEnd.getTime() <= requestedWindowStart.getTime()) {
+    throw new Error("COACHING_REQUESTED_TIME_RANGE_INVALID");
+  }
+  if (requestedWindowEnd.getTime() - requestedWindowStart.getTime() > 8 * 60 * 60 * 1000) {
+    throw new Error("COACHING_REQUESTED_TIME_RANGE_TOO_LONG");
+  }
+  if (notes && notes.length > 2000) throw new Error("COACHING_NOTES_TOO_LONG");
+
+  return {
+    contactName,
+    contactPhone,
+    requestedWindowStart,
+    requestedWindowEnd,
+    sessionMode: input.sessionMode,
+    notes,
+  };
+}
+
+async function createPendingPaymentBooking(
+  tx: any,
+  input: {
+    userId?: number | null;
+    customerId: number;
+    orderId: number;
+    productId: number;
+    request: NormalizedCoachingBookingRequest;
+  },
+): Promise<number> {
+  const inserted = await tx.insert(coachingBookings).values({
+    userId: input.userId,
+    customerId: input.customerId,
+    orderId: input.orderId,
+    productId: input.productId,
+    // 기존 공통 상태값을 그대로 사용한다. 연결된 주문이 pending인 동안은
+    // 운영자가 확정하지 않으며, 승인 성공에서만 scheduled로 전이한다.
+    status: "pending_schedule",
+    requestedWindowStart: input.request.requestedWindowStart,
+    requestedWindowEnd: input.request.requestedWindowEnd,
+    sessionMode: input.request.sessionMode,
+    detailsEncrypted: encryptCommerceValue(JSON.stringify({
+      contactName: input.request.contactName,
+      contactPhone: input.request.contactPhone,
+      notes: input.request.notes,
+    })),
+  });
+  const bookingId = Number(inserted[0].insertId);
+  await tx.insert(coachingBookingEvents).values({
+    bookingId,
+    eventType: "booking_request_created_pending_payment",
+    toStatus: "pending_schedule",
+  });
+  return bookingId;
+}
+
+async function confirmPaidCoachingBooking(tx: any, orderId: number, now: Date): Promise<void> {
+  const rows = await tx
+    .select()
+    .from(coachingBookings)
+    .where(eq(coachingBookings.orderId, orderId))
+    .limit(1);
+  const booking = rows[0];
+  if (!booking || booking.status !== "pending_schedule") return;
+
+  await tx
+    .update(coachingBookings)
+    .set({
+      status: "scheduled",
+      scheduledAt: booking.requestedWindowStart,
+      scheduledEndAt: booking.requestedWindowEnd,
+    })
+    .where(eq(coachingBookings.id, booking.id));
+  await tx.insert(coachingBookingEvents).values({
+    bookingId: booking.id,
+    eventType: "payment_approved_booking_confirmed",
+    fromStatus: "pending_schedule",
+    toStatus: "scheduled",
+    payloadEncrypted: encryptCommerceValue(JSON.stringify({ paidAt: now.toISOString() })),
+  });
+}
+
+async function cancelPendingPaymentBooking(
+  tx: any,
+  input: { orderId: number; reason: "payment_failed" | "payment_cancelled" | "payment_expired"; now: Date },
+): Promise<void> {
+  const rows = await tx
+    .select()
+    .from(coachingBookings)
+    .where(eq(coachingBookings.orderId, input.orderId))
+    .limit(1);
+  const booking = rows[0];
+  if (!booking || booking.status !== "pending_schedule") return;
+
+  await tx
+    .update(coachingBookings)
+    .set({ status: "cancelled", cancelledAt: input.now, cancelReason: input.reason })
+    .where(eq(coachingBookings.id, booking.id));
+  await tx.insert(coachingBookingEvents).values({
+    bookingId: booking.id,
+    eventType: input.reason,
+    fromStatus: "pending_schedule",
+    toStatus: "cancelled",
+  });
 }
 
 function asCheckoutResponse(row: {
@@ -106,6 +247,7 @@ async function createCheckoutForProvider(input: {
   email: string;
   idempotencyKey: string;
   couponCode?: string;
+  bookingRequest?: CoachingBookingRequestInput;
   userId?: number;
   authenticatedEmail?: string | null;
 }, provider: "test" | "toss_pg"): Promise<CheckoutResponse> {
@@ -124,6 +266,7 @@ async function createCheckoutForProvider(input: {
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
   const email = assertCheckoutEmail(input.email);
   const emailHash = hashCommerceEmail(email);
+  const bookingRequest = normalizeCoachingBookingRequest(input.bookingRequest);
   const now = new Date();
 
   return (db as any).transaction(async (tx: any) => {
@@ -157,6 +300,9 @@ async function createCheckoutForProvider(input: {
       (product.fulfillmentType !== "analysis" && product.fulfillmentType !== "coaching")
     ) {
       throw new Error("TEST_CHECKOUT_REQUIRES_AN_ACTIVE_PAID_PRODUCT");
+    }
+    if (bookingRequest && product.fulfillmentType !== "coaching") {
+      throw new Error("COACHING_BOOKING_REQUIRES_COACHING_PRODUCT");
     }
 
     const priceRows = await tx
@@ -251,6 +397,16 @@ async function createCheckoutForProvider(input: {
     const orderItemId = itemRows[0]?.id;
     if (!orderItemId) throw new Error("ORDER_ITEM_CREATE_FAILED");
 
+    if (bookingRequest) {
+      await createPendingPaymentBooking(tx, {
+        userId: linkedUserId,
+        customerId,
+        orderId,
+        productId: product.id,
+        request: bookingRequest,
+      });
+    }
+
     if (finalAmountKrw === 0) {
       const paidAt = new Date();
       await tx.update(orders).set({ status: "paid", paidAt }).where(eq(orders.id, orderId));
@@ -274,20 +430,7 @@ async function createCheckoutForProvider(input: {
       });
       await consumeCouponReservation(tx, orderId);
       const entitlementId = Number(entitlementInsert[0].insertId);
-      if (product.fulfillmentType === "coaching") {
-        const bookingInsert = await tx.insert(coachingBookings).values({
-          userId: linkedUserId,
-          customerId,
-          orderId,
-          productId: product.id,
-          status: "pending_schedule",
-        });
-        await tx.insert(coachingBookingEvents).values({
-          bookingId: Number(bookingInsert[0].insertId),
-          eventType: "booking_created",
-          toStatus: "pending_schedule",
-        });
-      }
+      if (product.fulfillmentType === "coaching") await confirmPaidCoachingBooking(tx, orderId, paidAt);
       const startGrant = product.fulfillmentType === "analysis"
         ? createEntitlementStartGrant({
             entitlementId,
@@ -334,6 +477,7 @@ export async function createTestCheckout(input: {
   email: string;
   idempotencyKey: string;
   couponCode?: string;
+  bookingRequest?: CoachingBookingRequestInput;
   userId?: number;
   authenticatedEmail?: string | null;
 }): Promise<CheckoutResponse> {
@@ -345,6 +489,7 @@ export async function createTossTestCheckout(input: {
   email: string;
   idempotencyKey: string;
   couponCode?: string;
+  bookingRequest?: CoachingBookingRequestInput;
   userId?: number;
   authenticatedEmail?: string | null;
 }): Promise<CheckoutResponse & { tossClientKey: string }> {
@@ -433,6 +578,11 @@ async function completePaymentForProvider(input: {
         .set({ status: "expired" })
         .where(eq(orders.id, record.orderId));
       await releaseCouponReservation(tx, record.orderId);
+      await cancelPendingPaymentBooking(tx, {
+        orderId: record.orderId,
+        reason: "payment_expired",
+        now: new Date(),
+      });
       throw new Error("TEST_ORDER_EXPIRED");
     }
     if (record.transactionStatus !== "ready") throw new Error("TEST_PAYMENT_PROCESSING");
@@ -480,20 +630,7 @@ async function completePaymentForProvider(input: {
         .limit(1);
       const productCode = itemProductRows[0]?.code as CommerceProductCode | undefined;
       if (!productCode) throw new Error("ENTITLEMENT_PRODUCT_NOT_FOUND");
-      if (record.fulfillmentType === "coaching") {
-        const bookingInsert = await tx.insert(coachingBookings).values({
-          userId: record.userId,
-          customerId: record.customerId,
-          orderId: record.orderId,
-          productId: record.productId,
-          status: "pending_schedule",
-        });
-        await tx.insert(coachingBookingEvents).values({
-          bookingId: Number(bookingInsert[0].insertId),
-          eventType: "booking_created",
-          toStatus: "pending_schedule",
-        });
-      }
+      if (record.fulfillmentType === "coaching") await confirmPaidCoachingBooking(tx, record.orderId, now);
       return {
         orderNumber: record.orderNumber,
         paymentId: input.providerPaymentId,
@@ -521,6 +658,11 @@ async function completePaymentForProvider(input: {
       .set({ status, cancelledAt: now })
       .where(eq(orders.id, record.orderId));
     await releaseCouponReservation(tx, record.orderId);
+    await cancelPendingPaymentBooking(tx, {
+      orderId: record.orderId,
+      reason: input.outcome === "failed" ? "payment_failed" : "payment_cancelled",
+      now,
+    });
     return {
       orderNumber: record.orderNumber,
       paymentId: input.providerPaymentId,
