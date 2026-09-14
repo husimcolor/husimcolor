@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getParentDomain, getSessionCookieOptions } from "../server/_core/cookies";
+import { HUSIMCOLOR_OAUTH_APP_ID, resolveOAuthAppId } from "../server/_core/env";
 import { createOAuthLoginUrl, getProductionFrontendOrigin } from "../server/_core/oauth";
 
 function request(overrides: Record<string, unknown> = {}) {
@@ -14,6 +15,10 @@ function request(overrides: Record<string, unknown> = {}) {
 }
 
 describe("production OAuth session policy", () => {
+  it("uses the registered project appId when Vercel runtime omits VITE_APP_ID", () => {
+    expect(resolveOAuthAppId("")).toBe(HUSIMCOLOR_OAUTH_APP_ID);
+  });
+
   it("uses a host-only cookie on Vercel public domains", () => {
     expect(getParentDomain("husimcolor.vercel.app")).toBeUndefined();
     expect(getSessionCookieOptions(request())).toMatchObject({
