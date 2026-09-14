@@ -939,7 +939,19 @@
 - [ ] 운영 배포 전 Android Chrome·Samsung Internet·Kakao/Naver 인앱 브라우저의 Toss 모바일 결제 진입·리다이렉트·복귀 UX QA
 - [x] 무료 컬러 체험·친구 관계 분석은 정상 이용을 유지하고 유료 분석 상품은 가격·정식 오픈 준비중으로 노출
 - [x] 일반 사용자 유료 결제·검사 시작을 Production 서버와 UI에서 차단하고 심사용 테스트 경로와 향후 활성화 설정을 분리
-- [ ] 무료·준비중 유료·기존 결과/PDF/공유·심사용 경로 회귀 검증 및 GitHub main→Vercel Production 배포
+- [x] 무료·준비중 유료·기존 결과/PDF/공유·심사용 경로 회귀 검증 및 GitHub main→Vercel Production 배포
 - [x] Production tRPC 번들의 PDF 색상 프로필 경로 오류를 보정하고 전체 자동검수·TypeScript·번들 검증 완료
-- [ ] 보정된 tRPC 함수를 GitHub main→Vercel Production에 재배포하고 기존 API·무료 이용·유료 공개 차단 재검증
+- [x] 보정된 tRPC 함수를 GitHub main→Vercel Production에 재배포하고 기존 API·무료 이용·유료 공개 차단 재검증
 - [x] 이메일 outbox의 PDF 전달 메타데이터 의존성을 분리해 tRPC 번들에 남은 PDFKit 정적 import 제거 및 전체 회귀 검증 완료
+- [ ] GitHub workflow 쓰기 권한을 확보해 cron 이메일 outbox 함수·10분 스케줄을 원격 main 배포 워크플로에 반영
+- [ ] Vercel Production에 상거래 이메일·Resend·cron·Toss 테스트 비밀 설정을 값 노출 없이 등록하고 private PDF 이메일 E2E 검증
+- [x] 현재 /admin 화면·레거시 신청/수동입금·방문 통계와 신규 주문/결제/권한/PDF/outbox 백엔드를 코드 기준으로 분석하고, 데이터 보존형 통합 관리자 전환안을 보고
+- [x] 홈페이지 코칭 상품 판매·회원/비회원 결제·쿠폰·예약 확장을 반영한 관리자/커머스 최종 범위와 예약 동시 구축 여부를 설계 검토
+- [x] 서버 역할 기반 관리자 권한과 고객·주문·결제·검사·문서·이메일 통합 운영 조회 API 구현
+- [x] 1:1 프리미엄·부부/커플·기타 관계 코칭 상품 및 결제 후 예약 대기/확정 운영 데이터·API 구현
+- [x] 기존 수동입금 데이터를 보존한 통합 관리자 운영 홈·고객·주문·PDF/이메일·예약 화면 구현
+- [x] 통합 관리자·코칭 예약 운영 자동검수와 기존 분석/결과/PDF/Kakao 공유 회귀 검증
+- [x] 운영자 계정의 서버 admin 역할과 새 /admin 접근 권한을 실제 확인
+- [x] OAuth 소유자 OpenID 로그인 시 users.role=admin 자동 부여 기존 구현과 실제 관리자 계정 생성을 확인
+- [ ] 통합 관리자·공통 커머스·코칭 예약 운영 기반을 GitHub Actions→Vercel Production에 배포
+- [ ] Production /admin의 기존 데이터 조회와 유료 공개 차단·Toss 실결제 비활성 상태를 검증

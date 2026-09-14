@@ -1,526 +1,178 @@
-import React, { useState, useCallback } from "react";
+import { useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
+  ActivityIndicator,
   Alert,
   RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
   TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { useRouter } from "expo-router";
+
 import { ScreenContainer } from "@/components/screen-container";
+import { startOAuthLogin } from "@/constants/oauth";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
-import { useRouter } from "expo-router";
-import { useAdmin } from "@/lib/adminContext";
 
-// ── 관리자 비밀번호 설정 ──────────────────────────────────────────
-// 비밀번호를 변경하려면 아래 ADMIN_PASSWORD 값을 수정하고 재배포하세요.
-// 이 방식은 Vercel 정적 배포 환경에서 브라우저 무관하게 동작합니다.
-const ADMIN_PASSWORD = "hyusim2024";
-// ────────────────────────────────────────────────────────────────
+type Tab = "운영" | "주문" | "고객" | "PDF·메일" | "예약" | "과거 신청" | "후기";
+type LegacyStatus = "pending" | "confirmed" | "rejected";
 
-type PaymentRecord = {
-  id: number;
-  senderName: string;
-  contact: string;
-  depositorName: string;
-  amount: number;
-  status: "pending" | "confirmed" | "rejected";
-  memo: string | null;
-  createdAt: Date | string;
+const tabs: Tab[] = ["운영", "주문", "고객", "PDF·메일", "예약", "과거 신청", "후기"];
+const bookingLabels: Record<string, string> = {
+  pending_schedule: "일정 대기", change_requested: "변경 요청", scheduled: "예약 확정",
+  completed: "완료", cancelled: "취소", no_show: "노쇼",
 };
+const legacyLabels: Record<LegacyStatus, string> = { pending: "입금 대기", confirmed: "입금 확인", rejected: "취소" };
 
-const STATUS_INFO: Record<string, { label: string; color: string }> = {
-  pending:   { label: "입금대기", color: "#F59E0B" },
-  confirmed: { label: "입금확인", color: "#22C55E" },
-  rejected:  { label: "취소",     color: "#EF4444" },
-};
+function dateText(value: Date | string | null | undefined) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function Badge({ text, tone = "neutral" }: { text: string; tone?: "good" | "warn" | "bad" | "neutral" }) {
+  const color = { good: "#3f7b52", warn: "#9a6a12", bad: "#b5584f", neutral: "#64625b" }[tone];
+  const bg = { good: "#e6f4e7", warn: "#fff3d9", bad: "#fdebe8", neutral: "#f0efea" }[tone];
+  return <View style={[styles.badge, { backgroundColor: bg }]}><Text style={[styles.badgeText, { color }]}>{text}</Text></View>;
+}
+
+function Metric({ value, label, color = "#3f7b52" }: { value: number; label: string; color?: string }) {
+  return <View style={styles.metric}><Text style={[styles.metricValue, { color }]}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></View>;
+}
+
+function Panel({ children }: { children: React.ReactNode }) {
+  return <View style={styles.panel}>{children}</View>;
+}
 
 export default function AdminScreen() {
   const colors = useColors();
   const router = useRouter();
+  const [tab, setTab] = useState<Tab>("운영");
+  const [customerId, setCustomerId] = useState<number | null>(null);
+  const [expandedPaymentId, setExpandedPaymentId] = useState<number | null>(null);
+  const [memo, setMemo] = useState<Record<number, string>>({});
+  const [schedule, setSchedule] = useState<Record<number, string>>({});
+  const [refreshing, setRefreshing] = useState(false);
 
-  // ── 인증 ──────────────────────────────────────────────────────
-  const [authenticated, setAuthenticated] = useState(false);
-  const [pwInput, setPwInput] = useState("");
-  const [pwError, setPwError] = useState(false);
+  const auth = trpc.auth.me.useQuery();
+  const isAdmin = auth.data?.role === "admin";
+  const secured = { enabled: isAdmin, retry: false };
+  const dashboard = trpc.admin.dashboard.useQuery(undefined, secured);
+  const orders = trpc.admin.orders.useQuery({ limit: 50 }, secured);
+  const customers = trpc.admin.customers.useQuery({ limit: 50 }, secured);
+  const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: isAdmin && customerId !== null });
+  const delivery = trpc.commerce.adminDelivery.list.useQuery({ limit: 50 }, secured);
+  const bookings = trpc.admin.coachingBookings.useQuery({ limit: 50 }, secured);
+  const legacy = trpc.admin.legacyPayments.useQuery({ limit: 100 }, secured);
+  const reviews = trpc.admin.reviews.useQuery({ limit: 100 }, secured);
+  const visits = trpc.visitors.stats.useQuery(undefined, secured);
+  const tests = trpc.visitors.testStats.useQuery(undefined, secured);
+  const logout = trpc.auth.logout.useMutation({ onSuccess: () => router.replace("/(tabs)") });
+  const updateLegacy = trpc.admin.updateLegacyPayment.useMutation({ onSuccess: () => { legacy.refetch(); dashboard.refetch(); } });
+  const retryMail = trpc.commerce.adminDelivery.retry.useMutation({ onSuccess: () => delivery.refetch() });
+  const updateBooking = trpc.admin.updateCoachingBooking.useMutation({ onSuccess: () => { bookings.refetch(); dashboard.refetch(); } });
+  const deleteReview = trpc.admin.deleteReview.useMutation({ onSuccess: () => reviews.refetch() });
 
-  const { login: globalLogin, logout: globalLogout } = useAdmin();
-
-  const handleLogin = () => {
-    if (pwInput === ADMIN_PASSWORD) {
-      setAuthenticated(true);
-      globalLogin(pwInput); // 전역 관리자 상태 업데이트
-      setPwError(false);
-    } else {
-      setPwError(true);
-      setPwInput("");
-    }
+  const refresh = async () => {
+    setRefreshing(true);
+    await Promise.all([auth.refetch(), dashboard.refetch(), orders.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
+    setRefreshing(false);
   };
-
-  // ── 데이터 조회 ────────────────────────────────────────────────
-  const { data: testStats, refetch: refetchTestStats } = trpc.visitors.testStats.useQuery(undefined, {
-    enabled: authenticated,
-    retry: false,
-  });
-
-  const { data: stats, refetch: refetchStats } = trpc.visitors.stats.useQuery(undefined, {
-    enabled: authenticated,
-    retry: false,
-  });
-
-  const { data: payments, refetch: refetchPayments, isLoading } = trpc.payments.list.useQuery(undefined, {
-    enabled: authenticated,
-    retry: false,
-  });
-
-  const { data: reviewStats, refetch: refetchReviewStats } = trpc.reviews.stats.useQuery(undefined, {
-    enabled: authenticated,
-    retry: false,
-  });
-
-  const { data: reviewList, refetch: refetchReviewList } = trpc.reviews.list.useQuery(undefined, {
-    enabled: authenticated,
-    retry: false,
-  });
-
-  const [reviewExpanded, setReviewExpanded] = useState<number | null>(null);
-
-  const deleteReview = trpc.reviews.delete.useMutation({
-    onSuccess: () => { refetchReviewList(); refetchReviewStats(); },
-    onError: (e) => Alert.alert("오류", e.message),
-  });
-  const handleDeleteReview = (id: number) => {
-    Alert.alert('후기 삭제', '이 후기를 삭제하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      { text: '삭제', style: 'destructive', onPress: () => deleteReview.mutate({ id }) },
+  const updatePayment = (id: number, status: LegacyStatus) => Alert.alert("과거 신청 상태", `“${legacyLabels[status]}”으로 변경하시겠습니까?`, [
+    { text: "취소", style: "cancel" }, { text: "변경", onPress: () => updateLegacy.mutate({ id, status, memo: memo[id] || undefined }) },
+  ]);
+  const confirmSchedule = (id: number) => {
+    const value = schedule[id]?.trim();
+    const scheduledAt = value ? new Date(value.replace(" ", "T")) : null;
+    if (!scheduledAt || Number.isNaN(scheduledAt.getTime())) return Alert.alert("일시 형식", "예: 2026-10-01 14:00 형식으로 입력해 주세요.");
+    updateBooking.mutate({ bookingId: id, status: "scheduled", scheduledAt });
+  };
+  const changeBookingStatus = (bookingId: number, status: "change_requested" | "completed" | "cancelled" | "no_show") => {
+    Alert.alert("예약 상태 변경", `“${bookingLabels[status]}” 상태로 변경하시겠습니까?`, [
+      { text: "취소", style: "cancel" }, { text: "변경", onPress: () => updateBooking.mutate({ bookingId, status }) },
     ]);
   };
 
-  const updateStatus = trpc.payments.updateStatus.useMutation({
-    onSuccess: () => { refetchPayments(); refetchStats(); },
-    onError: (e) => Alert.alert("오류", e.message),
-  });
+  if (auth.isLoading) return <ScreenContainer><View style={styles.center}><ActivityIndicator color="#3f7b52" /></View></ScreenContainer>;
+  if (!auth.data) return (
+    <ScreenContainer><View style={styles.center}>
+      <Text style={[styles.deniedTitle, { color: colors.foreground }]}>운영자 로그인 필요</Text>
+      <Text style={[styles.deniedBody, { color: colors.muted }]}>통합 관리자는 서버에 관리자 역할이 있는 운영자 계정에서만 열립니다.</Text>
+      <TouchableOpacity style={styles.login} onPress={() => { void startOAuthLogin(); }}><Text style={styles.loginText}>운영자 로그인</Text></TouchableOpacity>
+      <TouchableOpacity style={styles.outline} onPress={() => router.back()}><Text style={styles.outlineText}>돌아가기</Text></TouchableOpacity>
+    </View></ScreenContainer>
+  );
+  if (!isAdmin) return (
+    <ScreenContainer><View style={styles.center}>
+      <Text style={[styles.deniedTitle, { color: colors.foreground }]}>접근 권한이 없습니다</Text>
+      <Text style={[styles.deniedBody, { color: colors.muted }]}>이 계정에는 통합 관리자 역할이 설정되어 있지 않습니다.</Text>
+      <TouchableOpacity style={styles.outline} onPress={() => router.back()}><Text style={styles.outlineText}>돌아가기</Text></TouchableOpacity>
+    </View></ScreenContainer>
+  );
 
-  const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await Promise.all([refetchStats(), refetchPayments(), refetchReviewStats(), refetchReviewList()]);
-    setRefreshing(false);
-  }, [refetchStats, refetchPayments, refetchReviewStats, refetchReviewList]);
-
-  // ── 상태 변경 ─────────────────────────────────────────────────
-  const [memoInputs, setMemoInputs] = useState<Record<number, string>>({});
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-
-  const handleUpdateStatus = (id: number, status: "pending" | "confirmed" | "rejected") => {
-    const { label } = STATUS_INFO[status];
-    Alert.alert(
-      "상태 변경",
-      `이 기록을 "${label}"으로 변경하시겠습니까?`,
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: "변경",
-          onPress: () => updateStatus.mutate({ id, status, memo: memoInputs[id] || undefined }),
-        },
-      ]
-    );
-  };
-
-  // ── 통계 계산 ─────────────────────────────────────────────────
-  const paidCount     = payments?.filter((p: PaymentRecord) => p.amount > 0).length ?? 0;
-  const freeCount     = payments?.filter((p: PaymentRecord) => p.amount === 0).length ?? 0;
-  const pendingCount  = payments?.filter((p: PaymentRecord) => p.status === "pending").length ?? 0;
-  const confirmedCount = payments?.filter((p: PaymentRecord) => p.status === "confirmed").length ?? 0;
-
-  const formatDate = (d: Date | string) => {
-    const dt = new Date(d);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${dt.getFullYear()}.${pad(dt.getMonth() + 1)}.${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-  };
-
-  // ── 로그인 화면 ────────────────────────────────────────────────
-  if (!authenticated) {
-    return (
-      <ScreenContainer>
-        {/* 로그인 전에도 보이는 커플 테스트 버튼 - 오른쪽 상단 고정 */}
-        <TouchableOpacity
-          style={styles.floatingCoupleBtn}
-          onPress={() => router.push('/(tabs)/couple-start' as any)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.floatingCoupleBtnText}>💑 커플 테스트</Text>
-        </TouchableOpacity>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-          <View style={styles.loginContainer}>
-            <Text style={[styles.loginTitle, { color: colors.foreground }]}>🌿 관리자 로그인</Text>
-            <Text style={[styles.loginSub, { color: colors.muted }]}>휴심컬러 운영자 전용 화면입니다</Text>
-            <TextInput
-              style={[styles.loginInput, {
-                borderColor: pwError ? "#EF4444" : colors.border,
-                color: "#333333",
-                backgroundColor: colors.surface,
-              }]}
-              placeholder="비밀번호를 입력하세요"
-              placeholderTextColor={colors.muted}
-              secureTextEntry
-              value={pwInput}
-              onChangeText={(t) => { setPwInput(t); setPwError(false); }}
-              onSubmitEditing={handleLogin}
-              returnKeyType="done"
-              autoFocus
-            />
-            {pwError && <Text style={styles.pwError}>비밀번호가 올바르지 않습니다</Text>}
-            <TouchableOpacity
-              style={[styles.loginBtn, { backgroundColor: "#5A8A5A" }]}
-              onPress={handleLogin}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.loginBtnText}>로그인</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ marginTop: 12 }}>
-              <Text style={[styles.backText, { color: colors.muted }]}>← 돌아가기</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </ScreenContainer>
-    );
-  }
-
-  // ── 관리자 메인 화면 ───────────────────────────────────────────
   return (
     <ScreenContainer>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {/* 헤더 */}
-        <View style={styles.headerRow}>
-          <Text style={[styles.pageTitle, { color: colors.foreground }]}>🌿 관리자 대시보드</Text>
-          <View style={{ flexDirection: "row", gap: 6 }}>
-            <TouchableOpacity
-              style={[styles.smallBtn, { borderColor: "#4A7A4A", backgroundColor: "rgba(74,122,74,0.12)" }]}
-              onPress={() => router.push('/(tabs)/couple-start' as any)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.smallBtnText, { color: "#4A7A4A" }]}>💑 커플 테스트</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.smallBtn, { borderColor: "#EF4444" }]}
-              onPress={() => { setAuthenticated(false); globalLogout(); setPwInput(""); }}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.smallBtnText, { color: "#EF4444" }]}>로그아웃</Text>
-            </TouchableOpacity>
-          </View>
+      <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#3f7b52" />}>
+        <View style={styles.header}>
+          <View><Text style={[styles.eyebrow, { color: colors.muted }]}>HUSIMCOLOR OPERATIONS</Text><Text style={[styles.title, { color: colors.foreground }]}>통합 관리자</Text><Text style={[styles.subtitle, { color: colors.muted }]}>고객 · 주문 · 결과 · PDF · 이메일 · 예약</Text></View>
+          <TouchableOpacity style={styles.logout} onPress={() => logout.mutate()}><Text style={styles.logoutText}>로그아웃</Text></TouchableOpacity>
         </View>
-        <Text style={[styles.refreshHint, { color: colors.muted }]}>↓ 아래로 당겨 새로고침</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>{tabs.map((item) => <TouchableOpacity key={item} onPress={() => setTab(item)} style={[styles.tab, tab === item && styles.tabActive]}><Text style={[styles.tabText, tab === item && styles.tabTextActive]}>{item}</Text></TouchableOpacity>)}</ScrollView>
 
-        {/* 커플 코칭 테스트 버튼 - 눈에 잘 띄게 상단에 배치 */}
-        <TouchableOpacity
-          style={styles.coupleTestBtn}
-          onPress={() => router.push('/(tabs)/couple-start' as any)}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.coupleTestBtnTitle}>💑 커플 코칭 테스트 시작</Text>
-          <Text style={styles.coupleTestBtnSub}>커플 세션 전체 흐름을 처음부터 체험합니다</Text>
-        </TouchableOpacity>
+        {tab === "운영" && <>
+          <Text style={[styles.section, { color: colors.foreground }]}>오늘의 운영 신호</Text>
+          <View style={styles.grid}>
+            <Metric value={dashboard.data?.paidOrders ?? 0} label="결제 완료 주문" />
+            <Metric value={dashboard.data?.startedAnalyses ?? 0} label="검사 진행 중" color="#4d6f9f" />
+            <Metric value={dashboard.data?.failedDocuments ?? 0} label="PDF 실패" color="#b5584f" />
+            <Metric value={dashboard.data?.failedEmails ?? 0} label="메일 실패" color="#b5584f" />
+            <Metric value={dashboard.data?.pendingBookings ?? 0} label="예약 일정 대기" color="#b58c2c" />
+            <Metric value={dashboard.data?.legacyPending ?? 0} label="과거 입금 대기" color="#b58c2c" />
+          </View>
+          <Text style={[styles.section, { color: colors.foreground }]}>기존 체험 지표</Text>
+          <View style={styles.grid}>
+            <Metric value={visits.data?.totalVisitors ?? 0} label="고유 방문 기기" />
+            <Metric value={tests.data?.freeStart ?? 0} label="무료 시작" color="#b58c2c" />
+            <Metric value={tests.data?.deepResult ?? 0} label="개인 심화 결과" color="#4d6f9f" />
+            <Metric value={tests.data?.coupleResult ?? 0} label="관계 결과" />
+          </View>
+          <Panel><Text style={styles.noticeTitle}>공개 운영 상태</Text><Text style={styles.noticeText}>유료 분석은 정식 오픈 준비중을 유지합니다. 이 화면은 분석 문구·결과·PDF·공유 내용을 수정하지 않고 운영 상태만 추적합니다.</Text></Panel>
+        </>}
 
-        {/* 통계 대시보드 */}
-        <View style={styles.statsGrid}>
-          {/* 전체 방문 기록 */}
-          <View style={[styles.statCard, { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE', borderWidth: 1 }]}>
-            <Text style={[styles.statNum, { color: "#5A8A5A" }]}>{stats?.totalLogs ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: "#5A8A5A" }]}>전체 방문 기록{"\n"}재방문 포함</Text>
-          </View>
-          {/* 고유 방문자 */}
-          <View style={[styles.statCard, { backgroundColor: '#E8F4E8', borderColor: '#B0D8B0', borderWidth: 1 }]}>
-            <Text style={[styles.statNum, { color: "#3A7A3A" }]}>{stats?.totalVisitors ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: "#3A7A3A" }]}>고유 방문자{"\n"}기기 기준</Text>
-          </View>
-          {/* 오늘 방문자 */}
-          <View style={[styles.statCard, { backgroundColor: '#F0FFF4', borderColor: '#A0D8A0', borderWidth: 1 }]}>
-            <Text style={[styles.statNum, { color: "#2A6A2A" }]}>{stats?.todayVisitors ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: "#2A6A2A" }]}>오늘 방문자{"\n"}고유 기기</Text>
-          </View>
-          {/* 무료체험 신청 */}
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statNum, { color: "#C4A35A" }]}>{freeCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>무료체험 신청</Text>
-          </View>
-          {/* 유료결제 신청 */}
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statNum, { color: "#5A7EA8" }]}>{paidCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>유료결제 신청</Text>
-          </View>
-          {/* 입금대기 */}
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statNum, { color: "#F59E0B" }]}>{pendingCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>입금대기</Text>
-          </View>
-          {/* 입금확인 */}
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statNum, { color: "#22C55E" }]}>{confirmedCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>입금확인</Text>
-          </View>
-          {/* 총 신청 */}
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statNum, { color: colors.foreground }]}>{payments?.length ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>총 신청</Text>
-          </View>
-        </View>
+        {tab === "주문" && <><Text style={[styles.section, { color: colors.foreground }]}>최근 주문</Text>{orders.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {dateText(item.createdAt)}</Text><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.finalAmountKrw.toLocaleString()}원 · {item.provider ?? "결제 대기"}</Text></Panel>)}</>}
 
-        {/* 테스트 세션 통계 */}
-        <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 8 }]}>테스트 세션 통계</Text>
-        <View style={styles.statsGrid}>
-          <View style={[styles.statCard, { backgroundColor: '#FFF8F0', borderColor: '#E8D5B0', borderWidth: 1 }]}>
-            <Text style={[styles.statNum, { color: "#C4A35A" }]}>{testStats?.freeStart ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: "#8B6914" }]}>무료 테스트{"\n"}시작</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#FFF8F0', borderColor: '#E8D5B0', borderWidth: 1 }]}>
-            <Text style={[styles.statNum, { color: "#C4A35A" }]}>{testStats?.freeResult ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: "#8B6914" }]}>무료 테스트{"\n"}결과 도달</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#F0F4FF', borderColor: '#C0CCEE', borderWidth: 1 }]}>
-            <Text style={[styles.statNum, { color: "#5A7EA8" }]}>{testStats?.deepStart ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: "#3A5A88" }]}>심화 테스트{"\n"}시작</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#F0F4FF', borderColor: '#C0CCEE', borderWidth: 1 }]}>
-            <Text style={[styles.statNum, { color: "#5A7EA8" }]}>{testStats?.deepResult ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: "#3A5A88" }]}>심화 테스트{"\n"}결과 도달</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#F0FFF4', borderColor: '#B0DDB8', borderWidth: 1 }]}>
-            <Text style={[styles.statNum, { color: "#5A8A5A" }]}>{testStats?.coupleStart ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: "#3A6A3A" }]}>커플 테스트{"\n"}시작</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#F0FFF4', borderColor: '#B0DDB8', borderWidth: 1 }]}>
-            <Text style={[styles.statNum, { color: "#5A8A5A" }]}>{testStats?.coupleResult ?? "-"}</Text>
-            <Text style={[styles.statLabel, { color: "#3A6A3A" }]}>커플 테스트{"\n"}결과 도달</Text>
-          </View>
-        </View>
+        {tab === "고객" && <><Text style={[styles.section, { color: colors.foreground }]}>고객·회원 연결</Text><Text style={[styles.helper, { color: colors.muted }]}>이메일은 마스킹해 표시합니다. 행을 누르면 주문·이용권·검사·문서·예약 이력 수를 볼 수 있습니다.</Text>{customers.data?.map((item) => <TouchableOpacity key={item.id} onPress={() => setCustomerId(item.id)}><Panel><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.emailMasked}</Text><Badge text={item.userId ? "회원 연결" : "비회원"} tone={item.userId ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>주문 {item.orderCount}건 · 최근 주문 {dateText(item.latestOrderAt)}</Text></Panel></TouchableOpacity>)}{customer.data && <Panel><Text style={styles.noticeTitle}>{customer.data.customer.emailMasked} 고객 흐름</Text><Text style={styles.noticeText}>주문 {customer.data.orders.length} · 이용권 {customer.data.entitlements.length} · 검사 {customer.data.analysisRuns.length} · PDF {customer.data.privateDocuments.length} · 이메일 {customer.data.emailOutbox.length} · 예약 {customer.data.coachingBookings.length}</Text></Panel>}</>}
 
-        {/* 결제 신청 목록 */}
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>결제 신청 목록</Text>
-        {isLoading ? (
-          <ActivityIndicator color="#5A8A5A" style={{ marginVertical: 20 }} />
-        ) : !payments || payments.length === 0 ? (
-          <Text style={[styles.emptyText, { color: colors.muted }]}>아직 신청 내역이 없습니다.</Text>
-        ) : (
-          payments.map((p: PaymentRecord) => {
-            const si = STATUS_INFO[p.status] ?? STATUS_INFO.pending;
-            const isExpanded = expandedId === p.id;
-            return (
-              <View key={p.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <TouchableOpacity
-                  style={styles.cardHeader}
-                  onPress={() => setExpandedId(isExpanded ? null : p.id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.cardTitleRow}>
-                      <Text style={[styles.cardName, { color: colors.foreground }]}>{p.senderName}</Text>
-                      <View style={[styles.statusBadge, { borderColor: si.color }]}>
-                        <Text style={[styles.statusText, { color: si.color }]}>{si.label}</Text>
-                      </View>
-                      {p.amount > 0 && (
-                        <View style={[styles.statusBadge, { borderColor: "#5A7EA8" }]}>
-                          <Text style={[styles.statusText, { color: "#5A7EA8" }]}>유료</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={[styles.cardSubtitle, { color: colors.muted }]}>
-                      {formatDate(p.createdAt)} · {p.amount > 0 ? `${p.amount.toLocaleString()}원` : "무료체험"}
-                    </Text>
-                  </View>
-                  <Text style={[styles.expandIcon, { color: colors.muted }]}>{isExpanded ? "▲" : "▼"}</Text>
-                </TouchableOpacity>
+        {tab === "PDF·메일" && <><Text style={[styles.section, { color: colors.foreground }]}>Private PDF·이메일 Outbox</Text><Text style={[styles.helper, { color: colors.muted }]}>실패 건만 재시도하며, PDF 본문·분석 결과·공유 스냅샷은 수정하지 않습니다.</Text>{delivery.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>주문 #{item.orderId ?? "—"} · 문서 #{item.privateDocumentId ?? "—"}</Text><Badge text={item.status} tone={item.status === "sent" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>시도 {item.attemptCount}회 · 다음 시도 {dateText(item.nextAttemptAt)}</Text>{item.status === "failed" && <TouchableOpacity style={styles.action} onPress={() => retryMail.mutate({ outboxId: item.id })}><Text style={styles.actionText}>발송 재시도</Text></TouchableOpacity>}</Panel>)}</>}
 
-                {isExpanded && (
-                  <View style={styles.cardBody}>
-                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                    <View style={styles.infoGrid}>
-                      <View style={styles.infoRow}>
-                        <Text style={[styles.infoKey, { color: colors.muted }]}>연락처</Text>
-                        <Text style={[styles.infoVal, { color: colors.foreground }]}>{p.contact}</Text>
-                      </View>
-                      <View style={styles.infoRow}>
-                        <Text style={[styles.infoKey, { color: colors.muted }]}>입금자명</Text>
-                        <Text style={[styles.infoVal, { color: colors.foreground }]}>{p.depositorName}</Text>
-                      </View>
-                      {p.memo && (
-                        <View style={styles.infoRow}>
-                          <Text style={[styles.infoKey, { color: colors.muted }]}>메모</Text>
-                          <Text style={[styles.infoVal, { color: colors.foreground }]}>{p.memo}</Text>
-                        </View>
-                      )}
-                    </View>
-                    <TextInput
-                      style={[styles.memoInput, { borderColor: colors.border, color: "#333333", backgroundColor: colors.background }]}
-                      placeholder="관리자 메모 (선택)"
-                      placeholderTextColor={colors.muted}
-                      value={memoInputs[p.id] ?? ""}
-                      onChangeText={(t) => setMemoInputs((prev) => ({ ...prev, [p.id]: t }))}
-                      returnKeyType="done"
-                    />
-                    <View style={styles.actionRow}>
-                      <TouchableOpacity
-                        style={[styles.actionBtn, { borderColor: "#22C55E" }]}
-                        onPress={() => handleUpdateStatus(p.id, "confirmed")}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[styles.actionBtnText, { color: "#22C55E" }]}>입금확인</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.actionBtn, { borderColor: "#F59E0B" }]}
-                        onPress={() => handleUpdateStatus(p.id, "pending")}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[styles.actionBtnText, { color: "#F59E0B" }]}>입금대기</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.actionBtn, { borderColor: "#EF4444" }]}
-                        onPress={() => handleUpdateStatus(p.id, "rejected")}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[styles.actionBtnText, { color: "#EF4444" }]}>취소</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
-              </View>
-            );
-          })
-        )}
+        {tab === "예약" && <><Text style={[styles.section, { color: colors.foreground }]}>코칭 예약 운영</Text><Text style={[styles.helper, { color: colors.muted }]}>홈페이지 판매 화면은 아직 열지 않습니다. 결제 완료 코칭 주문은 일정 대기로 생성되어 운영자가 확정합니다.</Text>{bookings.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={bookingLabels[item.status] ?? item.status} tone={item.status === "completed" ? "good" : item.status === "cancelled" || item.status === "no_show" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.orderNumber}</Text><Text style={[styles.meta, { color: colors.muted }]}>확정 일시 {dateText(item.scheduledAt)} · {item.sessionMode === "online" ? "온라인" : item.sessionMode === "in_person" ? "대면" : "방식 미정"}</Text>{(item.status === "pending_schedule" || item.status === "change_requested") && <><TextInput value={schedule[item.id] ?? ""} onChangeText={(value) => setSchedule((old) => ({ ...old, [item.id]: value }))} placeholder="예: 2026-10-01 14:00" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><View style={styles.actions}><TouchableOpacity style={styles.action} onPress={() => confirmSchedule(item.id)}><Text style={styles.actionText}>일정 확정</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View></>}{item.status === "scheduled" && <View style={styles.actions}><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "completed")}><Text style={styles.smallActionText}>완료</Text></TouchableOpacity><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "change_requested")}><Text style={styles.smallActionText}>변경 요청</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "no_show")}><Text style={styles.dangerActionText}>노쇼</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View>}</Panel>)}</>}
 
-        {/* 후기 통계 */}
-        {reviewStats && (
-          <>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>후기 통계</Text>
-            <View style={styles.statsGrid}>
-              <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={[styles.statNum, { color: "#C4A35A" }]}>{reviewStats.total}</Text>
-                <Text style={[styles.statLabel, { color: colors.muted }]}>총 후기</Text>
-              </View>
-              <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={[styles.statNum, { color: "#5A8A5A" }]}>{reviewStats.avgRating}</Text>
-                <Text style={[styles.statLabel, { color: colors.muted }]}>평균 별점</Text>
-              </View>
-            </View>
-          </>
-        )}
+        {tab === "과거 신청" && <><Text style={[styles.section, { color: colors.foreground }]}>과거 신청·수동입금 기록</Text><Text style={[styles.helper, { color: colors.muted }]}>기존 기록은 삭제하거나 새 주문으로 자동 이관하지 않습니다. 상태 변경만 감사 로그로 보존합니다.</Text>{legacy.data?.map((item) => { const open = expandedPaymentId === item.id; return <Panel key={item.id}><TouchableOpacity style={styles.row} onPress={() => setExpandedPaymentId(open ? null : item.id)}><View><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.senderName}</Text><Text style={[styles.meta, { color: colors.muted }]}>{dateText(item.createdAt)} · {item.amount ? `${item.amount.toLocaleString()}원` : "무료체험"}</Text></View><Badge text={legacyLabels[item.status]} tone={item.status === "confirmed" ? "good" : item.status === "rejected" ? "bad" : "warn"} /></TouchableOpacity>{open && <View style={styles.expanded}><Text style={[styles.meta, { color: colors.muted }]}>연락처 {item.contact} · 입금자명 {item.depositorName}</Text><TextInput value={memo[item.id] ?? item.memo ?? ""} onChangeText={(value) => setMemo((old) => ({ ...old, [item.id]: value }))} placeholder="운영 메모" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><View style={styles.actions}>{(["confirmed", "pending", "rejected"] as LegacyStatus[]).map((status) => <TouchableOpacity key={status} style={status === "rejected" ? styles.dangerAction : styles.smallAction} onPress={() => updatePayment(item.id, status)}><Text style={status === "rejected" ? styles.dangerActionText : styles.smallActionText}>{legacyLabels[status]}</Text></TouchableOpacity>)}</View></View>}</Panel>; })}</>}
 
-        {/* 후기 목록 */}
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>후기 목록</Text>
-        {!reviewList || reviewList.length === 0 ? (
-          <Text style={[styles.emptyText, { color: colors.muted }]}>아직 후기가 없습니다.</Text>
-        ) : (
-          reviewList.map((r: any) => {
-            const isExpanded = reviewExpanded === r.id;
-            return (
-              <View key={r.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <TouchableOpacity
-                  style={styles.cardHeader}
-                  onPress={() => setReviewExpanded(isExpanded ? null : r.id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.cardTitleRow}>
-                      <Text style={[styles.cardName, { color: colors.foreground }]}>{r.nickname}</Text>
-                      <Text style={{ color: "#C4A35A", fontSize: 13 }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</Text>
-                    </View>
-                    <Text style={[styles.cardSubtitle, { color: colors.muted }]} numberOfLines={1}>
-                      {r.checkItems ? r.checkItems.split(',')[0] : (r.content ?? '')}
-                    </Text>
-                  </View>
-                  <Text style={[styles.expandIcon, { color: colors.muted }]}>{isExpanded ? "▲" : "▼"}</Text>
-                </TouchableOpacity>
-                {isExpanded && (
-                  <View style={styles.cardBody}>
-                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                    {r.checkItems && (
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                        {r.checkItems.split(',').filter(Boolean).map((c: string, idx: number) => (
-                          <View key={idx} style={{ borderWidth: 1, borderColor: colors.primary, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 }}>
-                            <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '500' }}>✓ {c}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                    {r.content ? <Text style={[{ color: colors.foreground, fontSize: 14, lineHeight: 22, marginBottom: 8 }]}>{r.content}</Text> : null}
-                    {r.tags && <Text style={[{ color: colors.muted, fontSize: 12, marginBottom: 8 }]}>태그: {r.tags}</Text>}
-                    {r.colorCombo && <Text style={[{ color: colors.muted, fontSize: 12, marginBottom: 8 }]}>컬러: {r.colorCombo}</Text>}
-                    <Text style={[{ color: colors.muted, fontSize: 11, marginBottom: 12 }]}>{formatDate(r.createdAt)}</Text>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, { borderColor: "#EF4444", flex: 0, paddingHorizontal: 16 }]}
-                      onPress={() => handleDeleteReview(r.id)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.actionBtnText, { color: "#EF4444" }]}>삭제</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            );
-          })
-        )}
+        {tab === "후기" && <><Text style={[styles.section, { color: colors.foreground }]}>후기 관리</Text>{reviews.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.nickname} · {"★".repeat(item.rating)}</Text><TouchableOpacity onPress={() => Alert.alert("후기 삭제", "이 후기를 삭제하시겠습니까?", [{ text: "취소", style: "cancel" }, { text: "삭제", style: "destructive", onPress: () => deleteReview.mutate({ id: item.id }) }])}><Text style={styles.delete}>삭제</Text></TouchableOpacity></View>{item.content && <Text style={[styles.review, { color: colors.muted }]}>{item.content}</Text>}<Text style={[styles.meta, { color: colors.muted }]}>{dateText(item.createdAt)}</Text></Panel>)}</>}
       </ScrollView>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  // 로그인
-  loginContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 32, gap: 12 },
-  loginTitle: { fontSize: 22, fontWeight: "800", letterSpacing: -0.3 },
-  loginSub: { fontSize: 14, textAlign: "center", marginBottom: 8 },
-  loginInput: { width: "100%", borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16 },
-  pwError: { color: "#EF4444", fontSize: 13 },
-  loginBtn: { width: "100%", paddingVertical: 16, borderRadius: 14, alignItems: "center", marginTop: 4 },
-  loginBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  backText: { fontSize: 14 },
-  // 메인
-  scrollContent: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 60, gap: 12 },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  pageTitle: { fontSize: 20, fontWeight: "800" },
-  headerBtns: { flexDirection: "row", gap: 6 },
-  smallBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1 },
-  smallBtnText: { fontSize: 12, fontWeight: "600" },
-  coupleTestBtn: { backgroundColor: "#4A7A4A", borderRadius: 16, paddingVertical: 18, paddingHorizontal: 20, alignItems: "center", gap: 4, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 3 },
-  coupleTestBtnTitle: { color: "#fff", fontSize: 18, fontWeight: "800", letterSpacing: -0.3 },
-  coupleTestBtnSub: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
-  floatingCoupleBtn: { position: "absolute", top: 16, right: 16, zIndex: 100, backgroundColor: "rgba(74,122,74,0.85)", borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14 },
-  floatingCoupleBtnText: { color: "#fff", fontSize: 13, fontWeight: "700" },
-  refreshHint: { fontSize: 12, textAlign: "center", marginTop: -4 },
-  // 통계
-  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  statCard: { width: "30.5%", borderRadius: 12, borderWidth: 1, padding: 12, alignItems: "center", gap: 4 },
-  statNum: { fontSize: 26, fontWeight: "800" },
-  statLabel: { fontSize: 11, textAlign: "center" },
-  // 목록
-  sectionTitle: { fontSize: 16, fontWeight: "700", marginTop: 4 },
-  emptyText: { textAlign: "center", fontSize: 14, paddingVertical: 40 },
-  card: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
-  cardHeader: { flexDirection: "row", alignItems: "center", padding: 14 },
-  cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
-  cardName: { fontSize: 16, fontWeight: "700" },
-  cardSubtitle: { fontSize: 12 },
-  expandIcon: { fontSize: 12, marginLeft: 8 },
-  statusBadge: { borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
-  statusText: { fontSize: 11, fontWeight: "700" },
-  cardBody: { paddingHorizontal: 14, paddingBottom: 14 },
-  divider: { height: 1, marginBottom: 12 },
-  infoGrid: { gap: 6, marginBottom: 12 },
-  infoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  infoKey: { fontSize: 13, width: 72 },
-  infoVal: { fontSize: 13, fontWeight: "600", flex: 1, textAlign: "right" },
-  memoInput: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 13, marginBottom: 10 },
-  actionRow: { flexDirection: "row", gap: 8 },
-  actionBtn: { flex: 1, borderWidth: 1.5, borderRadius: 10, paddingVertical: 10, alignItems: "center" },
-  actionBtnText: { fontSize: 13, fontWeight: "700" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 28, gap: 12 },
+  deniedTitle: { fontSize: 22, fontWeight: "800" }, deniedBody: { fontSize: 14, lineHeight: 22, textAlign: "center" },
+  login: { backgroundColor: "#3f7b52", borderRadius: 12, paddingHorizontal: 18, paddingVertical: 11 }, loginText: { color: "#fff", fontWeight: "800" },
+  outline: { borderWidth: 1, borderColor: "#3f7b52", borderRadius: 12, paddingHorizontal: 18, paddingVertical: 10 }, outlineText: { color: "#3f7b52", fontWeight: "800" },
+  container: { padding: 18, paddingBottom: 72, gap: 12 }, header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
+  eyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1.1 }, title: { fontSize: 25, fontWeight: "800", marginTop: 4 }, subtitle: { fontSize: 12, marginTop: 4 },
+  logout: { borderWidth: 1, borderColor: "#d99a93", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 }, logoutText: { color: "#b5584f", fontSize: 12, fontWeight: "800" },
+  tabs: { gap: 7, paddingVertical: 4 }, tab: { borderWidth: 1, borderColor: "#d9d5cb", borderRadius: 18, paddingHorizontal: 13, paddingVertical: 8, backgroundColor: "#fbfaf6" }, tabActive: { backgroundColor: "#3f7b52", borderColor: "#3f7b52" }, tabText: { color: "#64625b", fontSize: 12, fontWeight: "700" }, tabTextActive: { color: "#fff" },
+  section: { fontSize: 17, fontWeight: "800", marginTop: 8 }, helper: { fontSize: 12, lineHeight: 18, marginTop: -5 }, grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  metric: { width: "31.8%", minHeight: 92, borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 15, alignItems: "center", justifyContent: "center", padding: 7 }, metricValue: { fontSize: 25, fontWeight: "800" }, metricLabel: { fontSize: 10, textAlign: "center", color: "#77736a", marginTop: 5 },
+  panel: { borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 15, padding: 14, gap: 7 }, row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }, cardTitle: { fontSize: 14, fontWeight: "800", flexShrink: 1 }, meta: { fontSize: 11, lineHeight: 17 },
+  badge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }, badgeText: { fontSize: 10, fontWeight: "800" }, noticeTitle: { color: "#3f7b52", fontSize: 14, fontWeight: "800" }, noticeText: { color: "#55705a", fontSize: 12, lineHeight: 19 },
+  action: { alignSelf: "flex-start", backgroundColor: "#3f7b52", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }, actionText: { color: "#fff", fontSize: 12, fontWeight: "800" }, input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, fontSize: 12 }, actions: { flexDirection: "row", flexWrap: "wrap", gap: 7 }, smallAction: { borderWidth: 1, borderColor: "#a9c8ae", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, smallActionText: { color: "#3f7b52", fontSize: 11, fontWeight: "800" }, dangerAction: { borderWidth: 1, borderColor: "#e3aaa3", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, dangerActionText: { color: "#b5584f", fontSize: 11, fontWeight: "800" },
+  expanded: { borderTopWidth: 1, borderTopColor: "#ded9ce", paddingTop: 10, gap: 8 }, delete: { color: "#b5584f", fontSize: 11, fontWeight: "800" }, review: { fontSize: 12, lineHeight: 18 },
 });

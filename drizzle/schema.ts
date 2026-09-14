@@ -541,18 +541,59 @@ export const coachingBookings = mysqlTable(
     customerId: int("customerId").notNull(),
     orderId: int("orderId").notNull(),
     productId: int("productId").notNull(),
-    status: mysqlEnum("status", ["pending_schedule", "scheduled", "completed", "cancelled", "no_show"])
+    status: mysqlEnum("status", [
+      "pending_schedule",
+      "change_requested",
+      "scheduled",
+      "completed",
+      "cancelled",
+      "no_show",
+    ])
       .notNull()
       .default("pending_schedule"),
+    requestedWindowStart: timestamp("requestedWindowStart"),
+    requestedWindowEnd: timestamp("requestedWindowEnd"),
+    sessionMode: mysqlEnum("sessionMode", ["undecided", "online", "in_person"])
+      .notNull()
+      .default("undecided"),
     scheduledAt: timestamp("scheduledAt"),
+    scheduledEndAt: timestamp("scheduledEndAt"),
+    timezone: varchar("timezone", { length: 64 }).notNull().default("Asia/Seoul"),
+    assignedAdminUserId: int("assignedAdminUserId"),
     detailsEncrypted: text("detailsEncrypted"),
+    internalNoteEncrypted: text("internalNoteEncrypted"),
+    cancelledAt: timestamp("cancelledAt"),
+    cancelReason: varchar("cancelReason", { length: 500 }),
+    completedAt: timestamp("completedAt"),
+    noShowAt: timestamp("noShowAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
   (table) => [
     index("coaching_bookings_user_status_idx").on(table.userId, table.status),
     index("coaching_bookings_order_idx").on(table.orderId),
+    index("coaching_bookings_schedule_status_idx").on(table.status, table.scheduledAt),
   ],
 );
 
 export type CoachingBooking = typeof coachingBookings.$inferSelect;
+
+/** 예약 상태 변경은 덮어쓰기 대신 운영자·사유·전후 상태를 append-only로 남긴다. */
+export const coachingBookingEvents = mysqlTable(
+  "coaching_booking_events",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    bookingId: int("bookingId").notNull(),
+    adminUserId: int("adminUserId"),
+    eventType: varchar("eventType", { length: 80 }).notNull(),
+    fromStatus: varchar("fromStatus", { length: 40 }),
+    toStatus: varchar("toStatus", { length: 40 }),
+    payloadEncrypted: text("payloadEncrypted"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    index("coaching_booking_events_booking_idx").on(table.bookingId, table.createdAt),
+  ],
+);
+
+export type CoachingBookingEvent = typeof coachingBookingEvents.$inferSelect;

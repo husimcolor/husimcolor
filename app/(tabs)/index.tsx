@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
-import { useAdmin } from '@/lib/adminContext';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
@@ -14,7 +13,6 @@ const { width, height } = Dimensions.get('window');
 export default function HomeScreen() {
   const router = useRouter();
   const { resetColors } = useColorContext();
-  useAdmin(); // 관리자 컨텍스트 유지 (admin 탭에서 사용)
   const colors = useColors();
   const insets = useSafeAreaInsets();
   // 인앱브라우저 하단 safe area + 여유 padding

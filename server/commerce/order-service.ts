@@ -9,6 +9,7 @@ import {
   products,
   customers,
   coachingBookings,
+  coachingBookingEvents,
 } from "../../drizzle/schema";
 import type { CommercePaymentOutcome, CommerceProductCode } from "../../shared/commerce";
 import {
@@ -274,12 +275,17 @@ async function createCheckoutForProvider(input: {
       await consumeCouponReservation(tx, orderId);
       const entitlementId = Number(entitlementInsert[0].insertId);
       if (product.fulfillmentType === "coaching") {
-        await tx.insert(coachingBookings).values({
+        const bookingInsert = await tx.insert(coachingBookings).values({
           userId: linkedUserId,
           customerId,
           orderId,
           productId: product.id,
           status: "pending_schedule",
+        });
+        await tx.insert(coachingBookingEvents).values({
+          bookingId: Number(bookingInsert[0].insertId),
+          eventType: "booking_created",
+          toStatus: "pending_schedule",
         });
       }
       const startGrant = product.fulfillmentType === "analysis"
@@ -475,12 +481,17 @@ async function completePaymentForProvider(input: {
       const productCode = itemProductRows[0]?.code as CommerceProductCode | undefined;
       if (!productCode) throw new Error("ENTITLEMENT_PRODUCT_NOT_FOUND");
       if (record.fulfillmentType === "coaching") {
-        await tx.insert(coachingBookings).values({
+        const bookingInsert = await tx.insert(coachingBookings).values({
           userId: record.userId,
           customerId: record.customerId,
           orderId: record.orderId,
           productId: record.productId,
           status: "pending_schedule",
+        });
+        await tx.insert(coachingBookingEvents).values({
+          bookingId: Number(bookingInsert[0].insertId),
+          eventType: "booking_created",
+          toStatus: "pending_schedule",
         });
       }
       return {

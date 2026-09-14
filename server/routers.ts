@@ -24,6 +24,18 @@ import {
   ensureCommonAccountForAuthenticatedUser,
   getCommonAccountSnapshot,
 } from "./commerce/account-service";
+import {
+  deleteAdminReview,
+  getAdminCoachingBookingList,
+  getAdminCustomerDetail,
+  getAdminCustomerList,
+  getAdminLegacyPaymentRecords,
+  getAdminOperationsDashboard,
+  getAdminOrderList,
+  getAdminReviews,
+  updateAdminLegacyPaymentStatus,
+} from "./commerce/admin-operations-service";
+import { getAdminCoachingBookingEvents, updateAdminCoachingBooking } from "./commerce/coaching-booking-service";
 
 /**
  * PDFKit은 Vercel 함수 번들에서 상대 ICC 파일을 해석하지 못할 수 있으므로,
@@ -135,6 +147,7 @@ export const appRouter = router({
               "parent_child_deep",
               "personal_coaching",
               "couple_coaching",
+              "relationship_coaching",
             ]),
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
@@ -155,6 +168,7 @@ export const appRouter = router({
               "parent_child_deep",
               "personal_coaching",
               "couple_coaching",
+              "relationship_coaching",
             ]),
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
@@ -193,32 +207,54 @@ export const appRouter = router({
     }),
   }),
 
-  // 관리자 인증 API (DB 기반 - 브라우저 무관)
+  // 통합 운영 관리 API. 모든 조회·변경은 서버의 users.role=admin을 요구한다.
   admin: router({
-    // 비밀번호 검증
-    verifyPassword: publicProcedure
-      .input(z.object({ password: z.string() }))
-      .mutation(async ({ input }) => {
-        const correct = await db.getAdminPassword();
-        if (input.password !== correct) {
-          throw new Error("WRONG_PASSWORD");
-        }
-        return { success: true };
-      }),
-    // 비밀번호 변경
-    changePassword: publicProcedure
+    dashboard: adminProcedure.query(() => getAdminOperationsDashboard()),
+    orders: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
+      .query(({ input }) => getAdminOrderList(input.limit)),
+    customers: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
+      .query(({ input }) => getAdminCustomerList(input.limit)),
+    customerDetail: adminProcedure
+      .input(z.object({ customerId: z.number().int().positive() }))
+      .query(({ input }) => getAdminCustomerDetail(input.customerId)),
+    legacyPayments: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
+      .query(({ input }) => getAdminLegacyPaymentRecords(input.limit)),
+    updateLegacyPayment: adminProcedure
       .input(z.object({
-        currentPassword: z.string(),
-        newPassword: z.string().min(4).max(100),
+        id: z.number().int().positive(),
+        status: z.enum(["pending", "confirmed", "rejected"]),
+        memo: z.string().max(500).optional(),
       }))
-      .mutation(async ({ input }) => {
-        const correct = await db.getAdminPassword();
-        if (input.currentPassword !== correct) {
-          throw new Error("WRONG_PASSWORD");
-        }
-        await db.setAdminPassword(input.newPassword);
-        return { success: true };
-      }),
+      .mutation(({ input, ctx }) => updateAdminLegacyPaymentStatus({ ...input, adminUserId: ctx.user.id })),
+    reviews: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
+      .query(({ input }) => getAdminReviews(input.limit)),
+    deleteReview: adminProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) => deleteAdminReview({ ...input, adminUserId: ctx.user.id })),
+    coachingBookings: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
+      .query(({ input }) => getAdminCoachingBookingList(input.limit)),
+    coachingBookingEvents: adminProcedure
+      .input(z.object({ bookingId: z.number().int().positive() }))
+      .query(({ input }) => getAdminCoachingBookingEvents(input.bookingId)),
+    updateCoachingBooking: adminProcedure
+      .input(z.object({
+        bookingId: z.number().int().positive(),
+        status: z.enum(["pending_schedule", "change_requested", "scheduled", "completed", "cancelled", "no_show"]),
+        scheduledAt: z.date().nullable().optional(),
+        scheduledEndAt: z.date().nullable().optional(),
+        sessionMode: z.enum(["undecided", "online", "in_person"]).optional(),
+        requestedWindowStart: z.date().nullable().optional(),
+        requestedWindowEnd: z.date().nullable().optional(),
+        assignedAdminUserId: z.number().int().positive().nullable().optional(),
+        internalNote: z.string().max(2000).optional(),
+        cancelReason: z.string().max(500).optional(),
+      }))
+      .mutation(({ input, ctx }) => updateAdminCoachingBooking({ ...input, adminUserId: ctx.user.id })),
   }),
 
   // 입금 기록 API
@@ -233,10 +269,10 @@ export const appRouter = router({
       .mutation(({ input }) => {
         return db.createPaymentRecord(input);
       }),
-    list: publicProcedure.query(() => {
+    list: adminProcedure.query(() => {
       return db.getPaymentRecords();
     }),
-    updateStatus: publicProcedure
+    updateStatus: adminProcedure
       .input(z.object({
         id: z.number().int(),
         status: z.enum(['pending', 'confirmed', 'rejected']),
@@ -325,7 +361,7 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateReview(id, data);
       }),
-    delete: publicProcedure
+    delete: adminProcedure
       .input(z.object({ id: z.number().int() }))
       .mutation(({ input }) => {
         return db.deleteReview(input.id);

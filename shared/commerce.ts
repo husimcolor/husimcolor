@@ -61,6 +61,15 @@ export const COMMERCE_PRODUCTS = [
     amountKrw: 180_000,
     active: false,
   },
+  {
+    code: "relationship_coaching",
+    name: "기타 관계 코칭",
+    fulfillmentType: "coaching",
+    requiresPayment: true,
+    /** 판매가는 상품 운영 정책 확정 후 DB 가격 버전으로 활성화한다. */
+    amountKrw: 0,
+    active: false,
+  },
 ] as const;
 
 export type CommerceProduct = (typeof COMMERCE_PRODUCTS)[number];
