@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
 import { COLOR_DATA, ColorData } from '@/constants/colorData';
+import { BusinessInfoFooter } from '@/components/business-info-footer';
 
 const { width } = Dimensions.get('window');
 
@@ -469,6 +470,7 @@ export default function SelectScreen() {
             extraData={currentSelected?.id}
           />
         </View>
+        <BusinessInfoFooter compact />
       </ScrollView>
 
       {/* 하단 버튼 */}

@@ -956,3 +956,8 @@
 - [ ] 통합 관리자·공통 커머스·코칭 예약 운영 기반을 GitHub Actions→Vercel Production에 배포
 - [ ] Production /admin의 기존 데이터 조회와 유료 공개 차단·Toss 실결제 비활성 상태를 검증
 - [ ] Production OAuth 콜백·세션 쿠키·admin 역할 연결 실패 원인을 진단하고 휴대폰 관리자 로그인 경로를 최소 보정
+- [ ] OAuth 프로젝트의 husimcolor.com·husimcolor.vercel.app 허용 redirect URI를 점검·등록하고 Production 관리자 로그인 복구 검증
+- [x] Toss 심사 대비 기존 사업자정보를 재사용해 웹·앱 공개 화면의 상호·대표자·사업자등록번호·주소·고객문의 연락처 표기 정비
+- [x] 사업자정보 공개 표기와 분석·결과·PDF·Kakao 공유·유료 공개 차단 회귀 검증
+- [ ] 사업자정보 공통 표기와 상세 페이지를 GitHub Actions→Vercel Production에 배포하고 운영 화면 검증
+- [ ] Toss 심사 대비 이용약관·개인정보처리방침·환불/취소정책의 현재 페이지·연결 상태를 점검하고 법률 검토 전 수정안 제시

@@ -18,6 +18,7 @@ import {
   VISIBLE_RELATION_PRODUCTS,
   type VisibleRelationProduct,
 } from '@/constants/relationProducts';
+import { BusinessInfoFooter } from '@/components/business-info-footer';
 
 const ROMANTIC_RELATION_TYPES: { value: Extract<RelationType, '연인' | '부부'>; label: string; emoji: string }[] = [
   { value: '연인', label: '연인', emoji: '💑' },
@@ -253,7 +254,8 @@ export default function CoupleStartScreen() {
             </Text>
           </Pressable>
 
-          <View style={{ height: 40 }} />
+          <BusinessInfoFooter />
+          <View style={{ height: 28 }} />
         </Animated.View>
       </ScrollView>
     </ScreenContainer>

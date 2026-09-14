@@ -7,6 +7,7 @@ import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
+import { BusinessInfoFooter } from '@/components/business-info-footer';
 
 const { width, height } = Dimensions.get('window');
 
@@ -256,6 +257,9 @@ export default function HomeScreen() {
       >
         <Text style={[styles.adminLinkText, { color: colors.muted }]}>관리자</Text>
       </TouchableOpacity>
+      <View style={styles.businessInfoWrap}>
+        <BusinessInfoFooter />
+      </View>
       </ScrollView>
     </ScreenContainer>
   );
@@ -451,5 +455,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     opacity: 0.45,
     letterSpacing: 0.3,
+  },
+  businessInfoWrap: {
+    width: '100%',
+    paddingHorizontal: 24,
+    paddingBottom: 8,
   },
 });

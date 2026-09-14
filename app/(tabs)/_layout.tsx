@@ -89,6 +89,13 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="business-info"
+        options={{
+          title: "사업자정보",
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
