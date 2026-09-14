@@ -74,7 +74,11 @@ const encodeState = (value: string) => {
  */
 export const getRedirectUri = () => {
   if (ReactNative.Platform.OS === "web") {
-    return `${getApiBaseUrl()}/api/oauth/callback`;
+    // 개발 sandbox는 3000 포트 API 서버를 사용하고, Production은 현재
+    // 도메인의 Vercel 서버리스 OAuth 콜백을 사용한다.
+    const apiBaseUrl = getApiBaseUrl();
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return `${apiBaseUrl || origin}/api/oauth/callback`;
   } else {
     return Linking.createURL("/oauth/callback", {
       scheme: env.deepLinkScheme,

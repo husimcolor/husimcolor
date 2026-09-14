@@ -955,3 +955,4 @@
 - [x] OAuth 소유자 OpenID 로그인 시 users.role=admin 자동 부여 기존 구현과 실제 관리자 계정 생성을 확인
 - [ ] 통합 관리자·공통 커머스·코칭 예약 운영 기반을 GitHub Actions→Vercel Production에 배포
 - [ ] Production /admin의 기존 데이터 조회와 유료 공개 차단·Toss 실결제 비활성 상태를 검증
+- [ ] Production OAuth 콜백·세션 쿠키·admin 역할 연결 실패 원인을 진단하고 휴대폰 관리자 로그인 경로를 최소 보정

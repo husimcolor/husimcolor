@@ -3,11 +3,27 @@ import type { Express, Request, Response } from "express";
 import { getUserByOpenId, upsertUser } from "../db";
 import { ensureCommonAccountForAuthenticatedUser } from "../commerce/account-service";
 import { getSessionCookieOptions } from "./cookies";
+import { ENV } from "./env";
 import { sdk } from "./sdk";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
   return typeof value === "string" ? value : undefined;
+}
+
+function firstForwardedHeader(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value?.split(",")[0]?.trim();
+}
+
+/** Production OAuth callback always returns to the host that started the login. */
+export function getProductionFrontendOrigin(req: Request): string {
+  const forwardedHost = firstForwardedHeader(req.headers["x-forwarded-host"]);
+  const host = forwardedHost || req.get("host");
+  const forwardedProto = firstForwardedHeader(req.headers["x-forwarded-proto"]);
+  const protocol = forwardedProto || req.protocol || "https";
+  if (!host) return "https://husimcolor.vercel.app";
+  return `${protocol}://${host}`;
 }
 
 async function syncUser(userInfo: {
@@ -88,12 +104,11 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      // Redirect to the frontend URL (Expo web on port 8081)
-      // Cookie is set with parent domain so it works across both 3000 and 8081 subdomains
-      const frontendUrl =
-        process.env.EXPO_WEB_PREVIEW_URL ||
-        process.env.EXPO_PACKAGER_PROXY_URL ||
-        "http://localhost:8081";
+      const frontendUrl = ENV.isProduction
+        ? getProductionFrontendOrigin(req)
+        : process.env.EXPO_WEB_PREVIEW_URL ||
+          process.env.EXPO_PACKAGER_PROXY_URL ||
+          "http://localhost:8081";
       res.redirect(302, frontendUrl);
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
