@@ -9,6 +9,8 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import express from "express";
 import { appRouter } from "../../server/routers";
 import { createContext } from "../../server/_core/context";
+import { createOAuthLoginUrl, getProductionFrontendOrigin } from "../../server/_core/oauth";
+import { ENV } from "../../server/_core/env";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const app = express();
@@ -33,6 +35,26 @@ app.use((req, res, next) => {
     return;
   }
   next();
+});
+
+// This route intentionally lives under /api/trpc because the current Vercel
+// prebuilt workflow already routes that prefix to this serverless function.
+// It avoids relying on build-time EXPO_PUBLIC OAuth variables in Expo output.
+app.get("/api/trpc/auth-login", (req, res) => {
+  if (!ENV.appId) {
+    res.status(503).json({ error: "OAuth application is not configured" });
+    return;
+  }
+
+  const origin = getProductionFrontendOrigin(req);
+  const redirectUri = `${origin}/api/oauth/callback`;
+  res.json({
+    url: createOAuthLoginUrl({
+      appId: ENV.appId,
+      redirectUri,
+      portalUrl: process.env.OAUTH_PORTAL_URL || "https://manus.im",
+    }),
+  });
 });
 
 app.use(

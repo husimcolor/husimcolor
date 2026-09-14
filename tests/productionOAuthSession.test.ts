@@ -44,4 +44,8 @@ describe("production OAuth session policy", () => {
     expect(url.searchParams.get("appId")).toBe("app_123");
     expect(url.searchParams.get("redirectUri")).toBe("https://husimcolor.vercel.app/api/oauth/callback");
   });
+
+  it("uses the existing Vercel-routed tRPC prefix for static web login URL retrieval", () => {
+    expect("/api/trpc/auth-login").toMatch(/^\/api\/trpc\//);
+  });
 });

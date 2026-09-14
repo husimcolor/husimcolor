@@ -112,7 +112,7 @@ export const getLoginUrl = () => {
 export async function startOAuthLogin(): Promise<string | null> {
   if (ReactNative.Platform.OS === "web") {
     const apiBaseUrl = getApiBaseUrl();
-    const response = await fetch(`${apiBaseUrl}/api/auth/login`, { credentials: "include" });
+    const response = await fetch(`${apiBaseUrl}/api/trpc/auth-login`, { credentials: "include" });
     if (!response.ok) {
       throw new Error("OAuth login URL could not be created");
     }
