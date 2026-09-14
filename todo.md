@@ -901,4 +901,42 @@
 - [x] 기존 개인 심화·관계 분석 검사·결과·PDF·공유 비변경 회귀 검증 및 Production 배포
 - [x] 개인 심화분석 첫 화면 진입을 상품 소개 페이지 없이 기존 개인정보 입력 단계로 직접 연결
 - [x] 관계 상품 선택 화면에서 공통 개인정보 입력을 제거하고 상품 선택 뒤 별도 입력 단계로 분리
-- [ ] 부부·연인·부모·자녀·친구 입력 후 기존 검사 흐름, 결과·PDF·공유 비변경 회귀 검증 및 Production 배포
+- [x] 부부·연인·부모·자녀·친구 입력 후 기존 검사 흐름, 결과·PDF·공유 비변경 회귀 검증 및 Production 배포
+- [x] 토스페이먼츠·회원/비회원·구매권한·쿠폰·PDF/이메일·관리자·Google Play 확장을 위한 구현 전 아키텍처 설계 검토
+- [x] 회원·비회원 결과/PDF 보관·재다운로드 기간과 서버 파기 구조 설계
+- [x] 디지털 분석·예약 코칭의 환불 서버 판정 기준과 구현 전 법률 검토 항목 정리
+- [x] husimcolor.com 및 result@husimcolor.com의 DNS·SPF/DKIM/DMARC·이메일 발신 구성 점검
+- [x] support 수신·result 자동발신·분리된 DMARC 보고 주소를 반영한 이메일 주소 체계와 DNS 설정 템플릿 확정
+- [x] 법률 검토 전후 환불 고지 문구를 교체할 수 있도록 정책 엔진과 표시 문구를 분리하는 구현 설계 확정
+- [x] 결제·주문·구매권한·보관·PDF/이메일·관리자 구현의 단계별 외부 서비스 및 실행 선행조건 확정
+- [x] support 수신 메일함의 비용·기능·DNS 설정 난이도 비교와 Resend 발신 공존 구성 추천
+- [x] 한국에서 Zoho Mail Free의 husimcolor.com 사용자 지정 도메인 고객지원 수신 가능 여부 검증
+- [x] dmarc-reports 별도 사용자 사서함의 필요성과 최소 비용 보고 수신 구성 재검토
+- [ ] husimcolor.com에 Zoho 소유권 인증 TXT 레코드만 추가하고 기존 Vercel·홈페이지·MX/SPF/DKIM/DMARC 레코드 보존 확인
+- [x] husimcolor.com의 도메인 등록업체와 권한 네임서버·DNS 관리업체를 읽기 전용으로 확인
+- [x] Manus 프로젝트·세션의 Global Domain Group DNS 직접 수정 권한 및 Zoho TXT 추가 경로 확인
+- [ ] Manus 구매 도메인의 공식 DNS 관리 화면·메뉴 경로와 Zoho TXT 추가 권한 위치 확인
+- [x] 공통 상품·주문·테스트 결제·구매권한 DB 모델과 마이그레이션 구현
+- [x] 테스트 결제 승인·실패·취소·중복 방지 서버 API 및 entitlement 부여 구현
+- [x] 무료·유료 상품 경로와 기존 분석·결과·PDF·공유 보존 자동 회귀 검증
+- [x] Toss 테스트 승인 adapter·서버 검증·멱등 처리 구현
+- [x] 공통 쿠폰 검증·예약·사용·해제와 주문 금액 스냅샷 구현
+- [x] entitlement 기반 개인·관계 유료 검사 진입과 무료 흐름 보존 구현
+- [x] Toss 테스트·쿠폰·권한·기존 결과 기능의 자동 회귀 검증
+- [ ] Toss 운영 승인·웹훅 수신·환불 처리(심사 완료 후 별도 활성화)
+- [ ] 홈페이지·앱 공통 user_id 회원·인증·외부 로그인 연결과 비회원 이메일 소유권 연결 구현
+- [ ] 주문·결제·쿠폰·entitlement·검사·결과·PDF·이메일 기록을 공통 user_id로 연결
+- [ ] 1:1 컬러심리 코칭 100,000원·커플 관계코칭 180,000원 및 예약 확장용 공통 상품 구조 추가
+- [ ] Toss 테스트 카드 실제 결제 시나리오 검증과 private PDF·Resend outbox 구현
+- [ ] PDF·이메일 실패 재시도 및 향후 통합 관리자 추적용 서버 API 연결
+- [ ] Resend DKIM TXT와 CNAME 2개만 추가하고 기존 Zoho·Vercel·SPF·DKIM·DMARC DNS 레코드 보존 확인
+- [x] Manus Settings의 husimcolor.com DNS management 화면에서 지정된 Resend TXT 1개와 CNAME 2개만 추가
+- [ ] 공개 DNS에서 Resend DKIM TXT·CNAME 2개 전파 확인
+- [ ] result@husimcolor.com Resend adapter·private PDF 저장·outbox·재시도와 관리자 추적 API 구현
+- [ ] 사용자 제어권 전환 후 Toss 테스트 카드 인증 화면 재개 및 서버 entitlement 검증
+- [ ] 페이북 QR 테스트 인증 실패 원인 확인 및 공식 대체 Toss 테스트 승인 경로 검증
+- [x] Toss 테스트 checkout의 페이북·특정 카드사 고정 여부 점검 및 일반 카드 선택 경로 보정
+- [ ] 운영 배포 전 Android Chrome·Samsung Internet·Kakao/Naver 인앱 브라우저의 Toss 모바일 결제 진입·리다이렉트·복귀 UX QA
+- [x] 무료 컬러 체험·친구 관계 분석은 정상 이용을 유지하고 유료 분석 상품은 가격·정식 오픈 준비중으로 노출
+- [x] 일반 사용자 유료 결제·검사 시작을 Production 서버와 UI에서 차단하고 심사용 테스트 경로와 향후 활성화 설정을 분리
+- [ ] 무료·준비중 유료·기존 결과/PDF/공유·심사용 경로 회귀 검증 및 GitHub main→Vercel Production 배포

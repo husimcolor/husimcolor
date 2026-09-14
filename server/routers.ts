@@ -2,21 +2,181 @@ import { z } from "zod";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { parseCoupleShareSnapshot } from "../shared/couple-share";
+import { getCommerceEmailProtectionStatus } from "./commerce/crypto";
+import {
+  completeTestPayment,
+  completeTossTestPayment,
+  createTestCheckout,
+  createTossTestCheckout,
+  isTestPaymentEnabled,
+} from "./commerce/order-service";
+import { isTossTestPaymentEnabled } from "./commerce/toss-test-provider";
+import { isPublicPaidAnalysisEnabled } from "./commerce/release-policy";
+import { previewCoupon } from "./commerce/coupon-service";
+import { consumeEntitlementForAnalysisStart, verifyAnalysisDeliveryGrant } from "./commerce/entitlement-service";
+import { deliverPrivatePdfOutboxItem, getPrivatePdfOutboxSnapshot, retryFailedPrivatePdfOutboxItem } from "./commerce/email-outbox-service";
+import { queuePrivateAnalysisPdfDelivery } from "./commerce/pdf-delivery-service";
+import {
+  confirmGuestCommerceClaim,
+  createGuestCommerceClaim,
+  ensureCommonAccountForAuthenticatedUser,
+  getCommonAccountSnapshot,
+} from "./commerce/account-service";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query((opts) => opts.ctx.user),
+    me: publicProcedure.query(async (opts) => {
+      if (opts.ctx.user) await ensureCommonAccountForAuthenticatedUser(opts.ctx.user);
+      return opts.ctx.user;
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return {
         success: true,
       } as const;
+    }),
+  }),
+
+  // 결제 기반의 이메일 암호화 키가 서버에서만 유효한지 확인하는 경량 상태 API.
+  // 비밀값·이메일 원문·주문 정보는 절대 반환하지 않는다.
+  commerce: router({
+    health: publicProcedure.query(() => getCommerceEmailProtectionStatus()),
+    coupons: router({
+      preview: publicProcedure
+        .input(z.object({
+          couponCode: z.string().min(1).max(64),
+          productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
+          listAmountKrw: z.number().int().min(0).max(1_000_000),
+        }))
+        .query(({ input }) => previewCoupon(input)),
+    }),
+    entitlement: router({
+      consumeForAnalysisStart: publicProcedure
+        .input(z.object({
+          accessToken: z.string().min(20).max(2048),
+          productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
+        }))
+        .mutation(({ input }) => consumeEntitlementForAnalysisStart(input)),
+    }),
+    delivery: router({
+      queueAndSendPdf: publicProcedure
+        .input(z.object({
+          analysisRunId: z.number().int().positive(),
+          productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
+          deliveryToken: z.string().min(20).max(2048),
+          payload: z.unknown(),
+        }))
+        .mutation(async ({ input }) => {
+          verifyAnalysisDeliveryGrant({
+            accessToken: input.deliveryToken,
+            analysisRunId: input.analysisRunId,
+            productCode: input.productCode,
+          });
+          const queued = await queuePrivateAnalysisPdfDelivery({
+            analysisRunId: input.analysisRunId,
+            kind: input.productCode,
+            payload: input.payload as any,
+          });
+          const delivery = queued.outboxId
+            ? await deliverPrivatePdfOutboxItem(queued.outboxId)
+            : { status: "not_claimed" as const };
+          return { ...queued, delivery };
+        }),
+    }),
+    adminDelivery: router({
+      list: adminProcedure
+        .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
+        .query(({ input }) => getPrivatePdfOutboxSnapshot(input.limit)),
+      retry: adminProcedure
+        .input(z.object({ outboxId: z.number().int().positive() }))
+        .mutation(async ({ input }) => {
+          await retryFailedPrivatePdfOutboxItem(input.outboxId);
+          return deliverPrivatePdfOutboxItem(input.outboxId);
+        }),
+    }),
+    account: router({
+      snapshot: protectedProcedure.query(async ({ ctx }) => {
+        await ensureCommonAccountForAuthenticatedUser(ctx.user);
+        return getCommonAccountSnapshot(ctx.user);
+      }),
+      requestGuestClaim: protectedProcedure
+        .input(z.object({ email: z.string().email().max(320) }))
+        .mutation(({ ctx, input }) => createGuestCommerceClaim({ user: ctx.user, email: input.email })),
+      confirmGuestClaim: protectedProcedure
+        .input(z.object({ challengeId: z.number().int().positive(), code: z.string().regex(/^\d{6}$/) }))
+        .mutation(({ ctx, input }) => confirmGuestCommerceClaim({ user: ctx.user, ...input })),
+    }),
+    checkout: router({
+      createTest: publicProcedure
+        .input(
+          z.object({
+            productCode: z.enum([
+              "personal_deep",
+              "couple_love_deep",
+              "parent_child_deep",
+              "personal_coaching",
+              "couple_coaching",
+            ]),
+            email: z.string().email().max(320),
+            idempotencyKey: z.string().min(16).max(128),
+            couponCode: z.string().min(1).max(64).optional(),
+          }),
+        )
+        .mutation(({ input, ctx }) => createTestCheckout({
+          ...input,
+          userId: ctx.user?.id,
+          authenticatedEmail: ctx.user?.email,
+        })),
+      createTossTest: publicProcedure
+        .input(
+          z.object({
+            productCode: z.enum([
+              "personal_deep",
+              "couple_love_deep",
+              "parent_child_deep",
+              "personal_coaching",
+              "couple_coaching",
+            ]),
+            email: z.string().email().max(320),
+            idempotencyKey: z.string().min(16).max(128),
+            couponCode: z.string().min(1).max(64).optional(),
+          }),
+        )
+        .mutation(({ input, ctx }) => createTossTestCheckout({
+          ...input,
+          userId: ctx.user?.id,
+          authenticatedEmail: ctx.user?.email,
+        })),
+      completeTest: publicProcedure
+        .input(
+          z.object({
+            orderNumber: z.string().min(8).max(64),
+            providerPaymentId: z.string().min(8).max(160),
+            outcome: z.enum(["success", "failed", "cancelled"]),
+            amountKrw: z.number().int().min(0).max(1_000_000),
+          }),
+        )
+        .mutation(({ input }) => completeTestPayment(input)),
+      completeTossTest: publicProcedure
+        .input(
+          z.object({
+            orderNumber: z.string().min(8).max(64),
+            paymentKey: z.string().min(8).max(200),
+            amountKrw: z.number().int().min(0).max(1_000_000),
+          }),
+        )
+        .mutation(({ input }) => completeTossTestPayment(input)),
+      testMode: publicProcedure.query(() => ({
+        localSimulatorEnabled: isTestPaymentEnabled(),
+        tossTestEnabled: isTossTestPaymentEnabled(),
+        paidAnalysisPublicEnabled: isPublicPaidAnalysisEnabled(),
+      })),
     }),
   }),
 

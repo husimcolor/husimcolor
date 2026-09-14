@@ -30,6 +30,7 @@ import { buildPremiumShareCardData } from "@/lib/premium-share-card";
 import { PremiumShareSummaryCard } from "@/components/premium-share-summary-card";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
+import { getCommerceAnalysisDelivery } from "@/lib/commerce-access";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
@@ -508,11 +509,13 @@ export default function PremiumResultScreen() {
   const pdfDownloadLockRef = useRef(false);
   const pdfDownloadTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const pdfDownloadPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const automaticPdfDeliveryStartedRef = useRef(false);
   const REVIEW_TAGS = ["성향 해석", "관계 흐름", "무의식 흐름", "회복 방향", "코칭 메시지", "보완 루틴"];
 
   const createReviewMutation = trpc.reviews.create.useMutation();
   const updateReviewMutation = trpc.reviews.update.useMutation();
   const logVisitor = trpc.visitors.log.useMutation();
+  const queueAndSendPdf = trpc.commerce.delivery.queueAndSendPdf.useMutation();
 
   const handleReviewSubmit = async () => {
     if (reviewRating === 0) {
@@ -656,6 +659,70 @@ export default function PremiumResultScreen() {
   };
 
   useEffect(() => () => clearPdfDownloadTimers(), []);
+
+  useEffect(() => {
+    const queuePaidResultPdf = async () => {
+      if (automaticPdfDeliveryStartedRef.current || cards.length < 3 || prevColors.length < 3 || !profile) return;
+      const delivery = await getCommerceAnalysisDelivery("personal_deep");
+      if (!delivery) return;
+      automaticPdfDeliveryStartedRef.current = true;
+      const [firstCard, secondCard, thirdCard] = cards;
+      const stage2Cards = buildStage2CardInterpretations([firstCard, secondCard, thirdCard]);
+      const stage2Bridge = buildStage2ColorBridge(prevColors);
+      const lifeEnergyResult = buildLifeEnergyResult(
+        prevColors.map((color) => color.id),
+        [firstCard, secondCard, thirdCard].map((card) => ({ color: card.color, shape: card.shape })),
+        thirdCard.complementColors,
+      );
+      const recovery = buildCustomRecoveryRoutine(
+        lifeEnergyResult.complementaryFiveElements.elements,
+        thirdCard.wellness,
+        lifeEnergyResult.routines,
+        lifeEnergyResult.currentRoutines,
+      );
+      const lifeRoleReport = buildLifeRoleEnergyReport(
+        prevColors.map((color) => color.id),
+        [firstCard, secondCard, thirdCard].map((card) => ({ color: card.color, shape: card.shape })),
+        profile.age,
+      );
+      const flowType = lifeEnergyResult.flowType;
+      const archetypeKey = lifeEnergyResult.archetypes[0]?.key ?? "";
+      const jobCoaching = getJobCoaching(profile.job, profile.faith, thirdCard?.color, profile.concerns, flowType, archetypeKey);
+      const payload = buildPremiumPdfDownloadPayload({
+        profile,
+        selectedColors: prevColors,
+        cards,
+        stage2Bridge,
+        stage2Cards,
+        complementColors: selectDisplayComplementColors(firstCard, secondCard, thirdCard),
+        colorFlowDescription: `${prevColors[0].korName}의 ${prevColors[0].keywords[0]}·${prevColors[1].korName}의 ${prevColors[1].keywords[0]}·${prevColors[2].korName}의 ${prevColors[2].keywords[0]}이 당신의 성향을 이루고 있습니다.`,
+        combinedCoaching: generateCombinedCoaching(firstCard, secondCard, thirdCard, prevColors),
+        scripture: jobCoaching?.scriptureVerse ?? null,
+        lifeRoleReport,
+        lifeEnergyResult,
+        customRecoveryRoutine: {
+          tea: thirdCard.wellness.tea,
+          food: recovery.food,
+          breath: sanitizeRecovery(recovery.breath, profile.faith),
+          movement: sanitizeRecovery(recovery.movement, profile.faith),
+          smallPractice: sanitizeRecovery(recovery.smallPractice, profile.faith),
+          message: recovery.message,
+        },
+        coachingUrl: "https://naver.me/ID3fxw2W",
+      });
+      try {
+        await queueAndSendPdf.mutateAsync({
+          analysisRunId: delivery.analysisRunId,
+          productCode: "personal_deep",
+          deliveryToken: delivery.accessToken,
+          payload,
+        });
+      } catch {
+        // 발송 실패는 서버 outbox의 상태·재시도 정책과 관리자 추적 API에서 처리한다.
+      }
+    };
+    queuePaidResultPdf().catch(() => undefined);
+  }, [cards, prevColors, profile]);
 
   if (isLoading) {
     return (

@@ -19,6 +19,8 @@ import {
   type PremiumStage1Interpretation,
 } from "@/constants/premiumStage1Data";
 import { isPremiumActive } from "@/lib/trialUtils";
+import { hasCommerceAnalysisStarted } from "@/lib/commerce-access";
+import { trpc } from "@/lib/trpc";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SWATCH_SIZE = (SCREEN_WIDTH - 48 - 24) / 5; // 5열 배치
@@ -62,16 +64,23 @@ export default function PremiumColorSelectScreen() {
   const [selectedColors, setSelectedColors] = useState<ColorData[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [interpretation, setInterpretation] = useState<PremiumStage1Interpretation | null>(null);
+  const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
 
   useEffect(() => {
     const checkAccess = async () => {
+      if (commerceTestMode.isLoading) return;
+      if (commerceTestMode.data?.tossTestEnabled) {
+        const started = await hasCommerceAnalysisStarted("personal_deep");
+        if (!started) router.replace("/commerce-checkout?product=personal_deep" as any);
+        return;
+      }
       const active = await isPremiumActive();
       if (!active) {
         router.replace("/payment" as any);
       }
     };
     checkAccess();
-  }, []);
+  }, [commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled]);
 
   const handleColorToggle = (color: ColorData) => {
     setSelectedColors(prev => {

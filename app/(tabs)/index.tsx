@@ -63,6 +63,8 @@ export default function HomeScreen() {
   // 방문자 수 집계 (기기별 고유 UUID, 하루 1회 기준)
   // 카카오/네이버 인앱브라우저 대응: sessionStorage + localStorage + AsyncStorage 삼중 저장
   const logVisitor = trpc.visitors.log.useMutation();
+  const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
+  const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
   useEffect(() => {
     const trackVisit = async () => {
       try {
@@ -125,6 +127,15 @@ export default function HomeScreen() {
   const handleStart = () => {
     resetColors();
     router.push({ pathname: '/(tabs)/select', params: { step: '0' } });
+  };
+
+  const handlePersonalDeepEntry = () => {
+    if (!paidAnalysisPublicEnabled) return;
+    if (commerceTestMode.data?.tossTestEnabled) {
+      router.push('/(tabs)/commerce-checkout?product=personal_deep' as any);
+      return;
+    }
+    router.push('/(tabs)/premium-info' as any);
   };
 
   return (
@@ -205,16 +216,20 @@ export default function HomeScreen() {
             style={({ pressed }) => [
               styles.serviceCard,
               styles.individualServiceCard,
+              !paidAnalysisPublicEnabled && styles.preparingServiceCard,
               pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
             ]}
-            onPress={() => router.push('/(tabs)/premium-info' as any)}
+            onPress={handlePersonalDeepEntry}
+            disabled={!paidAnalysisPublicEnabled}
           >
             <View style={styles.serviceHeadingRow}>
               <Text style={styles.serviceTitle}>🎨 컬러 + 심리카드 개인 심화분석</Text>
               <Text style={styles.servicePrice}>29,000원</Text>
             </View>
             <Text style={styles.serviceSummary}>컬러 3개와 심리카드 3장으로 나를 깊이 살펴봅니다.</Text>
-            <Text style={styles.serviceCta}>나를 깊이 알아보기 →</Text>
+            <Text style={[styles.serviceCta, !paidAnalysisPublicEnabled && styles.preparingServiceCta]}>
+              {paidAnalysisPublicEnabled ? '나를 깊이 알아보기 →' : '정식 오픈 준비중'}
+            </Text>
           </Pressable>
 
           <Pressable
@@ -354,6 +369,9 @@ const styles = StyleSheet.create({
     borderColor: '#D8C6AA',
     borderWidth: 1,
   },
+  preparingServiceCard: {
+    opacity: 0.72,
+  },
   relationshipServiceCard: {
     backgroundColor: '#F2F5EF',
     borderColor: '#B8C9B4',
@@ -421,6 +439,9 @@ const styles = StyleSheet.create({
     color: '#587050',
     fontSize: 13,
     fontWeight: '800',
+  },
+  preparingServiceCta: {
+    color: '#8B5D2E',
   },
   adminLink: {
     alignSelf: 'center',

@@ -41,6 +41,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="commerce-checkout"
+        options={{
+          title: "테스트 결제",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="premium-info"
         options={{
           title: "심화 정보 입력",

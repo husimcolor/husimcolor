@@ -16,6 +16,8 @@ import * as Haptics from 'expo-haptics';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import { getTrialStatus, startTrial } from '@/lib/trialUtils';
+import { getCommerceStartGrant, markCommerceAnalysisStarted, removeCommerceStartGrant, saveCommerceAnalysisDelivery } from '@/lib/commerce-access';
+import { trpc } from '@/lib/trpc';
 
 const JOB_OPTIONS = [
   '생산직', '서비스직', '사역자', '주부',
@@ -34,6 +36,11 @@ export default function PremiumInfoScreen() {
   const [profileJob, setProfileJob] = useState('');
   const [profileFaith, setProfileFaith] = useState('');
   const [profileConcerns, setProfileConcerns] = useState<string[]>([]);
+  const [accessError, setAccessError] = useState<string | null>(null);
+  const consumeEntitlement = trpc.commerce.entitlement.consumeForAnalysisStart.useMutation();
+  const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
+  const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
+  const paidAnalysisPreparing = !commerceTestMode.isLoading && !paidAnalysisPublicEnabled;
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -56,10 +63,15 @@ export default function PremiumInfoScreen() {
     });
   };
 
-  const canContinue = Boolean(profileAge && profileJob && profileFaith);
+  const canContinue = Boolean(profileAge && profileJob && profileFaith) && !paidAnalysisPreparing;
 
   const handleContinue = async () => {
     if (!canContinue) return;
+    if (paidAnalysisPreparing) {
+      setAccessError('개인 심화분석은 정식 오픈 준비중입니다.');
+      return;
+    }
+    setAccessError(null);
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
@@ -71,8 +83,24 @@ export default function PremiumInfoScreen() {
       concerns: profileConcerns,
     }));
 
-    if (await getTrialStatus() === 'none') {
-      await startTrial();
+    try {
+      const grant = await getCommerceStartGrant('personal_deep');
+      if (commerceTestMode.data?.tossTestEnabled && !grant) {
+        router.replace('/(tabs)/commerce-checkout?product=personal_deep' as any);
+        return;
+      }
+        if (grant) {
+          const consumed = await consumeEntitlement.mutateAsync({ accessToken: grant.accessToken, productCode: 'personal_deep' });
+          await removeCommerceStartGrant('personal_deep');
+          await markCommerceAnalysisStarted('personal_deep');
+          await saveCommerceAnalysisDelivery(consumed.deliveryGrant);
+        }
+      if (await getTrialStatus() === 'none') {
+        await startTrial();
+      }
+    } catch {
+      setAccessError('구매권한을 확인하지 못했습니다. 결제를 다시 진행하지 말고 잠시 후 다시 시도해 주세요.');
+      return;
     }
     router.push('/premium-color-select' as any);
   };
@@ -163,8 +191,9 @@ export default function PremiumInfoScreen() {
             onPress={handleContinue}
             disabled={!canContinue}
           >
-            <Text style={styles.continueButtonText}>컬러 선택하기 →</Text>
+            <Text style={styles.continueButtonText}>{paidAnalysisPreparing ? '정식 오픈 준비중' : '컬러 선택하기 →'}</Text>
           </Pressable>
+          {accessError ? <Text style={styles.accessError}>{accessError}</Text> : null}
           <Text style={[styles.privacyNote, { color: colors.muted }]}>입력하신 정보는 결과 해석에만 활용되며{`\n`}외부로 전송되지 않습니다.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -191,5 +220,6 @@ const styles = StyleSheet.create({
   faithChip: { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, alignItems: 'center' },
   continueButton: { borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 8, marginBottom: 16 },
   continueButtonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', letterSpacing: 0.3 },
+  accessError: { color: '#9D3A34', fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 12 },
   privacyNote: { fontSize: 12, textAlign: 'center', lineHeight: 20 },
 });

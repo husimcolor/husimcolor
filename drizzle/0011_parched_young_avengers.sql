@@ -1,0 +1,2 @@
+ALTER TABLE `email_outbox` ADD CONSTRAINT `email_outbox_document_purpose_unique` UNIQUE(`privateDocumentId`,`purpose`);--> statement-breakpoint
+ALTER TABLE `private_documents` ADD CONSTRAINT `private_documents_analysis_type_unique` UNIQUE(`analysisRunId`,`documentType`);

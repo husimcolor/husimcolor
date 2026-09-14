@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLOR_DATA, type ColorData } from '@/constants/colorData';
 import type { CoupleSessionData } from '@/constants/coupleData';
+import { hasCommerceAnalysisStarted } from '@/lib/commerce-access';
+import { trpc } from '@/lib/trpc';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWATCH_SIZE = (SCREEN_WIDTH - 48 - 24) / 5;
@@ -52,6 +54,7 @@ export default function CoupleSelectScreen() {
   const accentColor = person === 'A' ? '#3D6B3D' : '#7B5EA7';
   const accentBg = person === 'A' ? '#8BAF8B11' : '#7B5EA711';
   const accentBorder = person === 'A' ? '#8BAF8B55' : '#7B5EA755';
+  const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
 
   // B 진입 시 항상 빈 배열로 초기화 (person 파라미터 변경 시 재초기화)
   const [selectedColors, setSelectedColors] = useState<ColorData[]>([]);
@@ -60,10 +63,24 @@ export default function CoupleSelectScreen() {
   useEffect(() => {
     // person이 바뀔 때마다 선택 상태 완전 초기화
     setSelectedColors([]);
-    AsyncStorage.getItem('@couple_session').then(raw => {
-      if (raw) setSessionData(JSON.parse(raw));
-    });
-  }, [person]);
+    const loadSession = async () => {
+      const raw = await AsyncStorage.getItem('@couple_session');
+      if (!raw) return;
+      const session = JSON.parse(raw) as CoupleSessionData;
+      if (commerceTestMode.isLoading) return;
+      const productCode = session.relationType === '연인' || session.relationType === '부부'
+        ? 'couple_love_deep'
+        : ['아빠-아들', '아빠-딸', '엄마-아들', '엄마-딸', '부모-자녀'].includes(session.relationType)
+          ? 'parent_child_deep'
+          : null;
+      if (commerceTestMode.data?.tossTestEnabled && productCode && !await hasCommerceAnalysisStarted(productCode)) {
+        router.replace('/couple-start' as any);
+        return;
+      }
+      setSessionData(session);
+    };
+    loadSession().catch(() => router.replace('/couple-start' as any));
+  }, [person, commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled]);
 
   const handleColorToggle = (color: ColorData) => {
     setSelectedColors(prev => {

@@ -5,6 +5,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import type { CoupleSessionData, FaithType, GenderType, RelationType } from '@/constants/coupleData';
+import { getCommerceStartGrant, markCommerceAnalysisStarted, removeCommerceStartGrant, saveCommerceAnalysisDelivery } from '@/lib/commerce-access';
+import { trpc } from '@/lib/trpc';
+import type { CommerceProductCode } from '@/shared/commerce';
 
 const GENDERS: { value: GenderType; label: string }[] = [
   { value: '남성', label: '남성' },
@@ -34,6 +37,14 @@ function getSingleParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function getPaidProductCode(
+  relationType: RelationType,
+): Extract<CommerceProductCode, 'couple_love_deep' | 'parent_child_deep'> | null {
+  if (relationType === '연인' || relationType === '부부') return 'couple_love_deep';
+  if (['아빠-아들', '아빠-딸', '엄마-아들', '엄마-딸', '부모-자녀'].includes(relationType)) return 'parent_child_deep';
+  return null;
+}
+
 export default function CoupleInfoScreen() {
   const router = useRouter();
   const colors = useColors();
@@ -44,8 +55,14 @@ export default function CoupleInfoScreen() {
   const [faithA, setFaithA] = useState<FaithType | null>(null);
   const [genderB, setGenderB] = useState<GenderType | null>(null);
   const [faithB, setFaithB] = useState<FaithType | null>(null);
+  const [accessError, setAccessError] = useState<string | null>(null);
+  const consumeEntitlement = trpc.commerce.entitlement.consumeForAnalysisStart.useMutation();
+  const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
+  const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
+  const paidProductCodeForRelation = relationType ? getPaidProductCode(relationType) : null;
+  const paidRelationPreparing = Boolean(paidProductCodeForRelation && !commerceTestMode.isLoading && !paidAnalysisPublicEnabled);
 
-  const canProceed = Boolean(relationType && relationLabel && genderA && faithA && genderB && faithB);
+  const canProceed = Boolean(relationType && relationLabel && genderA && faithA && genderB && faithB) && !paidRelationPreparing;
 
   const renderChip = (label: string, selected: boolean, onPress: () => void) => (
     <Pressable
@@ -63,6 +80,30 @@ export default function CoupleInfoScreen() {
 
   const handleStart = async () => {
     if (!canProceed || !relationType || !genderA || !faithA || !genderB || !faithB) return;
+    if (paidRelationPreparing) {
+      setAccessError('이 관계 심화분석은 정식 오픈 준비중입니다.');
+      return;
+    }
+    setAccessError(null);
+    const paidProductCode = getPaidProductCode(relationType);
+    try {
+      if (paidProductCode) {
+        const grant = await getCommerceStartGrant(paidProductCode);
+        if (commerceTestMode.data?.tossTestEnabled && !grant) {
+          router.replace(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(relationType)}` as any);
+          return;
+        }
+        if (grant) {
+          const consumed = await consumeEntitlement.mutateAsync({ accessToken: grant.accessToken, productCode: paidProductCode });
+          await removeCommerceStartGrant(paidProductCode);
+          await markCommerceAnalysisStarted(paidProductCode);
+          await saveCommerceAnalysisDelivery(consumed.deliveryGrant);
+        }
+      }
+    } catch {
+      setAccessError('구매권한을 확인하지 못했습니다. 결제를 다시 진행하지 말고 잠시 후 다시 시도해 주세요.');
+      return;
+    }
     const sessionData: CoupleSessionData = {
       relationType,
       personA: { info: { gender: genderA, faith: faithA }, colors: [], cards: [] },
@@ -117,8 +158,9 @@ export default function CoupleInfoScreen() {
           onPress={handleStart}
           disabled={!canProceed}
         >
-          <Text style={[styles.startButtonText, { color: canProceed ? '#FFFFFF' : colors.muted }]}>첫 번째 사람 컬러 선택하기 →</Text>
+          <Text style={[styles.startButtonText, { color: canProceed ? '#FFFFFF' : colors.muted }]}>{paidRelationPreparing ? '정식 오픈 준비중' : '첫 번째 사람 컬러 선택하기 →'}</Text>
         </Pressable>
+        {accessError ? <Text style={styles.accessError}>{accessError}</Text> : null}
       </ScrollView>
     </ScreenContainer>
   );
@@ -139,6 +181,7 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 14, fontWeight: '600' },
   startButton: { borderRadius: 16, paddingVertical: 17, alignItems: 'center', marginTop: 6 },
   startButtonText: { fontSize: 16, fontWeight: '700' },
+  accessError: { color: '#A93B35', fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 12 },
   invalidState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 16 },
   invalidText: { fontSize: 16, textAlign: 'center' },
   invalidButton: { borderRadius: 14, paddingHorizontal: 18, paddingVertical: 14 },

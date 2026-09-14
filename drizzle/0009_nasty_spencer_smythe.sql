@@ -1,0 +1,1 @@
+ALTER TABLE `payment_transactions` MODIFY COLUMN `provider` enum('test','toss_pg','google_play','coupon') NOT NULL;

@@ -1,6 +1,7 @@
 import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const.js";
 import type { Express, Request, Response } from "express";
 import { getUserByOpenId, upsertUser } from "../db";
+import { ensureCommonAccountForAuthenticatedUser } from "../commerce/account-service";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 
@@ -29,6 +30,9 @@ async function syncUser(userInfo: {
     lastSignedIn,
   });
   const saved = await getUserByOpenId(userInfo.openId);
+  if (saved) {
+    await ensureCommonAccountForAuthenticatedUser(saved);
+  }
   return (
     saved ?? {
       openId: userInfo.openId,

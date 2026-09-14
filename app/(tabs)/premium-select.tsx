@@ -16,6 +16,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { CARD_DATA, type CardData } from "@/constants/cardData";
 import { COLOR_DATA, type ColorData } from "@/constants/colorData";
 import { isPremiumActive } from "@/lib/trialUtils";
+import { hasCommerceAnalysisStarted } from "@/lib/commerce-access";
 import Svg, { Path, Circle } from "react-native-svg";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -390,15 +391,22 @@ function NativeCard({
 // ─── 메인 화면 ──────────────────────────────────────────────────────────────
 export default function PremiumSelectScreen() {
   const router = useRouter();
+  const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
 
   // 진입 시 체험/결제 상태 확인
   useEffect(() => {
-    isPremiumActive().then((active) => {
-      if (!active) {
-        router.replace("/payment" as any);
+    const checkAccess = async () => {
+      if (commerceTestMode.isLoading) return;
+      if (commerceTestMode.data?.tossTestEnabled) {
+        if (!await hasCommerceAnalysisStarted("personal_deep")) {
+          router.replace("/commerce-checkout?product=personal_deep" as any);
+        }
+        return;
       }
-    });
-  }, []);
+      if (!await isPremiumActive()) router.replace("/payment" as any);
+    };
+    checkAccess();
+  }, [commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled]);
 
   // CSS 주입 (웹 전용, 최초 1회)
   useEffect(() => {

@@ -50,6 +50,8 @@ export default function CoupleStartScreen() {
 
   // 커플 테스트 시작 추적
   const logVisitor = trpc.visitors.log.useMutation();
+  const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
+  const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
   useEffect(() => {
     const track = async () => {
       try {
@@ -68,10 +70,21 @@ export default function CoupleStartScreen() {
     ? parentChildCombo
     : relationType;
 
-  const canProceed = Boolean(effectiveRelationType);
+  const paidProductCode = selectedProductId === 'romantic'
+    ? 'couple_love_deep'
+    : selectedProductId === 'parent-child'
+      ? 'parent_child_deep'
+      : null;
+  const paidProductPreparing = Boolean(paidProductCode && !paidAnalysisPublicEnabled);
+  const canProceed = Boolean(effectiveRelationType) && !paidProductPreparing;
 
   const handleStart = () => {
     if (!effectiveRelationType) return;
+    if (paidProductCode && !paidAnalysisPublicEnabled) return;
+    if (paidProductCode && commerceTestMode.data?.tossTestEnabled) {
+      router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}` as any);
+      return;
+    }
     router.push({ pathname: '/(tabs)/couple-info', params: { relationType: effectiveRelationType } } as any);
   };
 
@@ -186,6 +199,9 @@ export default function CoupleStartScreen() {
                   <Text style={[styles.productPrice, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>
                     {product.price}
                   </Text>
+                  {product.id !== 'friend' && !paidAnalysisPublicEnabled ? (
+                    <Text style={[styles.productPreparing, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>정식 오픈 준비중</Text>
+                  ) : null}
                 </Pressable>
               ))}
             </View>
@@ -233,7 +249,7 @@ export default function CoupleStartScreen() {
             disabled={!canProceed}
           >
             <Text style={[styles.startBtnText, { color: canProceed ? '#fff' : colors.muted }]}>
-              다음 · 두 사람 정보 입력하기 →
+              {paidProductPreparing ? '정식 오픈 준비중' : '다음 · 두 사람 정보 입력하기 →'}
             </Text>
           </Pressable>
 
@@ -271,6 +287,7 @@ const styles = StyleSheet.create({
   },
   productTitle: { flex: 1, fontSize: 16, lineHeight: 23, fontWeight: '700' },
   productPrice: { fontSize: 16, fontWeight: '800', letterSpacing: 0.2 },
+  productPreparing: { fontSize: 11, fontWeight: '700', position: 'absolute', right: 16, bottom: 10 },
   subSection: {
     borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 20, marginTop: -12,
   },
