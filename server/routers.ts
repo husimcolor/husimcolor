@@ -75,7 +75,14 @@ export const appRouter = router({
       preview: publicProcedure
         .input(z.object({
           couponCode: z.string().min(1).max(64),
-          productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
+          productCode: z.enum([
+            "personal_deep",
+            "couple_love_deep",
+            "parent_child_deep",
+            "personal_coaching",
+            "couple_coaching",
+            "relationship_coaching",
+          ]),
           listAmountKrw: z.number().int().min(0).max(1_000_000),
         }))
         .query(({ input }) => previewCoupon(input)),
