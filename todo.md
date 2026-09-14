@@ -942,3 +942,4 @@
 - [ ] 무료·준비중 유료·기존 결과/PDF/공유·심사용 경로 회귀 검증 및 GitHub main→Vercel Production 배포
 - [x] Production tRPC 번들의 PDF 색상 프로필 경로 오류를 보정하고 전체 자동검수·TypeScript·번들 검증 완료
 - [ ] 보정된 tRPC 함수를 GitHub main→Vercel Production에 재배포하고 기존 API·무료 이용·유료 공개 차단 재검증
+- [x] 이메일 outbox의 PDF 전달 메타데이터 의존성을 분리해 tRPC 번들에 남은 PDFKit 정적 import 제거 및 전체 회귀 검증 완료

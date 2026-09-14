@@ -4,7 +4,7 @@ import { analysisRuns, emailOutbox, privateDocuments, products } from "../../dri
 import { getDb } from "../db";
 import { storageGetSignedUrl } from "../storage";
 import { decryptCommerceEmail } from "./crypto";
-import { getPrivatePdfFilename } from "./pdf-delivery-service";
+import { getPrivatePdfFilename } from "./pdf-delivery-policy";
 import { sendResendPdfEmail } from "./resend-provider";
 
 const MAX_AUTOMATIC_ATTEMPTS = 5;

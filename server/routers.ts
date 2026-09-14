@@ -31,8 +31,11 @@ import {
  * 실제 PDF 전달 요청에서만 기존 생성기를 불러와 개발·심사용 흐름을 유지한다.
  */
 export async function loadPrivatePdfDeliveryService() {
-  const moduleName = ["pdf", "delivery", "service"].join("-");
-  return import(`./commerce/${moduleName}`);
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("PRIVATE_PDF_DELIVERY_RUNTIME_NOT_ENABLED");
+  }
+  const sourceModule: string = "./commerce/pdf-delivery-service";
+  return import(sourceModule);
 }
 
 export const appRouter = router({
