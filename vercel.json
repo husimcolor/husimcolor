@@ -11,12 +11,16 @@
     "api/couple-pdf-report.ts": {
       "maxDuration": 30,
       "includeFiles": "server/assets/HusimPdfKorean.ttf"
+    },
+    "api/auth/kakao/[action].ts": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
     { "source": "/api/trpc/:path*", "destination": "/api/trpc/[...trpc]" },
     { "source": "/api/pdf-report", "destination": "/api/pdf-report" },
     { "source": "/api/couple-pdf-report", "destination": "/api/couple-pdf-report" },
+    { "source": "/api/auth/kakao/:action", "destination": "/api/auth/kakao/[action]" },
     { "source": "/((?!_expo/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
