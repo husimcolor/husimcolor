@@ -23,6 +23,7 @@ import {
   hashCommerceValue,
   normalizeCommerceEmail,
 } from "./crypto";
+import { ensurePreviewAccountLinkOutboxSchema } from "./preview-account-link-schema";
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
 const MAX_CLAIM_ATTEMPTS = 5;
@@ -162,6 +163,7 @@ export async function createGuestCommerceClaim(input: { user: AuthenticatedMembe
   outboxId: number;
   expiresAt: Date;
 }> {
+  await ensurePreviewAccountLinkOutboxSchema();
   await ensureCommonAccountForAuthenticatedUser(input.user);
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
