@@ -1,5 +1,5 @@
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -41,12 +41,19 @@ export default function MyPageScreen() {
     enabled: auth.isAuthenticated,
     retry: false,
   });
+  const restorableClaim = trpc.commerce.account.restorableGuestClaim.useQuery(undefined, {
+    enabled: auth.isAuthenticated,
+    retry: false,
+  });
   const [claimEmail, setClaimEmail] = useState("");
   const [claimCode, setClaimCode] = useState("");
   const [claimChallengeId, setClaimChallengeId] = useState<number | null>(null);
   const [inquiryEmail, setInquiryEmail] = useState("");
   const [inquirySubject, setInquirySubject] = useState("");
   const [inquiryMessage, setInquiryMessage] = useState("");
+  useEffect(() => {
+    if (restorableClaim.data?.challengeId) setClaimChallengeId(restorableClaim.data.challengeId);
+  }, [restorableClaim.data?.challengeId]);
   const requestClaim = trpc.commerce.account.requestGuestClaim.useMutation({
     onSuccess: (result) => {
       setClaimChallengeId(result.challengeId);
@@ -59,6 +66,7 @@ export default function MyPageScreen() {
       setClaimCode("");
       setClaimChallengeId(null);
       await dashboard.refetch();
+      await restorableClaim.refetch();
       Alert.alert("이력 연결 완료", `기존 주문 ${result.linkedOrders}건을 현재 계정에 연결했습니다.`);
     },
     onError: () => Alert.alert("인증 실패", "인증코드가 올바르지 않거나 만료되었습니다. 다시 요청해 주세요."),
