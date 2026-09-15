@@ -176,6 +176,8 @@ export const accountLinkChallenges = mysqlTable(
     userId: int("userId").notNull(),
     targetEmailHash: varchar("targetEmailHash", { length: 128 }).notNull(),
     codeHash: varchar("codeHash", { length: 128 }).notNull(),
+    /** 재시도 가능한 Outbox 발송을 위해 서버 전용 키로 암호화한 단발성 인증코드다. */
+    codeEncrypted: text("codeEncrypted"),
     purpose: mysqlEnum("purpose", ["claim_guest_commerce"]).notNull(),
     status: mysqlEnum("status", ["pending", "verified", "expired", "cancelled"])
       .notNull()
@@ -513,6 +515,7 @@ export const emailOutbox = mysqlTable(
     customerId: int("customerId"),
     orderId: int("orderId"),
     privateDocumentId: int("privateDocumentId"),
+    accountLinkChallengeId: int("accountLinkChallengeId"),
     purpose: mysqlEnum("purpose", ["account_link", "analysis_result_pdf"]).notNull(),
     toEmailHash: varchar("toEmailHash", { length: 128 }).notNull(),
     toEmailEncrypted: text("toEmailEncrypted").notNull(),
@@ -531,6 +534,7 @@ export const emailOutbox = mysqlTable(
     index("email_outbox_status_attempt_idx").on(table.status, table.nextAttemptAt),
     index("email_outbox_user_idx").on(table.userId),
     index("email_outbox_document_idx").on(table.privateDocumentId),
+    index("email_outbox_account_link_challenge_idx").on(table.accountLinkChallengeId),
     uniqueIndex("email_outbox_document_purpose_unique").on(table.privateDocumentId, table.purpose),
   ],
 );

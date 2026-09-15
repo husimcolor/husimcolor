@@ -17,7 +17,7 @@ import { isTossTestPaymentEnabled } from "./commerce/toss-test-provider";
 import { isPublicPaidAnalysisEnabled } from "./commerce/release-policy";
 import { previewCoupon } from "./commerce/coupon-service";
 import { consumeEntitlementForAnalysisStart, verifyAnalysisDeliveryGrant } from "./commerce/entitlement-service";
-import { deliverPrivatePdfOutboxItem, getPrivatePdfOutboxSnapshot, retryFailedPrivatePdfOutboxItem } from "./commerce/email-outbox-service";
+import { deliverAccountLinkOutboxItem, deliverPrivatePdfOutboxItem, getPrivatePdfOutboxSnapshot, retryFailedPrivatePdfOutboxItem } from "./commerce/email-outbox-service";
 import {
   confirmGuestCommerceClaim,
   createGuestCommerceClaim,
@@ -139,7 +139,11 @@ export const appRouter = router({
       }),
       requestGuestClaim: protectedProcedure
         .input(z.object({ email: z.string().email().max(320) }))
-        .mutation(({ ctx, input }) => createGuestCommerceClaim({ user: ctx.user, email: input.email })),
+        .mutation(async ({ ctx, input }) => {
+          const claim = await createGuestCommerceClaim({ user: ctx.user, email: input.email });
+          const delivery = await deliverAccountLinkOutboxItem(claim.outboxId);
+          return { ...claim, delivery };
+        }),
       confirmGuestClaim: protectedProcedure
         .input(z.object({ challengeId: z.number().int().positive(), code: z.string().regex(/^\d{6}$/) }))
         .mutation(({ ctx, input }) => confirmGuestCommerceClaim({ user: ctx.user, ...input })),

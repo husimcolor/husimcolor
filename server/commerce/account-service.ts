@@ -18,6 +18,7 @@ import type { User } from "../../drizzle/schema";
 import { getDb } from "../db";
 import {
   encryptCommerceEmail,
+  encryptCommerceValue,
   hashCommerceEmail,
   hashCommerceValue,
   normalizeCommerceEmail,
@@ -158,6 +159,7 @@ export async function linkCheckoutCustomerToAuthenticatedUser(
 
 export async function createGuestCommerceClaim(input: { user: AuthenticatedMember; email: string }): Promise<{
   challengeId: number;
+  outboxId: number;
   expiresAt: Date;
 }> {
   await ensureCommonAccountForAuthenticatedUser(input.user);
@@ -185,20 +187,21 @@ export async function createGuestCommerceClaim(input: { user: AuthenticatedMembe
       userId: input.user.id,
       targetEmailHash: emailHash,
       codeHash,
+      codeEncrypted: encryptCommerceValue(code),
       purpose: "claim_guest_commerce",
       expiresAt,
     });
     const challengeId = Number(inserted[0].insertId);
-    // result@ 발송 worker는 다음 구현 단계에서 이 outbox를 읽어 인증 코드를 전달한다.
-    await tx.insert(emailOutbox).values({
+    const outboxInsert = await tx.insert(emailOutbox).values({
       userId: input.user.id,
+      accountLinkChallengeId: challengeId,
       purpose: "account_link",
       toEmailHash: emailHash,
       toEmailEncrypted: encryptCommerceEmail(email),
       status: "queued",
       nextAttemptAt: now,
     });
-    return { challengeId, expiresAt };
+    return { challengeId, outboxId: Number(outboxInsert[0].insertId), expiresAt };
   });
 }
 

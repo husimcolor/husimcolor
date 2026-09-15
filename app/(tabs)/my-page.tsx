@@ -1,4 +1,5 @@
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
 import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -39,6 +40,25 @@ export default function MyPageScreen() {
   const dashboard = trpc.commerce.account.memberDashboard.useQuery(undefined, {
     enabled: auth.isAuthenticated,
     retry: false,
+  });
+  const [claimEmail, setClaimEmail] = useState("");
+  const [claimCode, setClaimCode] = useState("");
+  const [claimChallengeId, setClaimChallengeId] = useState<number | null>(null);
+  const requestClaim = trpc.commerce.account.requestGuestClaim.useMutation({
+    onSuccess: (result) => {
+      setClaimChallengeId(result.challengeId);
+      Alert.alert("인증코드 발송", "입력하신 이메일로 6자리 인증코드를 보냈습니다. 메일함을 확인해 주세요.");
+    },
+    onError: () => Alert.alert("발송 실패", "인증코드를 보낼 수 없습니다. 이메일을 확인한 뒤 잠시 후 다시 시도해 주세요."),
+  });
+  const confirmClaim = trpc.commerce.account.confirmGuestClaim.useMutation({
+    onSuccess: async (result) => {
+      setClaimCode("");
+      setClaimChallengeId(null);
+      await dashboard.refetch();
+      Alert.alert("이력 연결 완료", `기존 주문 ${result.linkedOrders}건을 현재 계정에 연결했습니다.`);
+    },
+    onError: () => Alert.alert("인증 실패", "인증코드가 올바르지 않거나 만료되었습니다. 다시 요청해 주세요."),
   });
 
   const beginKakaoLogin = () => {
@@ -83,7 +103,7 @@ export default function MyPageScreen() {
             <View style={styles.metric}><Text style={styles.metricValue}>{data?.summary.activeEntitlementCount ?? 0}</Text><Text style={styles.metricLabel}>사용 가능 이용권</Text></View>
             <View style={styles.metric}><Text style={styles.metricValue}>{data?.summary.completedAnalysisCount ?? 0}</Text><Text style={styles.metricLabel}>완료 분석</Text></View>
           </View>
-          {!data?.account.emailLinked && <View style={styles.notice}><Text style={styles.noticeTitle}>이전 구매 이력 연결</Text><Text style={styles.noticeBody}>카카오 이메일이 기존 구매 이메일과 다르면, 마이페이지에서 이메일 소유권 확인 후 이력을 연결할 수 있습니다.</Text></View>}
+          {!data?.account.emailLinked && <View style={styles.notice}><Text style={styles.noticeTitle}>이전 구매 이력 연결</Text><Text style={styles.noticeBody}>카카오 이메일이 기존 구매 이메일과 다르면, 해당 이메일의 인증코드 확인 후 이력을 연결할 수 있습니다.</Text><TextInput value={claimEmail} onChangeText={setClaimEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" placeholder="기존 구매에 사용한 이메일" placeholderTextColor="#78907b" style={styles.input} /><TouchableOpacity style={styles.verifyButton} disabled={requestClaim.isPending || !claimEmail.trim()} onPress={() => requestClaim.mutate({ email: claimEmail.trim() })}><Text style={styles.verifyButtonText}>{requestClaim.isPending ? "발송 중…" : "인증코드 받기"}</Text></TouchableOpacity>{claimChallengeId && <><TextInput value={claimCode} onChangeText={(value) => setClaimCode(value.replace(/\D/g, "").slice(0, 6))} keyboardType="number-pad" placeholder="6자리 인증코드" placeholderTextColor="#78907b" style={styles.input} /><TouchableOpacity style={styles.verifyButton} disabled={confirmClaim.isPending || claimCode.length !== 6} onPress={() => confirmClaim.mutate({ challengeId: claimChallengeId, code: claimCode })}><Text style={styles.verifyButtonText}>{confirmClaim.isPending ? "확인 중…" : "이력 연결 확인"}</Text></TouchableOpacity></>}</View>}
 
           <Section title="주문 내역">
             {data?.orders.length ? data.orders.map((order) => <View key={order.id} style={styles.card}><Text style={styles.cardTitle}>{order.productName}</Text><Text style={styles.meta}>{orderStatus[order.status] ?? order.status} · {order.finalAmountKrw.toLocaleString()}원 · {dateText(order.paidAt ?? order.createdAt)}</Text><Text style={styles.meta}>{order.channel === "web" ? "홈페이지 유입" : "앱 유입"}{order.isTest ? " · 테스트 주문(매출 제외)" : ""}</Text></View>) : <Text style={styles.empty}>연결된 주문이 아직 없습니다.</Text>}
@@ -118,6 +138,8 @@ const styles = StyleSheet.create({
   metric: { flex: 1, minHeight: 86, borderRadius: 14, borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", alignItems: "center", justifyContent: "center", padding: 8 },
   metricValue: { color: "#3f7b52", fontSize: 24, fontWeight: "800" }, metricLabel: { color: "#77736a", fontSize: 10, textAlign: "center", marginTop: 5 },
   notice: { borderRadius: 14, backgroundColor: "#edf5eb", padding: 14, gap: 4 }, noticeTitle: { color: "#3f7b52", fontWeight: "800", fontSize: 14 }, noticeBody: { color: "#55705a", fontSize: 12, lineHeight: 18 },
+  input: { borderWidth: 1, borderColor: "#b8d2bb", backgroundColor: "#fff", color: "#3d3530", borderRadius: 10, paddingHorizontal: 11, paddingVertical: 10, fontSize: 13, marginTop: 5 },
+  verifyButton: { alignSelf: "flex-start", backgroundColor: "#3f7b52", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, marginTop: 3 }, verifyButtonText: { color: "#fff", fontSize: 12, fontWeight: "800" },
   section: { gap: 8 }, sectionTitle: { color: "#3d3530", fontSize: 17, fontWeight: "800", marginTop: 8 },
   card: { borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 14, padding: 14, gap: 5 },
   cardTitle: { color: "#3d3530", fontSize: 14, fontWeight: "800" }, meta: { color: "#6c6860", fontSize: 12, lineHeight: 18 },

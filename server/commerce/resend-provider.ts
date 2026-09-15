@@ -14,6 +14,8 @@ type ResendEmailResponse = {
   id?: string;
 };
 
+type ResendAttachment = { filename: string; content: string };
+
 export function getResendConfig() {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const fromEmail = process.env.RESEND_FROM_EMAIL?.trim().toLowerCase();
@@ -39,13 +41,12 @@ export async function listResendDomains(): Promise<ResendDomainSummary[]> {
   return Array.isArray(payload.data) ? payload.data : [];
 }
 
-export async function sendResendPdfEmail(input: {
+export async function sendResendEmail(input: {
   to: string;
   subject: string;
   html: string;
-  filename: string;
-  pdf: Buffer;
   idempotencyKey: string;
+  attachments?: ResendAttachment[];
 }): Promise<{ providerMessageId: string }> {
   const { apiKey, fromEmail } = getResendConfig();
   const response = await fetch(`${RESEND_API_BASE_URL}/emails`, {
@@ -60,7 +61,7 @@ export async function sendResendPdfEmail(input: {
       to: [input.to],
       subject: input.subject,
       html: input.html,
-      attachments: [{ filename: input.filename, content: input.pdf.toString("base64") }],
+      ...(input.attachments?.length ? { attachments: input.attachments } : {}),
     }),
   });
   if (!response.ok) {
@@ -69,4 +70,21 @@ export async function sendResendPdfEmail(input: {
   const payload = (await response.json()) as ResendEmailResponse;
   if (!payload.id) throw new Error("RESEND_EMAIL_RESPONSE_MISSING_ID");
   return { providerMessageId: payload.id };
+}
+
+export async function sendResendPdfEmail(input: {
+  to: string;
+  subject: string;
+  html: string;
+  filename: string;
+  pdf: Buffer;
+  idempotencyKey: string;
+}): Promise<{ providerMessageId: string }> {
+  return sendResendEmail({
+    to: input.to,
+    subject: input.subject,
+    html: input.html,
+    idempotencyKey: input.idempotencyKey,
+    attachments: [{ filename: input.filename, content: input.pdf.toString("base64") }],
+  });
 }
