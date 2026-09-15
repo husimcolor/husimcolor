@@ -23,7 +23,9 @@ import {
   createGuestCommerceClaim,
   ensureCommonAccountForAuthenticatedUser,
   getCommonAccountSnapshot,
+  getMemberCommerceDashboard,
 } from "./commerce/account-service";
+import { isKakaoLoginEnabled } from "./_core/kakao-oauth";
 import {
   deleteAdminReview,
   getAdminCoachingBookingList,
@@ -58,6 +60,7 @@ export const appRouter = router({
       if (opts.ctx.user) await ensureCommonAccountForAuthenticatedUser(opts.ctx.user);
       return opts.ctx.user;
     }),
+    kakaoStatus: publicProcedure.query(() => ({ enabled: isKakaoLoginEnabled() })),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -129,6 +132,10 @@ export const appRouter = router({
       snapshot: protectedProcedure.query(async ({ ctx }) => {
         await ensureCommonAccountForAuthenticatedUser(ctx.user);
         return getCommonAccountSnapshot(ctx.user);
+      }),
+      memberDashboard: protectedProcedure.query(async ({ ctx }) => {
+        await ensureCommonAccountForAuthenticatedUser(ctx.user);
+        return getMemberCommerceDashboard(ctx.user);
       }),
       requestGuestClaim: protectedProcedure
         .input(z.object({ email: z.string().email().max(320) }))

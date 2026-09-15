@@ -145,3 +145,13 @@ export async function startOAuthLogin(): Promise<string | null> {
   // The OAuth callback will reopen the app via deep link.
   return null;
 }
+
+/** 웹 카카오 로그인은 서버가 OAuth state를 서명하고 httpOnly 쿠키로 검증한다. */
+export function startKakaoLogin(returnTo = "/my-page") {
+  if (ReactNative.Platform.OS !== "web" || typeof window === "undefined") return false;
+  const apiBaseUrl = getApiBaseUrl();
+  const url = new URL(`${apiBaseUrl}/api/auth/kakao/login`, window.location.origin);
+  url.searchParams.set("returnTo", returnTo);
+  window.location.assign(url.toString());
+  return true;
+}

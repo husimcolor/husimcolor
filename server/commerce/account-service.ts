@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 
 import {
   accountIdentities,
@@ -9,7 +9,10 @@ import {
   customers,
   emailOutbox,
   entitlements,
+  orderItems,
   orders,
+  products,
+  coachingBookings,
 } from "../../drizzle/schema";
 import type { User } from "../../drizzle/schema";
 import { getDb } from "../db";
@@ -24,6 +27,7 @@ const CLAIM_TTL_MS = 15 * 60 * 1000;
 const MAX_CLAIM_ATTEMPTS = 5;
 
 type AuthenticatedMember = Pick<User, "id" | "openId" | "email">;
+type IdentityProvider = "manus" | "kakao";
 
 export function canAutoLinkAuthenticatedCheckout(input: {
   checkoutEmail: string;
@@ -33,7 +37,7 @@ export function canAutoLinkAuthenticatedCheckout(input: {
   return normalizeCommerceEmail(input.checkoutEmail) === normalizeCommerceEmail(input.authenticatedEmail);
 }
 
-function accountIdentityHash(provider: "manus" | "email", subject: string): string {
+function accountIdentityHash(provider: IdentityProvider | "email", subject: string): string {
   return hashCommerceValue(`${provider}:${subject.trim().toLowerCase()}`);
 }
 
@@ -50,7 +54,13 @@ async function linkCommerceRowsForCustomer(tx: any, input: { customerId: number;
  * Manus OAuth 로그인 완료 뒤 앱과 홈페이지가 동일한 users.id를 canonical user_id로 쓰게 만든다.
  * OAuth 이메일과 동일한 기존 비회원 고객만 자동 연결하며, 다른 이메일은 별도 소유권 확인을 요구한다.
  */
-export async function ensureCommonAccountForAuthenticatedUser(user: AuthenticatedMember): Promise<{
+export async function ensureCommonAccountForAuthenticatedUser(
+  user: AuthenticatedMember,
+  identity: { provider: IdentityProvider; providerSubject: string } = {
+    provider: "manus",
+    providerSubject: user.openId,
+  },
+): Promise<{
   userId: number;
   customerId: number | null;
   autoLinked: boolean;
@@ -64,8 +74,8 @@ export async function ensureCommonAccountForAuthenticatedUser(user: Authenticate
       .insert(accountIdentities)
       .values({
         userId: user.id,
-        provider: "manus",
-        providerSubjectHash: accountIdentityHash("manus", user.openId),
+        provider: identity.provider,
+        providerSubjectHash: accountIdentityHash(identity.provider, identity.providerSubject),
         emailHash: user.email ? hashCommerceEmail(user.email) : null,
         verifiedAt: now,
       })
@@ -262,5 +272,91 @@ export async function getCommonAccountSnapshot(user: AuthenticatedMember) {
     userId: user.id,
     emailLinked: Boolean(customerRows[0]?.userId === user.id),
     customerId: customerRows[0]?.id ?? null,
+  };
+}
+
+/**
+ * 마이페이지용 최소 공통 원장 조회다. 원본 분석·PDF·결제 payload와 이메일 원문은 반환하지 않는다.
+ * 주문이 이메일 소유권 확인으로 연결된 경우에만 user_id 기준으로 표시한다.
+ */
+export async function getMemberCommerceDashboard(user: AuthenticatedMember) {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+
+  const [account, orderRows, entitlementRows, analysisRows, bookingRows] = await Promise.all([
+    getCommonAccountSnapshot(user),
+    db.select().from(orders).where(eq(orders.userId, user.id)).orderBy(desc(orders.createdAt)).limit(50),
+    db.select().from(entitlements).where(eq(entitlements.userId, user.id)).orderBy(desc(entitlements.createdAt)).limit(50),
+    db.select().from(analysisRuns).where(eq(analysisRuns.userId, user.id)).orderBy(desc(analysisRuns.startedAt)).limit(50),
+    db.select().from(coachingBookings).where(eq(coachingBookings.userId, user.id)).orderBy(desc(coachingBookings.createdAt)).limit(50),
+  ]);
+
+  const orderIds = orderRows.map((order) => order.id);
+  const itemRows = orderIds.length
+    ? await db.select().from(orderItems).where(inArray(orderItems.orderId, orderIds))
+    : [];
+  const productIds = Array.from(
+    new Set([
+      ...itemRows.map((item) => item.productId),
+      ...entitlementRows.map((item) => item.productId),
+      ...analysisRows.map((item) => item.productId),
+      ...bookingRows.map((item) => item.productId),
+    ]),
+  );
+  const productRows = productIds.length
+    ? await db.select().from(products).where(inArray(products.id, productIds))
+    : [];
+  const productNameById = new Map(productRows.map((product) => [product.id, product.name]));
+  const firstItemByOrderId = new Map<number, (typeof itemRows)[number]>();
+  itemRows.forEach((item) => {
+    if (!firstItemByOrderId.has(item.orderId)) firstItemByOrderId.set(item.orderId, item);
+  });
+
+  return {
+    account,
+    summary: {
+      orderCount: orderRows.length,
+      paidOrderCount: orderRows.filter((order) => order.status === "paid" && !order.isTest).length,
+      activeEntitlementCount: entitlementRows.filter((entitlement) => entitlement.status === "active").length,
+      completedAnalysisCount: analysisRows.filter((analysis) => analysis.status === "completed").length,
+    },
+    orders: orderRows.map((order) => {
+      const item = firstItemByOrderId.get(order.id);
+      return {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        channel: order.channel,
+        isTest: order.isTest,
+        finalAmountKrw: order.finalAmountKrw,
+        createdAt: order.createdAt,
+        paidAt: order.paidAt,
+        productName: item?.productNameSnapshot ?? "주문 상품",
+        fulfillmentType: item?.fulfillmentType ?? null,
+      };
+    }),
+    entitlements: entitlementRows.map((entitlement) => ({
+      id: entitlement.id,
+      productName: productNameById.get(entitlement.productId) ?? "분석 이용권",
+      status: entitlement.status,
+      usedCount: entitlement.usedCount,
+      usageLimit: entitlement.usageLimit,
+      validUntil: entitlement.validUntil,
+    })),
+    analyses: analysisRows.map((analysis) => ({
+      id: analysis.id,
+      productName: productNameById.get(analysis.productId) ?? "심화 분석",
+      status: analysis.status,
+      startedAt: analysis.startedAt,
+      completedAt: analysis.completedAt,
+    })),
+    coachingBookings: bookingRows.map((booking) => ({
+      id: booking.id,
+      productName: productNameById.get(booking.productId) ?? "코칭 프로그램",
+      status: booking.status,
+      sessionMode: booking.sessionMode,
+      scheduledAt: booking.scheduledAt,
+      createdAt: booking.createdAt,
+    })),
   };
 }
