@@ -1,6 +1,6 @@
 import { and, eq, inArray, lt, lte } from "drizzle-orm";
 
-import { accountLinkChallenges, analysisRuns, emailOutbox, privateDocuments, products } from "../../drizzle/schema";
+import { accountLinkChallenges, analysisRuns, emailOutbox, privateDocuments, products, supportTickets } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { storageGetSignedUrl } from "../storage";
 import { decryptCommerceEmail, decryptCommerceValue } from "./crypto";
@@ -25,6 +25,11 @@ export function getAccountLinkEmailIdempotencyKey(outboxId: number): string {
   return `husim-account-link-outbox-${outboxId}`;
 }
 
+export function getSupportNotificationIdempotencyKey(outboxId: number): string {
+  if (!Number.isInteger(outboxId) || outboxId <= 0) throw new Error("INVALID_OUTBOX_ID");
+  return `husim-support-outbox-${outboxId}`;
+}
+
 function resultEmailHtml() {
   return [
     "<p>안녕하세요. 휴심컬러입니다.</p>",
@@ -45,6 +50,15 @@ function accountLinkEmailHtml(code: string, expiresAt: Date) {
     `<p style="font-size:24px;font-weight:700;letter-spacing:4px">${code}</p>`,
     `<p>인증코드는 ${expiresText}까지 유효합니다. 본인이 요청하지 않았다면 이 메일을 무시해 주세요.</p>`,
   ].join("");
+}
+
+function supportEmailHtml(input: { contactEmail: string; subject: string; message: string }) {
+  const escaped = input.message
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br/>");
+  return `<p>휴심컬러 고객 문의가 접수되었습니다.</p><p><strong>답변 받을 이메일</strong>: ${input.contactEmail}</p><p><strong>제목</strong>: ${input.subject}</p><p>${escaped}</p>`;
 }
 
 async function readPrivatePdf(storageKey: string): Promise<Buffer> {
@@ -173,6 +187,57 @@ export async function deliverAccountLinkOutboxItem(outboxId: number): Promise<{
   }
 }
 
+export async function deliverSupportNotificationOutboxItem(outboxId: number): Promise<{
+  status: "sent" | "retry_scheduled" | "not_claimed";
+  attemptCount?: number;
+}> {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const claimed = await db
+    .update(emailOutbox)
+    .set({ status: "sending", attemptCount: (emailOutbox.attemptCount as any) + 1 })
+    .where(and(
+      eq(emailOutbox.id, outboxId),
+      eq(emailOutbox.purpose, "support_notification"),
+      inArray(emailOutbox.status, ["queued", "failed"]),
+      lte(emailOutbox.nextAttemptAt, new Date()),
+    ));
+  if (Number((claimed as any)[0]?.affectedRows ?? 0) !== 1) return { status: "not_claimed" };
+  const rows = await db
+    .select({
+      id: emailOutbox.id,
+      attemptCount: emailOutbox.attemptCount,
+      toEmailEncrypted: emailOutbox.toEmailEncrypted,
+      contactEmailEncrypted: supportTickets.contactEmailEncrypted,
+      subject: supportTickets.subject,
+      messageEncrypted: supportTickets.messageEncrypted,
+    })
+    .from(emailOutbox)
+    .innerJoin(supportTickets, eq(emailOutbox.supportTicketId, supportTickets.id))
+    .where(and(eq(emailOutbox.id, outboxId), eq(emailOutbox.status, "sending")))
+    .limit(1);
+  const item = rows[0];
+  if (!item) return { status: "not_claimed" };
+  try {
+    const result = await sendResendEmail({
+      to: decryptCommerceEmail(item.toEmailEncrypted),
+      subject: `[휴심컬러 문의] ${item.subject}`,
+      html: supportEmailHtml({
+        contactEmail: decryptCommerceEmail(item.contactEmailEncrypted),
+        subject: item.subject,
+        message: decryptCommerceValue(item.messageEncrypted),
+      }),
+      idempotencyKey: getSupportNotificationIdempotencyKey(item.id),
+    });
+    await db.update(emailOutbox).set({ status: "sent", providerMessageId: result.providerMessageId, sentAt: new Date(), lastErrorCode: null }).where(eq(emailOutbox.id, outboxId));
+    return { status: "sent", attemptCount: item.attemptCount };
+  } catch (error) {
+    const errorCode = error instanceof Error ? error.message.slice(0, 160) : "SUPPORT_EMAIL_DELIVERY_FAILED";
+    await db.update(emailOutbox).set({ status: "failed", lastErrorCode: errorCode, nextAttemptAt: getOutboxRetryAt(item.attemptCount) }).where(eq(emailOutbox.id, outboxId));
+    return { status: "retry_scheduled", attemptCount: item.attemptCount };
+  }
+}
+
 export async function retryFailedPrivatePdfOutboxItem(outboxId: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -186,14 +251,20 @@ export async function processDueEmailOutbox(limit = 10): Promise<{ sent: number;
     .select({ id: emailOutbox.id, purpose: emailOutbox.purpose })
     .from(emailOutbox)
     .where(and(
-      inArray(emailOutbox.purpose, ["analysis_result_pdf", "account_link"]),
+      inArray(emailOutbox.purpose, ["analysis_result_pdf", "account_link", "support_notification"]),
       inArray(emailOutbox.status, ["queued", "failed"]),
       lte(emailOutbox.nextAttemptAt, new Date()),
       lt(emailOutbox.attemptCount, MAX_AUTOMATIC_ATTEMPTS),
     ))
     .orderBy(emailOutbox.nextAttemptAt)
     .limit(Math.min(Math.max(limit, 1), 25));
-  const outcomes = await Promise.all(due.map((item) => item.purpose === "account_link" ? deliverAccountLinkOutboxItem(item.id) : deliverPrivatePdfOutboxItem(item.id)));
+  const outcomes = await Promise.all(due.map((item) =>
+    item.purpose === "account_link"
+      ? deliverAccountLinkOutboxItem(item.id)
+      : item.purpose === "support_notification"
+        ? deliverSupportNotificationOutboxItem(item.id)
+        : deliverPrivatePdfOutboxItem(item.id),
+  ));
   return {
     sent: outcomes.filter((outcome) => outcome.status === "sent").length,
     retryScheduled: outcomes.filter((outcome) => outcome.status === "retry_scheduled").length,

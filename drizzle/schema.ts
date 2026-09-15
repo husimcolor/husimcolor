@@ -516,7 +516,8 @@ export const emailOutbox = mysqlTable(
     orderId: int("orderId"),
     privateDocumentId: int("privateDocumentId"),
     accountLinkChallengeId: int("accountLinkChallengeId"),
-    purpose: mysqlEnum("purpose", ["account_link", "analysis_result_pdf"]).notNull(),
+    supportTicketId: int("supportTicketId"),
+    purpose: mysqlEnum("purpose", ["account_link", "analysis_result_pdf", "support_notification"]).notNull(),
     toEmailHash: varchar("toEmailHash", { length: 128 }).notNull(),
     toEmailEncrypted: text("toEmailEncrypted").notNull(),
     status: mysqlEnum("status", ["queued", "sending", "sent", "failed", "cancelled"])
@@ -535,11 +536,29 @@ export const emailOutbox = mysqlTable(
     index("email_outbox_user_idx").on(table.userId),
     index("email_outbox_document_idx").on(table.privateDocumentId),
     index("email_outbox_account_link_challenge_idx").on(table.accountLinkChallengeId),
+    index("email_outbox_support_ticket_idx").on(table.supportTicketId),
     uniqueIndex("email_outbox_document_purpose_unique").on(table.privateDocumentId, table.purpose),
   ],
 );
 
 export type EmailOutboxItem = typeof emailOutbox.$inferSelect;
+
+/** 고객 문의 본문은 암호화해 보관하고, 알림 발송은 공통 Outbox로 처리한다. */
+export const supportTickets = mysqlTable(
+  "support_tickets",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId"),
+    contactEmailHash: varchar("contactEmailHash", { length: 128 }).notNull(),
+    contactEmailEncrypted: text("contactEmailEncrypted").notNull(),
+    subject: varchar("subject", { length: 160 }).notNull(),
+    messageEncrypted: text("messageEncrypted").notNull(),
+    status: mysqlEnum("status", ["open", "closed"]).notNull().default("open"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    closedAt: timestamp("closedAt"),
+  },
+  (table) => [index("support_tickets_user_status_idx").on(table.userId, table.status)],
+);
 
 /** 향후 홈페이지 코칭의 전액 결제 주문을 일정·진행 상태와 같은 user_id에 연결한다. */
 export const coachingBookings = mysqlTable(

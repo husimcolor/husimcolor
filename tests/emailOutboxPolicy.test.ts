@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getAccountLinkEmailIdempotencyKey, getOutboxEmailIdempotencyKey, getOutboxRetryAt, MAX_AUTOMATIC_ATTEMPTS } from "../server/commerce/email-outbox-service";
+import { getAccountLinkEmailIdempotencyKey, getOutboxEmailIdempotencyKey, getOutboxRetryAt, getSupportNotificationIdempotencyKey, MAX_AUTOMATIC_ATTEMPTS } from "../server/commerce/email-outbox-service";
 
 describe("email outbox retry policy", () => {
   it("uses bounded exponential-like retry intervals without sending an email", () => {
@@ -19,5 +19,9 @@ describe("email outbox retry policy", () => {
   it("uses a separate deterministic key for account-link verification messages", () => {
     expect(getAccountLinkEmailIdempotencyKey(18)).toBe("husim-account-link-outbox-18");
     expect(() => getAccountLinkEmailIdempotencyKey(-1)).toThrow("INVALID_OUTBOX_ID");
+  });
+
+  it("uses a separate deterministic key for support notifications", () => {
+    expect(getSupportNotificationIdempotencyKey(19)).toBe("husim-support-outbox-19");
   });
 });

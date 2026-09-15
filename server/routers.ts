@@ -26,6 +26,7 @@ import {
   getMemberCommerceDashboard,
 } from "./commerce/account-service";
 import { isKakaoLoginEnabled } from "./_core/kakao-oauth";
+import { createSupportInquiry } from "./commerce/support-service";
 import {
   deleteAdminReview,
   getAdminCoachingBookingList,
@@ -74,6 +75,16 @@ export const appRouter = router({
   // 비밀값·이메일 원문·주문 정보는 절대 반환하지 않는다.
   commerce: router({
     health: publicProcedure.query(() => getCommerceEmailProtectionStatus()),
+    support: router({
+      submitInquiry: protectedProcedure
+        .input(z.object({ email: z.string().email().max(320), subject: z.string().trim().min(2).max(160), message: z.string().trim().min(10).max(4000) }))
+        .mutation(async ({ ctx, input }) => {
+          const inquiry = await createSupportInquiry({ user: ctx.user, ...input });
+          const { deliverSupportNotificationOutboxItem } = await import("./commerce/email-outbox-service");
+          const delivery = await deliverSupportNotificationOutboxItem(inquiry.outboxId);
+          return { ...inquiry, delivery };
+        }),
+    }),
     coupons: router({
       preview: publicProcedure
         .input(z.object({
