@@ -17,6 +17,18 @@ describe("TestPaymentService", () => {
     vi.unstubAllEnvs();
   });
 
+  it("명시적 테스트 모드의 Vercel Preview에서만 테스트 결제를 허용한다", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("COMMERCE_TEST_MODE", "true");
+
+    expect(isTestPaymentEnabled()).toBe(true);
+
+    vi.stubEnv("VERCEL_ENV", "production");
+    expect(isTestPaymentEnabled()).toBe(false);
+    vi.unstubAllEnvs();
+  });
+
   it("creates a server-priced personal analysis order and protects guest email", () => {
     const service = new TestPaymentService();
     const checkout = service.createCheckout({

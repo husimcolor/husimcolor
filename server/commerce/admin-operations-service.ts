@@ -1,4 +1,4 @@
-import { count, desc, eq, max } from "drizzle-orm";
+import { and, count, desc, eq, max } from "drizzle-orm";
 
 import {
   adminAuditLogs,
@@ -43,8 +43,11 @@ async function getCount(table: any, where?: any): Promise<number> {
 }
 
 export async function getAdminOperationsDashboard() {
-  const [paidOrders, pendingOrders, activeEntitlements, startedAnalyses, failedDocuments, failedEmails, pendingBookings, legacyPending, totalCustomers] = await Promise.all([
-    getCount(orders, eq(orders.status, "paid")),
+  const [paidOrders, paidWebOrders, paidAppOrders, testOrders, pendingOrders, activeEntitlements, startedAnalyses, failedDocuments, failedEmails, pendingBookings, legacyPending, totalCustomers] = await Promise.all([
+    getCount(orders, and(eq(orders.status, "paid"), eq(orders.isTest, false))),
+    getCount(orders, and(eq(orders.status, "paid"), eq(orders.channel, "web"), eq(orders.isTest, false))),
+    getCount(orders, and(eq(orders.status, "paid"), eq(orders.channel, "app"), eq(orders.isTest, false))),
+    getCount(orders, eq(orders.isTest, true)),
     getCount(orders, eq(orders.status, "pending")),
     getCount(entitlements, eq(entitlements.status, "active")),
     getCount(analysisRuns, eq(analysisRuns.status, "started")),
@@ -57,6 +60,9 @@ export async function getAdminOperationsDashboard() {
 
   return {
     paidOrders,
+    paidWebOrders,
+    paidAppOrders,
+    testOrders,
     pendingOrders,
     activeEntitlements,
     startedAnalyses,
@@ -76,6 +82,8 @@ export async function getAdminOrderList(limit = 50) {
       id: orders.id,
       orderNumber: orders.orderNumber,
       status: orders.status,
+      channel: orders.channel,
+      isTest: orders.isTest,
       regularAmountKrw: orders.regularAmountKrw,
       listAmountKrw: orders.listAmountKrw,
       discountAmountKrw: orders.discountAmountKrw,

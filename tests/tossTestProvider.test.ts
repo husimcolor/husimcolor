@@ -18,6 +18,7 @@ describe("Toss test payment adapter", () => {
 
   it("only exposes the public test client key outside production", () => {
     vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("COMMERCE_TEST_MODE", "true");
     vi.stubEnv("TOSS_TEST_CLIENT_KEY", "test_ck_sample");
     vi.stubEnv("TOSS_TEST_SECRET_KEY", "test_sk_sample");
 
@@ -27,6 +28,19 @@ describe("Toss test payment adapter", () => {
     vi.stubEnv("NODE_ENV", "production");
     expect(isTossTestPaymentEnabled()).toBe(false);
     expect(() => getTossTestClientConfig()).toThrow("TOSS_TEST_PAYMENT_DISABLED");
+  });
+
+  it("명시적 테스트 모드의 Vercel Preview에서만 Toss 테스트 키를 허용한다", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("COMMERCE_TEST_MODE", "true");
+    vi.stubEnv("TOSS_TEST_CLIENT_KEY", "test_ck_sample");
+    vi.stubEnv("TOSS_TEST_SECRET_KEY", "test_sk_sample");
+
+    expect(isTossTestPaymentEnabled()).toBe(true);
+
+    vi.stubEnv("VERCEL_ENV", "production");
+    expect(isTossTestPaymentEnabled()).toBe(false);
   });
 
   it("confirms only a DONE payment with matching order and server amount", async () => {

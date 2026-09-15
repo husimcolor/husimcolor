@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isExplicitTestPaymentRuntime } from "./test-runtime";
 
 const TOSS_TEST_CONFIRM_URL = "https://api.tosspayments.com/v1/payments/confirm";
 
@@ -21,7 +22,7 @@ function getRequiredTestKey(name: "TOSS_TEST_CLIENT_KEY" | "TOSS_TEST_SECRET_KEY
 }
 
 export function isTossTestPaymentEnabled(): boolean {
-  return process.env.NODE_ENV !== "production" &&
+  return isExplicitTestPaymentRuntime() &&
     Boolean(process.env.TOSS_TEST_CLIENT_KEY?.trim()) &&
     Boolean(process.env.TOSS_TEST_SECRET_KEY?.trim());
 }

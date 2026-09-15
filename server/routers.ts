@@ -152,6 +152,7 @@ export const appRouter = router({
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
             couponCode: z.string().min(1).max(64).optional(),
+            channel: z.enum(["app", "web"]).optional().default("app"),
           }),
         )
         .mutation(({ input, ctx }) => createTestCheckout({
@@ -173,6 +174,7 @@ export const appRouter = router({
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
             couponCode: z.string().min(1).max(64).optional(),
+            channel: z.enum(["app", "web"]).optional().default("app"),
           }),
         )
         .mutation(({ input, ctx }) => createTossTestCheckout({

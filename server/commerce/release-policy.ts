@@ -1,4 +1,5 @@
 import { isPaidAnalysisProduct, type CommerceProductCode } from "../../shared/commerce";
+import { isExplicitTestPaymentRuntime } from "./test-runtime";
 
 /**
  * 운영 공개 상태는 결제 키나 상품 active 상태와 분리한다.
@@ -6,6 +7,7 @@ import { isPaidAnalysisProduct, type CommerceProductCode } from "../../shared/co
  * COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED=true로 명시적으로 연다.
  */
 export function isPublicPaidAnalysisEnabled(environment = process.env): boolean {
+  if (isExplicitTestPaymentRuntime(environment) && environment.VERCEL_ENV === "preview") return true;
   if (environment.NODE_ENV !== "production") return true;
   return environment.COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED === "true";
 }

@@ -254,6 +254,10 @@ export const orders = mysqlTable(
     ])
       .notNull()
       .default("pending"),
+    /** 주문이 시작된 고객 접점. 과거 주문은 app 기본값으로 보존한다. */
+    channel: mysqlEnum("channel", ["app", "web"]).notNull().default("app"),
+    /** Preview·Toss 테스트 주문은 매출 통계에서 분리한다. */
+    isTest: boolean("isTest").notNull().default(false),
     currency: varchar("currency", { length: 3 }).notNull().default("KRW"),
     regularAmountKrw: int("regularAmountKrw").notNull().default(0),
     listAmountKrw: int("listAmountKrw").notNull(),
@@ -271,6 +275,7 @@ export const orders = mysqlTable(
     index("orders_user_status_idx").on(table.userId, table.status),
     index("orders_customer_status_idx").on(table.customerId, table.status),
     index("orders_guest_status_idx").on(table.guestEmailHash, table.status),
+    index("orders_channel_test_status_idx").on(table.channel, table.isTest, table.status),
   ],
 );
 

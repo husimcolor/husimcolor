@@ -128,6 +128,9 @@ export default function AdminScreen() {
           <Text style={[styles.section, { color: colors.foreground }]}>오늘의 운영 신호</Text>
           <View style={styles.grid}>
             <Metric value={dashboard.data?.paidOrders ?? 0} label="결제 완료 주문" />
+            <Metric value={dashboard.data?.paidWebOrders ?? 0} label="홈페이지 결제 완료" color="#4d6f9f" />
+            <Metric value={dashboard.data?.paidAppOrders ?? 0} label="앱 결제 완료" color="#4d6f9f" />
+            <Metric value={dashboard.data?.testOrders ?? 0} label="테스트 주문 (매출 제외)" color="#8a7a68" />
             <Metric value={dashboard.data?.startedAnalyses ?? 0} label="검사 진행 중" color="#4d6f9f" />
             <Metric value={dashboard.data?.failedDocuments ?? 0} label="PDF 실패" color="#b5584f" />
             <Metric value={dashboard.data?.failedEmails ?? 0} label="메일 실패" color="#b5584f" />
@@ -144,7 +147,7 @@ export default function AdminScreen() {
           <Panel><Text style={styles.noticeTitle}>공개 운영 상태</Text><Text style={styles.noticeText}>유료 분석은 정식 오픈 준비중을 유지합니다. 이 화면은 분석 문구·결과·PDF·공유 내용을 수정하지 않고 운영 상태만 추적합니다.</Text></Panel>
         </>}
 
-        {tab === "주문" && <><Text style={[styles.section, { color: colors.foreground }]}>최근 주문</Text>{orders.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {dateText(item.createdAt)}</Text><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.finalAmountKrw.toLocaleString()}원 · {item.provider ?? "결제 대기"}</Text></Panel>)}</>}
+        {tab === "주문" && <><Text style={[styles.section, { color: colors.foreground }]}>최근 주문</Text>{orders.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {dateText(item.createdAt)}</Text><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.finalAmountKrw.toLocaleString()}원 · {item.provider ?? "결제 대기"} · {item.channel === "web" ? "홈페이지 유입" : "앱 유입"}{item.isTest ? " · 테스트 주문(매출 제외)" : ""}</Text></Panel>)}</>}
 
         {tab === "고객" && <><Text style={[styles.section, { color: colors.foreground }]}>고객·회원 연결</Text><Text style={[styles.helper, { color: colors.muted }]}>이메일은 마스킹해 표시합니다. 행을 누르면 주문·이용권·검사·문서·예약 이력 수를 볼 수 있습니다.</Text>{customers.data?.map((item) => <TouchableOpacity key={item.id} onPress={() => setCustomerId(item.id)}><Panel><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.emailMasked}</Text><Badge text={item.userId ? "회원 연결" : "비회원"} tone={item.userId ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>주문 {item.orderCount}건 · 최근 주문 {dateText(item.latestOrderAt)}</Text></Panel></TouchableOpacity>)}{customer.data && <Panel><Text style={styles.noticeTitle}>{customer.data.customer.emailMasked} 고객 흐름</Text><Text style={styles.noticeText}>주문 {customer.data.orders.length} · 이용권 {customer.data.entitlements.length} · 검사 {customer.data.analysisRuns.length} · PDF {customer.data.privateDocuments.length} · 이메일 {customer.data.emailOutbox.length} · 예약 {customer.data.coachingBookings.length}</Text></Panel>}</>}
 
