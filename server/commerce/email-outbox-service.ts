@@ -1,10 +1,14 @@
-import { and, eq, inArray, lt, lte } from "drizzle-orm";
+import { and, asc, eq, inArray, lt, lte } from "drizzle-orm";
 
 import { accountLinkChallenges, analysisRuns, emailOutbox, privateDocuments, products, supportTickets } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { storageGetSignedUrl } from "../storage";
 import { decryptCommerceEmail, decryptCommerceValue } from "./crypto";
 import { getPrivatePdfFilename } from "./pdf-delivery-policy";
+import {
+  isApprovedPreviewOutboxCandidate,
+  isPreviewOutboxManualVerificationEnabled,
+} from "./preview-outbox-verification";
 import { sendResendEmail, sendResendPdfEmail } from "./resend-provider";
 
 const MAX_AUTOMATIC_ATTEMPTS = 5;
@@ -269,6 +273,79 @@ export async function processDueEmailOutbox(limit = 10): Promise<{ sent: number;
     sent: outcomes.filter((outcome) => outcome.status === "sent").length,
     retryScheduled: outcomes.filter((outcome) => outcome.status === "retry_scheduled").length,
     skipped: outcomes.filter((outcome) => outcome.status === "not_claimed").length,
+  };
+}
+
+/**
+ * Preview에서 현재 로그인한 사용자가 만든 기존 테스트 큐만 제한적으로 처리한다.
+ * 새 메일·주문·티켓을 생성하지 않으며, PDF와 일반 문의는 이 경로에 포함하지 않는다.
+ */
+export async function processApprovedPreviewOutboxForUser(userId: number, limit = 2): Promise<{
+  sent: number;
+  retryScheduled: number;
+  skipped: number;
+  selected: Array<{ id: number; purpose: "account_link" | "support_notification" }>;
+}> {
+  if (!isPreviewOutboxManualVerificationEnabled()) {
+    throw new Error("PREVIEW_OUTBOX_VERIFICATION_DISABLED");
+  }
+  const supportEmail = process.env.SUPPORT_EMAIL?.trim().toLowerCase();
+  if (!supportEmail) throw new Error("SUPPORT_EMAIL_NOT_CONFIGURED");
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const now = new Date();
+  const rows = await db
+    .select({
+      id: emailOutbox.id,
+      purpose: emailOutbox.purpose,
+      toEmailEncrypted: emailOutbox.toEmailEncrypted,
+      accountLinkStatus: accountLinkChallenges.status,
+      accountLinkExpiresAt: accountLinkChallenges.expiresAt,
+      supportSubject: supportTickets.subject,
+    })
+    .from(emailOutbox)
+    .leftJoin(accountLinkChallenges, eq(emailOutbox.accountLinkChallengeId, accountLinkChallenges.id))
+    .leftJoin(supportTickets, eq(emailOutbox.supportTicketId, supportTickets.id))
+    .where(and(
+      eq(emailOutbox.userId, userId),
+      inArray(emailOutbox.purpose, ["account_link", "support_notification"]),
+      inArray(emailOutbox.status, ["queued", "failed"]),
+      lte(emailOutbox.nextAttemptAt, now),
+      lt(emailOutbox.attemptCount, MAX_AUTOMATIC_ATTEMPTS),
+    ))
+    .orderBy(asc(emailOutbox.nextAttemptAt))
+    .limit(25);
+
+  const selected = rows
+    .filter((row): row is typeof row & { purpose: "account_link" | "support_notification" } => {
+      if (row.purpose !== "account_link" && row.purpose !== "support_notification") return false;
+      let recipientMatchesSupport = false;
+      try {
+        recipientMatchesSupport = decryptCommerceEmail(row.toEmailEncrypted).trim().toLowerCase() === supportEmail;
+      } catch {
+        return false;
+      }
+      return isApprovedPreviewOutboxCandidate({
+        purpose: row.purpose,
+        recipientMatchesSupport,
+        accountLinkStatus: row.accountLinkStatus,
+        accountLinkUnexpired: row.accountLinkExpiresAt ? row.accountLinkExpiresAt.getTime() > now.getTime() : null,
+        supportSubject: row.supportSubject,
+      });
+    })
+    .slice(0, Math.min(Math.max(limit, 1), 2));
+
+  const outcomes = [];
+  for (const item of selected) {
+    outcomes.push(item.purpose === "account_link"
+      ? await deliverAccountLinkOutboxItem(item.id)
+      : await deliverSupportNotificationOutboxItem(item.id));
+  }
+  return {
+    sent: outcomes.filter((outcome) => outcome.status === "sent").length,
+    retryScheduled: outcomes.filter((outcome) => outcome.status === "retry_scheduled").length,
+    skipped: outcomes.filter((outcome) => outcome.status === "not_claimed").length,
+    selected: selected.map((item) => ({ id: item.id, purpose: item.purpose })),
   };
 }
 

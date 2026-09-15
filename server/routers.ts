@@ -17,7 +17,13 @@ import { isTossTestPaymentEnabled } from "./commerce/toss-test-provider";
 import { isPublicPaidAnalysisEnabled } from "./commerce/release-policy";
 import { previewCoupon } from "./commerce/coupon-service";
 import { consumeEntitlementForAnalysisStart, verifyAnalysisDeliveryGrant } from "./commerce/entitlement-service";
-import { deliverAccountLinkOutboxItem, deliverPrivatePdfOutboxItem, getPrivatePdfOutboxSnapshot, retryFailedPrivatePdfOutboxItem } from "./commerce/email-outbox-service";
+import {
+  deliverAccountLinkOutboxItem,
+  deliverPrivatePdfOutboxItem,
+  getPrivatePdfOutboxSnapshot,
+  processApprovedPreviewOutboxForUser,
+  retryFailedPrivatePdfOutboxItem,
+} from "./commerce/email-outbox-service";
 import {
   confirmGuestCommerceClaim,
   createGuestCommerceClaim,
@@ -158,6 +164,8 @@ export const appRouter = router({
       confirmGuestClaim: protectedProcedure
         .input(z.object({ challengeId: z.number().int().positive(), code: z.string().regex(/^\d{6}$/) }))
         .mutation(({ ctx, input }) => confirmGuestCommerceClaim({ user: ctx.user, ...input })),
+      processApprovedPreviewOutbox: protectedProcedure
+        .mutation(({ ctx }) => processApprovedPreviewOutboxForUser(ctx.user.id)),
     }),
     checkout: router({
       createTest: publicProcedure
