@@ -28,6 +28,7 @@ import {
   confirmGuestCommerceClaim,
   createGuestCommerceClaim,
   ensureCommonAccountForAuthenticatedUser,
+  getRestorableGuestCommerceClaim,
   getCommonAccountSnapshot,
   getMemberCommerceDashboard,
 } from "./commerce/account-service";
@@ -161,6 +162,7 @@ export const appRouter = router({
           const delivery = await deliverAccountLinkOutboxItem(claim.outboxId);
           return { ...claim, delivery };
         }),
+      restorableGuestClaim: protectedProcedure.query(({ ctx }) => getRestorableGuestCommerceClaim(ctx.user)),
       confirmGuestClaim: protectedProcedure
         .input(z.object({ challengeId: z.number().int().positive(), code: z.string().regex(/^\d{6}$/) }))
         .mutation(({ ctx, input }) => confirmGuestCommerceClaim({ user: ctx.user, ...input })),
