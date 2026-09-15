@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, lt, lte } from "drizzle-orm";
+import { and, asc, eq, inArray, lt, lte, sql } from "drizzle-orm";
 
 import { accountLinkChallenges, analysisRuns, emailOutbox, privateDocuments, products, supportTickets } from "../../drizzle/schema";
 import { getDb } from "../db";
@@ -78,7 +78,7 @@ async function claimPrivatePdfOutboxItem(outboxId: number) {
   const now = new Date();
   const claimed = await db
     .update(emailOutbox)
-    .set({ status: "sending", attemptCount: (emailOutbox.attemptCount as any) + 1 })
+    .set({ status: "sending", attemptCount: sql`${emailOutbox.attemptCount} + 1` })
     .where(and(
       eq(emailOutbox.id, outboxId),
       eq(emailOutbox.purpose, "analysis_result_pdf"),
@@ -142,7 +142,7 @@ async function claimAccountLinkOutboxItem(outboxId: number) {
   const now = new Date();
   const claimed = await db
     .update(emailOutbox)
-    .set({ status: "sending", attemptCount: (emailOutbox.attemptCount as any) + 1 })
+    .set({ status: "sending", attemptCount: sql`${emailOutbox.attemptCount} + 1` })
     .where(and(
       eq(emailOutbox.id, outboxId),
       eq(emailOutbox.purpose, "account_link"),
@@ -199,7 +199,7 @@ export async function deliverSupportNotificationOutboxItem(outboxId: number): Pr
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
   const claimed = await db
     .update(emailOutbox)
-    .set({ status: "sending", attemptCount: (emailOutbox.attemptCount as any) + 1 })
+    .set({ status: "sending", attemptCount: sql`${emailOutbox.attemptCount} + 1` })
     .where(and(
       eq(emailOutbox.id, outboxId),
       eq(emailOutbox.purpose, "support_notification"),
