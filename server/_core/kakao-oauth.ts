@@ -17,6 +17,7 @@ const KAKAO_STATE_COOKIE = "husim_kakao_state";
 const KAKAO_STATE_TTL_MS = 10 * 60 * 1000;
 
 export const KAKAO_CALLBACK_PATH = "/api/auth/kakao/callback";
+const DEFAULT_KAKAO_REDIRECT_ORIGIN = "https://husimcolor.vercel.app";
 
 type KakaoState = {
   issuedAt: number;
@@ -96,8 +97,13 @@ export function parseKakaoState(value: string | undefined, now = Date.now()): Ka
   }
 }
 
-export function getKakaoRedirectUri(req: Request) {
-  return `${getProductionFrontendOrigin(req)}${KAKAO_CALLBACK_PATH}`;
+/**
+ * 카카오는 사전에 등록된 URI만 허용하므로 변동하는 Preview 호스트가 아니라
+ * 공통 인증 앱의 고정 도메인을 사용한다. 필요하면 서버 환경변수로만 변경한다.
+ */
+export function getKakaoRedirectUri() {
+  const configuredOrigin = process.env.KAKAO_REDIRECT_ORIGIN?.trim().replace(/\/+$/, "");
+  return `${configuredOrigin || DEFAULT_KAKAO_REDIRECT_ORIGIN}${KAKAO_CALLBACK_PATH}`;
 }
 
 export function createKakaoAuthorizeUrl(input: { redirectUri: string; state: string }) {
@@ -195,7 +201,7 @@ export function registerKakaoOAuthRoutes(app: Express) {
       sameSite: "lax",
       maxAge: KAKAO_STATE_TTL_MS,
     });
-    res.redirect(302, createKakaoAuthorizeUrl({ redirectUri: getKakaoRedirectUri(req), state }));
+    res.redirect(302, createKakaoAuthorizeUrl({ redirectUri: getKakaoRedirectUri(), state }));
   });
 
   app.get(KAKAO_CALLBACK_PATH, async (req, res) => {
@@ -215,7 +221,7 @@ export function registerKakaoOAuthRoutes(app: Express) {
       return;
     }
     try {
-      const accessToken = await exchangeKakaoCode(code, getKakaoRedirectUri(req));
+      const accessToken = await exchangeKakaoCode(code, getKakaoRedirectUri());
       const user = await syncKakaoUser(await getKakaoUser(accessToken));
       const sessionToken = await sdk.createSessionToken(user.openId, {
         name: user.name || "카카오 사용자",

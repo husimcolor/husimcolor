@@ -12,7 +12,7 @@
       "maxDuration": 30,
       "includeFiles": "server/assets/HusimPdfKorean.ttf"
     },
-    "api/auth/kakao/[action].ts": {
+    "api/auth/[...action].ts": {
       "maxDuration": 30
     }
   },
@@ -20,7 +20,7 @@
     { "source": "/api/trpc/:path*", "destination": "/api/trpc/[...trpc]" },
     { "source": "/api/pdf-report", "destination": "/api/pdf-report" },
     { "source": "/api/couple-pdf-report", "destination": "/api/couple-pdf-report" },
-    { "source": "/api/auth/kakao/:action", "destination": "/api/auth/kakao/[action]" },
+    { "source": "/api/auth/:path*", "destination": "/api/auth/[...action]" },
     { "source": "/((?!_expo/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [

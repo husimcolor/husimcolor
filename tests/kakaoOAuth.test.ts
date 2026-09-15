@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createKakaoAuthorizeUrl,
   createKakaoState,
+  getKakaoRedirectUri,
   isKakaoLoginEnabled,
   normalizeReturnTo,
   parseKakaoState,
@@ -37,5 +38,9 @@ describe("Kakao OAuth configuration", () => {
     expect(url.searchParams.get("redirect_uri")).toBe("https://husimcolor.vercel.app/api/auth/kakao/callback");
     if (original === undefined) delete process.env.KAKAO_REST_API_KEY;
     else process.env.KAKAO_REST_API_KEY = original;
+  });
+
+  it("uses the registered fixed app callback origin instead of a changing Preview host", () => {
+    expect(getKakaoRedirectUri()).toBe("https://husimcolor.vercel.app/api/auth/kakao/callback");
   });
 });
