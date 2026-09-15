@@ -20,7 +20,12 @@ export function ensurePreviewAccountLinkOutboxSchema(): Promise<void> {
       throw new Error("PREVIEW_ACCOUNT_LINK_DATABASE_UNAVAILABLE");
     }
 
-    const connection = await mysql.createConnection(process.env.DATABASE_URL);
+    const urlWithoutSsl = process.env.DATABASE_URL.replace(/[?&]ssl=[^&]*/g, "").replace(/\?$/, "");
+    const connection = await mysql.createConnection({
+      uri: urlWithoutSsl,
+      ssl: { rejectUnauthorized: false, minVersion: "TLSv1.2" },
+      connectTimeout: 15_000,
+    });
     try {
       const [challengeColumns] = await connection.execute(
         "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'account_link_challenges' AND COLUMN_NAME = 'codeEncrypted'",
