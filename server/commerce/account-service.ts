@@ -23,6 +23,7 @@ import {
   hashCommerceValue,
   normalizeCommerceEmail,
 } from "./crypto";
+import { isRestorableGuestClaim } from "./guest-claim-state";
 import { ensurePreviewAccountLinkOutboxSchema } from "./preview-account-link-schema";
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
@@ -205,6 +206,36 @@ export async function createGuestCommerceClaim(input: { user: AuthenticatedMembe
     });
     return { challengeId, outboxId: Number(outboxInsert[0].insertId), expiresAt };
   });
+}
+
+/**
+ * 페이지 새로고침 뒤에도 기존 인증 메일을 다시 보내지 않고, 현재 사용자의 유효한 챌린지만 복구한다.
+ * 이메일·코드·암호화 원문은 반환하지 않는다.
+ */
+export async function getRestorableGuestCommerceClaim(user: AuthenticatedMember): Promise<{
+  challengeId: number;
+  expiresAt: Date;
+} | null> {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const rows = await db
+    .select({
+      id: accountLinkChallenges.id,
+      status: accountLinkChallenges.status,
+      expiresAt: accountLinkChallenges.expiresAt,
+    })
+    .from(accountLinkChallenges)
+    .where(and(
+      eq(accountLinkChallenges.userId, user.id),
+      eq(accountLinkChallenges.purpose, "claim_guest_commerce"),
+      eq(accountLinkChallenges.status, "pending"),
+      gt(accountLinkChallenges.expiresAt, new Date()),
+    ))
+    .orderBy(desc(accountLinkChallenges.createdAt))
+    .limit(1);
+  const claim = rows[0];
+  if (!claim || !isRestorableGuestClaim(claim)) return null;
+  return { challengeId: claim.id, expiresAt: claim.expiresAt };
 }
 
 export async function confirmGuestCommerceClaim(input: {
