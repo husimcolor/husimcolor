@@ -40,6 +40,10 @@ export function canAutoLinkAuthenticatedCheckout(input: {
   return normalizeCommerceEmail(input.checkoutEmail) === normalizeCommerceEmail(input.authenticatedEmail);
 }
 
+export function getNoCommerceGuestClaimResult(): { customerId: null; linkedOrders: 0 } {
+  return { customerId: null, linkedOrders: 0 };
+}
+
 function accountIdentityHash(provider: IdentityProvider | "email", subject: string): string {
   return hashCommerceValue(`${provider}:${subject.trim().toLowerCase()}`);
 }
@@ -242,7 +246,7 @@ export async function confirmGuestCommerceClaim(input: {
   user: AuthenticatedMember;
   challengeId: number;
   code: string;
-}): Promise<{ customerId: number; linkedOrders: number }> {
+}): Promise<{ customerId: number | null; linkedOrders: number }> {
   if (!/^\d{6}$/.test(input.code)) throw new Error("INVALID_CLAIM_CODE");
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -281,7 +285,15 @@ export async function confirmGuestCommerceClaim(input: {
       .where(eq(customers.emailHash, challenge.targetEmailHash))
       .limit(1);
     const customer = customerRows[0];
-    if (!customer) throw new Error("GUEST_COMMERCE_NOT_FOUND");
+    // 인증 대상 이메일에 기존 구매 고객이 없을 수 있다. 이 경우에도 이메일
+    // 소유권 검증 자체는 완료해야 하며, 기존 원장 행을 새로 만들거나 수정하지 않는다.
+    if (!customer) {
+      await tx
+        .update(accountLinkChallenges)
+        .set({ status: "verified", verifiedAt: now })
+        .where(eq(accountLinkChallenges.id, challenge.id));
+      return getNoCommerceGuestClaimResult();
+    }
     if (customer.userId && customer.userId !== input.user.id) throw new Error("EMAIL_ALREADY_LINKED_TO_ANOTHER_ACCOUNT");
     await tx
       .update(customers)
