@@ -1,22 +1,16 @@
 {
   "outputDirectory": "dist",
   "functions": {
-    "api/trpc/[...trpc].ts": {
-      "maxDuration": 30
-    },
-    "api/pdf-report.ts": {
-      "maxDuration": 30,
-      "includeFiles": "server/assets/HusimPdfKorean.ttf"
-    },
-    "api/couple-pdf-report.ts": {
-      "maxDuration": 30,
-      "includeFiles": "server/assets/HusimPdfKorean.ttf"
-    },
-    "api/auth/[...action].ts": {
-      "maxDuration": 30
-    }
+    "api/legacy-admin.ts": { "maxDuration": 30 },
+    "api/trpc/[...trpc].ts": { "maxDuration": 30 },
+    "api/pdf-report.ts": { "maxDuration": 30, "includeFiles": "server/assets/HusimPdfKorean.ttf" },
+    "api/couple-pdf-report.ts": { "maxDuration": 30, "includeFiles": "server/assets/HusimPdfKorean.ttf" },
+    "api/auth/[...action].ts": { "maxDuration": 30 }
   },
   "rewrites": [
+    { "source": "/api/auth/legacy-admin-login", "destination": "/api/legacy-admin?action=legacy-admin-login" },
+    { "source": "/api/auth/legacy-admin-session", "destination": "/api/legacy-admin?action=legacy-admin-session" },
+    { "source": "/api/auth/legacy-admin-logout", "destination": "/api/legacy-admin?action=legacy-admin-logout" },
     { "source": "/api/trpc/:path*", "destination": "/api/trpc/[...trpc]" },
     { "source": "/api/pdf-report", "destination": "/api/pdf-report" },
     { "source": "/api/couple-pdf-report", "destination": "/api/couple-pdf-report" },
@@ -24,53 +18,24 @@
     { "source": "/((?!_expo/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" }
-      ]
-    },
-    {
-      "source": "/index.html",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Pragma", "value": "no-cache" },
-        { "key": "Expires", "value": "0" }
-      ]
-    },
-    {
-      "source": "/(couple-result|couple-start|couple-card-select|premium-color-select|premium-result|payment)\\.html",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Pragma", "value": "no-cache" },
-        { "key": "Expires", "value": "0" }
-      ]
-    },
-    {
-      "source": "/_expo/static/js/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/_expo/static/css/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/_expo/static/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/assets/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    }
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "X-XSS-Protection", "value": "1; mode=block" }
+    ] },
+    { "source": "/index.html", "headers": [
+      { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+      { "key": "Pragma", "value": "no-cache" },
+      { "key": "Expires", "value": "0" }
+    ] },
+    { "source": "/(couple-result|couple-start|couple-card-select|premium-color-select|premium-result|payment)\\.html", "headers": [
+      { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+      { "key": "Pragma", "value": "no-cache" },
+      { "key": "Expires", "value": "0" }
+    ] },
+    { "source": "/_expo/static/js/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/_expo/static/css/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/_expo/static/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] }
   ]
 }
