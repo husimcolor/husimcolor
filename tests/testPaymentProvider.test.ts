@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TestPaymentService } from "../server/commerce/test-payment";
 import { decryptCommerceEmail } from "../server/commerce/crypto";
 import { isTestPaymentEnabled } from "../server/commerce/order-service";
@@ -7,6 +7,15 @@ function testKey(label: string) {
   return `${label}-000000000000000000000000`;
 }
 
+beforeEach(() => {
+  vi.stubEnv("COMMERCE_EMAIL_HASH_SECRET", "test-commerce-email-hash-secret-000000000000000000000000");
+  vi.stubEnv("COMMERCE_EMAIL_ENCRYPTION_KEY", Buffer.alloc(32, 7).toString("base64"));
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("TestPaymentService", () => {
   it("cannot expose the database-backed test payment endpoint in production", () => {
     vi.stubEnv("NODE_ENV", "production");
@@ -14,6 +23,18 @@ describe("TestPaymentService", () => {
 
     expect(isTestPaymentEnabled()).toBe(false);
 
+    vi.unstubAllEnvs();
+  });
+
+  it("명시적 테스트 모드의 Vercel Preview에서만 테스트 결제를 허용한다", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("COMMERCE_TEST_MODE", "true");
+
+    expect(isTestPaymentEnabled()).toBe(true);
+
+    vi.stubEnv("VERCEL_ENV", "production");
+    expect(isTestPaymentEnabled()).toBe(false);
     vi.unstubAllEnvs();
   });
 

@@ -10,6 +10,7 @@ vi.mock("../server/commerce/email-outbox-service", () => ({
 
 describe("outbox cron authorization", () => {
   beforeEach(() => {
+    process.env.CRON_SECRET = "c".repeat(48);
     processDuePrivatePdfOutbox.mockReset();
     processDuePrivatePdfOutbox.mockResolvedValue({ sent: 0, retryScheduled: 0, skipped: 0 });
   });

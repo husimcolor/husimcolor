@@ -5,6 +5,7 @@ import { ensureCommonAccountForAuthenticatedUser } from "../commerce/account-ser
 import { getSessionCookieOptions } from "./cookies";
 import { ENV } from "./env";
 import { sdk } from "./sdk";
+import { registerLegacyAdminRoutes } from "./legacy-admin";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -100,6 +101,7 @@ function buildUserResponse(
 }
 
 export function registerOAuthRoutes(app: Express) {
+  void registerLegacyAdminRoutes(app);
   // The Expo web bundle is static in Vercel, so OAuth settings must be read
   // from the server rather than relying on build-time EXPO_PUBLIC variables.
   app.get("/api/auth/login", (req: Request, res: Response) => {

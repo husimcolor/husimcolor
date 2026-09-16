@@ -31,7 +31,10 @@ export default function HomeScreen() {
     if (logoTapTimer.current) clearTimeout(logoTapTimer.current);
     if (newCount >= 5) {
       setLogoTapCount(0);
-      router.push('/admin' as any);
+      // The hidden entry must resolve to the existing tab screen that owns
+      // the legacy password + server-authorized administrator session.
+      // It never starts Google/Manus OAuth.
+      router.push('/(tabs)/admin' as any);
       return;
     }
     logoTapTimer.current = setTimeout(() => setLogoTapCount(0), 2000);
@@ -249,14 +252,14 @@ export default function HomeScreen() {
          </Animated.View>
       </View>
 
-      {/* 관리자 링크 - 하단 */}
       <TouchableOpacity
-        onPress={() => router.push('/(tabs)/admin' as any)}
-        activeOpacity={0.5}
-        style={styles.adminLink}
+        onPress={() => router.push('/(tabs)/my-page' as any)}
+        activeOpacity={0.7}
+        style={styles.myPageLink}
       >
-        <Text style={[styles.adminLinkText, { color: colors.muted }]}>관리자</Text>
+        <Text style={[styles.myPageLinkText, { color: colors.primary }]}>내 분석 · 마이페이지</Text>
       </TouchableOpacity>
+
       <View style={styles.businessInfoWrap}>
         <BusinessInfoFooter />
       </View>
@@ -445,16 +448,14 @@ const styles = StyleSheet.create({
   preparingServiceCta: {
     color: '#8B5D2E',
   },
-  adminLink: {
+  myPageLink: {
     alignSelf: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 20,
-    marginBottom: 4,
   },
-  adminLinkText: {
-    fontSize: 11,
-    opacity: 0.45,
-    letterSpacing: 0.3,
+  myPageLinkText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
   businessInfoWrap: {
     width: '100%',

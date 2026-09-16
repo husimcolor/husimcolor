@@ -1,9 +1,11 @@
-import { count, desc, eq, max } from "drizzle-orm";
+import { and, count, desc, eq, inArray, max } from "drizzle-orm";
 
 import {
   adminAuditLogs,
   analysisRuns,
   coachingBookings,
+  couponRedemptions,
+  coupons,
   customers,
   emailOutbox,
   entitlements,
@@ -13,9 +15,16 @@ import {
   paymentTransactions,
   privateDocuments,
   reviews,
+  supportTickets,
 } from "../../drizzle/schema";
 import { getDb } from "../db";
-import { decryptCommerceEmail } from "./crypto";
+import type { AdminAuditActor } from "./admin-audit-actor";
+import { decryptCommerceEmail, decryptCommerceValue } from "./crypto";
+import { canTransitionSupportTicketStatus } from "./member-portal-contract";
+import {
+  isPreviewReadOnlyVerificationEnabled,
+  previewVerificationUnavailableResult,
+} from "./preview-admin-verification";
 
 function asCount(value: unknown): number {
   return Number(value ?? 0);
@@ -34,6 +43,17 @@ export function maskCommerceEmailForAdmin(encryptedEmail: string | null): string
   }
 }
 
+function maskCommerceNameForAdmin(encryptedName: string | null): string {
+  if (!encryptedName) return "—";
+  try {
+    const name = decryptCommerceValue(encryptedName).trim();
+    if (!name) return "—";
+    return `${name.slice(0, 1)}${"•".repeat(Math.max(1, name.length - 1))}`;
+  } catch {
+    return "보호된 이름";
+  }
+}
+
 async function getCount(table: any, where?: any): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -43,8 +63,11 @@ async function getCount(table: any, where?: any): Promise<number> {
 }
 
 export async function getAdminOperationsDashboard() {
-  const [paidOrders, pendingOrders, activeEntitlements, startedAnalyses, failedDocuments, failedEmails, pendingBookings, legacyPending, totalCustomers] = await Promise.all([
-    getCount(orders, eq(orders.status, "paid")),
+  const [paidOrders, paidWebOrders, paidAppOrders, testOrders, pendingOrders, activeEntitlements, startedAnalyses, failedDocuments, failedEmails, pendingBookings, legacyPending, totalCustomers] = await Promise.all([
+    getCount(orders, and(eq(orders.status, "paid"), eq(orders.isTest, false))),
+    getCount(orders, and(eq(orders.status, "paid"), eq(orders.channel, "web"), eq(orders.isTest, false))),
+    getCount(orders, and(eq(orders.status, "paid"), eq(orders.channel, "app"), eq(orders.isTest, false))),
+    getCount(orders, eq(orders.isTest, true)),
     getCount(orders, eq(orders.status, "pending")),
     getCount(entitlements, eq(entitlements.status, "active")),
     getCount(analysisRuns, eq(analysisRuns.status, "started")),
@@ -57,6 +80,9 @@ export async function getAdminOperationsDashboard() {
 
   return {
     paidOrders,
+    paidWebOrders,
+    paidAppOrders,
+    testOrders,
     pendingOrders,
     activeEntitlements,
     startedAnalyses,
@@ -76,6 +102,8 @@ export async function getAdminOrderList(limit = 50) {
       id: orders.id,
       orderNumber: orders.orderNumber,
       status: orders.status,
+      channel: orders.channel,
+      isTest: orders.isTest,
       regularAmountKrw: orders.regularAmountKrw,
       listAmountKrw: orders.listAmountKrw,
       discountAmountKrw: orders.discountAmountKrw,
@@ -104,6 +132,91 @@ export async function getAdminOrderList(limit = 50) {
     ...row,
     customerEmailMasked: maskCommerceEmailForAdmin(row.customerEmailEncrypted),
   }));
+}
+
+/**
+ * Preview 원장 확인에 필요한 최소 메타데이터만 반환한다. 이메일·문의·PDF·분석·공유
+ * 원문과 결제 provider payload는 절대로 선택하지 않는다.
+ */
+export async function getPreviewReadOnlyVerificationSnapshot() {
+  if (!isPreviewReadOnlyVerificationEnabled()) {
+    return previewVerificationUnavailableResult();
+  }
+
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+
+  const [testOrderRows, outboxRows] = await Promise.all([
+    db
+      .select({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        status: orders.status,
+        channel: orders.channel,
+        createdAt: orders.createdAt,
+        paidAt: orders.paidAt,
+        customerEmailEncrypted: customers.emailEncrypted,
+        productCode: orderItems.productCodeSnapshot,
+        productName: orderItems.productNameSnapshot,
+        paymentStatus: paymentTransactions.status,
+        entitlementStatus: entitlements.status,
+      })
+      .from(orders)
+      .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+      .leftJoin(customers, eq(customers.id, orders.customerId))
+      .leftJoin(paymentTransactions, eq(paymentTransactions.orderId, orders.id))
+      .leftJoin(entitlements, eq(entitlements.orderItemId, orderItems.id))
+      .where(eq(orders.isTest, true))
+      .orderBy(desc(orders.createdAt))
+      .limit(20),
+    db
+      .select({
+        id: emailOutbox.id,
+        purpose: emailOutbox.purpose,
+        status: emailOutbox.status,
+        attemptCount: emailOutbox.attemptCount,
+        lastErrorCode: emailOutbox.lastErrorCode,
+        sentAt: emailOutbox.sentAt,
+        createdAt: emailOutbox.createdAt,
+        accountLinkChallengeId: emailOutbox.accountLinkChallengeId,
+        supportTicketId: emailOutbox.supportTicketId,
+        toEmailEncrypted: emailOutbox.toEmailEncrypted,
+      })
+      .from(emailOutbox)
+      .where(inArray(emailOutbox.purpose, ["account_link", "support_notification"]))
+      .orderBy(desc(emailOutbox.createdAt))
+      .limit(20),
+  ]);
+
+  return {
+    available: true as const,
+    reason: null,
+    testOrders: testOrderRows.map((row) => ({
+      id: row.id,
+      orderNumber: row.orderNumber,
+      status: row.status,
+      channel: row.channel,
+      createdAt: row.createdAt,
+      paidAt: row.paidAt,
+      productCode: row.productCode,
+      productName: row.productName,
+      paymentStatus: row.paymentStatus,
+      entitlementStatus: row.entitlementStatus,
+      customerEmailMasked: maskCommerceEmailForAdmin(row.customerEmailEncrypted),
+    })),
+    outbox: outboxRows.map((row) => ({
+      id: row.id,
+      purpose: row.purpose,
+      status: row.status,
+      attemptCount: row.attemptCount,
+      lastErrorCode: row.lastErrorCode,
+      sentAt: row.sentAt,
+      createdAt: row.createdAt,
+      accountLinkChallengeId: row.accountLinkChallengeId,
+      supportTicketId: row.supportTicketId,
+      recipientEmailMasked: maskCommerceEmailForAdmin(row.toEmailEncrypted),
+    })),
+  };
 }
 
 export async function getAdminCustomerList(limit = 50) {
@@ -189,6 +302,82 @@ export async function getAdminCustomerDetail(customerId: number) {
   };
 }
 
+export async function getAdminSupportTicketList(limit = 100) {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const rows = await db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt)).limit(Math.min(Math.max(limit, 1), 200));
+  return rows.map((ticket) => {
+    let message = "보호된 문의 내용";
+    try {
+      message = decryptCommerceValue(ticket.messageEncrypted);
+    } catch {
+      // 복호화 실패 시에도 관리자 목록은 메타데이터만 표시한다.
+    }
+    return {
+      id: ticket.id,
+      userId: ticket.userId,
+      nameMasked: maskCommerceNameForAdmin(ticket.contactNameEncrypted),
+      emailMasked: maskCommerceEmailForAdmin(ticket.contactEmailEncrypted),
+      inquiryType: ticket.inquiryType,
+      subject: ticket.subject,
+      message,
+      status: ticket.status,
+      createdAt: ticket.createdAt,
+      respondedAt: ticket.respondedAt,
+    };
+  });
+}
+
+export async function updateAdminSupportTicketStatus(input: {
+  id: number;
+  status: "received" | "reviewing" | "answered";
+  adminUserId: number | null;
+  auditActor: AdminAuditActor;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const rows = await db.select().from(supportTickets).where(eq(supportTickets.id, input.id)).limit(1);
+  const before = rows[0];
+  if (!before) throw new Error("SUPPORT_TICKET_NOT_FOUND");
+  if (!canTransitionSupportTicketStatus(before.status, input.status)) throw new Error("SUPPORT_TICKET_STATUS_TRANSITION_INVALID");
+  const now = new Date();
+  const after = {
+    status: input.status,
+    respondedAt: input.status === "answered" ? now : before.respondedAt,
+    closedAt: input.status === "answered" ? now : before.closedAt,
+  };
+  await db.update(supportTickets).set(after).where(eq(supportTickets.id, input.id));
+  await db.insert(adminAuditLogs).values({
+    adminUserId: input.adminUserId,
+    action: "support_ticket_status_updated",
+    entityType: "support_ticket",
+    entityId: String(input.id),
+    beforeJson: JSON.stringify({ status: before.status, auditActor: input.auditActor.subject }),
+    afterJson: JSON.stringify({ status: after.status, auditActor: input.auditActor.subject }),
+  });
+  return { success: true } as const;
+}
+
+export async function getAdminCouponOverview(limit = 100) {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const [couponRows, redemptionRows] = await Promise.all([
+    db.select().from(coupons).orderBy(desc(coupons.createdAt)).limit(Math.min(Math.max(limit, 1), 200)),
+    db.select({ couponId: couponRedemptions.couponId, state: couponRedemptions.state }).from(couponRedemptions).limit(1000),
+  ]);
+  return couponRows.map((coupon) => ({
+    id: coupon.id,
+    code: coupon.code,
+    discountType: coupon.discountType,
+    discountValue: coupon.discountValue,
+    status: coupon.status,
+    startsAt: coupon.startsAt,
+    endsAt: coupon.endsAt,
+    redemptionCount: redemptionRows.filter((row) => row.couponId === coupon.id && row.state === "consumed").length,
+    reservedCount: redemptionRows.filter((row) => row.couponId === coupon.id && row.state === "reserved").length,
+  }));
+}
+
 export async function getAdminLegacyPaymentRecords(limit = 100) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -203,7 +392,8 @@ export async function updateAdminLegacyPaymentStatus(input: {
   id: number;
   status: "pending" | "confirmed" | "rejected";
   memo?: string;
-  adminUserId: number;
+  adminUserId: number | null;
+  auditActor: AdminAuditActor;
 }) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -221,8 +411,8 @@ export async function updateAdminLegacyPaymentStatus(input: {
     action: "legacy_payment_status_updated",
     entityType: "payment_record",
     entityId: String(input.id),
-    beforeJson: JSON.stringify({ status: before.status, memo: before.memo }),
-    afterJson: JSON.stringify(after),
+    beforeJson: JSON.stringify({ status: before.status, memo: before.memo, auditActor: input.auditActor.subject }),
+    afterJson: JSON.stringify({ ...after, auditActor: input.auditActor.subject }),
   });
   return { success: true } as const;
 }
@@ -233,7 +423,7 @@ export async function getAdminReviews(limit = 100) {
   return db.select().from(reviews).orderBy(desc(reviews.createdAt)).limit(Math.min(Math.max(limit, 1), 200));
 }
 
-export async function deleteAdminReview(input: { id: number; adminUserId: number }) {
+export async function deleteAdminReview(input: { id: number; adminUserId: number | null; auditActor: AdminAuditActor }) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
   const rows = await db.select().from(reviews).where(eq(reviews.id, input.id)).limit(1);
@@ -245,7 +435,7 @@ export async function deleteAdminReview(input: { id: number; adminUserId: number
     action: "review_deleted",
     entityType: "review",
     entityId: String(input.id),
-    beforeJson: JSON.stringify({ rating: before.rating, nickname: before.nickname }),
+    beforeJson: JSON.stringify({ rating: before.rating, nickname: before.nickname, auditActor: input.auditActor.subject }),
   });
   return { success: true } as const;
 }

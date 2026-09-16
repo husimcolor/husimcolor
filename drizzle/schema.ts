@@ -176,6 +176,8 @@ export const accountLinkChallenges = mysqlTable(
     userId: int("userId").notNull(),
     targetEmailHash: varchar("targetEmailHash", { length: 128 }).notNull(),
     codeHash: varchar("codeHash", { length: 128 }).notNull(),
+    /** 재시도 가능한 Outbox 발송을 위해 서버 전용 키로 암호화한 단발성 인증코드다. */
+    codeEncrypted: text("codeEncrypted"),
     purpose: mysqlEnum("purpose", ["claim_guest_commerce"]).notNull(),
     status: mysqlEnum("status", ["pending", "verified", "expired", "cancelled"])
       .notNull()
@@ -254,6 +256,10 @@ export const orders = mysqlTable(
     ])
       .notNull()
       .default("pending"),
+    /** 주문이 시작된 고객 접점. 과거 주문은 app 기본값으로 보존한다. */
+    channel: mysqlEnum("channel", ["app", "web"]).notNull().default("app"),
+    /** Preview·Toss 테스트 주문은 매출 통계에서 분리한다. */
+    isTest: boolean("isTest").notNull().default(false),
     currency: varchar("currency", { length: 3 }).notNull().default("KRW"),
     regularAmountKrw: int("regularAmountKrw").notNull().default(0),
     listAmountKrw: int("listAmountKrw").notNull(),
@@ -271,6 +277,7 @@ export const orders = mysqlTable(
     index("orders_user_status_idx").on(table.userId, table.status),
     index("orders_customer_status_idx").on(table.customerId, table.status),
     index("orders_guest_status_idx").on(table.guestEmailHash, table.status),
+    index("orders_channel_test_status_idx").on(table.channel, table.isTest, table.status),
   ],
 );
 
@@ -508,7 +515,9 @@ export const emailOutbox = mysqlTable(
     customerId: int("customerId"),
     orderId: int("orderId"),
     privateDocumentId: int("privateDocumentId"),
-    purpose: mysqlEnum("purpose", ["account_link", "analysis_result_pdf"]).notNull(),
+    accountLinkChallengeId: int("accountLinkChallengeId"),
+    supportTicketId: int("supportTicketId"),
+    purpose: mysqlEnum("purpose", ["account_link", "analysis_result_pdf", "support_notification"]).notNull(),
     toEmailHash: varchar("toEmailHash", { length: 128 }).notNull(),
     toEmailEncrypted: text("toEmailEncrypted").notNull(),
     status: mysqlEnum("status", ["queued", "sending", "sent", "failed", "cancelled"])
@@ -526,11 +535,36 @@ export const emailOutbox = mysqlTable(
     index("email_outbox_status_attempt_idx").on(table.status, table.nextAttemptAt),
     index("email_outbox_user_idx").on(table.userId),
     index("email_outbox_document_idx").on(table.privateDocumentId),
+    index("email_outbox_account_link_challenge_idx").on(table.accountLinkChallengeId),
+    index("email_outbox_support_ticket_idx").on(table.supportTicketId),
     uniqueIndex("email_outbox_document_purpose_unique").on(table.privateDocumentId, table.purpose),
   ],
 );
 
 export type EmailOutboxItem = typeof emailOutbox.$inferSelect;
+
+/** 고객 문의 본문은 암호화해 보관하고, 알림 발송은 공통 Outbox로 처리한다. */
+export const supportTickets = mysqlTable(
+  "support_tickets",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId"),
+    contactNameEncrypted: text("contactNameEncrypted"),
+    contactEmailHash: varchar("contactEmailHash", { length: 128 }).notNull(),
+    contactEmailEncrypted: text("contactEmailEncrypted").notNull(),
+    inquiryType: mysqlEnum("inquiryType", ["payment_refund", "analysis_result", "pdf_email", "coaching_booking", "other"])
+      .notNull()
+      .default("other"),
+    subject: varchar("subject", { length: 160 }).notNull(),
+    messageEncrypted: text("messageEncrypted").notNull(),
+    status: mysqlEnum("status", ["received", "reviewing", "answered"]).notNull().default("received"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    respondedAt: timestamp("respondedAt"),
+    closedAt: timestamp("closedAt"),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => [index("support_tickets_user_status_idx").on(table.userId, table.status)],
+);
 
 /** 향후 홈페이지 코칭의 전액 결제 주문을 일정·진행 상태와 같은 user_id에 연결한다. */
 export const coachingBookings = mysqlTable(

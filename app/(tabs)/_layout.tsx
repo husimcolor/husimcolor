@@ -83,6 +83,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="my-page"
+        options={{
+          title: "마이페이지",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="admin"
         options={{
           title: "관리자",
