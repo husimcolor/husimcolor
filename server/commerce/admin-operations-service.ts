@@ -301,7 +301,7 @@ export async function updateAdminLegacyPaymentStatus(input: {
   id: number;
   status: "pending" | "confirmed" | "rejected";
   memo?: string;
-  adminUserId: number;
+  adminUserId: number | null;
 }) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
