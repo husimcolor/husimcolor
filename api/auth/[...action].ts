@@ -16,5 +16,12 @@ registerKakaoOAuthRoutes(app);
 registerLegacyAdminRoutes(app);
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
+  const action = req.query.action;
+  const requestUrl = req.url ?? "";
+  if (!requestUrl.startsWith("/api/auth/") && Array.isArray(action) && action.length > 0) {
+    const queryStart = requestUrl.indexOf("?");
+    const search = queryStart >= 0 ? requestUrl.slice(queryStart) : "";
+    req.url = `/api/auth/${action.join("/")}${search}`;
+  }
   return app(req, res);
 }
