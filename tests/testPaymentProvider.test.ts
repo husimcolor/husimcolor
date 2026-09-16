@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TestPaymentService } from "../server/commerce/test-payment";
 import { decryptCommerceEmail } from "../server/commerce/crypto";
 import { isTestPaymentEnabled } from "../server/commerce/order-service";
@@ -6,6 +6,15 @@ import { isTestPaymentEnabled } from "../server/commerce/order-service";
 function testKey(label: string) {
   return `${label}-000000000000000000000000`;
 }
+
+beforeEach(() => {
+  vi.stubEnv("COMMERCE_EMAIL_HASH_SECRET", "test-commerce-email-hash-secret-000000000000000000000000");
+  vi.stubEnv("COMMERCE_EMAIL_ENCRYPTION_KEY", Buffer.alloc(32, 7).toString("base64"));
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("TestPaymentService", () => {
   it("cannot expose the database-backed test payment endpoint in production", () => {
