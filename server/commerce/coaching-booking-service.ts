@@ -2,6 +2,7 @@ import { desc, eq } from "drizzle-orm";
 
 import { adminAuditLogs, coachingBookingEvents, coachingBookings } from "../../drizzle/schema";
 import { getDb } from "../db";
+import type { AdminAuditActor } from "./admin-audit-actor";
 import { encryptCommerceValue } from "./crypto";
 
 export type CoachingBookingStatus =
@@ -46,6 +47,7 @@ export async function updateAdminCoachingBooking(input: {
   internalNote?: string;
   cancelReason?: string;
   adminUserId: number | null;
+  auditActor: AdminAuditActor;
 }) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -88,6 +90,7 @@ export async function updateAdminCoachingBooking(input: {
         sessionMode: input.sessionMode ?? null,
         hasInternalNote: input.internalNote !== undefined,
         cancelReason: input.cancelReason ?? null,
+        auditActor: input.auditActor.subject,
       })),
     });
     await tx.insert(adminAuditLogs).values({
@@ -95,8 +98,8 @@ export async function updateAdminCoachingBooking(input: {
       action: "coaching_booking_updated",
       entityType: "coaching_booking",
       entityId: String(input.bookingId),
-      beforeJson: JSON.stringify({ status: before.status, scheduledAt: before.scheduledAt }),
-      afterJson: JSON.stringify({ status: input.status, scheduledAt: input.scheduledAt ?? before.scheduledAt }),
+      beforeJson: JSON.stringify({ status: before.status, scheduledAt: before.scheduledAt, auditActor: input.auditActor.subject }),
+      afterJson: JSON.stringify({ status: input.status, scheduledAt: input.scheduledAt ?? before.scheduledAt, auditActor: input.auditActor.subject }),
     });
 
     const updated = await tx.select().from(coachingBookings).where(eq(coachingBookings.id, input.bookingId)).limit(1);

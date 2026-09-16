@@ -18,6 +18,7 @@ import {
   supportTickets,
 } from "../../drizzle/schema";
 import { getDb } from "../db";
+import type { AdminAuditActor } from "./admin-audit-actor";
 import { decryptCommerceEmail, decryptCommerceValue } from "./crypto";
 import { canTransitionSupportTicketStatus } from "./member-portal-contract";
 import {
@@ -331,6 +332,7 @@ export async function updateAdminSupportTicketStatus(input: {
   id: number;
   status: "received" | "reviewing" | "answered";
   adminUserId: number | null;
+  auditActor: AdminAuditActor;
 }) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -350,8 +352,8 @@ export async function updateAdminSupportTicketStatus(input: {
     action: "support_ticket_status_updated",
     entityType: "support_ticket",
     entityId: String(input.id),
-    beforeJson: JSON.stringify({ status: before.status }),
-    afterJson: JSON.stringify({ status: after.status }),
+    beforeJson: JSON.stringify({ status: before.status, auditActor: input.auditActor.subject }),
+    afterJson: JSON.stringify({ status: after.status, auditActor: input.auditActor.subject }),
   });
   return { success: true } as const;
 }
@@ -391,6 +393,7 @@ export async function updateAdminLegacyPaymentStatus(input: {
   status: "pending" | "confirmed" | "rejected";
   memo?: string;
   adminUserId: number | null;
+  auditActor: AdminAuditActor;
 }) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -408,8 +411,8 @@ export async function updateAdminLegacyPaymentStatus(input: {
     action: "legacy_payment_status_updated",
     entityType: "payment_record",
     entityId: String(input.id),
-    beforeJson: JSON.stringify({ status: before.status, memo: before.memo }),
-    afterJson: JSON.stringify(after),
+    beforeJson: JSON.stringify({ status: before.status, memo: before.memo, auditActor: input.auditActor.subject }),
+    afterJson: JSON.stringify({ ...after, auditActor: input.auditActor.subject }),
   });
   return { success: true } as const;
 }
@@ -420,7 +423,7 @@ export async function getAdminReviews(limit = 100) {
   return db.select().from(reviews).orderBy(desc(reviews.createdAt)).limit(Math.min(Math.max(limit, 1), 200));
 }
 
-export async function deleteAdminReview(input: { id: number; adminUserId: number | null }) {
+export async function deleteAdminReview(input: { id: number; adminUserId: number | null; auditActor: AdminAuditActor }) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
   const rows = await db.select().from(reviews).where(eq(reviews.id, input.id)).limit(1);
@@ -432,7 +435,7 @@ export async function deleteAdminReview(input: { id: number; adminUserId: number
     action: "review_deleted",
     entityType: "review",
     entityId: String(input.id),
-    beforeJson: JSON.stringify({ rating: before.rating, nickname: before.nickname }),
+    beforeJson: JSON.stringify({ rating: before.rating, nickname: before.nickname, auditActor: input.auditActor.subject }),
   });
   return { success: true } as const;
 }
