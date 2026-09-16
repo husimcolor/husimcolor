@@ -31,6 +31,7 @@ import {
   getRestorableGuestCommerceClaim,
   getCommonAccountSnapshot,
   getMemberCommerceDashboard,
+  getMemberPrivateDocumentDownload,
 } from "./commerce/account-service";
 import { isKakaoLoginEnabled } from "./_core/kakao-oauth";
 import { createSupportInquiry } from "./commerce/support-service";
@@ -44,7 +45,10 @@ import {
   getAdminOrderList,
   getPreviewReadOnlyVerificationSnapshot,
   getAdminReviews,
+  getAdminSupportTicketList,
+  getAdminCouponOverview,
   updateAdminLegacyPaymentStatus,
+  updateAdminSupportTicketStatus,
 } from "./commerce/admin-operations-service";
 import { getAdminCoachingBookingEvents, updateAdminCoachingBooking } from "./commerce/coaching-booking-service";
 
@@ -85,7 +89,13 @@ export const appRouter = router({
     health: publicProcedure.query(() => getCommerceEmailProtectionStatus()),
     support: router({
       submitInquiry: protectedProcedure
-        .input(z.object({ email: z.string().email().max(320), subject: z.string().trim().min(2).max(160), message: z.string().trim().min(10).max(4000) }))
+        .input(z.object({
+          name: z.string().trim().min(1).max(80),
+          email: z.string().email().max(320),
+          inquiryType: z.enum(["payment_refund", "analysis_result", "pdf_email", "coaching_booking", "other"]),
+          subject: z.string().trim().min(2).max(160),
+          message: z.string().trim().min(10).max(4000),
+        }))
         .mutation(async ({ ctx, input }) => {
           const inquiry = await createSupportInquiry({ user: ctx.user, ...input });
           const { deliverSupportNotificationOutboxItem } = await import("./commerce/email-outbox-service");
@@ -156,6 +166,9 @@ export const appRouter = router({
         await ensureCommonAccountForAuthenticatedUser(ctx.user);
         return getMemberCommerceDashboard(ctx.user);
       }),
+      downloadPrivateDocument: protectedProcedure
+        .input(z.object({ documentId: z.number().int().positive() }))
+        .mutation(({ ctx, input }) => getMemberPrivateDocumentDownload(ctx.user, input.documentId)),
       requestGuestClaim: protectedProcedure
         .input(z.object({ email: z.string().email().max(320) }))
         .mutation(async ({ ctx, input }) => {
@@ -252,6 +265,15 @@ export const appRouter = router({
     customers: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminCustomerList(input.limit)),
+    supportTickets: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
+      .query(({ input }) => getAdminSupportTicketList(input.limit)),
+    updateSupportTicket: adminProcedure
+      .input(z.object({ id: z.number().int().positive(), status: z.enum(["received", "reviewing", "answered"]) }))
+      .mutation(({ input, ctx }) => updateAdminSupportTicketStatus({ ...input, adminUserId: ctx.user?.id ?? null })),
+    coupons: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
+      .query(({ input }) => getAdminCouponOverview(input.limit)),
     customerDetail: adminProcedure
       .input(z.object({ customerId: z.number().int().positive() }))
       .query(({ input }) => getAdminCustomerDetail(input.customerId)),
