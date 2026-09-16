@@ -11,7 +11,7 @@
     "api/couple-pdf-report.ts": {
       "maxDuration": 30,
       "includeFiles": "server/assets/HusimPdfKorean.ttf"
-    },
+    }
   },
   "rewrites": [
     { "source": "/api/trpc/:path*", "destination": "/api/trpc/[...trpc]" },
