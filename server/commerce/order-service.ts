@@ -24,6 +24,7 @@ import {
   getTossTestClientConfig,
   isTossTestPaymentEnabled,
 } from "./toss-test-provider";
+import { isExplicitTestPaymentRuntime } from "./test-runtime";
 import {
   consumeCouponReservation,
   releaseCouponReservation,
@@ -93,7 +94,7 @@ function asCheckoutResponse(row: {
 }
 
 export function isTestPaymentEnabled(): boolean {
-  return process.env.NODE_ENV !== "production" && process.env.COMMERCE_TEST_MODE !== "false";
+  return isExplicitTestPaymentRuntime();
 }
 
 /**
@@ -106,6 +107,7 @@ async function createCheckoutForProvider(input: {
   email: string;
   idempotencyKey: string;
   couponCode?: string;
+  channel?: "app" | "web";
   userId?: number;
   authenticatedEmail?: string | null;
 }, provider: "test" | "toss_pg"): Promise<CheckoutResponse> {
@@ -124,6 +126,8 @@ async function createCheckoutForProvider(input: {
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
   const email = assertCheckoutEmail(input.email);
   const emailHash = hashCommerceEmail(email);
+  const channel = input.channel === "web" ? "web" : "app";
+  const isTestOrder = provider === "test" || provider === "toss_pg";
   const now = new Date();
 
   return (db as any).transaction(async (tx: any) => {
@@ -202,6 +206,8 @@ async function createCheckoutForProvider(input: {
       userId: linkedUserId,
       guestEmailHash: emailHash,
       status: "pending",
+      channel,
+      isTest: isTestOrder,
       regularAmountKrw: price.regularAmountKrw || price.amountKrw,
       listAmountKrw: price.amountKrw,
       discountAmountKrw: 0,
@@ -334,6 +340,7 @@ export async function createTestCheckout(input: {
   email: string;
   idempotencyKey: string;
   couponCode?: string;
+  channel?: "app" | "web";
   userId?: number;
   authenticatedEmail?: string | null;
 }): Promise<CheckoutResponse> {
@@ -345,6 +352,7 @@ export async function createTossTestCheckout(input: {
   email: string;
   idempotencyKey: string;
   couponCode?: string;
+  channel?: "app" | "web";
   userId?: number;
   authenticatedEmail?: string | null;
 }): Promise<CheckoutResponse & { tossClientKey: string }> {

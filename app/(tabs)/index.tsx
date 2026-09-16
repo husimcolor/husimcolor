@@ -249,6 +249,14 @@ export default function HomeScreen() {
          </Animated.View>
       </View>
 
+      <TouchableOpacity
+        onPress={() => router.push('/(tabs)/my-page' as any)}
+        activeOpacity={0.7}
+        style={styles.myPageLink}
+      >
+        <Text style={[styles.myPageLinkText, { color: colors.primary }]}>내 분석 · 마이페이지</Text>
+      </TouchableOpacity>
+
       {/* 관리자 링크 - 하단 */}
       <TouchableOpacity
         onPress={() => router.push('/(tabs)/admin' as any)}
@@ -444,6 +452,15 @@ const styles = StyleSheet.create({
   },
   preparingServiceCta: {
     color: '#8B5D2E',
+  },
+  myPageLink: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  myPageLinkText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
   adminLink: {
     alignSelf: 'center',

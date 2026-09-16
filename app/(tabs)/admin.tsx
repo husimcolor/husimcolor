@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,14 +13,14 @@ import {
 import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
-import { startOAuthLogin } from "@/constants/oauth";
+import { getApiBaseUrl, startOAuthLogin } from "@/constants/oauth";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 
-type Tab = "운영" | "주문" | "고객" | "PDF·메일" | "예약" | "과거 신청" | "후기";
+type Tab = "운영" | "주문" | "고객" | "PDF·메일" | "예약" | "과거 신청" | "후기" | "Preview 검증";
 type LegacyStatus = "pending" | "confirmed" | "rejected";
 
-const tabs: Tab[] = ["운영", "주문", "고객", "PDF·메일", "예약", "과거 신청", "후기"];
+const tabs: Tab[] = ["운영", "주문", "고객", "PDF·메일", "예약", "과거 신청", "후기", "Preview 검증"];
 const bookingLabels: Record<string, string> = {
   pending_schedule: "일정 대기", change_requested: "변경 요청", scheduled: "예약 확정",
   completed: "완료", cancelled: "취소", no_show: "노쇼",
@@ -58,14 +58,46 @@ export default function AdminScreen() {
   const [memo, setMemo] = useState<Record<number, string>>({});
   const [schedule, setSchedule] = useState<Record<number, string>>({});
   const [refreshing, setRefreshing] = useState(false);
+  const [legacyAdmin, setLegacyAdmin] = useState(false);
+  const [legacyLoading, setLegacyLoading] = useState(true);
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+  const apiBaseUrl = getApiBaseUrl();
+
+  const refreshLegacySession = async () => {
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/auth/legacy-admin-session`, { credentials: "include" });
+      const payload = await response.json() as { authenticated?: boolean };
+      setLegacyAdmin(payload.authenticated === true);
+    } catch { setLegacyAdmin(false); } finally { setLegacyLoading(false); }
+  };
+
+  useEffect(() => { void refreshLegacySession(); }, []);
+
+  const loginWithLegacyPassword = async () => {
+    setPasswordError(false);
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/auth/legacy-admin-login`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
+      const payload = await response.json() as { authenticated?: boolean };
+      if (response.ok && payload.authenticated) { setLegacyAdmin(true); setPassword(""); } else { setPasswordError(true); setPassword(""); }
+    } catch { setPasswordError(true); }
+  };
+
+  const logoutLegacyAdmin = async () => {
+    await fetch(`${apiBaseUrl}/api/auth/legacy-admin-logout`, { method: "POST", credentials: "include" });
+    setLegacyAdmin(false);
+    setPassword("");
+  };
 
   const auth = trpc.auth.me.useQuery();
   const isAdmin = auth.data?.role === "admin";
-  const secured = { enabled: isAdmin, retry: false };
+  const hasAdminAccess = isAdmin || legacyAdmin;
+  const secured = { enabled: hasAdminAccess, retry: false };
   const dashboard = trpc.admin.dashboard.useQuery(undefined, secured);
   const orders = trpc.admin.orders.useQuery({ limit: 50 }, secured);
+  const previewVerification = trpc.admin.previewVerification.useQuery(undefined, secured);
   const customers = trpc.admin.customers.useQuery({ limit: 50 }, secured);
-  const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: isAdmin && customerId !== null });
+  const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: hasAdminAccess && customerId !== null });
   const delivery = trpc.commerce.adminDelivery.list.useQuery({ limit: 50 }, secured);
   const bookings = trpc.admin.coachingBookings.useQuery({ limit: 50 }, secured);
   const legacy = trpc.admin.legacyPayments.useQuery({ limit: 100 }, secured);
@@ -80,7 +112,7 @@ export default function AdminScreen() {
 
   const refresh = async () => {
     setRefreshing(true);
-    await Promise.all([auth.refetch(), dashboard.refetch(), orders.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
+    await Promise.all([auth.refetch(), dashboard.refetch(), orders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
     setRefreshing(false);
   };
   const updatePayment = (id: number, status: LegacyStatus) => Alert.alert("과거 신청 상태", `“${legacyLabels[status]}”으로 변경하시겠습니까?`, [
@@ -98,19 +130,15 @@ export default function AdminScreen() {
     ]);
   };
 
-  if (auth.isLoading) return <ScreenContainer><View style={styles.center}><ActivityIndicator color="#3f7b52" /></View></ScreenContainer>;
-  if (!auth.data) return (
+  if (auth.isLoading || legacyLoading) return <ScreenContainer><View style={styles.center}><ActivityIndicator color="#3f7b52" /></View></ScreenContainer>;
+  if (!hasAdminAccess) return (
     <ScreenContainer><View style={styles.center}>
-      <Text style={[styles.deniedTitle, { color: colors.foreground }]}>운영자 로그인 필요</Text>
-      <Text style={[styles.deniedBody, { color: colors.muted }]}>통합 관리자는 서버에 관리자 역할이 있는 운영자 계정에서만 열립니다.</Text>
-      <TouchableOpacity style={styles.login} onPress={() => { void startOAuthLogin(); }}><Text style={styles.loginText}>운영자 로그인</Text></TouchableOpacity>
-      <TouchableOpacity style={styles.outline} onPress={() => router.back()}><Text style={styles.outlineText}>돌아가기</Text></TouchableOpacity>
-    </View></ScreenContainer>
-  );
-  if (!isAdmin) return (
-    <ScreenContainer><View style={styles.center}>
-      <Text style={[styles.deniedTitle, { color: colors.foreground }]}>접근 권한이 없습니다</Text>
-      <Text style={[styles.deniedBody, { color: colors.muted }]}>이 계정에는 통합 관리자 역할이 설정되어 있지 않습니다.</Text>
+      <Text style={[styles.deniedTitle, { color: colors.foreground }]}>기존 관리자 로그인</Text>
+      <Text style={[styles.deniedBody, { color: colors.muted }]}>로고 5회 터치로 열리는 기존 관리자 비밀번호를 입력해 주세요.</Text>
+      <TextInput value={password} onChangeText={(value) => { setPassword(value); setPasswordError(false); }} onSubmitEditing={() => { void loginWithLegacyPassword(); }} placeholder="관리자 비밀번호" placeholderTextColor={colors.muted} secureTextEntry autoFocus style={[styles.input, styles.passwordInput, { color: colors.foreground, borderColor: passwordError ? "#b5584f" : colors.border, backgroundColor: colors.background }]} />
+      {passwordError && <Text style={styles.passwordError}>비밀번호가 올바르지 않거나 관리자 세션을 만들 수 없습니다.</Text>}
+      <TouchableOpacity style={styles.login} onPress={() => { void loginWithLegacyPassword(); }}><Text style={styles.loginText}>비밀번호로 로그인</Text></TouchableOpacity>
+      <TouchableOpacity style={styles.outline} onPress={() => { void startOAuthLogin(); }}><Text style={styles.outlineText}>Manus OAuth 운영자 로그인</Text></TouchableOpacity>
       <TouchableOpacity style={styles.outline} onPress={() => router.back()}><Text style={styles.outlineText}>돌아가기</Text></TouchableOpacity>
     </View></ScreenContainer>
   );
@@ -120,7 +148,7 @@ export default function AdminScreen() {
       <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#3f7b52" />}>
         <View style={styles.header}>
           <View><Text style={[styles.eyebrow, { color: colors.muted }]}>HUSIMCOLOR OPERATIONS</Text><Text style={[styles.title, { color: colors.foreground }]}>통합 관리자</Text><Text style={[styles.subtitle, { color: colors.muted }]}>고객 · 주문 · 결과 · PDF · 이메일 · 예약</Text></View>
-          <TouchableOpacity style={styles.logout} onPress={() => logout.mutate()}><Text style={styles.logoutText}>로그아웃</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.logout} onPress={() => legacyAdmin ? void logoutLegacyAdmin() : logout.mutate()}><Text style={styles.logoutText}>로그아웃</Text></TouchableOpacity>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>{tabs.map((item) => <TouchableOpacity key={item} onPress={() => setTab(item)} style={[styles.tab, tab === item && styles.tabActive]}><Text style={[styles.tabText, tab === item && styles.tabTextActive]}>{item}</Text></TouchableOpacity>)}</ScrollView>
 
@@ -128,6 +156,9 @@ export default function AdminScreen() {
           <Text style={[styles.section, { color: colors.foreground }]}>오늘의 운영 신호</Text>
           <View style={styles.grid}>
             <Metric value={dashboard.data?.paidOrders ?? 0} label="결제 완료 주문" />
+            <Metric value={dashboard.data?.paidWebOrders ?? 0} label="홈페이지 결제 완료" color="#4d6f9f" />
+            <Metric value={dashboard.data?.paidAppOrders ?? 0} label="앱 결제 완료" color="#4d6f9f" />
+            <Metric value={dashboard.data?.testOrders ?? 0} label="테스트 주문 (매출 제외)" color="#8a7a68" />
             <Metric value={dashboard.data?.startedAnalyses ?? 0} label="검사 진행 중" color="#4d6f9f" />
             <Metric value={dashboard.data?.failedDocuments ?? 0} label="PDF 실패" color="#b5584f" />
             <Metric value={dashboard.data?.failedEmails ?? 0} label="메일 실패" color="#b5584f" />
@@ -144,7 +175,10 @@ export default function AdminScreen() {
           <Panel><Text style={styles.noticeTitle}>공개 운영 상태</Text><Text style={styles.noticeText}>유료 분석은 정식 오픈 준비중을 유지합니다. 이 화면은 분석 문구·결과·PDF·공유 내용을 수정하지 않고 운영 상태만 추적합니다.</Text></Panel>
         </>}
 
-        {tab === "주문" && <><Text style={[styles.section, { color: colors.foreground }]}>최근 주문</Text>{orders.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {dateText(item.createdAt)}</Text><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.finalAmountKrw.toLocaleString()}원 · {item.provider ?? "결제 대기"}</Text></Panel>)}</>}
+        {tab === "주문" && <><Text style={[styles.section, { color: colors.foreground }]}>최근 주문</Text>{orders.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {dateText(item.createdAt)}</Text><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.finalAmountKrw.toLocaleString()}원 · {item.provider ?? "결제 대기"} · {item.channel === "web" ? "홈페이지 유입" : "앱 유입"}{item.isTest ? " · 테스트 주문(매출 제외)" : ""}</Text></Panel>)}</>}
+
+
+        {tab === "Preview 검증" && <><Text style={[styles.section, { color: colors.foreground }]}>Preview 원장 검증</Text><Text style={[styles.helper, { color: colors.muted }]}>Preview·관리자 역할에서만 테스트 주문과 인증·문의 Outbox 상태를 마스킹하여 조회합니다. 이 화면에는 수정·재발송·다운로드 기능이 없습니다.</Text>{previewVerification.data?.available === false && <Panel><Text style={styles.noticeTitle}>Preview 환경에서만 사용할 수 있습니다</Text><Text style={styles.noticeText}>Production에서는 검증 데이터가 반환되지 않습니다.</Text></Panel>}{previewVerification.data?.available && <><Text style={[styles.section, { color: colors.foreground }]}>테스트 주문</Text>{previewVerification.data.testOrders.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {item.customerEmailMasked} · {item.channel === "web" ? "홈페이지 유입" : "앱 유입"}</Text><Text style={[styles.meta, { color: colors.muted }]}>결제 {item.paymentStatus ?? "—"} · 이용권 {item.entitlementStatus ?? "—"} · {dateText(item.createdAt)}</Text></Panel>)}{previewVerification.data.testOrders.length === 0 && <Panel><Text style={styles.noticeText}>표시할 테스트 주문이 없습니다.</Text></Panel>}<Text style={[styles.section, { color: colors.foreground }]}>인증·문의 Outbox</Text>{previewVerification.data.outbox.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.purpose === "account_link" ? "이력 연결 인증" : "고객 문의 알림"}</Text><Badge text={item.status} tone={item.status === "sent" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.recipientEmailMasked} · 시도 {item.attemptCount}회 · {dateText(item.sentAt ?? item.createdAt)}</Text>{item.lastErrorCode && <Text style={[styles.meta, { color: "#b5584f" }]}>오류 코드 {item.lastErrorCode}</Text>}</Panel>)}{previewVerification.data.outbox.length === 0 && <Panel><Text style={styles.noticeText}>표시할 인증·문의 Outbox가 없습니다.</Text></Panel>}</>}</>}
 
         {tab === "고객" && <><Text style={[styles.section, { color: colors.foreground }]}>고객·회원 연결</Text><Text style={[styles.helper, { color: colors.muted }]}>이메일은 마스킹해 표시합니다. 행을 누르면 주문·이용권·검사·문서·예약 이력 수를 볼 수 있습니다.</Text>{customers.data?.map((item) => <TouchableOpacity key={item.id} onPress={() => setCustomerId(item.id)}><Panel><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.emailMasked}</Text><Badge text={item.userId ? "회원 연결" : "비회원"} tone={item.userId ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>주문 {item.orderCount}건 · 최근 주문 {dateText(item.latestOrderAt)}</Text></Panel></TouchableOpacity>)}{customer.data && <Panel><Text style={styles.noticeTitle}>{customer.data.customer.emailMasked} 고객 흐름</Text><Text style={styles.noticeText}>주문 {customer.data.orders.length} · 이용권 {customer.data.entitlements.length} · 검사 {customer.data.analysisRuns.length} · PDF {customer.data.privateDocuments.length} · 이메일 {customer.data.emailOutbox.length} · 예약 {customer.data.coachingBookings.length}</Text></Panel>}</>}
 
@@ -173,6 +207,6 @@ const styles = StyleSheet.create({
   metric: { width: "31.8%", minHeight: 92, borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 15, alignItems: "center", justifyContent: "center", padding: 7 }, metricValue: { fontSize: 25, fontWeight: "800" }, metricLabel: { fontSize: 10, textAlign: "center", color: "#77736a", marginTop: 5 },
   panel: { borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 15, padding: 14, gap: 7 }, row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }, cardTitle: { fontSize: 14, fontWeight: "800", flexShrink: 1 }, meta: { fontSize: 11, lineHeight: 17 },
   badge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }, badgeText: { fontSize: 10, fontWeight: "800" }, noticeTitle: { color: "#3f7b52", fontSize: 14, fontWeight: "800" }, noticeText: { color: "#55705a", fontSize: 12, lineHeight: 19 },
-  action: { alignSelf: "flex-start", backgroundColor: "#3f7b52", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }, actionText: { color: "#fff", fontSize: 12, fontWeight: "800" }, input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, fontSize: 12 }, actions: { flexDirection: "row", flexWrap: "wrap", gap: 7 }, smallAction: { borderWidth: 1, borderColor: "#a9c8ae", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, smallActionText: { color: "#3f7b52", fontSize: 11, fontWeight: "800" }, dangerAction: { borderWidth: 1, borderColor: "#e3aaa3", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, dangerActionText: { color: "#b5584f", fontSize: 11, fontWeight: "800" },
+  action: { alignSelf: "flex-start", backgroundColor: "#3f7b52", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }, actionText: { color: "#fff", fontSize: 12, fontWeight: "800" }, input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, fontSize: 12 }, passwordInput: { width: "100%", maxWidth: 320 }, passwordError: { color: "#b5584f", fontSize: 12, textAlign: "center" }, actions: { flexDirection: "row", flexWrap: "wrap", gap: 7 }, smallAction: { borderWidth: 1, borderColor: "#a9c8ae", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, smallActionText: { color: "#3f7b52", fontSize: 11, fontWeight: "800" }, dangerAction: { borderWidth: 1, borderColor: "#e3aaa3", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, dangerActionText: { color: "#b5584f", fontSize: 11, fontWeight: "800" },
   expanded: { borderTopWidth: 1, borderTopColor: "#ded9ce", paddingTop: 10, gap: 8 }, delete: { color: "#b5584f", fontSize: 11, fontWeight: "800" }, review: { fontSize: 12, lineHeight: 18 },
 });

@@ -66,9 +66,10 @@ async function loadTossPaymentsScript(): Promise<(clientKey: string) => TossPaym
 
 export default function CommerceCheckoutScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ product?: string | string[]; relationType?: string | string[]; paymentKey?: string | string[]; orderId?: string | string[]; amount?: string | string[]; code?: string | string[] }>();
+  const params = useLocalSearchParams<{ product?: string | string[]; relationType?: string | string[]; paymentKey?: string | string[]; orderId?: string | string[]; amount?: string | string[]; code?: string | string[]; channel?: string | string[] }>();
   const productCode = getSingleParam(params.product);
   const relationType = getSingleParam(params.relationType);
+  const channel = getSingleParam(params.channel) === "web" ? "web" : "app";
   const paymentKey = getSingleParam(params.paymentKey);
   const orderNumber = getSingleParam(params.orderId);
   const amount = Number(getSingleParam(params.amount));
@@ -125,6 +126,7 @@ export default function CommerceCheckoutScreen() {
         email: email.trim(),
         idempotencyKey: getIdempotencyKey(),
         couponCode: couponCode.trim() || undefined,
+        channel,
       });
       if (checkout.status === "paid") {
         if (!checkout.startGrant) throw new Error("COUPON_GRANT_NOT_ISSUED");
@@ -138,6 +140,7 @@ export default function CommerceCheckoutScreen() {
       const baseParams = new URLSearchParams({
         product: productCode,
         ...(relationType ? { relationType } : {}),
+        ...(channel === "web" ? { channel } : {}),
       }).toString();
       await payment.requestPayment({
         method: "CARD",

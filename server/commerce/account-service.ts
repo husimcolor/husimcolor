@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 
 import {
   accountIdentities,
@@ -9,21 +9,28 @@ import {
   customers,
   emailOutbox,
   entitlements,
+  orderItems,
   orders,
+  products,
+  coachingBookings,
 } from "../../drizzle/schema";
 import type { User } from "../../drizzle/schema";
 import { getDb } from "../db";
 import {
   encryptCommerceEmail,
+  encryptCommerceValue,
   hashCommerceEmail,
   hashCommerceValue,
   normalizeCommerceEmail,
 } from "./crypto";
+import { isRestorableGuestClaim } from "./guest-claim-state";
+import { ensurePreviewAccountLinkOutboxSchema } from "./preview-account-link-schema";
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
 const MAX_CLAIM_ATTEMPTS = 5;
 
 type AuthenticatedMember = Pick<User, "id" | "openId" | "email">;
+type IdentityProvider = "manus" | "kakao";
 
 export function canAutoLinkAuthenticatedCheckout(input: {
   checkoutEmail: string;
@@ -33,7 +40,11 @@ export function canAutoLinkAuthenticatedCheckout(input: {
   return normalizeCommerceEmail(input.checkoutEmail) === normalizeCommerceEmail(input.authenticatedEmail);
 }
 
-function accountIdentityHash(provider: "manus" | "email", subject: string): string {
+export function getNoCommerceGuestClaimResult(): { customerId: null; linkedOrders: 0 } {
+  return { customerId: null, linkedOrders: 0 };
+}
+
+function accountIdentityHash(provider: IdentityProvider | "email", subject: string): string {
   return hashCommerceValue(`${provider}:${subject.trim().toLowerCase()}`);
 }
 
@@ -50,7 +61,13 @@ async function linkCommerceRowsForCustomer(tx: any, input: { customerId: number;
  * Manus OAuth 로그인 완료 뒤 앱과 홈페이지가 동일한 users.id를 canonical user_id로 쓰게 만든다.
  * OAuth 이메일과 동일한 기존 비회원 고객만 자동 연결하며, 다른 이메일은 별도 소유권 확인을 요구한다.
  */
-export async function ensureCommonAccountForAuthenticatedUser(user: AuthenticatedMember): Promise<{
+export async function ensureCommonAccountForAuthenticatedUser(
+  user: AuthenticatedMember,
+  identity: { provider: IdentityProvider; providerSubject: string } = {
+    provider: "manus",
+    providerSubject: user.openId,
+  },
+): Promise<{
   userId: number;
   customerId: number | null;
   autoLinked: boolean;
@@ -64,8 +81,8 @@ export async function ensureCommonAccountForAuthenticatedUser(user: Authenticate
       .insert(accountIdentities)
       .values({
         userId: user.id,
-        provider: "manus",
-        providerSubjectHash: accountIdentityHash("manus", user.openId),
+        provider: identity.provider,
+        providerSubjectHash: accountIdentityHash(identity.provider, identity.providerSubject),
         emailHash: user.email ? hashCommerceEmail(user.email) : null,
         verifiedAt: now,
       })
@@ -148,8 +165,10 @@ export async function linkCheckoutCustomerToAuthenticatedUser(
 
 export async function createGuestCommerceClaim(input: { user: AuthenticatedMember; email: string }): Promise<{
   challengeId: number;
+  outboxId: number;
   expiresAt: Date;
 }> {
+  await ensurePreviewAccountLinkOutboxSchema();
   await ensureCommonAccountForAuthenticatedUser(input.user);
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -175,28 +194,59 @@ export async function createGuestCommerceClaim(input: { user: AuthenticatedMembe
       userId: input.user.id,
       targetEmailHash: emailHash,
       codeHash,
+      codeEncrypted: encryptCommerceValue(code),
       purpose: "claim_guest_commerce",
       expiresAt,
     });
     const challengeId = Number(inserted[0].insertId);
-    // result@ 발송 worker는 다음 구현 단계에서 이 outbox를 읽어 인증 코드를 전달한다.
-    await tx.insert(emailOutbox).values({
+    const outboxInsert = await tx.insert(emailOutbox).values({
       userId: input.user.id,
+      accountLinkChallengeId: challengeId,
       purpose: "account_link",
       toEmailHash: emailHash,
       toEmailEncrypted: encryptCommerceEmail(email),
       status: "queued",
       nextAttemptAt: now,
     });
-    return { challengeId, expiresAt };
+    return { challengeId, outboxId: Number(outboxInsert[0].insertId), expiresAt };
   });
+}
+
+/**
+ * 페이지 새로고침 뒤에도 기존 인증 메일을 다시 보내지 않고, 현재 사용자의 유효한 챌린지만 복구한다.
+ * 이메일·코드·암호화 원문은 반환하지 않는다.
+ */
+export async function getRestorableGuestCommerceClaim(user: AuthenticatedMember): Promise<{
+  challengeId: number;
+  expiresAt: Date;
+} | null> {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const rows = await db
+    .select({
+      id: accountLinkChallenges.id,
+      status: accountLinkChallenges.status,
+      expiresAt: accountLinkChallenges.expiresAt,
+    })
+    .from(accountLinkChallenges)
+    .where(and(
+      eq(accountLinkChallenges.userId, user.id),
+      eq(accountLinkChallenges.purpose, "claim_guest_commerce"),
+      eq(accountLinkChallenges.status, "pending"),
+      gt(accountLinkChallenges.expiresAt, new Date()),
+    ))
+    .orderBy(desc(accountLinkChallenges.createdAt))
+    .limit(1);
+  const claim = rows[0];
+  if (!claim || !isRestorableGuestClaim(claim)) return null;
+  return { challengeId: claim.id, expiresAt: claim.expiresAt };
 }
 
 export async function confirmGuestCommerceClaim(input: {
   user: AuthenticatedMember;
   challengeId: number;
   code: string;
-}): Promise<{ customerId: number; linkedOrders: number }> {
+}): Promise<{ customerId: number | null; linkedOrders: number }> {
   if (!/^\d{6}$/.test(input.code)) throw new Error("INVALID_CLAIM_CODE");
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -235,7 +285,15 @@ export async function confirmGuestCommerceClaim(input: {
       .where(eq(customers.emailHash, challenge.targetEmailHash))
       .limit(1);
     const customer = customerRows[0];
-    if (!customer) throw new Error("GUEST_COMMERCE_NOT_FOUND");
+    // 인증 대상 이메일에 기존 구매 고객이 없을 수 있다. 이 경우에도 이메일
+    // 소유권 검증 자체는 완료해야 하며, 기존 원장 행을 새로 만들거나 수정하지 않는다.
+    if (!customer) {
+      await tx
+        .update(accountLinkChallenges)
+        .set({ status: "verified", verifiedAt: now })
+        .where(eq(accountLinkChallenges.id, challenge.id));
+      return getNoCommerceGuestClaimResult();
+    }
     if (customer.userId && customer.userId !== input.user.id) throw new Error("EMAIL_ALREADY_LINKED_TO_ANOTHER_ACCOUNT");
     await tx
       .update(customers)
@@ -262,5 +320,91 @@ export async function getCommonAccountSnapshot(user: AuthenticatedMember) {
     userId: user.id,
     emailLinked: Boolean(customerRows[0]?.userId === user.id),
     customerId: customerRows[0]?.id ?? null,
+  };
+}
+
+/**
+ * 마이페이지용 최소 공통 원장 조회다. 원본 분석·PDF·결제 payload와 이메일 원문은 반환하지 않는다.
+ * 주문이 이메일 소유권 확인으로 연결된 경우에만 user_id 기준으로 표시한다.
+ */
+export async function getMemberCommerceDashboard(user: AuthenticatedMember) {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+
+  const [account, orderRows, entitlementRows, analysisRows, bookingRows] = await Promise.all([
+    getCommonAccountSnapshot(user),
+    db.select().from(orders).where(eq(orders.userId, user.id)).orderBy(desc(orders.createdAt)).limit(50),
+    db.select().from(entitlements).where(eq(entitlements.userId, user.id)).orderBy(desc(entitlements.createdAt)).limit(50),
+    db.select().from(analysisRuns).where(eq(analysisRuns.userId, user.id)).orderBy(desc(analysisRuns.startedAt)).limit(50),
+    db.select().from(coachingBookings).where(eq(coachingBookings.userId, user.id)).orderBy(desc(coachingBookings.createdAt)).limit(50),
+  ]);
+
+  const orderIds = orderRows.map((order) => order.id);
+  const itemRows = orderIds.length
+    ? await db.select().from(orderItems).where(inArray(orderItems.orderId, orderIds))
+    : [];
+  const productIds = Array.from(
+    new Set([
+      ...itemRows.map((item) => item.productId),
+      ...entitlementRows.map((item) => item.productId),
+      ...analysisRows.map((item) => item.productId),
+      ...bookingRows.map((item) => item.productId),
+    ]),
+  );
+  const productRows = productIds.length
+    ? await db.select().from(products).where(inArray(products.id, productIds))
+    : [];
+  const productNameById = new Map(productRows.map((product) => [product.id, product.name]));
+  const firstItemByOrderId = new Map<number, (typeof itemRows)[number]>();
+  itemRows.forEach((item) => {
+    if (!firstItemByOrderId.has(item.orderId)) firstItemByOrderId.set(item.orderId, item);
+  });
+
+  return {
+    account,
+    summary: {
+      orderCount: orderRows.length,
+      paidOrderCount: orderRows.filter((order) => order.status === "paid" && !order.isTest).length,
+      activeEntitlementCount: entitlementRows.filter((entitlement) => entitlement.status === "active").length,
+      completedAnalysisCount: analysisRows.filter((analysis) => analysis.status === "completed").length,
+    },
+    orders: orderRows.map((order) => {
+      const item = firstItemByOrderId.get(order.id);
+      return {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        channel: order.channel,
+        isTest: order.isTest,
+        finalAmountKrw: order.finalAmountKrw,
+        createdAt: order.createdAt,
+        paidAt: order.paidAt,
+        productName: item?.productNameSnapshot ?? "주문 상품",
+        fulfillmentType: item?.fulfillmentType ?? null,
+      };
+    }),
+    entitlements: entitlementRows.map((entitlement) => ({
+      id: entitlement.id,
+      productName: productNameById.get(entitlement.productId) ?? "분석 이용권",
+      status: entitlement.status,
+      usedCount: entitlement.usedCount,
+      usageLimit: entitlement.usageLimit,
+      validUntil: entitlement.validUntil,
+    })),
+    analyses: analysisRows.map((analysis) => ({
+      id: analysis.id,
+      productName: productNameById.get(analysis.productId) ?? "심화 분석",
+      status: analysis.status,
+      startedAt: analysis.startedAt,
+      completedAt: analysis.completedAt,
+    })),
+    coachingBookings: bookingRows.map((booking) => ({
+      id: booking.id,
+      productName: productNameById.get(booking.productId) ?? "코칭 프로그램",
+      status: booking.status,
+      sessionMode: booking.sessionMode,
+      scheduledAt: booking.scheduledAt,
+      createdAt: booking.createdAt,
+    })),
   };
 }

@@ -1,4 +1,4 @@
-import { count, desc, eq, max } from "drizzle-orm";
+import { and, count, desc, eq, inArray, max } from "drizzle-orm";
 
 import {
   adminAuditLogs,
@@ -16,6 +16,10 @@ import {
 } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { decryptCommerceEmail } from "./crypto";
+import {
+  isPreviewReadOnlyVerificationEnabled,
+  previewVerificationUnavailableResult,
+} from "./preview-admin-verification";
 
 function asCount(value: unknown): number {
   return Number(value ?? 0);
@@ -43,8 +47,11 @@ async function getCount(table: any, where?: any): Promise<number> {
 }
 
 export async function getAdminOperationsDashboard() {
-  const [paidOrders, pendingOrders, activeEntitlements, startedAnalyses, failedDocuments, failedEmails, pendingBookings, legacyPending, totalCustomers] = await Promise.all([
-    getCount(orders, eq(orders.status, "paid")),
+  const [paidOrders, paidWebOrders, paidAppOrders, testOrders, pendingOrders, activeEntitlements, startedAnalyses, failedDocuments, failedEmails, pendingBookings, legacyPending, totalCustomers] = await Promise.all([
+    getCount(orders, and(eq(orders.status, "paid"), eq(orders.isTest, false))),
+    getCount(orders, and(eq(orders.status, "paid"), eq(orders.channel, "web"), eq(orders.isTest, false))),
+    getCount(orders, and(eq(orders.status, "paid"), eq(orders.channel, "app"), eq(orders.isTest, false))),
+    getCount(orders, eq(orders.isTest, true)),
     getCount(orders, eq(orders.status, "pending")),
     getCount(entitlements, eq(entitlements.status, "active")),
     getCount(analysisRuns, eq(analysisRuns.status, "started")),
@@ -57,6 +64,9 @@ export async function getAdminOperationsDashboard() {
 
   return {
     paidOrders,
+    paidWebOrders,
+    paidAppOrders,
+    testOrders,
     pendingOrders,
     activeEntitlements,
     startedAnalyses,
@@ -76,6 +86,8 @@ export async function getAdminOrderList(limit = 50) {
       id: orders.id,
       orderNumber: orders.orderNumber,
       status: orders.status,
+      channel: orders.channel,
+      isTest: orders.isTest,
       regularAmountKrw: orders.regularAmountKrw,
       listAmountKrw: orders.listAmountKrw,
       discountAmountKrw: orders.discountAmountKrw,
@@ -104,6 +116,92 @@ export async function getAdminOrderList(limit = 50) {
     ...row,
     customerEmailMasked: maskCommerceEmailForAdmin(row.customerEmailEncrypted),
   }));
+}
+
+
+/**
+ * Preview 원장 확인에 필요한 최소 메타데이터만 반환한다. 이메일·문의·PDF·분석·공유
+ * 원문과 결제 provider payload는 절대로 선택하지 않는다.
+ */
+export async function getPreviewReadOnlyVerificationSnapshot() {
+  if (!isPreviewReadOnlyVerificationEnabled()) {
+    return previewVerificationUnavailableResult();
+  }
+
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+
+  const [testOrderRows, outboxRows] = await Promise.all([
+    db
+      .select({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        status: orders.status,
+        channel: orders.channel,
+        createdAt: orders.createdAt,
+        paidAt: orders.paidAt,
+        customerEmailEncrypted: customers.emailEncrypted,
+        productCode: orderItems.productCodeSnapshot,
+        productName: orderItems.productNameSnapshot,
+        paymentStatus: paymentTransactions.status,
+        entitlementStatus: entitlements.status,
+      })
+      .from(orders)
+      .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+      .leftJoin(customers, eq(customers.id, orders.customerId))
+      .leftJoin(paymentTransactions, eq(paymentTransactions.orderId, orders.id))
+      .leftJoin(entitlements, eq(entitlements.orderItemId, orderItems.id))
+      .where(eq(orders.isTest, true))
+      .orderBy(desc(orders.createdAt))
+      .limit(20),
+    db
+      .select({
+        id: emailOutbox.id,
+        purpose: emailOutbox.purpose,
+        status: emailOutbox.status,
+        attemptCount: emailOutbox.attemptCount,
+        lastErrorCode: emailOutbox.lastErrorCode,
+        sentAt: emailOutbox.sentAt,
+        createdAt: emailOutbox.createdAt,
+        accountLinkChallengeId: emailOutbox.accountLinkChallengeId,
+        supportTicketId: emailOutbox.supportTicketId,
+        toEmailEncrypted: emailOutbox.toEmailEncrypted,
+      })
+      .from(emailOutbox)
+      .where(inArray(emailOutbox.purpose, ["account_link", "support_notification"]))
+      .orderBy(desc(emailOutbox.createdAt))
+      .limit(20),
+  ]);
+
+  return {
+    available: true as const,
+    reason: null,
+    testOrders: testOrderRows.map((row) => ({
+      id: row.id,
+      orderNumber: row.orderNumber,
+      status: row.status,
+      channel: row.channel,
+      createdAt: row.createdAt,
+      paidAt: row.paidAt,
+      productCode: row.productCode,
+      productName: row.productName,
+      paymentStatus: row.paymentStatus,
+      entitlementStatus: row.entitlementStatus,
+      customerEmailMasked: maskCommerceEmailForAdmin(row.customerEmailEncrypted),
+    })),
+    outbox: outboxRows.map((row) => ({
+      id: row.id,
+      purpose: row.purpose,
+      status: row.status,
+      attemptCount: row.attemptCount,
+      lastErrorCode: row.lastErrorCode,
+      sentAt: row.sentAt,
+      createdAt: row.createdAt,
+      accountLinkChallengeId: row.accountLinkChallengeId,
+      supportTicketId: row.supportTicketId,
+      recipientEmailMasked: maskCommerceEmailForAdmin(row.toEmailEncrypted),
+    })),
+  };
 }
 
 export async function getAdminCustomerList(limit = 50) {
@@ -203,7 +301,7 @@ export async function updateAdminLegacyPaymentStatus(input: {
   id: number;
   status: "pending" | "confirmed" | "rejected";
   memo?: string;
-  adminUserId: number;
+  adminUserId: number | null;
 }) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
