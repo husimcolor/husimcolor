@@ -42,6 +42,7 @@ import {
   getAdminLegacyPaymentRecords,
   getAdminOperationsDashboard,
   getAdminOrderList,
+  getPreviewReadOnlyVerificationSnapshot,
   getAdminReviews,
   updateAdminLegacyPaymentStatus,
 } from "./commerce/admin-operations-service";
@@ -247,6 +248,7 @@ export const appRouter = router({
     orders: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminOrderList(input.limit)),
+    previewVerification: adminProcedure.query(() => getPreviewReadOnlyVerificationSnapshot()),
     customers: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminCustomerList(input.limit)),
