@@ -45,7 +45,7 @@ export async function updateAdminCoachingBooking(input: {
   assignedAdminUserId?: number | null;
   internalNote?: string;
   cancelReason?: string;
-  adminUserId: number;
+  adminUserId: number | null;
 }) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
