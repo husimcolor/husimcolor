@@ -13,7 +13,7 @@ import {
 import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
-import { getApiBaseUrl, startOAuthLogin } from "@/constants/oauth";
+import { getApiBaseUrl } from "@/constants/oauth";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 
@@ -97,7 +97,7 @@ export default function AdminScreen() {
   const orders = trpc.admin.orders.useQuery({ limit: 50 }, secured);
   const previewVerification = trpc.admin.previewVerification.useQuery(undefined, secured);
   const customers = trpc.admin.customers.useQuery({ limit: 50 }, secured);
-  const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: hasAdminAccess && customerId !== null });
+  const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: isAdmin && customerId !== null });
   const delivery = trpc.commerce.adminDelivery.list.useQuery({ limit: 50 }, secured);
   const bookings = trpc.admin.coachingBookings.useQuery({ limit: 50 }, secured);
   const legacy = trpc.admin.legacyPayments.useQuery({ limit: 100 }, secured);
@@ -133,12 +133,11 @@ export default function AdminScreen() {
   if (auth.isLoading || legacyLoading) return <ScreenContainer><View style={styles.center}><ActivityIndicator color="#3f7b52" /></View></ScreenContainer>;
   if (!hasAdminAccess) return (
     <ScreenContainer><View style={styles.center}>
-      <Text style={[styles.deniedTitle, { color: colors.foreground }]}>기존 관리자 로그인</Text>
-      <Text style={[styles.deniedBody, { color: colors.muted }]}>로고 5회 터치로 열리는 기존 관리자 비밀번호를 입력해 주세요.</Text>
+      <Text style={[styles.deniedTitle, { color: colors.foreground }]}>통합 관리자 로그인</Text>
+      <Text style={[styles.deniedBody, { color: colors.muted }]}>로고 5회 터치로 열리는 기존 관리자 비밀번호를 입력해 주세요. 로그인 후에는 서버 서명된 통합 관리자 세션으로 안전하게 운영 화면에 접근합니다.</Text>
       <TextInput value={password} onChangeText={(value) => { setPassword(value); setPasswordError(false); }} onSubmitEditing={() => { void loginWithLegacyPassword(); }} placeholder="관리자 비밀번호" placeholderTextColor={colors.muted} secureTextEntry autoFocus style={[styles.input, styles.passwordInput, { color: colors.foreground, borderColor: passwordError ? "#b5584f" : colors.border, backgroundColor: colors.background }]} />
       {passwordError && <Text style={styles.passwordError}>비밀번호가 올바르지 않거나 관리자 세션을 만들 수 없습니다.</Text>}
       <TouchableOpacity style={styles.login} onPress={() => { void loginWithLegacyPassword(); }}><Text style={styles.loginText}>비밀번호로 로그인</Text></TouchableOpacity>
-      <TouchableOpacity style={styles.outline} onPress={() => { void startOAuthLogin(); }}><Text style={styles.outlineText}>Manus OAuth 운영자 로그인</Text></TouchableOpacity>
       <TouchableOpacity style={styles.outline} onPress={() => router.back()}><Text style={styles.outlineText}>돌아가기</Text></TouchableOpacity>
     </View></ScreenContainer>
   );
