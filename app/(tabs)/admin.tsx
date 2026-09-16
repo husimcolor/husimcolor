@@ -99,7 +99,7 @@ export default function AdminScreen() {
   const orders = trpc.admin.orders.useQuery({ limit: 50 }, secured);
   const previewVerification = trpc.admin.previewVerification.useQuery(undefined, secured);
   const customers = trpc.admin.customers.useQuery({ limit: 50 }, secured);
-  const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: isAdmin && customerId !== null });
+  const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: hasAdminAccess && customerId !== null });
   const delivery = trpc.commerce.adminDelivery.list.useQuery({ limit: 50 }, secured);
   const bookings = trpc.admin.coachingBookings.useQuery({ limit: 50 }, secured);
   const supportTickets = trpc.admin.supportTickets.useQuery({ limit: 100 }, secured);
