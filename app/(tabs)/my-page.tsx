@@ -1,4 +1,4 @@
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 
@@ -20,6 +20,12 @@ const bookingStatus: Record<string, string> = {
   pending_schedule: "일정 확인 중", change_requested: "일정 변경 요청", scheduled: "예약 확정",
   completed: "진행 완료", cancelled: "취소", no_show: "노쇼",
 };
+const inquiryTypes = ["payment_refund", "analysis_result", "pdf_email", "coaching_booking", "other"] as const;
+type InquiryType = (typeof inquiryTypes)[number];
+const inquiryTypeLabels: Record<InquiryType, string> = {
+  payment_refund: "결제·환불", analysis_result: "검사·결과", pdf_email: "PDF·이메일", coaching_booking: "코칭예약", other: "기타",
+};
+const inquiryStatusLabels: Record<string, string> = { received: "접수", reviewing: "확인", answered: "답변완료" };
 
 function dateText(value: Date | string | null | undefined) {
   if (!value) return "—";
@@ -49,11 +55,14 @@ export default function MyPageScreen() {
   const [claimCode, setClaimCode] = useState("");
   const [claimChallengeId, setClaimChallengeId] = useState<number | null>(null);
   const [inquiryEmail, setInquiryEmail] = useState("");
+  const [inquiryName, setInquiryName] = useState("");
+  const [inquiryType, setInquiryType] = useState<InquiryType>("other");
   const [inquirySubject, setInquirySubject] = useState("");
   const [inquiryMessage, setInquiryMessage] = useState("");
   useEffect(() => {
     if (restorableClaim.data?.challengeId) setClaimChallengeId(restorableClaim.data.challengeId);
   }, [restorableClaim.data?.challengeId]);
+  useEffect(() => { if (auth.user?.name && !inquiryName) setInquiryName(auth.user.name); }, [auth.user?.name, inquiryName]);
   const requestClaim = trpc.commerce.account.requestGuestClaim.useMutation({
     onSuccess: (result) => {
       setClaimChallengeId(result.challengeId);
@@ -72,8 +81,12 @@ export default function MyPageScreen() {
     onError: () => Alert.alert("인증 실패", "인증코드가 올바르지 않거나 만료되었습니다. 다시 요청해 주세요."),
   });
   const submitInquiry = trpc.commerce.support.submitInquiry.useMutation({
-    onSuccess: () => { setInquirySubject(""); setInquiryMessage(""); Alert.alert("문의 접수", "문의가 접수되었습니다. 답변은 입력하신 이메일로 안내드립니다."); },
+    onSuccess: async () => { setInquirySubject(""); setInquiryMessage(""); await dashboard.refetch(); Alert.alert("문의 접수", "문의가 접수되었습니다. 답변은 입력하신 이메일로 안내드립니다."); },
     onError: () => Alert.alert("문의 접수 실패", "입력 내용을 확인한 뒤 다시 시도해 주세요."),
+  });
+  const downloadDocument = trpc.commerce.account.downloadPrivateDocument.useMutation({
+    onSuccess: async (result) => { await Linking.openURL(result.url); },
+    onError: () => Alert.alert("PDF를 열 수 없습니다", "보관기간이 지났거나 아직 생성 중입니다."),
   });
 
   const beginKakaoLogin = () => {
@@ -119,18 +132,28 @@ export default function MyPageScreen() {
             <View style={styles.metric}><Text style={styles.metricValue}>{data?.summary.completedAnalysisCount ?? 0}</Text><Text style={styles.metricLabel}>완료 분석</Text></View>
           </View>
           {!data?.account.emailLinked && <View style={styles.notice}><Text style={styles.noticeTitle}>이전 구매 이력 연결</Text><Text style={styles.noticeBody}>카카오 이메일이 기존 구매 이메일과 다르면, 해당 이메일의 인증코드 확인 후 이력을 연결할 수 있습니다.</Text><TextInput value={claimEmail} onChangeText={setClaimEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" placeholder="기존 구매에 사용한 이메일" placeholderTextColor="#78907b" style={styles.input} /><TouchableOpacity style={styles.verifyButton} disabled={requestClaim.isPending || !claimEmail.trim()} onPress={() => requestClaim.mutate({ email: claimEmail.trim() })}><Text style={styles.verifyButtonText}>{requestClaim.isPending ? "발송 중…" : "인증코드 받기"}</Text></TouchableOpacity>{claimChallengeId && <><Text style={styles.noticeBody}>기존 인증 요청이 확인되었습니다. 받은 6자리 코드를 입력해 주세요.</Text><TextInput value={claimCode} onChangeText={(value) => setClaimCode(value.replace(/\D/g, "").slice(0, 6))} keyboardType="number-pad" placeholder="6자리 인증코드" placeholderTextColor="#78907b" style={styles.input} /><TouchableOpacity style={styles.verifyButton} disabled={confirmClaim.isPending || claimCode.length !== 6} onPress={() => confirmClaim.mutate({ challengeId: claimChallengeId, code: claimCode })}><Text style={styles.verifyButtonText}>{confirmClaim.isPending ? "확인 중…" : "이력 연결 확인"}</Text></TouchableOpacity></>}</View>}
-          <View style={styles.notice}><Text style={styles.noticeTitle}>고객 문의</Text><Text style={styles.noticeBody}>문의 내용을 남겨주시면 support@husimcolor.com으로 전달됩니다.</Text><TextInput value={inquiryEmail} onChangeText={setInquiryEmail} autoCapitalize="none" keyboardType="email-address" placeholder="답변 받을 이메일" placeholderTextColor="#78907b" style={styles.input} /><TextInput value={inquirySubject} onChangeText={setInquirySubject} placeholder="문의 제목" placeholderTextColor="#78907b" style={styles.input} /><TextInput value={inquiryMessage} onChangeText={setInquiryMessage} multiline placeholder="문의 내용을 입력해 주세요." placeholderTextColor="#78907b" style={[styles.input, styles.messageInput]} /><TouchableOpacity style={styles.verifyButton} disabled={submitInquiry.isPending || !inquiryEmail.trim() || inquirySubject.trim().length < 2 || inquiryMessage.trim().length < 10} onPress={() => submitInquiry.mutate({ email: inquiryEmail.trim(), subject: inquirySubject.trim(), message: inquiryMessage.trim() })}><Text style={styles.verifyButtonText}>{submitInquiry.isPending ? "접수 중…" : "문의 보내기"}</Text></TouchableOpacity></View>
+          <View style={styles.notice}><Text style={styles.noticeTitle}>1:1 문의</Text><Text style={styles.noticeBody}>문의는 support@husimcolor.com으로 전달되며, 처리 상태는 아래 문의내역에서 확인할 수 있습니다.</Text><TextInput value={inquiryName} onChangeText={setInquiryName} placeholder="이름" placeholderTextColor="#78907b" style={styles.input} /><TextInput value={inquiryEmail} onChangeText={setInquiryEmail} autoCapitalize="none" keyboardType="email-address" placeholder="답변 받을 이메일" placeholderTextColor="#78907b" style={styles.input} /><View style={styles.typeRow}>{inquiryTypes.map((type) => <TouchableOpacity key={type} onPress={() => setInquiryType(type)} style={[styles.typeButton, inquiryType === type && styles.typeButtonActive]}><Text style={[styles.typeButtonText, inquiryType === type && styles.typeButtonTextActive]}>{inquiryTypeLabels[type]}</Text></TouchableOpacity>)}</View><TextInput value={inquirySubject} onChangeText={setInquirySubject} placeholder="문의 제목" placeholderTextColor="#78907b" style={styles.input} /><TextInput value={inquiryMessage} onChangeText={setInquiryMessage} multiline placeholder="문의 내용을 입력해 주세요." placeholderTextColor="#78907b" style={[styles.input, styles.messageInput]} /><TouchableOpacity style={styles.verifyButton} disabled={submitInquiry.isPending || !inquiryName.trim() || !inquiryEmail.trim() || inquirySubject.trim().length < 2 || inquiryMessage.trim().length < 10} onPress={() => submitInquiry.mutate({ name: inquiryName.trim(), email: inquiryEmail.trim(), inquiryType, subject: inquirySubject.trim(), message: inquiryMessage.trim() })}><Text style={styles.verifyButtonText}>{submitInquiry.isPending ? "접수 중…" : "문의 보내기"}</Text></TouchableOpacity></View>
 
           <Section title="주문 내역">
-            {data?.orders.length ? data.orders.map((order) => <View key={order.id} style={styles.card}><Text style={styles.cardTitle}>{order.productName}</Text><Text style={styles.meta}>{orderStatus[order.status] ?? order.status} · {order.finalAmountKrw.toLocaleString()}원 · {dateText(order.paidAt ?? order.createdAt)}</Text><Text style={styles.meta}>{order.channel === "web" ? "홈페이지 유입" : "앱 유입"}{order.isTest ? " · 테스트 주문(매출 제외)" : ""}</Text></View>) : <Text style={styles.empty}>연결된 주문이 아직 없습니다.</Text>}
+            {data?.orders.length ? data.orders.map((order) => <View key={order.id} style={styles.card}><Text style={styles.cardTitle}>{order.productName}</Text><Text style={styles.meta}>{orderStatus[order.status] ?? order.status} · 결제 {order.finalAmountKrw.toLocaleString()}원 · 할인 {order.discountAmountKrw.toLocaleString()}원 · {dateText(order.paidAt ?? order.createdAt)}</Text><Text style={styles.meta}>{order.channel === "web" ? "홈페이지 유입" : "앱 유입"}{order.isTest ? " · 테스트 주문(매출 제외)" : ""}</Text></View>) : <Text style={styles.empty}>연결된 주문이 아직 없습니다.</Text>}
           </Section>
           <Section title="이용권과 분석">
             {data?.entitlements.length ? data.entitlements.map((item) => <View key={item.id} style={styles.card}><Text style={styles.cardTitle}>{item.productName}</Text><Text style={styles.meta}>{entitlementStatus[item.status] ?? item.status} · {item.usedCount}/{item.usageLimit}회 사용</Text></View>) : <Text style={styles.empty}>표시할 이용권이 없습니다.</Text>}
-            {data?.analyses.map((item) => <View key={`analysis-${item.id}`} style={styles.card}><Text style={styles.cardTitle}>{item.productName}</Text><Text style={styles.meta}>{analysisStatus[item.status] ?? item.status} · {dateText(item.completedAt ?? item.startedAt)}</Text></View>)}
+            {data?.analyses.map((item) => <View key={`analysis-${item.id}`} style={styles.card}><Text style={styles.cardTitle}>{item.productName}</Text><Text style={styles.meta}>{analysisStatus[item.status] ?? item.status} · {dateText(item.completedAt ?? item.startedAt)}{item.hasSavedResult ? " · 결과 보관" : ""}</Text></View>)}
+          </Section>
+          <Section title="결과 PDF">
+            {data?.privateDocuments.length ? data.privateDocuments.map((item) => <View key={`document-${item.id}`} style={styles.card}><Text style={styles.cardTitle}>심화 분석 PDF</Text><Text style={styles.meta}>{item.available ? `보관 중 · ${dateText(item.retentionExpiresAt)}까지` : "생성 중이거나 보관기간이 지났습니다."}</Text>{item.available && <TouchableOpacity style={styles.verifyButton} disabled={downloadDocument.isPending} onPress={() => downloadDocument.mutate({ documentId: item.id })}><Text style={styles.verifyButtonText}>{downloadDocument.isPending ? "열는 중…" : "PDF 다시 보기·다운로드"}</Text></TouchableOpacity>}</View>) : <Text style={styles.empty}>보관 중인 PDF가 없습니다.</Text>}
+          </Section>
+          <Section title="쿠폰함">
+            {data?.coupons.length ? data.coupons.map((item) => <View key={`coupon-${item.id}`} style={styles.card}><Text style={styles.cardTitle}>{item.code}</Text><Text style={styles.meta}>{item.discountType === "percent" ? `${item.discountValue}% 할인` : `${item.discountValue.toLocaleString()}원 할인`} · {item.state === "consumed" ? "사용 완료" : item.state === "reserved" ? "사용 예약" : "해제"}</Text></View>) : <Text style={styles.empty}>쿠폰 사용 이력이 없습니다.</Text>}
           </Section>
           <Section title="코칭 예약">
             {data?.coachingBookings.length ? data.coachingBookings.map((item) => <View key={item.id} style={styles.card}><Text style={styles.cardTitle}>{item.productName}</Text><Text style={styles.meta}>{bookingStatus[item.status] ?? item.status} · {item.sessionMode === "online" ? "온라인" : item.sessionMode === "in_person" ? "대면" : "방식 확인 중"}</Text><Text style={styles.meta}>일정 {dateText(item.scheduledAt)}</Text></View>) : <Text style={styles.empty}>연결된 코칭 예약이 없습니다.</Text>}
           </Section>
+          <Section title="문의내역">
+            {data?.inquiries.length ? data.inquiries.map((item) => <View key={`inquiry-${item.id}`} style={styles.card}><Text style={styles.cardTitle}>{inquiryTypeLabels[item.inquiryType] ?? item.inquiryType} · {item.subject}</Text><Text style={styles.meta}>{inquiryStatusLabels[item.status] ?? item.status} · {dateText(item.respondedAt ?? item.createdAt)}</Text></View>) : <Text style={styles.empty}>접수한 문의가 없습니다.</Text>}
+          </Section>
+          <Section title="내 정보"><View style={styles.card}><Text style={styles.cardTitle}>{auth.user?.name ?? "회원"}</Text><Text style={styles.meta}>{auth.user?.email ?? "이메일 정보 없음"} · {data?.account.emailLinked ? "구매 이메일 연결 완료" : "구매 이력 연결 가능"}</Text></View></Section>
         </>}
       </ScrollView>
     </ScreenContainer>
@@ -156,6 +179,7 @@ const styles = StyleSheet.create({
   notice: { borderRadius: 14, backgroundColor: "#edf5eb", padding: 14, gap: 4 }, noticeTitle: { color: "#3f7b52", fontWeight: "800", fontSize: 14 }, noticeBody: { color: "#55705a", fontSize: 12, lineHeight: 18 },
   input: { borderWidth: 1, borderColor: "#b8d2bb", backgroundColor: "#fff", color: "#3d3530", borderRadius: 10, paddingHorizontal: 11, paddingVertical: 10, fontSize: 13, marginTop: 5 },
   verifyButton: { alignSelf: "flex-start", backgroundColor: "#3f7b52", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, marginTop: 3 }, verifyButtonText: { color: "#fff", fontSize: 12, fontWeight: "800" },
+  typeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 }, typeButton: { borderWidth: 1, borderColor: "#b8d2bb", borderRadius: 10, paddingHorizontal: 9, paddingVertical: 7, backgroundColor: "#fff" }, typeButtonActive: { backgroundColor: "#3f7b52", borderColor: "#3f7b52" }, typeButtonText: { color: "#55705a", fontSize: 11, fontWeight: "700" }, typeButtonTextActive: { color: "#fff" },
   messageInput: { minHeight: 88, textAlignVertical: "top" },
   section: { gap: 8 }, sectionTitle: { color: "#3d3530", fontSize: 17, fontWeight: "800", marginTop: 8 },
   card: { borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 14, padding: 14, gap: 5 },
