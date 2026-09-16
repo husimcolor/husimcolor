@@ -6,13 +6,17 @@ import {
   accountLinkChallenges,
   analysisRuns,
   couponRedemptions,
+  coupons,
   customers,
   emailOutbox,
   entitlements,
   orderItems,
   orders,
+  paymentTransactions,
+  privateDocuments,
   products,
   coachingBookings,
+  supportTickets,
 } from "../../drizzle/schema";
 import type { User } from "../../drizzle/schema";
 import { getDb } from "../db";
@@ -25,6 +29,7 @@ import {
 } from "./crypto";
 import { isRestorableGuestClaim } from "./guest-claim-state";
 import { ensurePreviewAccountLinkOutboxSchema } from "./preview-account-link-schema";
+import { storageGetSignedUrl } from "../storage";
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
 const MAX_CLAIM_ATTEMPTS = 5;
@@ -331,18 +336,27 @@ export async function getMemberCommerceDashboard(user: AuthenticatedMember) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
 
-  const [account, orderRows, entitlementRows, analysisRows, bookingRows] = await Promise.all([
+  const [account, orderRows, entitlementRows, analysisRows, bookingRows, documentRows, couponRows, inquiryRows] = await Promise.all([
     getCommonAccountSnapshot(user),
     db.select().from(orders).where(eq(orders.userId, user.id)).orderBy(desc(orders.createdAt)).limit(50),
     db.select().from(entitlements).where(eq(entitlements.userId, user.id)).orderBy(desc(entitlements.createdAt)).limit(50),
     db.select().from(analysisRuns).where(eq(analysisRuns.userId, user.id)).orderBy(desc(analysisRuns.startedAt)).limit(50),
     db.select().from(coachingBookings).where(eq(coachingBookings.userId, user.id)).orderBy(desc(coachingBookings.createdAt)).limit(50),
+    db.select().from(privateDocuments).where(eq(privateDocuments.userId, user.id)).orderBy(desc(privateDocuments.createdAt)).limit(50),
+    db.select({
+      id: couponRedemptions.id, state: couponRedemptions.state, reservedAt: couponRedemptions.reservedAt, consumedAt: couponRedemptions.consumedAt, releasedAt: couponRedemptions.releasedAt,
+      code: coupons.code, discountType: coupons.discountType, discountValue: coupons.discountValue, status: coupons.status, endsAt: coupons.endsAt,
+    }).from(couponRedemptions).innerJoin(coupons, eq(coupons.id, couponRedemptions.couponId)).where(eq(couponRedemptions.userId, user.id)).orderBy(desc(couponRedemptions.reservedAt)).limit(50),
+    db.select({ id: supportTickets.id, inquiryType: supportTickets.inquiryType, status: supportTickets.status, subject: supportTickets.subject, createdAt: supportTickets.createdAt, respondedAt: supportTickets.respondedAt, }).from(supportTickets).where(eq(supportTickets.userId, user.id)).orderBy(desc(supportTickets.createdAt)).limit(50),
   ]);
 
   const orderIds = orderRows.map((order) => order.id);
-  const itemRows = orderIds.length
-    ? await db.select().from(orderItems).where(inArray(orderItems.orderId, orderIds))
-    : [];
+  const [itemRows, paymentRows] = orderIds.length
+    ? await Promise.all([
+      db.select().from(orderItems).where(inArray(orderItems.orderId, orderIds)),
+      db.select({ orderId: paymentTransactions.orderId, status: paymentTransactions.status }).from(paymentTransactions).where(inArray(paymentTransactions.orderId, orderIds)),
+    ])
+    : [[], []] as const;
   const productIds = Array.from(
     new Set([
       ...itemRows.map((item) => item.productId),
@@ -359,6 +373,7 @@ export async function getMemberCommerceDashboard(user: AuthenticatedMember) {
   itemRows.forEach((item) => {
     if (!firstItemByOrderId.has(item.orderId)) firstItemByOrderId.set(item.orderId, item);
   });
+  const paymentStatusByOrderId = new Map(paymentRows.map((payment) => [payment.orderId, payment.status]));
 
   return {
     account,
@@ -377,6 +392,9 @@ export async function getMemberCommerceDashboard(user: AuthenticatedMember) {
         channel: order.channel,
         isTest: order.isTest,
         finalAmountKrw: order.finalAmountKrw,
+        listAmountKrw: order.listAmountKrw,
+        discountAmountKrw: order.discountAmountKrw,
+        paymentStatus: paymentStatusByOrderId.get(order.id) ?? null,
         createdAt: order.createdAt,
         paidAt: order.paidAt,
         productName: item?.productNameSnapshot ?? "주문 상품",
@@ -397,6 +415,7 @@ export async function getMemberCommerceDashboard(user: AuthenticatedMember) {
       status: analysis.status,
       startedAt: analysis.startedAt,
       completedAt: analysis.completedAt,
+      hasSavedResult: Boolean(analysis.resultReference),
     })),
     coachingBookings: bookingRows.map((booking) => ({
       id: booking.id,
@@ -406,5 +425,18 @@ export async function getMemberCommerceDashboard(user: AuthenticatedMember) {
       scheduledAt: booking.scheduledAt,
       createdAt: booking.createdAt,
     })),
+    privateDocuments: documentRows.map((document) => ({ id: document.id, analysisRunId: document.analysisRunId, status: document.status, retentionExpiresAt: document.retentionExpiresAt, generatedAt: document.generatedAt, available: document.status === "generated" && Boolean(document.storageKey) && document.retentionExpiresAt > new Date(), })),
+    coupons: couponRows,
+    inquiries: inquiryRows,
   };
+}
+
+/** 로그인한 본인의 보관기간 내 PDF만 기존 private storage에서 일회성 URL로 재발급한다. */
+export async function getMemberPrivateDocumentDownload(user: AuthenticatedMember, documentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const rows = await db.select().from(privateDocuments).where(and(eq(privateDocuments.id, documentId), eq(privateDocuments.userId, user.id), eq(privateDocuments.status, "generated"), gt(privateDocuments.retentionExpiresAt, new Date()))).limit(1);
+  const document = rows[0];
+  if (!document?.storageKey) throw new Error("PRIVATE_DOCUMENT_NOT_AVAILABLE");
+  return { documentId: document.id, url: await storageGetSignedUrl(document.storageKey) };
 }
