@@ -9,6 +9,7 @@ import { registerOAuthRoutes } from "../../server/_core/oauth";
  * Manus·카카오 인증 경로를 같은 Vercel 함수에서 명시적으로 처리한다.
  */
 const app = express();
+app.use(express.json({ limit: "8kb" }));
 registerOAuthRoutes(app);
 registerKakaoOAuthRoutes(app);
 
