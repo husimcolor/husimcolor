@@ -4,6 +4,8 @@ import {
   adminAuditLogs,
   analysisRuns,
   coachingBookings,
+  couponRedemptions,
+  coupons,
   customers,
   emailOutbox,
   entitlements,
@@ -13,9 +15,11 @@ import {
   paymentTransactions,
   privateDocuments,
   reviews,
+  supportTickets,
 } from "../../drizzle/schema";
 import { getDb } from "../db";
-import { decryptCommerceEmail } from "./crypto";
+import { decryptCommerceEmail, decryptCommerceValue } from "./crypto";
+import { canTransitionSupportTicketStatus } from "./member-portal-contract";
 import {
   isPreviewReadOnlyVerificationEnabled,
   previewVerificationUnavailableResult,
@@ -35,6 +39,17 @@ export function maskCommerceEmailForAdmin(encryptedEmail: string | null): string
     return `${visible}${"•".repeat(Math.max(1, local.length - visible.length))}@${domain}`;
   } catch {
     return "보호된 이메일";
+  }
+}
+
+function maskCommerceNameForAdmin(encryptedName: string | null): string {
+  if (!encryptedName) return "—";
+  try {
+    const name = decryptCommerceValue(encryptedName).trim();
+    if (!name) return "—";
+    return `${name.slice(0, 1)}${"•".repeat(Math.max(1, name.length - 1))}`;
+  } catch {
+    return "보호된 이름";
   }
 }
 
@@ -117,7 +132,6 @@ export async function getAdminOrderList(limit = 50) {
     customerEmailMasked: maskCommerceEmailForAdmin(row.customerEmailEncrypted),
   }));
 }
-
 
 /**
  * Preview 원장 확인에 필요한 최소 메타데이터만 반환한다. 이메일·문의·PDF·분석·공유
@@ -287,6 +301,81 @@ export async function getAdminCustomerDetail(customerId: number) {
   };
 }
 
+export async function getAdminSupportTicketList(limit = 100) {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const rows = await db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt)).limit(Math.min(Math.max(limit, 1), 200));
+  return rows.map((ticket) => {
+    let message = "보호된 문의 내용";
+    try {
+      message = decryptCommerceValue(ticket.messageEncrypted);
+    } catch {
+      // 복호화 실패 시에도 관리자 목록은 메타데이터만 표시한다.
+    }
+    return {
+      id: ticket.id,
+      userId: ticket.userId,
+      nameMasked: maskCommerceNameForAdmin(ticket.contactNameEncrypted),
+      emailMasked: maskCommerceEmailForAdmin(ticket.contactEmailEncrypted),
+      inquiryType: ticket.inquiryType,
+      subject: ticket.subject,
+      message,
+      status: ticket.status,
+      createdAt: ticket.createdAt,
+      respondedAt: ticket.respondedAt,
+    };
+  });
+}
+
+export async function updateAdminSupportTicketStatus(input: {
+  id: number;
+  status: "received" | "reviewing" | "answered";
+  adminUserId: number | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const rows = await db.select().from(supportTickets).where(eq(supportTickets.id, input.id)).limit(1);
+  const before = rows[0];
+  if (!before) throw new Error("SUPPORT_TICKET_NOT_FOUND");
+  if (!canTransitionSupportTicketStatus(before.status, input.status)) throw new Error("SUPPORT_TICKET_STATUS_TRANSITION_INVALID");
+  const now = new Date();
+  const after = {
+    status: input.status,
+    respondedAt: input.status === "answered" ? now : before.respondedAt,
+    closedAt: input.status === "answered" ? now : before.closedAt,
+  };
+  await db.update(supportTickets).set(after).where(eq(supportTickets.id, input.id));
+  await db.insert(adminAuditLogs).values({
+    adminUserId: input.adminUserId,
+    action: "support_ticket_status_updated",
+    entityType: "support_ticket",
+    entityId: String(input.id),
+    beforeJson: JSON.stringify({ status: before.status }),
+    afterJson: JSON.stringify({ status: after.status }),
+  });
+  return { success: true } as const;
+}
+
+export async function getAdminCouponOverview(limit = 100) {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const [couponRows, redemptionRows] = await Promise.all([
+    db.select().from(coupons).orderBy(desc(coupons.createdAt)).limit(Math.min(Math.max(limit, 1), 200)),
+    db.select({ couponId: couponRedemptions.couponId, state: couponRedemptions.state }).from(couponRedemptions).limit(1000),
+  ]);
+  return couponRows.map((coupon) => ({
+    id: coupon.id,
+    code: coupon.code,
+    discountType: coupon.discountType,
+    discountValue: coupon.discountValue,
+    status: coupon.status,
+    startsAt: coupon.startsAt,
+    endsAt: coupon.endsAt,
+    redemptionCount: redemptionRows.filter((row) => row.couponId === coupon.id && row.state === "consumed").length,
+    reservedCount: redemptionRows.filter((row) => row.couponId === coupon.id && row.state === "reserved").length,
+  }));
+}
+
 export async function getAdminLegacyPaymentRecords(limit = 100) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -331,7 +420,7 @@ export async function getAdminReviews(limit = 100) {
   return db.select().from(reviews).orderBy(desc(reviews.createdAt)).limit(Math.min(Math.max(limit, 1), 200));
 }
 
-export async function deleteAdminReview(input: { id: number; adminUserId: number }) {
+export async function deleteAdminReview(input: { id: number; adminUserId: number | null }) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
   const rows = await db.select().from(reviews).where(eq(reviews.id, input.id)).limit(1);
