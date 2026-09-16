@@ -35,6 +35,8 @@ import {
 } from "./commerce/account-service";
 import { isKakaoLoginEnabled } from "./_core/kakao-oauth";
 import { createSupportInquiry } from "./commerce/support-service";
+import { resolveAdminAuditActor } from "./commerce/admin-audit-actor";
+import { getSupportTicketSchemaAudit } from "./commerce/support-ticket-schema-audit";
 import {
   deleteAdminReview,
   getAdminCoachingBookingList,
@@ -262,6 +264,7 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminOrderList(input.limit)),
     previewVerification: adminProcedure.query(() => getPreviewReadOnlyVerificationSnapshot()),
+    supportTicketSchemaAudit: adminProcedure.query(() => getSupportTicketSchemaAudit()),
     customers: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminCustomerList(input.limit)),
@@ -270,7 +273,10 @@ export const appRouter = router({
       .query(({ input }) => getAdminSupportTicketList(input.limit)),
     updateSupportTicket: adminProcedure
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["received", "reviewing", "answered"]) }))
-      .mutation(({ input, ctx }) => updateAdminSupportTicketStatus({ ...input, adminUserId: ctx.user?.id ?? null })),
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return updateAdminSupportTicketStatus({ ...input, ...auditActor, auditActor });
+      }),
     coupons: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
       .query(({ input }) => getAdminCouponOverview(input.limit)),
@@ -286,13 +292,19 @@ export const appRouter = router({
         status: z.enum(["pending", "confirmed", "rejected"]),
         memo: z.string().max(500).optional(),
       }))
-      .mutation(({ input, ctx }) => updateAdminLegacyPaymentStatus({ ...input, adminUserId: ctx.user?.id ?? null })),
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return updateAdminLegacyPaymentStatus({ ...input, ...auditActor, auditActor });
+      }),
     reviews: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
       .query(({ input }) => getAdminReviews(input.limit)),
     deleteReview: adminProcedure
       .input(z.object({ id: z.number().int().positive() }))
-      .mutation(({ input, ctx }) => deleteAdminReview({ ...input, adminUserId: ctx.user?.id ?? null })),
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return deleteAdminReview({ ...input, ...auditActor, auditActor });
+      }),
     coachingBookings: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminCoachingBookingList(input.limit)),
@@ -312,7 +324,10 @@ export const appRouter = router({
         internalNote: z.string().max(2000).optional(),
         cancelReason: z.string().max(500).optional(),
       }))
-      .mutation(({ input, ctx }) => updateAdminCoachingBooking({ ...input, adminUserId: ctx.user?.id ?? null })),
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return updateAdminCoachingBooking({ ...input, ...auditActor, auditActor });
+      }),
   }),
 
   // 입금 기록 API
