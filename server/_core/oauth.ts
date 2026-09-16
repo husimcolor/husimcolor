@@ -1,144 +1,227 @@
 import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const.js";
-
 import type { Express, Request, Response } from "express";
-
 import { getUserByOpenId, upsertUser } from "../db";
-
 import { ensureCommonAccountForAuthenticatedUser } from "../commerce/account-service";
-
 import { getSessionCookieOptions } from "./cookies";
-
 import { ENV } from "./env";
-
 import { sdk } from "./sdk";
-
 import { registerLegacyAdminRoutes } from "./legacy-admin";
 
-
-
 function getQueryParam(req: Request, key: string): string | undefined {
-  
   const value = req.query[key];
-  
   return typeof value === "string" ? value : undefined;
-  
 }
-
-
 
 function firstForwardedHeader(value: string | string[] | undefined): string | undefined {
-  
   if (Array.isArray(value)) return value[0];
-  
   return value?.split(",")[0]?.trim();
-  
 }
 
-
-
-export function createOAuthLoginUrl({ appId, redirectUri, portalUrl = "https://manus.im" }: { appId: string; redirectUri: string; portalUrl?: string }): string {
-  
+export function createOAuthLoginUrl({
+  appId,
+  redirectUri,
+  portalUrl = "https://manus.im",
+}: {
+  appId: string;
+  redirectUri: string;
+  portalUrl?: string;
+}): string {
   const url = new URL("/app-auth", portalUrl);
-  
   url.searchParams.set("appId", appId);
-  
   url.searchParams.set("redirectUri", redirectUri);
-  
   url.searchParams.set("state", Buffer.from(redirectUri, "utf8").toString("base64"));
-  
   url.searchParams.set("type", "signIn");
-  
   return url.toString();
-  
 }
 
-
-
+/** Production OAuth callback always returns to the host that started the login. */
 export function getProductionFrontendOrigin(req: Request): string {
-  
   const forwardedHost = firstForwardedHeader(req.headers["x-forwarded-host"]);
-  
   const host = forwardedHost || req.get("host");
-  
   const forwardedProto = firstForwardedHeader(req.headers["x-forwarded-proto"]);
-  
   const protocol = forwardedProto || req.protocol || "https";
-  
   if (!host) return "https://husimcolor.vercel.app";
-  
   return `${protocol}://${host}`;
-  
 }
 
+async function syncUser(userInfo: {
+  openId?: string | null;
+  name?: string | null;
+  email?: string | null;
+  loginMethod?: string | null;
+  platform?: string | null;
+}) {
+  if (!userInfo.openId) {
+    throw new Error("openId missing from user info");
+  }
 
-
-async function syncUser(userInfo: { openId?: string | null; name?: string | null; email?: string | null; loginMethod?: string | null; platform?: string | null }) {
-  
-  if (!userInfo.openId) throw new Error("openId missing from user info");
-  
   const lastSignedIn = new Date();
-  
-  await upsertUser({ openId: userInfo.openId, name: userInfo.name || null, email: userInfo.email ?? null, loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null, lastSignedIn });
-  
+  await upsertUser({
+    openId: userInfo.openId,
+    name: userInfo.name || null,
+    email: userInfo.email ?? null,
+    loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+    lastSignedIn,
+  });
   const saved = await getUserByOpenId(userInfo.openId);
-  
-  if (saved) await ensureCommonAccountForAuthenticatedUser(saved);
-  
-  return saved ?? { openId: userInfo.openId, name: userInfo.name, email: userInfo.email, loginMethod: userInfo.loginMethod ?? null, lastSignedIn };
-  
+  if (saved) {
+    await ensureCommonAccountForAuthenticatedUser(saved);
+  }
+  return (
+    saved ?? {
+      openId: userInfo.openId,
+      name: userInfo.name,
+      email: userInfo.email,
+      loginMethod: userInfo.loginMethod ?? null,
+      lastSignedIn,
+    }
+  );
 }
 
-
-
-function buildUserResponse(user: Awaited<ReturnType<typeof getUserByOpenId>> | { openId: string; name?: string | null; email?: string | null; loginMethod?: string | null; lastSignedIn?: Date | null }) {
-  
-  return { id: (user as any)?.id ?? null, openId: user?.openId ?? null, name: user?.name ?? null, email: user?.email ?? null, loginMethod: user?.loginMethod ?? null, role: (user as any)?.role ?? "user", lastSignedIn: (user?.lastSignedIn ?? new Date()).toISOString() };
-  
+function buildUserResponse(
+  user:
+    | Awaited<ReturnType<typeof getUserByOpenId>>
+    | {
+        openId: string;
+        name?: string | null;
+        email?: string | null;
+        loginMethod?: string | null;
+        lastSignedIn?: Date | null;
+      },
+) {
+  return {
+    id: (user as any)?.id ?? null,
+    openId: user?.openId ?? null,
+    name: user?.name ?? null,
+    email: user?.email ?? null,
+    loginMethod: user?.loginMethod ?? null,
+    role: (user as any)?.role ?? "user",
+    lastSignedIn: (user?.lastSignedIn ?? new Date()).toISOString(),
+  };
 }
-
-
 
 export function registerOAuthRoutes(app: Express) {
-  
   void registerLegacyAdminRoutes(app);
-  
-
-  
+  // The Expo web bundle is static in Vercel, so OAuth settings must be read
+  // from the server rather than relying on build-time EXPO_PUBLIC variables.
   app.get("/api/auth/login", (req: Request, res: Response) => {
-    
-    if (!ENV.appId) { res.status(503).json({ error: "OAuth application is not configured" }); return; }
-    
+    if (!ENV.appId) {
+      res.status(503).json({ error: "OAuth application is not configured" });
+      return;
+    }
 
+    const origin = getProductionFrontendOrigin(req);
+    const redirectUri = `${origin}/api/oauth/callback`;
+    const portalUrl = process.env.OAUTH_PORTAL_URL || "https://manus.im";
+    res.json({ url: createOAuthLoginUrl({ appId: ENV.appId, redirectUri, portalUrl }) });
+  });
 
+  app.get("/api/oauth/callback", async (req: Request, res: Response) => {
+    const code = getQueryParam(req, "code");
+    const state = getQueryParam(req, "state");
 
+    if (!code || !state) {
+      res.status(400).json({ error: "code and state are required" });
+      return;
+    }
 
+    try {
+      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
+      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
+      await syncUser(userInfo);
+      const sessionToken = await sdk.createSessionToken(userInfo.openId!, {
+        name: userInfo.name || "",
+        expiresInMs: ONE_YEAR_MS,
+      });
 
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
+      const frontendUrl = ENV.isProduction
+        ? getProductionFrontendOrigin(req)
+        : process.env.EXPO_WEB_PREVIEW_URL ||
+          process.env.EXPO_PACKAGER_PROXY_URL ||
+          "http://localhost:8081";
+      res.redirect(302, frontendUrl);
+    } catch (error) {
+      console.error("[OAuth] Callback failed", error);
+      res.status(500).json({ error: "OAuth callback failed" });
+    }
+  });
 
+  app.get("/api/oauth/mobile", async (req: Request, res: Response) => {
+    const code = getQueryParam(req, "code");
+    const state = getQueryParam(req, "state");
 
+    if (!code || !state) {
+      res.status(400).json({ error: "code and state are required" });
+      return;
+    }
 
+    try {
+      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
+      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
+      const user = await syncUser(userInfo);
 
+      const sessionToken = await sdk.createSessionToken(userInfo.openId!, {
+        name: userInfo.name || "",
+        expiresInMs: ONE_YEAR_MS,
+      });
 
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
+      res.json({
+        app_session_id: sessionToken,
+        user: buildUserResponse(user),
+      });
+    } catch (error) {
+      console.error("[OAuth] Mobile exchange failed", error);
+      res.status(500).json({ error: "OAuth mobile exchange failed" });
+    }
+  });
 
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    const cookieOptions = getSessionCookieOptions(req);
+    res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+    res.json({ success: true });
+  });
 
+  // Get current authenticated user - works with both cookie (web) and Bearer token (mobile)
+  app.get("/api/auth/me", async (req: Request, res: Response) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      res.json({ user: buildUserResponse(user) });
+    } catch (error) {
+      console.error("[Auth] /api/auth/me failed:", error);
+      res.status(401).json({ error: "Not authenticated", user: null });
+    }
+  });
 
+  // Establish session cookie from Bearer token
+  // Used by iframe preview: frontend receives token via postMessage, then calls this endpoint
+  // to get a proper Set-Cookie response from the backend (3000-xxx domain)
+  app.post("/api/auth/session", async (req: Request, res: Response) => {
+    try {
+      // Authenticate using Bearer token from Authorization header
+      const user = await sdk.authenticateRequest(req);
 
+      // Get the token from the Authorization header to set as cookie
+      const authHeader = req.headers.authorization || req.headers.Authorization;
+      if (typeof authHeader !== "string" || !authHeader.startsWith("Bearer ")) {
+        res.status(400).json({ error: "Bearer token required" });
+        return;
+      }
+      const token = authHeader.slice("Bearer ".length).trim();
 
+      // Set cookie for this domain (3000-xxx)
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      res.json({ success: true, user: buildUserResponse(user) });
+    } catch (error) {
+      console.error("[Auth] /api/auth/session failed:", error);
+      res.status(401).json({ error: "Invalid token" });
+    }
+  });
+}
