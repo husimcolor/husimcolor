@@ -31,10 +31,7 @@ export default function HomeScreen() {
     if (logoTapTimer.current) clearTimeout(logoTapTimer.current);
     if (newCount >= 5) {
       setLogoTapCount(0);
-      // The hidden entry must resolve to the existing tab screen that owns
-      // the legacy password + server-authorized administrator session.
-      // It never starts Google/Manus OAuth.
-      router.push('/(tabs)/admin' as any);
+      router.push('/admin' as any);
       return;
     }
     logoTapTimer.current = setTimeout(() => setLogoTapCount(0), 2000);
@@ -162,10 +159,10 @@ export default function HomeScreen() {
           <TouchableOpacity
             onPress={handleLogoTap}
             activeOpacity={0.9}
-            style={[styles.logoContainer, { backgroundColor: colors.surface, shadowColor: colors.foreground }]}
+            style={styles.logoContainer}
           >
             <Image
-              source={{ uri: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663646006927/mTvBGzpe4naoi2CdDkbujz/icon-fBSxKFHiCtYA4p9pczpHqG.png' }}
+              source={require('@/assets/images/husimcolor-home-symbol.jpg')}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -252,14 +249,14 @@ export default function HomeScreen() {
          </Animated.View>
       </View>
 
+      {/* 관리자 링크 - 하단 */}
       <TouchableOpacity
-        onPress={() => router.push('/(tabs)/my-page' as any)}
-        activeOpacity={0.7}
-        style={styles.myPageLink}
+        onPress={() => router.push('/(tabs)/admin' as any)}
+        activeOpacity={0.5}
+        style={styles.adminLink}
       >
-        <Text style={[styles.myPageLinkText, { color: colors.primary }]}>내 분석 · 마이페이지</Text>
+        <Text style={[styles.adminLinkText, { color: colors.muted }]}>관리자</Text>
       </TouchableOpacity>
-
       <View style={styles.businessInfoWrap}>
         <BusinessInfoFooter />
       </View>
@@ -309,19 +306,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    width: 110,
-    height: 110,
-    borderRadius: 28,
+    width: 122,
+    height: 122,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 4 },
+    backgroundColor: '#FFF9EE',
+    borderWidth: 1,
+    borderColor: '#F2E8D7',
+    shadowColor: '#B9A98A',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: 8,
+    elevation: 2,
   },
   logoImage: {
-    width: 90,
-    height: 90,
+    width: 102,
+    height: 102,
     borderRadius: 20,
   },
   textSection: {
@@ -448,14 +449,16 @@ const styles = StyleSheet.create({
   preparingServiceCta: {
     color: '#8B5D2E',
   },
-  myPageLink: {
+  adminLink: {
     alignSelf: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 20,
+    marginBottom: 4,
   },
-  myPageLinkText: {
-    fontSize: 13,
-    fontWeight: '800',
+  adminLinkText: {
+    fontSize: 11,
+    opacity: 0.45,
+    letterSpacing: 0.3,
   },
   businessInfoWrap: {
     width: '100%',
