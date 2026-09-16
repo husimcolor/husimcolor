@@ -9,6 +9,7 @@ describe("Preview 관리자 인증 화면", () => {
     expect(adminScreen).toContain("통합 관리자 로그인");
     expect(adminScreen).toContain("서버 서명된 통합 관리자 세션");
     expect(adminScreen).toContain("비밀번호로 로그인");
+    expect(adminScreen).toContain("enabled: hasAdminAccess && customerId !== null");
     expect(adminScreen).not.toContain("Manus OAuth 운영자 로그인");
     expect(adminScreen).not.toContain("startOAuthLogin");
   });
