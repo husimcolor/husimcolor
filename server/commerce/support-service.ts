@@ -5,7 +5,9 @@ import { encryptCommerceEmail, encryptCommerceValue, hashCommerceEmail } from ".
 
 export async function createSupportInquiry(input: {
   user: AuthenticatedUser;
+  name: string;
   email: string;
+  inquiryType: "payment_refund" | "analysis_result" | "pdf_email" | "coaching_booking" | "other";
   subject: string;
   message: string;
 }) {
@@ -16,8 +18,10 @@ export async function createSupportInquiry(input: {
   const ticket = await db.transaction(async (tx) => {
     const ticketInsert = await tx.insert(supportTickets).values({
       userId: input.user.id,
+      contactNameEncrypted: encryptCommerceValue(input.name.trim()),
       contactEmailHash: hashCommerceEmail(input.email),
       contactEmailEncrypted: encryptCommerceEmail(input.email),
+      inquiryType: input.inquiryType,
       subject: input.subject.trim(),
       messageEncrypted: encryptCommerceValue(input.message.trim()),
     });
