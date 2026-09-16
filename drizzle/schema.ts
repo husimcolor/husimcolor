@@ -549,13 +549,19 @@ export const supportTickets = mysqlTable(
   {
     id: int("id").autoincrement().primaryKey(),
     userId: int("userId"),
+    contactNameEncrypted: text("contactNameEncrypted"),
     contactEmailHash: varchar("contactEmailHash", { length: 128 }).notNull(),
     contactEmailEncrypted: text("contactEmailEncrypted").notNull(),
+    inquiryType: mysqlEnum("inquiryType", ["payment_refund", "analysis_result", "pdf_email", "coaching_booking", "other"])
+      .notNull()
+      .default("other"),
     subject: varchar("subject", { length: 160 }).notNull(),
     messageEncrypted: text("messageEncrypted").notNull(),
-    status: mysqlEnum("status", ["open", "closed"]).notNull().default("open"),
+    status: mysqlEnum("status", ["received", "reviewing", "answered"]).notNull().default("received"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
+    respondedAt: timestamp("respondedAt"),
     closedAt: timestamp("closedAt"),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
   (table) => [index("support_tickets_user_status_idx").on(table.userId, table.status)],
 );
