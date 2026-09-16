@@ -10,15 +10,19 @@ import express from "express";
 import { appRouter } from "../../server/routers";
 import { createContext } from "../../server/_core/context";
 import { createOAuthLoginUrl, getProductionFrontendOrigin } from "../../server/_core/oauth";
-import { registerLegacyAdminRoutes } from "../../server/_core/legacy-admin";
 import { ENV } from "../../server/_core/env";
+import { registerLegacyAdminRoutes } from "../../server/_core/legacy-admin";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const app = express();
+const LEGACY_ADMIN_ROUTE_NAMES = new Set([
+  "legacy-admin-login",
+  "legacy-admin-session",
+  "legacy-admin-logout",
+]);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-registerLegacyAdminRoutes(app);
 
 // CORS 설정
 app.use((req, res, next) => {
@@ -59,6 +63,11 @@ app.get("/api/trpc/auth-login", (req, res) => {
   });
 });
 
+// The current Vercel build emits this tRPC function, but not the separate
+// auth catch-all function. Preserve the legacy paths only through an internal
+// rewrite marker; requests never enter the public tRPC contract as admin data.
+registerLegacyAdminRoutes(app);
+
 app.use(
   "/api/trpc",
   createExpressMiddleware({
@@ -68,6 +77,11 @@ app.use(
 );
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  // /api/trpc/[...trpc] -> req.url을 /api/trpc/xxx 형태로 변환
+  const routeName = req.query.legacyAdminRoute;
+  if (typeof routeName === "string" && LEGACY_ADMIN_ROUTE_NAMES.has(routeName)) {
+    const requestUrl = new URL(req.url ?? "/", "https://internal.invalid");
+    requestUrl.searchParams.delete("legacyAdminRoute");
+    req.url = `/api/auth/${routeName}${requestUrl.search}`;
+  }
   return app(req as any, res as any);
 }
