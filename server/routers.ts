@@ -264,13 +264,13 @@ export const appRouter = router({
         status: z.enum(["pending", "confirmed", "rejected"]),
         memo: z.string().max(500).optional(),
       }))
-      .mutation(({ input, ctx }) => updateAdminLegacyPaymentStatus({ ...input, adminUserId: ctx.user.id })),
+      .mutation(({ input, ctx }) => updateAdminLegacyPaymentStatus({ ...input, adminUserId: ctx.user?.id ?? null })),
     reviews: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
       .query(({ input }) => getAdminReviews(input.limit)),
     deleteReview: adminProcedure
       .input(z.object({ id: z.number().int().positive() }))
-      .mutation(({ input, ctx }) => deleteAdminReview({ ...input, adminUserId: ctx.user.id })),
+      .mutation(({ input, ctx }) => deleteAdminReview({ ...input, adminUserId: ctx.user?.id ?? null })),
     coachingBookings: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminCoachingBookingList(input.limit)),
@@ -290,7 +290,7 @@ export const appRouter = router({
         internalNote: z.string().max(2000).optional(),
         cancelReason: z.string().max(500).optional(),
       }))
-      .mutation(({ input, ctx }) => updateAdminCoachingBooking({ ...input, adminUserId: ctx.user.id })),
+      .mutation(({ input, ctx }) => updateAdminCoachingBooking({ ...input, adminUserId: ctx.user?.id ?? null })),
   }),
 
   // 입금 기록 API
