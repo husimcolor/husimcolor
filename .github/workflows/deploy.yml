@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -37,32 +40,22 @@ jobs:
           mkdir -p ".vercel/output/functions/api/trpc/[...trpc].func"
           mkdir -p ".vercel/output/functions/api/couple-pdf-report.func"
           mkdir -p ".vercel/output/functions/api/parent-child-pdf-report.func"
+          mkdir -p ".vercel/output/functions/api/auth/kakao/login.func"
+          mkdir -p ".vercel/output/functions/api/auth/kakao/callback.func"
 
       - name: Build tRPC API function (with mysql2 bundled)
         run: |
-          npx esbuild "api/trpc/[...trpc].ts" \
-            --bundle \
-            --platform=node \
-            --target=node20 \
-            --format=cjs \
-            --outfile=".vercel/output/functions/api/trpc/[...trpc].func/index.js"
+          npx esbuild "api/trpc/[...trpc].ts" --bundle --platform=node --target=node20 --format=cjs --outfile=".vercel/output/functions/api/trpc/[...trpc].func/index.js"
+
+      - name: Build Kakao OAuth API functions
+        run: |
+          npx esbuild "api/auth/kakao/login.ts" --bundle --platform=node --target=node20 --format=cjs --outfile=".vercel/output/functions/api/auth/kakao/login.func/index.js"
+          npx esbuild "api/auth/kakao/callback.ts" --bundle --platform=node --target=node20 --format=cjs --outfile=".vercel/output/functions/api/auth/kakao/callback.func/index.js"
 
       - name: Build PDF report API functions
         run: |
-          npx esbuild "api/couple-pdf-report.ts" \
-            --bundle \
-            --platform=node \
-            --target=node20 \
-            --format=cjs \
-            --external:pdfkit \
-            --outfile=".vercel/output/functions/api/couple-pdf-report.func/index.js"
-          npx esbuild "api/parent-child-pdf-report.ts" \
-            --bundle \
-            --platform=node \
-            --target=node20 \
-            --format=cjs \
-            --external:pdfkit \
-            --outfile=".vercel/output/functions/api/parent-child-pdf-report.func/index.js"
+          npx esbuild "api/couple-pdf-report.ts" --bundle --platform=node --target=node20 --format=cjs --external:pdfkit --outfile=".vercel/output/functions/api/couple-pdf-report.func/index.js"
+          npx esbuild "api/parent-child-pdf-report.ts" --bundle --platform=node --target=node20 --format=cjs --external:pdfkit --outfile=".vercel/output/functions/api/parent-child-pdf-report.func/index.js"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/couple-pdf-report.func/HusimPdfKorean.ttf"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/parent-child-pdf-report.func/HusimPdfKorean.ttf"
 
@@ -92,6 +85,8 @@ jobs:
           VCEOF
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/couple-pdf-report.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/parent-child-pdf-report.func/.vc-config.json"
+          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/kakao/login.func/.vc-config.json"
+          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/kakao/callback.func/.vc-config.json"
 
       - name: Write Vercel output config
         run: |
@@ -117,4 +112,9 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Deploy prebuilt to Vercel
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+          else
+            vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+          fi
