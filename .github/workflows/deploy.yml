@@ -1,120 +1,218 @@
 name: Deploy to Vercel
 
+
+
 on:
+
   push:
+  
     branches:
+    
       - main
+      
+  pull_request:
+  
+    branches:
+    
+      - main
+      
+
 
 jobs:
+
   deploy:
+  
     runs-on: ubuntu-latest
+    
     steps:
+    
       - name: Checkout repository
+      
         uses: actions/checkout@v4
+        
+
 
       - name: Setup Node.js
+      
         uses: actions/setup-node@v4
+        
         with:
+        
           node-version: '22'
+          
+
 
       - name: Install pnpm
+      
         uses: pnpm/action-setup@v4
+        
+
 
       - name: Install dependencies
+      
         run: pnpm install --frozen-lockfile
+        
+
 
       - name: Build latest Expo web bundle
+      
         run: |
+        
           rm -rf dist .vercel/output
+          
           mkdir -p node_modules/react-native-css-interop/.cache
+          
           : > node_modules/react-native-css-interop/.cache/web.css
+          
           EXPO_USE_METRO_WORKSPACE_ROOT=1 pnpm exec expo export --platform web --output-dir dist
+          
+
 
       - name: Prepare Vercel output structure
+      
         run: |
+        
           mkdir -p .vercel/output/static
+          
           cp -r dist/. .vercel/output/static/
+          
           mkdir -p ".vercel/output/functions/api/trpc/[...trpc].func"
+          
           mkdir -p ".vercel/output/functions/api/couple-pdf-report.func"
+          
           mkdir -p ".vercel/output/functions/api/parent-child-pdf-report.func"
+          
+          mkdir -p ".vercel/output/functions/api/auth/kakao/login.func"
+          
+          mkdir -p ".vercel/output/functions/api/auth/kakao/callback.func"
+          
+
 
       - name: Build tRPC API function (with mysql2 bundled)
+      
         run: |
+        
           npx esbuild "api/trpc/[...trpc].ts" \
+          
             --bundle \
+            
             --platform=node \
+            
             --target=node20 \
+            
             --format=cjs \
+            
             --outfile=".vercel/output/functions/api/trpc/[...trpc].func/index.js"
+            
+
+
+      - name: Build Kakao OAuth API functions
+      
+        run: |
+        
+          npx esbuild "api/auth/kakao/login.ts" \
+          
+            --bundle \
+            
+            --platform=node \
+            
+            --target=node20 \
+            
+            --format=cjs \
+            
+            --outfile=".vercel/output/functions/api/auth/kakao/login.func/index.js"
+            
+          npx esbuild "api/auth/kakao/callback.ts" \
+          
+            --bundle \
+            
+            --platform=node \
+            
+            --target=node20 \
+            
+            --format=cjs \
+            
+            --outfile=".vercel/output/functions/api/auth/kakao/callback.func/index.js"
+            
+
 
       - name: Build PDF report API functions
+      
         run: |
+        
           npx esbuild "api/couple-pdf-report.ts" \
+          
             --bundle \
+            
             --platform=node \
+            
             --target=node20 \
+            
             --format=cjs \
+            
             --external:pdfkit \
-            --outfile=".vercel/output/functions/api/couple-pdf-report.func/index.js"
-          npx esbuild "api/parent-child-pdf-report.ts" \
-            --bundle \
-            --platform=node \
-            --target=node20 \
-            --format=cjs \
-            --external:pdfkit \
-            --outfile=".vercel/output/functions/api/parent-child-pdf-report.func/index.js"
-          cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/couple-pdf-report.func/HusimPdfKorean.ttf"
-          cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/parent-child-pdf-report.func/HusimPdfKorean.ttf"
+            
+            --outfile=".vercel/output/functions/api/couple-pdf-r
 
-      - name: Include PDFKit serverless runtime
-        run: |
-          for function in couple-pdf-report parent-child-pdf-report; do
-            runtime=".vercel/output/functions/api/${function}.func/node_modules"
-            mkdir -p "${runtime}/@noble" "${runtime}/@swc"
-            for package in pdfkit fflate fontkit linebreak png-js brotli clone dfa fast-deep-equal restructure tiny-inflate unicode-properties unicode-trie base64-js pako tslib; do
-              cp -RL "node_modules/${package}" "${runtime}/${package}"
-            done
-            for package in ciphers hashes; do
-              cp -RL "node_modules/@noble/${package}" "${runtime}/@noble/${package}"
-            done
-            cp -RL "node_modules/@swc/helpers" "${runtime}/@swc/helpers"
-          done
 
-      - name: Write function config
-        run: |
-          cat > ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" << 'VCEOF'
-          {
-            "runtime": "nodejs20.x",
-            "handler": "index.js",
-            "launcherType": "Nodejs",
-            "shouldAddHelpers": true
-          }
-          VCEOF
-          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/couple-pdf-report.func/.vc-config.json"
-          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/parent-child-pdf-report.func/.vc-config.json"
 
-      - name: Write Vercel output config
-        run: |
-          cat > .vercel/output/config.json << 'CFGEOF'
-          {
-            "version": 3,
-            "routes": [
-              { "src": "/api/trpc/(.*)", "dest": "/api/trpc/[...trpc]"},
-              { "src": "/api/couple-pdf-report", "dest": "/api/couple-pdf-report" },
-              { "src": "/api/parent-child-pdf-report", "dest": "/api/parent-child-pdf-report" },
-              { "src": "/_expo/static/js/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
-              { "src": "/_expo/static/css/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
-              { "src": "/_expo/static/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
-              { "src": "/assets/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
-              { "src": "/index.html", "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }, "continue": true },
-              { "handle": "filesystem" },
-              { "src": "/((?!_expo/|assets/).*)", "dest": "/index.html" }
-            ]
-          }
-          CFGEOF
 
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
 
-      - name: Deploy prebuilt to Vercel
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
