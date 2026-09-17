@@ -92,16 +92,11 @@ jobs:
       
         run: |
         
-          npx esbuild "api/trpc/[...trpc].ts" \
-          
-            --bundle \
-            
-            --platform=node \
-            
-            --target=node20 \
-            
-            --format=cjs \
-            
+          npx esbuild "api/trpc/[...trpc].ts"           
+            --bundle             
+            --platform=node             
+            --target=node20             
+            --format=cjs             
             --outfile=".vercel/output/functions/api/trpc/[...trpc].func/index.js"
             
 
@@ -110,28 +105,18 @@ jobs:
       
         run: |
         
-          npx esbuild "api/auth/kakao/login.ts" \
-          
-            --bundle \
-            
-            --platform=node \
-            
-            --target=node20 \
-            
-            --format=cjs \
-            
+          npx esbuild "api/auth/kakao/login.ts"           
+            --bundle             
+            --platform=node             
+            --target=node20             
+            --format=cjs             
             --outfile=".vercel/output/functions/api/auth/kakao/login.func/index.js"
             
-          npx esbuild "api/auth/kakao/callback.ts" \
-          
-            --bundle \
-            
-            --platform=node \
-            
-            --target=node20 \
-            
-            --format=cjs \
-            
+          npx esbuild "api/auth/kakao/callback.ts"           
+            --bundle             
+            --platform=node             
+            --target=node20             
+            --format=cjs             
             --outfile=".vercel/output/functions/api/auth/kakao/callback.func/index.js"
             
 
@@ -140,18 +125,12 @@ jobs:
       
         run: |
         
-          npx esbuild "api/couple-pdf-report.ts" \
-          
-            --bundle \
-            
-            --platform=node \
-            
-            --target=node20 \
-            
-            --format=cjs \
-            
-            --external:pdfkit \
-            
+          npx esbuild "api/couple-pdf-report.ts"           
+            --bundle             
+            --platform=node             
+            --target=node20             
+            --format=cjs             
+            --external:pdfkit             
             --outfile=".vercel/output/functions/api/couple-pdf-r
 
 
