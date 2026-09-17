@@ -13,6 +13,7 @@ import {
 } from "../../drizzle/schema";
 import type { CommercePaymentOutcome, CommerceProductCode } from "../../shared/commerce";
 import {
+  decryptCommerceValue,
   encryptCommerceEmail,
   encryptCommerceValue,
   hashCommerceEmail,
@@ -56,6 +57,69 @@ type PaymentResponse = {
   startGrant: EntitlementStartGrant | null;
   alreadyProcessed: boolean;
 };
+
+export type CoachingBookingRequest = {
+  contactName: string;
+  contactPhone: string;
+  requestedWindowStart: string;
+  requestedWindowEnd: string;
+  sessionMode: "online" | "in_person";
+  notes?: string;
+};
+
+type NormalizedCoachingBookingRequest = {
+  contactName: string;
+  contactPhone: string;
+  requestedWindowStart: Date;
+  requestedWindowEnd: Date;
+  sessionMode: "online" | "in_person";
+  notes: string | null;
+};
+
+const PENDING_COACHING_BOOKING_VERSION = 1;
+
+export function normalizeCoachingBookingRequest(request: CoachingBookingRequest | undefined): NormalizedCoachingBookingRequest | null {
+  if (!request) return null;
+  const contactName = request.contactName.trim();
+  const contactPhone = request.contactPhone.trim();
+  const requestedWindowStart = new Date(request.requestedWindowStart);
+  const requestedWindowEnd = new Date(request.requestedWindowEnd);
+  const notes = request.notes?.trim() || null;
+  if (!contactName || contactName.length > 100) throw new Error("INVALID_COACHING_CONTACT_NAME");
+  if (!contactPhone || contactPhone.length > 40) throw new Error("INVALID_COACHING_CONTACT_PHONE");
+  if (Number.isNaN(requestedWindowStart.getTime()) || Number.isNaN(requestedWindowEnd.getTime()) || requestedWindowEnd <= requestedWindowStart) throw new Error("INVALID_COACHING_REQUESTED_WINDOW");
+  if (request.sessionMode !== "online" && request.sessionMode !== "in_person") throw new Error("INVALID_COACHING_SESSION_MODE");
+  if (notes && notes.length > 2000) throw new Error("INVALID_COACHING_NOTES");
+  return { contactName, contactPhone, requestedWindowStart, requestedWindowEnd, sessionMode: request.sessionMode, notes };
+}
+
+export function encryptPendingCoachingBookingRequest(request: NormalizedCoachingBookingRequest): string {
+  return encryptCommerceValue(JSON.stringify({ version: PENDING_COACHING_BOOKING_VERSION, request: {
+    contactName: request.contactName, contactPhone: request.contactPhone,
+    requestedWindowStart: request.requestedWindowStart.toISOString(), requestedWindowEnd: request.requestedWindowEnd.toISOString(),
+    sessionMode: request.sessionMode, notes: request.notes,
+  } }));
+}
+
+export function decryptPendingCoachingBookingRequest(value: string | null | undefined): NormalizedCoachingBookingRequest | null {
+  if (!value) return null;
+  try {
+    const payload = JSON.parse(decryptCommerceValue(value)) as { version?: number; request?: CoachingBookingRequest };
+    return payload.version === PENDING_COACHING_BOOKING_VERSION ? normalizeCoachingBookingRequest(payload.request) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function getCoachingBookingPersistence(request: NormalizedCoachingBookingRequest | null) {
+  if (!request) return { sessionMode: "undecided" as const, requestedWindowStart: null, requestedWindowEnd: null, detailsEncrypted: null };
+  return {
+    sessionMode: request.sessionMode,
+    requestedWindowStart: request.requestedWindowStart,
+    requestedWindowEnd: request.requestedWindowEnd,
+    detailsEncrypted: encryptCommerceValue(JSON.stringify({ contactName: request.contactName, contactPhone: request.contactPhone, notes: request.notes })),
+  };
+}
 
 function newOrderNumber(): string {
   return `HC-${crypto.randomUUID().replace(/-/g, "").slice(0, 24).toUpperCase()}`;
@@ -107,6 +171,7 @@ async function createCheckoutForProvider(input: {
   email: string;
   idempotencyKey: string;
   couponCode?: string;
+  bookingRequest?: CoachingBookingRequest;
   channel?: "app" | "web";
   userId?: number;
   authenticatedEmail?: string | null;
@@ -128,6 +193,7 @@ async function createCheckoutForProvider(input: {
   const emailHash = hashCommerceEmail(email);
   const channel = input.channel === "web" ? "web" : "app";
   const isTestOrder = provider === "test" || provider === "toss_pg";
+  const bookingRequest = normalizeCoachingBookingRequest(input.bookingRequest);
   const now = new Date();
 
   return (db as any).transaction(async (tx: any) => {
@@ -162,6 +228,8 @@ async function createCheckoutForProvider(input: {
     ) {
       throw new Error("TEST_CHECKOUT_REQUIRES_AN_ACTIVE_PAID_PRODUCT");
     }
+
+    if (bookingRequest && product.fulfillmentType !== "coaching") throw new Error("COACHING_BOOKING_REQUEST_REQUIRES_COACHING_PRODUCT");
 
     const priceRows = await tx
       .select()
@@ -281,12 +349,14 @@ async function createCheckoutForProvider(input: {
       await consumeCouponReservation(tx, orderId);
       const entitlementId = Number(entitlementInsert[0].insertId);
       if (product.fulfillmentType === "coaching") {
+        const bookingPersistence = getCoachingBookingPersistence(bookingRequest);
         const bookingInsert = await tx.insert(coachingBookings).values({
           userId: linkedUserId,
           customerId,
           orderId,
           productId: product.id,
           status: "pending_schedule",
+          ...bookingPersistence,
         });
         await tx.insert(coachingBookingEvents).values({
           bookingId: Number(bookingInsert[0].insertId),
@@ -319,6 +389,7 @@ async function createCheckoutForProvider(input: {
       providerOrderId: createdOrder.orderNumber,
       status: "ready",
       idempotencyKey: input.idempotencyKey,
+      ...(bookingRequest ? { rawPayloadEncrypted: encryptPendingCoachingBookingRequest(bookingRequest) } : {}),
     });
 
     return asCheckoutResponse({
@@ -340,6 +411,7 @@ export async function createTestCheckout(input: {
   email: string;
   idempotencyKey: string;
   couponCode?: string;
+  bookingRequest?: CoachingBookingRequest;
   channel?: "app" | "web";
   userId?: number;
   authenticatedEmail?: string | null;
@@ -352,6 +424,7 @@ export async function createTossTestCheckout(input: {
   email: string;
   idempotencyKey: string;
   couponCode?: string;
+  bookingRequest?: CoachingBookingRequest;
   channel?: "app" | "web";
   userId?: number;
   authenticatedEmail?: string | null;
@@ -383,6 +456,7 @@ async function completePaymentForProvider(input: {
         transactionId: paymentTransactions.id,
         transactionStatus: paymentTransactions.status,
         savedPaymentId: paymentTransactions.providerPaymentId,
+        pendingBookingRequestEncrypted: paymentTransactions.rawPayloadEncrypted,
         orderId: orders.id,
         orderStatus: orders.status,
         orderNumber: orders.orderNumber,
@@ -461,7 +535,7 @@ async function completePaymentForProvider(input: {
         .set({
           status: "approved",
           providerPaymentId: input.providerPaymentId,
-          ...(input.rawPayloadEncrypted ? { rawPayloadEncrypted: input.rawPayloadEncrypted } : {}),
+          rawPayloadEncrypted: input.rawPayloadEncrypted ?? null,
           approvedAt: now,
         })
         .where(eq(paymentTransactions.id, record.transactionId));
@@ -489,12 +563,14 @@ async function completePaymentForProvider(input: {
       const productCode = itemProductRows[0]?.code as CommerceProductCode | undefined;
       if (!productCode) throw new Error("ENTITLEMENT_PRODUCT_NOT_FOUND");
       if (record.fulfillmentType === "coaching") {
+        const bookingPersistence = getCoachingBookingPersistence(decryptPendingCoachingBookingRequest(record.pendingBookingRequestEncrypted));
         const bookingInsert = await tx.insert(coachingBookings).values({
           userId: record.userId,
           customerId: record.customerId,
           orderId: record.orderId,
           productId: record.productId,
           status: "pending_schedule",
+          ...bookingPersistence,
         });
         await tx.insert(coachingBookingEvents).values({
           bookingId: Number(bookingInsert[0].insertId),
@@ -520,7 +596,7 @@ async function completePaymentForProvider(input: {
       .set({
         status,
         providerPaymentId: input.providerPaymentId,
-        ...(input.rawPayloadEncrypted ? { rawPayloadEncrypted: input.rawPayloadEncrypted } : {}),
+        rawPayloadEncrypted: input.rawPayloadEncrypted ?? null,
         cancelledAt: now,
       })
       .where(eq(paymentTransactions.id, record.transactionId));
