@@ -42,6 +42,9 @@ jobs:
           mkdir -p ".vercel/output/functions/api/parent-child-pdf-report.func"
           mkdir -p ".vercel/output/functions/api/auth/kakao/login.func"
           mkdir -p ".vercel/output/functions/api/auth/kakao/callback.func"
+          mkdir -p ".vercel/output/functions/api/auth/legacy-admin-login.func"
+          mkdir -p ".vercel/output/functions/api/auth/legacy-admin-session.func"
+          mkdir -p ".vercel/output/functions/api/auth/legacy-admin-logout.func"
 
       - name: Build tRPC API function (with mysql2 bundled)
         run: |
@@ -51,6 +54,12 @@ jobs:
         run: |
           npx esbuild "api/auth/kakao/login.ts" --bundle --platform=node --target=node20 --format=cjs --outfile=".vercel/output/functions/api/auth/kakao/login.func/index.js"
           npx esbuild "api/auth/kakao/callback.ts" --bundle --platform=node --target=node20 --format=cjs --outfile=".vercel/output/functions/api/auth/kakao/callback.func/index.js"
+
+      - name: Build existing legacy-admin API functions
+        run: |
+          npx esbuild "api/auth/legacy-admin-login.ts" --bundle --platform=node --target=node20 --format=cjs --outfile=".vercel/output/functions/api/auth/legacy-admin-login.func/index.js"
+          npx esbuild "api/auth/legacy-admin-session.ts" --bundle --platform=node --target=node20 --format=cjs --outfile=".vercel/output/functions/api/auth/legacy-admin-session.func/index.js"
+          npx esbuild "api/auth/legacy-admin-logout.ts" --bundle --platform=node --target=node20 --format=cjs --outfile=".vercel/output/functions/api/auth/legacy-admin-logout.func/index.js"
 
       - name: Build PDF report API functions
         run: |
@@ -87,6 +96,9 @@ jobs:
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/parent-child-pdf-report.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/kakao/login.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/kakao/callback.func/.vc-config.json"
+          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/legacy-admin-login.func/.vc-config.json"
+          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/legacy-admin-session.func/.vc-config.json"
+          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/legacy-admin-logout.func/.vc-config.json"
 
       - name: Write Vercel output config
         run: |
@@ -94,6 +106,9 @@ jobs:
           {
             "version": 3,
             "routes": [
+              { "src": "/api/auth/legacy-admin-login", "dest": "/api/auth/legacy-admin-login" },
+              { "src": "/api/auth/legacy-admin-session", "dest": "/api/auth/legacy-admin-session" },
+              { "src": "/api/auth/legacy-admin-logout", "dest": "/api/auth/legacy-admin-logout" },
               { "src": "/api/trpc/(.*)", "dest": "/api/trpc/[...trpc]"},
               { "src": "/api/couple-pdf-report", "dest": "/api/couple-pdf-report" },
               { "src": "/api/parent-child-pdf-report", "dest": "/api/parent-child-pdf-report" },

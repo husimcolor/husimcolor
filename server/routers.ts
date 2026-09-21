@@ -14,6 +14,7 @@ import {
   isTestPaymentEnabled,
 } from "./commerce/order-service";
 import { isTossTestPaymentEnabled } from "./commerce/toss-test-provider";
+import { getTossCardReviewConfig, isTossCardReviewEnabled } from "./commerce/toss-card-review";
 import { isPublicPaidAnalysisEnabled } from "./commerce/release-policy";
 import { previewCoupon } from "./commerce/coupon-service";
 import { consumeEntitlementForAnalysisStart, verifyAnalysisDeliveryGrant } from "./commerce/entitlement-service";
@@ -265,9 +266,15 @@ export const appRouter = router({
           }),
         )
         .mutation(({ input }) => completeTossTestPayment(input)),
+      cardReview: publicProcedure
+        .input(z.object({
+          productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
+        }))
+        .query(({ input }) => getTossCardReviewConfig(input.productCode)),
       testMode: publicProcedure.query(() => ({
         localSimulatorEnabled: isTestPaymentEnabled(),
         tossTestEnabled: isTossTestPaymentEnabled(),
+        tossCardReviewEnabled: isTossCardReviewEnabled(),
         paidAnalysisPublicEnabled: isPublicPaidAnalysisEnabled(),
       })),
     }),

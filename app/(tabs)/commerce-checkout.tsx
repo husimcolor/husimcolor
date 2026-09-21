@@ -66,13 +66,25 @@ async function loadTossPaymentsScript(): Promise<(clientKey: string) => TossPaym
 
 export default function CommerceCheckoutScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ product?: string | string[]; relationType?: string | string[]; paymentKey?: string | string[]; orderId?: string | string[]; amount?: string | string[]; code?: string | string[]; channel?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    product?: string | string[];
+    relationType?: string | string[];
+    paymentKey?: string | string[];
+    orderId?: string | string[];
+    amount?: string | string[];
+    code?: string | string[];
+    channel?: string | string[];
+    review?: string | string[];
+    reviewResult?: string | string[];
+  }>();
   const productCode = getSingleParam(params.product);
   const relationType = getSingleParam(params.relationType);
   const channel = getSingleParam(params.channel) === "web" ? "web" : "app";
   const paymentKey = getSingleParam(params.paymentKey);
   const orderNumber = getSingleParam(params.orderId);
   const amount = Number(getSingleParam(params.amount));
+  const requestedCardReview = getSingleParam(params.review) === "toss-card-review";
+  const reviewResult = getSingleParam(params.reviewResult);
   const product = productCode ? getCommerceProduct(productCode) : undefined;
   const [email, setEmail] = useState("");
   const [couponCode, setCouponCode] = useState("");
@@ -83,6 +95,14 @@ export default function CommerceCheckoutScreen() {
   const completeCheckout = trpc.commerce.checkout.completeTossTest.useMutation();
   const testMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = testMode.data?.paidAnalysisPublicEnabled ?? false;
+  // When card review is enabled, every paid-analysis entry uses the non-persistent
+  // review handoff first, even though Preview also has test-payment mode enabled.
+  const automaticCardReview = Boolean(testMode.data?.tossCardReviewEnabled && isPaidAnalysisCode(productCode));
+  const cardReviewMode = requestedCardReview || automaticCardReview;
+  const cardReview = trpc.commerce.checkout.cardReview.useQuery(
+    { productCode: productCode as "personal_deep" | "couple_love_deep" | "parent_child_deep" },
+    { enabled: cardReviewMode && isPaidAnalysisCode(productCode), retry: false },
+  );
 
   const moveToAnalysis = async (grant: { productCode: CommerceProductCode; accessToken: string; expiresAt: string }) => {
     await saveCommerceStartGrant(grant);
@@ -95,7 +115,7 @@ export default function CommerceCheckoutScreen() {
   };
 
   useEffect(() => {
-    if (!paymentKey || !orderNumber || !Number.isInteger(amount) || amount < 0 || processedReturn.current || !isPaidAnalysisCode(productCode)) return;
+    if (cardReviewMode || !paymentKey || !orderNumber || !Number.isInteger(amount) || amount < 0 || processedReturn.current || !isPaidAnalysisCode(productCode)) return;
     processedReturn.current = true;
     setProcessing(true);
     completeCheckout
@@ -106,7 +126,7 @@ export default function CommerceCheckoutScreen() {
       })
       .catch(() => setMessage("테스트 결제 승인 확인에 실패했습니다. 동일 결제를 다시 요청하지 말고 관리자에게 주문번호를 알려 주세요."))
       .finally(() => setProcessing(false));
-  }, [paymentKey, orderNumber, amount, productCode]);
+  }, [cardReviewMode, paymentKey, orderNumber, amount, productCode]);
 
   const requestPayment = async () => {
     if (!isPaidAnalysisCode(productCode) || !product) return;
@@ -150,7 +170,6 @@ export default function CommerceCheckoutScreen() {
         customerEmail: email.trim(),
         successUrl: `${origin}/commerce-checkout?${baseParams}`,
         failUrl: `${origin}/commerce-checkout?${baseParams}`,
-        // 카드사·간편결제 앱 자체창(DIRECT)을 열지 않고, 사용자가 결제수단을 고르는 통합 결제창을 고정한다.
         card: { flowMode: "DEFAULT" },
         windowTarget: "self",
       });
@@ -161,8 +180,79 @@ export default function CommerceCheckoutScreen() {
     }
   };
 
+  const requestCardReviewPayment = async () => {
+    if (!cardReview.data || Platform.OS !== "web") {
+      setMessage("심사용 Toss 테스트 결제창은 현재 웹 환경에서만 연결되어 있습니다.");
+      return;
+    }
+    setProcessing(true);
+    setMessage(null);
+    try {
+      const TossPayments = await loadTossPaymentsScript();
+      const tossPayments = TossPayments(cardReview.data.tossClientKey);
+      const payment = tossPayments.payment({ customerKey: "ANONYMOUS" });
+      const origin = window.location.origin;
+      const baseParams = new URLSearchParams({
+        product: cardReview.data.productCode,
+        ...(relationType ? { relationType } : {}),
+        ...(channel === "web" ? { channel } : {}),
+        review: "toss-card-review",
+        reviewResult: "returned",
+      }).toString();
+      await payment.requestPayment({
+        method: "CARD",
+        amount: { currency: "KRW", value: cardReview.data.amountKrw },
+        orderId: cardReview.data.orderNumber,
+        orderName: cardReview.data.productName,
+        customerEmail: cardReview.data.customerEmail,
+        successUrl: `${origin}/commerce-checkout?${baseParams}`,
+        failUrl: `${origin}/commerce-checkout?${baseParams}`,
+        card: { flowMode: "DEFAULT" },
+        windowTarget: "self",
+      });
+    } catch {
+      setMessage("심사용 Toss 테스트 결제창을 열지 못했습니다. 결제 승인이나 주문 생성은 수행되지 않았습니다.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   if (!isPaidAnalysisCode(productCode) || !product) {
     return <ScreenContainer><View style={styles.center}><Text style={styles.message}>결제할 분석 상품을 먼저 선택해 주세요.</Text></View></ScreenContainer>;
+  }
+
+  if (cardReviewMode && reviewResult) {
+    return (
+      <ScreenContainer><View style={styles.center}>
+        <Text style={styles.title}>심사용 Toss 테스트 확인 완료</Text>
+        <Text style={styles.reviewNotice}>이 화면은 카드사 심사용 결제창 확인 전용입니다. 결제 승인, 주문 생성, 이용권 발급, 분석 시작은 수행하지 않았습니다.</Text>
+        <Pressable onPress={() => router.replace('/(tabs)/index' as any)} style={styles.back}><Text style={styles.backText}>홈으로 돌아가기</Text></Pressable>
+      </View></ScreenContainer>
+    );
+  }
+
+  if (cardReviewMode) {
+    if (cardReview.isLoading) {
+      return <ScreenContainer><View style={styles.center}><ActivityIndicator color="#3f7b52" /></View></ScreenContainer>;
+    }
+    if (!cardReview.data) {
+      return <ScreenContainer><View style={styles.center}><Text style={styles.message}>심사용 Toss 테스트 결제창은 현재 열 수 없습니다.</Text><Pressable onPress={() => router.replace('/(tabs)/index' as any)} style={styles.back}><Text style={styles.backText}>홈으로 돌아가기</Text></Pressable></View></ScreenContainer>;
+    }
+    return (
+      <ScreenContainer edges={["top", "left", "right"]}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <Text style={styles.eyebrow}>TOSS PAYMENTS CARD REVIEW</Text>
+          <Text style={styles.title}>{cardReview.data.productName}</Text>
+          <Text style={styles.price}>{cardReview.data.amountKrw.toLocaleString()}원</Text>
+          <Text style={styles.reviewNotice}>카드사 심사용 Toss 테스트 결제창입니다. 실제 청구, 고객·주문·결제 데이터 생성, 이용권 발급, 분석 시작은 수행하지 않습니다.</Text>
+          {message ? <Text style={styles.error}>{message}</Text> : null}
+          <Pressable disabled={processing} onPress={requestCardReviewPayment} style={({ pressed }) => [styles.button, processing && styles.buttonDisabled, pressed && !processing && { opacity: 0.86 }]}>
+            {processing ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Toss 테스트 결제창 열기</Text>}
+          </Pressable>
+          <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>이전으로 돌아가기</Text></Pressable>
+        </ScrollView>
+      </ScreenContainer>
+    );
   }
 
   if (!paidAnalysisPublicEnabled) {
@@ -194,9 +284,10 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, padding: 24, backgroundColor: "#F8F3EA" },
   center: { flex: 1, padding: 24, alignItems: "center", justifyContent: "center" },
   eyebrow: { color: "#8B6B4A", fontSize: 13, fontWeight: "800", letterSpacing: 0.8, marginTop: 16 },
-  title: { color: "#2D2420", fontSize: 25, fontWeight: "800", marginTop: 10 },
-  price: { color: "#7D5E38", fontSize: 20, fontWeight: "800", marginTop: 8 },
+  title: { color: "#2D2420", fontSize: 25, fontWeight: "800", marginTop: 10, textAlign: "center" },
+  price: { color: "#7D5E38", fontSize: 20, fontWeight: "800", marginTop: 8, textAlign: "center" },
   notice: { color: "#6D6258", fontSize: 14, lineHeight: 22, marginTop: 18, marginBottom: 28 },
+  reviewNotice: { color: "#5C4B3E", fontSize: 14, lineHeight: 22, marginTop: 18, marginBottom: 28, textAlign: "center" },
   label: { color: "#3C312A", fontSize: 15, fontWeight: "700", marginBottom: 9 },
   optional: { color: "#897D72", fontSize: 13, fontWeight: "400" },
   input: { backgroundColor: "#FFFDF9", borderColor: "#D9CDBF", borderWidth: 1, borderRadius: 12, color: "#2D2420", fontSize: 16, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 20 },
