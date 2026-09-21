@@ -26,6 +26,7 @@ type TossPaymentsInstance = {
 };
 
 const ANALYSIS_SERVICE_PERIOD = "검사 완료 즉시 제공 · 기술적 오류 발생 시 최대 24시간 이내 제공 상태를 확인·안내";
+const COACHING_SERVICE_PERIOD = "희망 일정 접수 후 3영업일 이내 일정 안내 · 결제일로부터 최대 60일 이내 서비스 제공";
 const REFUND_POLICY_URL = "https://husimcolor.com/refund-policy";
 
 declare global {
@@ -40,6 +41,16 @@ function getSingleParam(value: string | string[] | undefined): string | undefine
 
 function isPaidAnalysisCode(value: string | undefined): value is Extract<CommerceProductCode, "personal_deep" | "couple_love_deep" | "parent_child_deep"> {
   return Boolean(value && isPaidAnalysisProduct(value));
+}
+
+function isCardReviewProductCode(value: string | undefined): value is Extract<CommerceProductCode, "personal_deep" | "couple_love_deep" | "parent_child_deep" | "personal_coaching" | "couple_coaching"> {
+  return isPaidAnalysisCode(value) || value === "personal_coaching" || value === "couple_coaching";
+}
+
+function getCardReviewServicePeriod(productCode: string | undefined) {
+  return productCode === "personal_coaching" || productCode === "couple_coaching"
+    ? COACHING_SERVICE_PERIOD
+    : ANALYSIS_SERVICE_PERIOD;
 }
 
 function getIdempotencyKey(): string {
@@ -103,9 +114,10 @@ export default function CommerceCheckoutScreen() {
   const automaticCardReview = Boolean(testMode.data?.tossCardReviewEnabled && isPaidAnalysisCode(productCode));
   const cardReviewMode = requestedCardReview || automaticCardReview;
   const cardReview = trpc.commerce.checkout.cardReview.useQuery(
-    { productCode: productCode as "personal_deep" | "couple_love_deep" | "parent_child_deep" },
-    { enabled: cardReviewMode && isPaidAnalysisCode(productCode), retry: false },
+    { productCode: productCode as "personal_deep" | "couple_love_deep" | "parent_child_deep" | "personal_coaching" | "couple_coaching" },
+    { enabled: cardReviewMode && isCardReviewProductCode(productCode), retry: false },
   );
+  const cardReviewServicePeriod = getCardReviewServicePeriod(productCode);
 
   const moveToAnalysis = async (grant: { productCode: CommerceProductCode; accessToken: string; expiresAt: string }) => {
     await saveCommerceStartGrant(grant);
@@ -220,7 +232,11 @@ export default function CommerceCheckoutScreen() {
     }
   };
 
-  if (!isPaidAnalysisCode(productCode) || !product) {
+  // Coaching remains unavailable to the ordinary app checkout. It can render
+  // only after the explicit review-only switch has selected its read-only
+  // configuration above.
+  const canRenderCardReview = cardReviewMode && isCardReviewProductCode(productCode);
+  if ((!isPaidAnalysisCode(productCode) && !canRenderCardReview) || !product) {
     return <ScreenContainer><View style={styles.center}><Text style={styles.message}>결제할 분석 상품을 먼저 선택해 주세요.</Text></View></ScreenContainer>;
   }
 
@@ -246,10 +262,10 @@ export default function CommerceCheckoutScreen() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <Text style={styles.eyebrow}>TOSS PAYMENTS CARD REVIEW</Text>
           <Text style={styles.title}>{cardReview.data.productName}</Text>
-          <Text style={styles.price}>{cardReview.data.amountKrw.toLocaleString()}원</Text>
-          <View style={styles.servicePeriodCard}>
-            <Text style={styles.servicePeriodTitle}>서비스 제공기간</Text>
-            <Text style={styles.servicePeriodText}>{ANALYSIS_SERVICE_PERIOD}</Text>
+            <Text style={styles.price}>{cardReview.data.amountKrw.toLocaleString()}원</Text>
+            <View style={styles.servicePeriodCard}>
+              <Text style={styles.servicePeriodTitle}>서비스 제공기간</Text>
+            <Text style={styles.servicePeriodText}>{cardReviewServicePeriod}</Text>
             <Pressable onPress={() => Linking.openURL(REFUND_POLICY_URL)} accessibilityRole="link" accessibilityLabel="환불정책 확인하기">
               <Text style={styles.policyLink}>환불정책 확인</Text>
             </Pressable>

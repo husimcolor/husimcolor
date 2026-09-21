@@ -27,7 +27,7 @@ describe("Toss card-review checkout screen", () => {
 
   it("uses a standard Toss card-selection window without an email input or normal checkout mutation", () => {
     const reviewRequest = sectionAfter("const requestCardReviewPayment");
-    const end = reviewRequest.indexOf("if (!isPaidAnalysisCode(productCode) || !product)");
+    const end = reviewRequest.indexOf("const canRenderCardReview");
     const onlyReviewRequest = reviewRequest.slice(0, end);
 
     expect(onlyReviewRequest).toContain('card: { flowMode: "DEFAULT" }');
@@ -52,9 +52,17 @@ describe("Toss card-review checkout screen", () => {
     const onlyReviewPresentation = reviewPresentation.slice(0, firstNonReviewBranch);
 
     expect(checkoutScreen).toContain('const ANALYSIS_SERVICE_PERIOD = "검사 완료 즉시 제공 · 기술적 오류 발생 시 최대 24시간 이내 제공 상태를 확인·안내"');
-    expect(onlyReviewPresentation).toContain("{ANALYSIS_SERVICE_PERIOD}");
+    expect(onlyReviewPresentation).toContain("{cardReviewServicePeriod}");
     expect(checkoutScreen).toContain('const REFUND_POLICY_URL = "https://husimcolor.com/refund-policy"');
     expect(onlyReviewPresentation).toContain("환불정책 확인");
     expect(onlyReviewPresentation).toContain("Linking.openURL(REFUND_POLICY_URL)");
+  });
+
+  it("uses the existing non-persistent review request for coaching with its approved service period", () => {
+    expect(checkoutScreen).toContain('value === "personal_coaching" || value === "couple_coaching"');
+    expect(checkoutScreen).toContain('const COACHING_SERVICE_PERIOD = "희망 일정 접수 후 3영업일 이내 일정 안내 · 결제일로부터 최대 60일 이내 서비스 제공"');
+    expect(checkoutScreen).toContain("{cardReviewServicePeriod}");
+    expect(checkoutScreen).toContain("const canRenderCardReview = cardReviewMode && isCardReviewProductCode(productCode)");
+    expect(checkoutScreen).toContain("(!isPaidAnalysisCode(productCode) && !canRenderCardReview) || !product");
   });
 });

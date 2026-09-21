@@ -4,11 +4,22 @@ import { getCommerceProduct, isPaidAnalysisProduct, type CommerceProductCode } f
 
 type CardReviewProductCode = Extract<
   CommerceProductCode,
-  "personal_deep" | "couple_love_deep" | "parent_child_deep"
+  "personal_deep" | "couple_love_deep" | "parent_child_deep" | "personal_coaching" | "couple_coaching"
 >;
 
+const COACHING_CARD_REVIEW_PRESENTATION = {
+  personal_coaching: {
+    productName: "1:1 프리미엄 컬러심리 코칭",
+    amountKrw: 100_000,
+  },
+  couple_coaching: {
+    productName: "부부·커플 관계 코칭",
+    amountKrw: 180_000,
+  },
+} as const;
+
 function isCardReviewProductCode(value: CommerceProductCode): value is CardReviewProductCode {
-  return isPaidAnalysisProduct(value);
+  return isPaidAnalysisProduct(value) || value === "personal_coaching" || value === "couple_coaching";
 }
 
 function hasTestClientKey(environment: NodeJS.ProcessEnv): boolean {
@@ -60,7 +71,7 @@ export function getTossCardReviewConfig(
   customerEmail: "review@husimcolor.com";
 } {
   if (!isCardReviewProductCode(productCode)) {
-    throw new Error("TOSS_CARD_REVIEW_REQUIRES_PAID_ANALYSIS_PRODUCT");
+    throw new Error("TOSS_CARD_REVIEW_REQUIRES_PAID_PRODUCT");
   }
   if (!isTossCardReviewEnabled(environment)) {
     throw new Error("TOSS_CARD_REVIEW_DISABLED");
@@ -70,11 +81,14 @@ export function getTossCardReviewConfig(
   if (!product || !product.requiresPayment || !product.amountKrw) {
     throw new Error("TOSS_CARD_REVIEW_PRODUCT_NOT_AVAILABLE");
   }
+  const coachingPresentation = productCode === "personal_coaching" || productCode === "couple_coaching"
+    ? COACHING_CARD_REVIEW_PRESENTATION[productCode]
+    : null;
 
   return {
     productCode,
-    productName: product.name,
-    amountKrw: product.amountKrw,
+    productName: coachingPresentation?.productName ?? product.name,
+    amountKrw: coachingPresentation?.amountKrw ?? product.amountKrw,
     orderNumber: createReviewOrderNumber(productCode),
     tossClientKey: requireReviewClientKey(environment),
     customerEmail: "review@husimcolor.com",
