@@ -70,7 +70,7 @@ describe("Toss card-review presentation flow", () => {
     };
 
     expect(() => getTossCardReviewConfig("friend_relationship", environment)).toThrow(
-      "TOSS_CARD_REVIEW_REQUIRES_PAID_ANALYSIS_PRODUCT",
+      "TOSS_CARD_REVIEW_REQUIRES_PAID_PRODUCT",
     );
     expect(() => getTossCardReviewConfig("personal_deep", { NODE_ENV: "test" })).toThrow("TOSS_CARD_REVIEW_DISABLED");
   });
