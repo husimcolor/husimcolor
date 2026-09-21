@@ -232,7 +232,11 @@ export default function CommerceCheckoutScreen() {
     }
   };
 
-  if (!isPaidAnalysisCode(productCode) || !product) {
+  // Coaching remains unavailable to the ordinary app checkout. It can render
+  // only after the explicit review-only switch has selected its read-only
+  // configuration above.
+  const canRenderCardReview = cardReviewMode && isCardReviewProductCode(productCode);
+  if ((!isPaidAnalysisCode(productCode) && !canRenderCardReview) || !product) {
     return <ScreenContainer><View style={styles.center}><Text style={styles.message}>결제할 분석 상품을 먼저 선택해 주세요.</Text></View></ScreenContainer>;
   }
 
