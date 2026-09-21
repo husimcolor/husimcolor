@@ -26,6 +26,7 @@ import {
 } from "@/lib/trialUtils";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const REFUND_POLICY_URL = "https://husimcolor.com/refund-policy";
 
 // ─── 결제 상품 목록 ───────────────────────────────────────────────
 // ─── 프로필 입력 옵션 ─────────────────────────────────────────────
@@ -567,10 +568,17 @@ export default function PaymentScreen() {
         )}
 
         {/* 안내 문구 */}
-        <Text style={[styles.notice, { color: colors.muted }]}>
-          · 결제 후 환불은 카드 선택 전에만 가능합니다{"\n"}
-          · 결제 관련 문의:
-        </Text>
+        <TouchableOpacity
+          onPress={() => Linking.openURL(REFUND_POLICY_URL)}
+          activeOpacity={0.7}
+          accessibilityRole="link"
+          accessibilityLabel="환불정책 확인하기"
+        >
+          <Text style={[styles.notice, styles.refundPolicyLink, { color: colors.muted }]}>
+            · 환불 기준은 환불정책을 확인해 주세요.
+          </Text>
+        </TouchableOpacity>
+        <Text style={[styles.notice, { color: colors.muted }]}>· 결제 관련 문의:</Text>
         <TouchableOpacity
           onPress={() => Linking.openURL("https://open.kakao.com/o/sp6nBerh")}
           activeOpacity={0.7}
@@ -874,6 +882,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     textAlign: "center",
+  },
+  refundPolicyLink: {
+    textDecorationLine: "underline",
+    textDecorationStyle: "dotted",
+    paddingVertical: 2,
   },
   kakaoLink: {
     fontSize: 13,

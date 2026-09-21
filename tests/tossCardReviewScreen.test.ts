@@ -45,4 +45,16 @@ describe("Toss card-review checkout screen", () => {
     expect(onlyReviewReturn).not.toContain("completeCheckout.mutateAsync");
     expect(onlyReviewReturn).not.toContain("moveToAnalysis(");
   });
+
+  it("shows the approved analysis service period and public refund-policy link before payment", () => {
+    const reviewPresentation = sectionAfter("if (cardReviewMode) {");
+    const firstNonReviewBranch = reviewPresentation.indexOf("if (!paidAnalysisPublicEnabled)");
+    const onlyReviewPresentation = reviewPresentation.slice(0, firstNonReviewBranch);
+
+    expect(checkoutScreen).toContain('const ANALYSIS_SERVICE_PERIOD = "검사 완료 즉시 제공 · 기술적 오류 발생 시 최대 24시간 이내 제공 상태를 확인·안내"');
+    expect(onlyReviewPresentation).toContain("{ANALYSIS_SERVICE_PERIOD}");
+    expect(checkoutScreen).toContain('const REFUND_POLICY_URL = "https://husimcolor.com/refund-policy"');
+    expect(onlyReviewPresentation).toContain("환불정책 확인");
+    expect(onlyReviewPresentation).toContain("Linking.openURL(REFUND_POLICY_URL)");
+  });
 });
