@@ -268,7 +268,13 @@ export const appRouter = router({
         .mutation(({ input }) => completeTossTestPayment(input)),
       cardReview: publicProcedure
         .input(z.object({
-          productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
+          productCode: z.enum([
+            "personal_deep",
+            "couple_love_deep",
+            "parent_child_deep",
+            "personal_coaching",
+            "couple_coaching",
+          ]),
         }))
         .query(({ input }) => getTossCardReviewConfig(input.productCode)),
       testMode: publicProcedure.query(() => ({
