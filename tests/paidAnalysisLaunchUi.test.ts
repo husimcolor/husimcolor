@@ -10,7 +10,9 @@ describe("유료 분석 정식 오픈 준비중 UI", () => {
     const source = read("app/(tabs)/index.tsx");
     expect(source).toContain("29,000원");
     expect(source).toContain("정식 오픈 준비중");
-    expect(source).toContain("disabled={!paidAnalysisPublicEnabled}");
+    expect(source).toContain("disabled={!paidAnalysisPublicEnabled && !tossCardReviewEnabled}");
+    expect(source).toContain("if (tossCardReviewEnabled) {");
+    expect(source).toContain("product=personal_deep&review=toss-card-review");
   });
 
   it("관계 화면은 친구 무료 경로를 보존하면서 유료 관계 시작을 준비중으로 막는다", () => {
@@ -18,6 +20,8 @@ describe("유료 분석 정식 오픈 준비중 UI", () => {
     expect(source).toContain("product.id !== 'friend' && !paidAnalysisPublicEnabled");
     expect(source).toContain("paidProductPreparing ? '정식 오픈 준비중'");
     expect(source).toContain("setRelationType('친구')");
+    expect(source).toContain("if (paidProductCode && tossCardReviewEnabled) {");
+    expect(source).toContain("review=toss-card-review");
   });
 
   it("직접 정보 입력 URL도 준비중 유료 검사 시작을 차단한다", () => {

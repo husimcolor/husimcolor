@@ -20,6 +20,11 @@ describe("Toss card-review checkout screen", () => {
     expect(checkoutScreen).toContain("TOSS PAYMENTS CARD REVIEW");
   });
 
+  it("prioritizes non-persistent review mode for paid analysis when both Preview modes are enabled", () => {
+    expect(checkoutScreen).toContain("testMode.data?.tossCardReviewEnabled && isPaidAnalysisCode(productCode)");
+    expect(checkoutScreen).not.toContain("tossCardReviewEnabled && !paidAnalysisPublicEnabled");
+  });
+
   it("uses a standard Toss card-selection window without an email input or normal checkout mutation", () => {
     const reviewRequest = sectionAfter("const requestCardReviewPayment");
     const end = reviewRequest.indexOf("if (!isPaidAnalysisCode(productCode) || !product)");
