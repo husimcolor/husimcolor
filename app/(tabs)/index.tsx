@@ -131,7 +131,7 @@ export default function HomeScreen() {
 
   const handlePersonalDeepEntry = () => {
     if (!paidAnalysisPublicEnabled && !tossCardReviewEnabled) return;
-    if (!paidAnalysisPublicEnabled && tossCardReviewEnabled) {
+    if (tossCardReviewEnabled) {
       router.push('/(tabs)/commerce-checkout?product=personal_deep&review=toss-card-review' as any);
       return;
     }

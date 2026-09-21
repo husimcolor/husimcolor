@@ -95,7 +95,9 @@ export default function CommerceCheckoutScreen() {
   const completeCheckout = trpc.commerce.checkout.completeTossTest.useMutation();
   const testMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = testMode.data?.paidAnalysisPublicEnabled ?? false;
-  const automaticCardReview = Boolean(testMode.data?.tossCardReviewEnabled && !paidAnalysisPublicEnabled);
+  // When card review is enabled, every paid-analysis entry uses the non-persistent
+  // review handoff first, even though Preview also has test-payment mode enabled.
+  const automaticCardReview = Boolean(testMode.data?.tossCardReviewEnabled && isPaidAnalysisCode(productCode));
   const cardReviewMode = requestedCardReview || automaticCardReview;
   const cardReview = trpc.commerce.checkout.cardReview.useQuery(
     { productCode: productCode as "personal_deep" | "couple_love_deep" | "parent_child_deep" },

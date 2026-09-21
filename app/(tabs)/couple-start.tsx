@@ -83,7 +83,7 @@ export default function CoupleStartScreen() {
   const handleStart = () => {
     if (!effectiveRelationType) return;
     if (paidProductCode && !paidAnalysisPublicEnabled && !tossCardReviewEnabled) return;
-    if (paidProductCode && !paidAnalysisPublicEnabled && tossCardReviewEnabled) {
+    if (paidProductCode && tossCardReviewEnabled) {
       router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}&review=toss-card-review` as any);
       return;
     }
