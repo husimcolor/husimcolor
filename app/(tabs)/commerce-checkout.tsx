@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -24,6 +24,9 @@ type TossPaymentsInstance = {
     }): Promise<void>;
   };
 };
+
+const ANALYSIS_SERVICE_PERIOD = "검사 완료 즉시 제공 · 기술적 오류 발생 시 최대 24시간 이내 제공 상태를 확인·안내";
+const REFUND_POLICY_URL = "https://husimcolor.com/refund-policy";
 
 declare global {
   interface Window {
@@ -244,6 +247,13 @@ export default function CommerceCheckoutScreen() {
           <Text style={styles.eyebrow}>TOSS PAYMENTS CARD REVIEW</Text>
           <Text style={styles.title}>{cardReview.data.productName}</Text>
           <Text style={styles.price}>{cardReview.data.amountKrw.toLocaleString()}원</Text>
+          <View style={styles.servicePeriodCard}>
+            <Text style={styles.servicePeriodTitle}>서비스 제공기간</Text>
+            <Text style={styles.servicePeriodText}>{ANALYSIS_SERVICE_PERIOD}</Text>
+            <Pressable onPress={() => Linking.openURL(REFUND_POLICY_URL)} accessibilityRole="link" accessibilityLabel="환불정책 확인하기">
+              <Text style={styles.policyLink}>환불정책 확인</Text>
+            </Pressable>
+          </View>
           <Text style={styles.reviewNotice}>카드사 심사용 Toss 테스트 결제창입니다. 실제 청구, 고객·주문·결제 데이터 생성, 이용권 발급, 분석 시작은 수행하지 않습니다.</Text>
           {message ? <Text style={styles.error}>{message}</Text> : null}
           <Pressable disabled={processing} onPress={requestCardReviewPayment} style={({ pressed }) => [styles.button, processing && styles.buttonDisabled, pressed && !processing && { opacity: 0.86 }]}>
@@ -266,6 +276,13 @@ export default function CommerceCheckoutScreen() {
         <Text style={styles.title}>{product.name}</Text>
         <Text style={styles.price}>{product.amountKrw?.toLocaleString()}원</Text>
         <Text style={styles.notice}>토스 심사 완료 전에는 테스트 키로만 동작하며 실제 청구는 발생하지 않습니다.</Text>
+        <View style={styles.servicePeriodCard}>
+          <Text style={styles.servicePeriodTitle}>서비스 제공기간</Text>
+          <Text style={styles.servicePeriodText}>{ANALYSIS_SERVICE_PERIOD}</Text>
+          <Pressable onPress={() => Linking.openURL(REFUND_POLICY_URL)} accessibilityRole="link" accessibilityLabel="환불정책 확인하기">
+            <Text style={styles.policyLink}>환불정책 확인</Text>
+          </Pressable>
+        </View>
         <Text style={styles.label}>주문 확인 이메일</Text>
         <TextInput style={styles.input} value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" placeholder="name@example.com" placeholderTextColor="#94887C" />
         <Text style={styles.label}>쿠폰 코드 <Text style={styles.optional}>(선택)</Text></Text>
@@ -288,6 +305,10 @@ const styles = StyleSheet.create({
   price: { color: "#7D5E38", fontSize: 20, fontWeight: "800", marginTop: 8, textAlign: "center" },
   notice: { color: "#6D6258", fontSize: 14, lineHeight: 22, marginTop: 18, marginBottom: 28 },
   reviewNotice: { color: "#5C4B3E", fontSize: 14, lineHeight: 22, marginTop: 18, marginBottom: 28, textAlign: "center" },
+  servicePeriodCard: { backgroundColor: "#EFF6EE", borderColor: "#B4CCB3", borderWidth: 1, borderRadius: 14, padding: 14, marginTop: 14, marginBottom: 22 },
+  servicePeriodTitle: { color: "#3D6645", fontSize: 14, fontWeight: "800" },
+  servicePeriodText: { color: "#4D594D", fontSize: 13, lineHeight: 20, marginTop: 5 },
+  policyLink: { color: "#3F7B52", fontSize: 13, fontWeight: "800", textDecorationLine: "underline", marginTop: 8 },
   label: { color: "#3C312A", fontSize: 15, fontWeight: "700", marginBottom: 9 },
   optional: { color: "#897D72", fontSize: 13, fontWeight: "400" },
   input: { backgroundColor: "#FFFDF9", borderColor: "#D9CDBF", borderWidth: 1, borderRadius: 12, color: "#2D2420", fontSize: 16, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 20 },
