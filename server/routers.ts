@@ -54,6 +54,12 @@ import {
   updateAdminSupportTicketStatus,
 } from "./commerce/admin-operations-service";
 import { getAdminCoachingBookingEvents, updateAdminCoachingBooking } from "./commerce/coaching-booking-service";
+import {
+  createAdminCoachingBlackoutDate,
+  getAdminCoachingBlackoutDates,
+  getPublicCoachingBlackoutDates,
+  removeAdminCoachingBlackoutDate,
+} from "./commerce/coaching-blackout-service";
 
 /**
  * PDFKit은 Vercel 함수 번들에서 상대 ICC 파일을 해석하지 못할 수 있으므로,
@@ -277,6 +283,15 @@ export const appRouter = router({
           ]),
         }))
         .query(({ input }) => getTossCardReviewConfig(input.productCode)),
+      offlineCoachingAvailability: publicProcedure
+        .input(z.object({
+          productCode: z.enum(["personal_coaching", "couple_coaching"]),
+          fromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        }))
+        .query(async ({ input }) => ({
+          blackoutDates: await getPublicCoachingBlackoutDates(input.fromDate, input.toDate),
+        })),
       testMode: publicProcedure.query(() => ({
         localSimulatorEnabled: isTestPaymentEnabled(),
         tossTestEnabled: isTossTestPaymentEnabled(),
@@ -356,6 +371,22 @@ export const appRouter = router({
       .mutation(({ input, ctx }) => {
         const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
         return updateAdminCoachingBooking({ ...input, ...auditActor, auditActor });
+      }),
+    coachingBlackoutDates: adminProcedure.query(() => getAdminCoachingBlackoutDates()),
+    createCoachingBlackoutDate: adminProcedure
+      .input(z.object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        note: z.string().max(500).optional(),
+      }))
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return createAdminCoachingBlackoutDate({ ...input, ...auditActor, auditActor });
+      }),
+    removeCoachingBlackoutDate: adminProcedure
+      .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return removeAdminCoachingBlackoutDate({ ...input, ...auditActor, auditActor });
       }),
   }),
 
