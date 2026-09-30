@@ -64,6 +64,7 @@ export default function HomeScreen() {
   const logVisitor = trpc.visitors.log.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
+  const tossCardReviewEnabled = commerceTestMode.data?.tossCardReviewEnabled ?? false;
   useEffect(() => {
     const trackVisit = async () => {
       try {
@@ -129,7 +130,11 @@ export default function HomeScreen() {
   };
 
   const handlePersonalDeepEntry = () => {
-    if (!paidAnalysisPublicEnabled) return;
+    if (!paidAnalysisPublicEnabled && !tossCardReviewEnabled) return;
+    if (tossCardReviewEnabled) {
+      router.push('/(tabs)/commerce-checkout?product=personal_deep&review=toss-card-review' as any);
+      return;
+    }
     if (commerceTestMode.data?.tossTestEnabled) {
       router.push('/(tabs)/commerce-checkout?product=personal_deep' as any);
       return;
@@ -215,19 +220,19 @@ export default function HomeScreen() {
             style={({ pressed }) => [
               styles.serviceCard,
               styles.individualServiceCard,
-              !paidAnalysisPublicEnabled && styles.preparingServiceCard,
+              !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCard,
               pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
             ]}
             onPress={handlePersonalDeepEntry}
-            disabled={!paidAnalysisPublicEnabled}
+            disabled={!paidAnalysisPublicEnabled && !tossCardReviewEnabled}
           >
             <View style={styles.serviceHeadingRow}>
               <Text style={styles.serviceTitle}>🎨 컬러 + 심리카드 개인 심화분석</Text>
               <Text style={styles.servicePrice}>29,000원</Text>
             </View>
             <Text style={styles.serviceSummary}>컬러 3개와 심리카드 3장으로 나를 깊이 살펴봅니다.</Text>
-            <Text style={[styles.serviceCta, !paidAnalysisPublicEnabled && styles.preparingServiceCta]}>
-              {paidAnalysisPublicEnabled ? '나를 깊이 알아보기 →' : '정식 오픈 준비중'}
+            <Text style={[styles.serviceCta, !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCta]}>
+              {paidAnalysisPublicEnabled ? '나를 깊이 알아보기 →' : tossCardReviewEnabled ? '심사용 Toss 테스트 결제 열기 →' : '정식 오픈 준비중'}
             </Text>
           </Pressable>
 

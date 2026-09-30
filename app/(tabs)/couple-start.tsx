@@ -53,6 +53,7 @@ export default function CoupleStartScreen() {
   const logVisitor = trpc.visitors.log.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
+  const tossCardReviewEnabled = commerceTestMode.data?.tossCardReviewEnabled ?? false;
   useEffect(() => {
     const track = async () => {
       try {
@@ -76,12 +77,16 @@ export default function CoupleStartScreen() {
     : selectedProductId === 'parent-child'
       ? 'parent_child_deep'
       : null;
-  const paidProductPreparing = Boolean(paidProductCode && !paidAnalysisPublicEnabled);
+  const paidProductPreparing = Boolean(paidProductCode && !paidAnalysisPublicEnabled && !tossCardReviewEnabled);
   const canProceed = Boolean(effectiveRelationType) && !paidProductPreparing;
 
   const handleStart = () => {
     if (!effectiveRelationType) return;
-    if (paidProductCode && !paidAnalysisPublicEnabled) return;
+    if (paidProductCode && !paidAnalysisPublicEnabled && !tossCardReviewEnabled) return;
+    if (paidProductCode && tossCardReviewEnabled) {
+      router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}&review=toss-card-review` as any);
+      return;
+    }
     if (paidProductCode && commerceTestMode.data?.tossTestEnabled) {
       router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}` as any);
       return;
@@ -193,14 +198,14 @@ export default function CoupleStartScreen() {
                     pressed && { opacity: 0.86, transform: [{ scale: 0.985 }] },
                   ]}
                   onPress={() => handleProductSelect(product)}
-                >
+                  >
                   <Text style={[styles.productTitle, { color: selectedProductId === product.id ? '#FFF9F0' : '#2D2420' }]}>
                     {product.title}
                   </Text>
                   <Text style={[styles.productPrice, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>
                     {product.price}
                   </Text>
-                  {product.id !== 'friend' && !paidAnalysisPublicEnabled ? (
+                  {product.id !== 'friend' && !paidAnalysisPublicEnabled && !tossCardReviewEnabled ? (
                     <Text style={[styles.productPreparing, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>정식 오픈 준비중</Text>
                   ) : null}
                 </Pressable>
@@ -250,7 +255,7 @@ export default function CoupleStartScreen() {
             disabled={!canProceed}
           >
             <Text style={[styles.startBtnText, { color: canProceed ? '#fff' : colors.muted }]}>
-              {paidProductPreparing ? '정식 오픈 준비중' : '다음 · 두 사람 정보 입력하기 →'}
+              {paidProductPreparing ? '정식 오픈 준비중' : paidProductCode && tossCardReviewEnabled && !paidAnalysisPublicEnabled ? '심사용 Toss 테스트 결제 열기 →' : '다음 · 두 사람 정보 입력하기 →'}
             </Text>
           </Pressable>
 
