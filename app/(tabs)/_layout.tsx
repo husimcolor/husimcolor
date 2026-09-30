@@ -69,6 +69,27 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="relationship-mode"
+        options={{
+          title: "검사 방식 선택",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="relationship-invite-start"
+        options={{
+          title: "각자 검사 시작",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="relationship-invite"
+        options={{
+          title: "관계 검사",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="premium-result"
         options={{
           title: "심화 결과",

@@ -4,6 +4,12 @@ import { and, eq, gt } from "drizzle-orm";
 import { analysisRuns, entitlements, orderItems, products } from "../../drizzle/schema";
 import type { CommerceProductCode } from "../../shared/commerce";
 import { getDb } from "../db";
+import {
+  createRelationshipInviteSession,
+  type RelationshipInviteStart,
+  type RelationshipInviteMode,
+} from "./relationship-invite-service";
+import type { RelationType } from "../../constants/coupleData";
 
 const TOKEN_VERSION = "v1";
 const TOKEN_TTL_MS = 2 * 60 * 60 * 1000;
@@ -161,12 +167,15 @@ export function verifyAnalysisDeliveryGrant(input: {
 export async function consumeEntitlementForAnalysisStart(input: {
   accessToken: string;
   productCode: CommerceProductCode;
+  relationshipMode?: RelationshipInviteMode;
+  relationType?: RelationType;
 }): Promise<{
   entitlementId: number;
   analysisRunId: number;
   productCode: CommerceProductCode;
   status: "consumed";
   deliveryGrant: AnalysisDeliveryGrant;
+  relationshipInvite: RelationshipInviteStart | null;
 }> {
   const token = parse(input.accessToken);
   if (token.productCode !== input.productCode) throw new Error("ENTITLEMENT_PRODUCT_MISMATCH");
@@ -226,6 +235,16 @@ export async function consumeEntitlementForAnalysisStart(input: {
       status: "started",
     });
     const analysisRunId = Number(runInsert[0].insertId);
+    const relationshipInvite = input.relationshipMode === "invite_link"
+      ? await createRelationshipInviteSession(tx, {
+          analysisRunId,
+          entitlementId: entitlement.entitlementId,
+          orderId: entitlement.orderId ?? null,
+          productId: entitlement.productId,
+          productCode: input.productCode,
+          relationType: input.relationType ?? (() => { throw new Error("RELATIONSHIP_TYPE_REQUIRED"); })(),
+        })
+      : null;
     return {
       entitlementId: entitlement.entitlementId,
       analysisRunId,
@@ -237,6 +256,7 @@ export async function consumeEntitlementForAnalysisStart(input: {
         productCode: input.productCode,
         accessMode,
       }),
+      relationshipInvite,
     };
   });
 }

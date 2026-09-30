@@ -978,5 +978,5 @@
 - [x] 실제 모바일 Preview에서 wrapper 프레임 제거 상태를 재검증하고 Production 미배포로 결과 전달
 - [x] 첫 화면 심볼 wrapper에 연한 아이보리·웜베이지 배경판과 약한 그림자를 적용하고 심볼을 약 12% 확대
 - [x] Preview에서 제목과의 시각적 균형·원본 심볼 보존을 확인하고 Production 미배포로 결과 전달
-- [ ] 승인된 최신 심볼 배경판·약한 그림자·확대 스타일을 GitHub Actions→Vercel Production에 배포
-- [ ] Production 첫 화면의 최신 심볼 표시와 유료 공개 차단 상태를 확인
+- [x] 승인된 최신 심볼 배경판·약한 그림자·확대 스타일을 GitHub Actions→Vercel Production에 배포
+- [x] Production 첫 화면의 최신 심볼 표시와 유료 공개 차단 상태를 확인

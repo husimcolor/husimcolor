@@ -176,8 +176,6 @@ export const accountLinkChallenges = mysqlTable(
     userId: int("userId").notNull(),
     targetEmailHash: varchar("targetEmailHash", { length: 128 }).notNull(),
     codeHash: varchar("codeHash", { length: 128 }).notNull(),
-    /** 재시도 가능한 Outbox 발송을 위해 서버 전용 키로 암호화한 단발성 인증코드다. */
-    codeEncrypted: text("codeEncrypted"),
     purpose: mysqlEnum("purpose", ["claim_guest_commerce"]).notNull(),
     status: mysqlEnum("status", ["pending", "verified", "expired", "cancelled"])
       .notNull()
@@ -256,10 +254,6 @@ export const orders = mysqlTable(
     ])
       .notNull()
       .default("pending"),
-    /** 주문이 시작된 고객 접점. 과거 주문은 app 기본값으로 보존한다. */
-    channel: mysqlEnum("channel", ["app", "web"]).notNull().default("app"),
-    /** Preview·Toss 테스트 주문은 매출 통계에서 분리한다. */
-    isTest: boolean("isTest").notNull().default(false),
     currency: varchar("currency", { length: 3 }).notNull().default("KRW"),
     regularAmountKrw: int("regularAmountKrw").notNull().default(0),
     listAmountKrw: int("listAmountKrw").notNull(),
@@ -277,7 +271,6 @@ export const orders = mysqlTable(
     index("orders_user_status_idx").on(table.userId, table.status),
     index("orders_customer_status_idx").on(table.customerId, table.status),
     index("orders_guest_status_idx").on(table.guestEmailHash, table.status),
-    index("orders_channel_test_status_idx").on(table.channel, table.isTest, table.status),
   ],
 );
 
@@ -477,6 +470,87 @@ export const analysisRuns = mysqlTable(
 
 export type AnalysisRun = typeof analysisRuns.$inferSelect;
 
+/**
+ * 한 주문의 관계 심화검사를 두 기기에서 안전하게 이어가기 위한 서버 세션이다.
+ * 기존 한 휴대폰 검사는 계속 AsyncStorage 경로를 사용하며 이 테이블을 만들지 않는다.
+ */
+export const relationshipSessions = mysqlTable(
+  "relationship_sessions",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    sessionCode: varchar("sessionCode", { length: 64 }).notNull(),
+    analysisRunId: int("analysisRunId").notNull(),
+    entitlementId: int("entitlementId").notNull(),
+    orderId: int("orderId"),
+    productId: int("productId").notNull(),
+    relationType: varchar("relationType", { length: 50 }).notNull(),
+    mode: mysqlEnum("mode", ["invite_link"]).notNull().default("invite_link"),
+    status: mysqlEnum("status", [
+      "collecting",
+      "awaiting_partner",
+      "report_generating",
+      "email_pending",
+      "completed",
+      "failed",
+    ]).notNull().default("collecting"),
+    /** 원문 토큰을 보관하지 않는다. 모든 토큰은 서버 HMAC 해시만 저장한다. */
+    ownerTokenHash: varchar("ownerTokenHash", { length: 128 }).notNull(),
+    inviteTokenHash: varchar("inviteTokenHash", { length: 128 }).notNull(),
+    resultTokenHash: varchar("resultTokenHash", { length: 128 }).notNull(),
+    /** 기존 결과·PDF 생성기에서 만든 고정 결과 스냅샷의 암호문이다. */
+    resultSnapshotEncrypted: text("resultSnapshotEncrypted"),
+    reportErrorCode: varchar("reportErrorCode", { length: 160 }),
+    reportGeneratedAt: timestamp("reportGeneratedAt"),
+    emailDeliveredAt: timestamp("emailDeliveredAt"),
+    completedAt: timestamp("completedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("relationship_sessions_code_unique").on(table.sessionCode),
+    uniqueIndex("relationship_sessions_analysis_run_unique").on(table.analysisRunId),
+    uniqueIndex("relationship_sessions_invite_token_unique").on(table.inviteTokenHash),
+    index("relationship_sessions_status_idx").on(table.status, table.updatedAt),
+    index("relationship_sessions_order_idx").on(table.orderId),
+  ],
+);
+
+export type RelationshipSession = typeof relationshipSessions.$inferSelect;
+
+/** 참여자별 초안과 최종 제출본을 분리·암호화하여 재접속과 동시 제출을 안전하게 처리한다. */
+export const relationshipParticipants = mysqlTable(
+  "relationship_participants",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    relationshipSessionId: int("relationshipSessionId").notNull(),
+    participant: mysqlEnum("participant", ["A", "B"]).notNull(),
+    status: mysqlEnum("status", ["not_started", "in_progress", "submitted"])
+      .notNull()
+      .default("not_started"),
+    consentAccepted: boolean("consentAccepted").notNull().default(false),
+    consentAcceptedAt: timestamp("consentAcceptedAt"),
+    draftEncrypted: text("draftEncrypted"),
+    submittedEncrypted: text("submittedEncrypted"),
+    draftRevision: int("draftRevision").notNull().default(0),
+    startedAt: timestamp("startedAt"),
+    submittedAt: timestamp("submittedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("relationship_participants_session_slot_unique").on(
+      table.relationshipSessionId,
+      table.participant,
+    ),
+    index("relationship_participants_session_status_idx").on(
+      table.relationshipSessionId,
+      table.status,
+    ),
+  ],
+);
+
+export type RelationshipParticipant = typeof relationshipParticipants.$inferSelect;
+
 /** private 저장 PDF의 위치·보관기한·생성 상태를 별도로 추적한다. */
 export const privateDocuments = mysqlTable(
   "private_documents",
@@ -515,9 +589,7 @@ export const emailOutbox = mysqlTable(
     customerId: int("customerId"),
     orderId: int("orderId"),
     privateDocumentId: int("privateDocumentId"),
-    accountLinkChallengeId: int("accountLinkChallengeId"),
-    supportTicketId: int("supportTicketId"),
-    purpose: mysqlEnum("purpose", ["account_link", "analysis_result_pdf", "support_notification"]).notNull(),
+    purpose: mysqlEnum("purpose", ["account_link", "analysis_result_pdf"]).notNull(),
     toEmailHash: varchar("toEmailHash", { length: 128 }).notNull(),
     toEmailEncrypted: text("toEmailEncrypted").notNull(),
     status: mysqlEnum("status", ["queued", "sending", "sent", "failed", "cancelled"])
@@ -535,36 +607,11 @@ export const emailOutbox = mysqlTable(
     index("email_outbox_status_attempt_idx").on(table.status, table.nextAttemptAt),
     index("email_outbox_user_idx").on(table.userId),
     index("email_outbox_document_idx").on(table.privateDocumentId),
-    index("email_outbox_account_link_challenge_idx").on(table.accountLinkChallengeId),
-    index("email_outbox_support_ticket_idx").on(table.supportTicketId),
     uniqueIndex("email_outbox_document_purpose_unique").on(table.privateDocumentId, table.purpose),
   ],
 );
 
 export type EmailOutboxItem = typeof emailOutbox.$inferSelect;
-
-/** 고객 문의 본문은 암호화해 보관하고, 알림 발송은 공통 Outbox로 처리한다. */
-export const supportTickets = mysqlTable(
-  "support_tickets",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId"),
-    contactNameEncrypted: text("contactNameEncrypted"),
-    contactEmailHash: varchar("contactEmailHash", { length: 128 }).notNull(),
-    contactEmailEncrypted: text("contactEmailEncrypted").notNull(),
-    inquiryType: mysqlEnum("inquiryType", ["payment_refund", "analysis_result", "pdf_email", "coaching_booking", "other"])
-      .notNull()
-      .default("other"),
-    subject: varchar("subject", { length: 160 }).notNull(),
-    messageEncrypted: text("messageEncrypted").notNull(),
-    status: mysqlEnum("status", ["received", "reviewing", "answered"]).notNull().default("received"),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    respondedAt: timestamp("respondedAt"),
-    closedAt: timestamp("closedAt"),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  },
-  (table) => [index("support_tickets_user_status_idx").on(table.userId, table.status)],
-);
 
 /** 향후 홈페이지 코칭의 전액 결제 주문을 일정·진행 상태와 같은 user_id에 연결한다. */
 export const coachingBookings = mysqlTable(

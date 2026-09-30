@@ -40,6 +40,8 @@ export type CouplePdfDownloadPayload = {
   personA: CouplePdfPerson;
   personB: CouplePdfPerson;
   relationship: {
+    /** 초대 링크 검사에서 선택한 실제 역할. 기존 한 기기 결과는 생략 시 기존 표기를 유지한다. */
+    personLabels?: { personA: string; personB: string };
     attractionAnalysis: string;
     roles: {
       personATitle: string;
