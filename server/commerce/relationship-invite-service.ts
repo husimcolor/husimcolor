@@ -35,9 +35,6 @@ import { parseCoupleShareSnapshot, type CoupleShareSnapshot } from "../../shared
 import type { CommerceProductCode } from "../../shared/commerce";
 import { getDb } from "../db";
 import { decryptCommerceValue, encryptCommerceValue, hashCommerceValue } from "./crypto";
-import { queuePrivateAnalysisPdfDelivery } from "./pdf-delivery-service";
-import { buildCouplePdfDownloadPayload } from "../../lib/couple-pdf-download";
-import { buildParentChildPdfDownloadPayload } from "../../lib/parent-child-pdf-download";
 
 export type RelationshipParticipantSlot = "A" | "B";
 export type RelationshipInviteMode = "invite_link";
@@ -237,7 +234,7 @@ function getPdfCardRows(selectedCards: string[]) {
     }));
 }
 
-function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: "couple_love_deep" | "parent_child_deep") {
+async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: "couple_love_deep" | "parent_child_deep") {
   const { sessionData, personAAnalysis, personBAnalysis, coupleAnalysis, archetypeResult } = snapshot;
   const { personA, personB, relationType } = sessionData;
   const personLabels = {
@@ -253,6 +250,7 @@ function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: "coupl
     if (!roles || !unified) throw new Error("RELATIONSHIP_ROMANTIC_REPORT_DATA_INVALID");
     const hasFaith = personA.info.faith === "기독교" || personB.info.faith === "기독교";
     const recommendedColors = archetypeResult.recommendedColors ?? coupleAnalysis.coupleRoutine.recommendedColors;
+    const { buildCouplePdfDownloadPayload } = await import("../../lib/couple-pdf-download");
     return buildCouplePdfDownloadPayload({
       relationType,
       couple: {
@@ -338,6 +336,7 @@ function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: "coupl
     parent: { colors: parent.colors, cards: parentCards.filter((card): card is NonNullable<typeof card> => Boolean(card)) },
     child: { colors: child.colors, cards: childCards.filter((card): card is NonNullable<typeof card> => Boolean(card)) },
   });
+  const { buildParentChildPdfDownloadPayload } = await import("../../lib/parent-child-pdf-download");
   return buildParentChildPdfDownloadPayload({
     relationType,
       personA: {
@@ -644,11 +643,12 @@ export async function generateAndQueueRelationshipReport(relationshipSessionId: 
     const personA = parseSubmittedPayload(participants.find((row) => row.participant === "A")?.submittedEncrypted ?? null);
     const personB = parseSubmittedPayload(participants.find((row) => row.participant === "B")?.submittedEncrypted ?? null);
     const snapshot = buildResultSnapshot(asSessionData(session.relationType as RelationType, personA, personB));
-    const payload = buildDeliveryPayload(snapshot, session.productCode);
+    const payload = await buildDeliveryPayload(snapshot, session.productCode);
     await db
       .update(relationshipSessions)
       .set({ resultSnapshotEncrypted: encryptCommerceValue(JSON.stringify(snapshot)), reportGeneratedAt: new Date(), reportErrorCode: null })
       .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "report_generating")));
+    const { queuePrivateAnalysisPdfDelivery } = await import("./pdf-delivery-service");
     const queued = await queuePrivateAnalysisPdfDelivery({
       analysisRunId: session.analysisRunId,
       kind: session.productCode,
