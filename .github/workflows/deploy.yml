@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - feature/coaching-availability-preview
   pull_request:
     branches:
       - main
