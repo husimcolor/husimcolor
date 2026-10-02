@@ -87,6 +87,7 @@ export default function CommerceCheckoutScreen() {
     orderId?: string | string[];
     amount?: string | string[];
     code?: string | string[];
+    message?: string | string[];
     channel?: string | string[];
     review?: string | string[];
     reviewResult?: string | string[];
@@ -97,6 +98,8 @@ export default function CommerceCheckoutScreen() {
   const paymentKey = getSingleParam(params.paymentKey);
   const orderNumber = getSingleParam(params.orderId);
   const amount = Number(getSingleParam(params.amount));
+  const failureCode = getSingleParam(params.code);
+  const failureMessage = getSingleParam(params.message);
   const requestedCardReview = getSingleParam(params.review) === "toss-card-review";
   const reviewResult = getSingleParam(params.reviewResult);
   const product = productCode ? getCommerceProduct(productCode) : undefined;
@@ -107,6 +110,7 @@ export default function CommerceCheckoutScreen() {
   const processedReturn = useRef(false);
   const createCheckout = trpc.commerce.checkout.createTossTest.useMutation();
   const completeCheckout = trpc.commerce.checkout.completeTossTest.useMutation();
+  const completeFailedCheckout = trpc.commerce.checkout.completeTossTestFailure.useMutation();
   const testMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = testMode.data?.paidAnalysisPublicEnabled ?? false;
   // When card review is enabled, every paid-analysis entry uses the non-persistent
@@ -142,6 +146,21 @@ export default function CommerceCheckoutScreen() {
       .catch(() => setMessage("테스트 결제 승인 확인에 실패했습니다. 동일 결제를 다시 요청하지 말고 관리자에게 주문번호를 알려 주세요."))
       .finally(() => setProcessing(false));
   }, [cardReviewMode, paymentKey, orderNumber, amount, productCode]);
+
+  useEffect(() => {
+    if (cardReviewMode || paymentKey || !failureCode || !orderNumber || processedReturn.current || !isPaidAnalysisCode(productCode)) return;
+    processedReturn.current = true;
+    setProcessing(true);
+    completeFailedCheckout
+      .mutateAsync({ orderNumber, errorCode: failureCode, errorMessage: failureMessage })
+      .then((result) => {
+        setMessage(result.status === "cancelled"
+          ? "결제가 취소되었습니다. 사용 예약된 쿠폰이 있었다면 다시 사용할 수 있습니다."
+          : "결제에 실패했습니다. 사용 예약된 쿠폰이 있었다면 다시 사용할 수 있습니다.");
+      })
+      .catch(() => setMessage("결제 결과를 확인하지 못했습니다. 동일 결제를 다시 요청하지 말고 관리자에게 주문번호를 알려 주세요."))
+      .finally(() => setProcessing(false));
+  }, [cardReviewMode, paymentKey, failureCode, failureMessage, orderNumber, productCode]);
 
   const requestPayment = async () => {
     if (!isPaidAnalysisCode(productCode) || !product) return;

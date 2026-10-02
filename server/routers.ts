@@ -9,6 +9,7 @@ import { getCommerceEmailProtectionStatus } from "./commerce/crypto";
 import {
   completeTestPayment,
   completeTossTestPayment,
+  completeTossTestPaymentFailure,
   createTestCheckout,
   createTossTestCheckout,
   isTestPaymentEnabled,
@@ -281,6 +282,15 @@ export const appRouter = router({
           }),
         )
         .mutation(({ input }) => completeTossTestPayment(input)),
+      completeTossTestFailure: publicProcedure
+        .input(
+          z.object({
+            orderNumber: z.string().min(8).max(64),
+            errorCode: z.string().min(1).max(120),
+            errorMessage: z.string().max(500).optional(),
+          }),
+        )
+        .mutation(({ input }) => completeTossTestPaymentFailure(input)),
       cardReview: publicProcedure
         .input(z.object({
           productCode: z.enum([

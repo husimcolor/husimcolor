@@ -58,6 +58,19 @@ type PaymentResponse = {
   alreadyProcessed: boolean;
 };
 
+export type TossTestTerminalOutcome = "failed" | "cancelled";
+
+/**
+ * Toss redirects both buyer-initiated exits and authentication aborts to the
+ * configured failUrl. These terminal states must release a Preview-only
+ * coupon reservation, but must never create an entitlement.
+ */
+export function getTossTestTerminalOutcome(errorCode: string): TossTestTerminalOutcome {
+  return errorCode === "PAY_PROCESS_CANCELED" || errorCode === "PAY_PROCESS_ABORTED"
+    ? "cancelled"
+    : "failed";
+}
+
 export type CoachingBookingRequest = {
   contactName: string;
   contactPhone: string;
@@ -437,7 +450,7 @@ async function completePaymentForProvider(input: {
   orderNumber: string;
   providerPaymentId: string;
   outcome: CommercePaymentOutcome;
-  amountKrw: number;
+  amountKrw?: number;
   provider: "test" | "toss_pg";
   rawPayloadEncrypted?: string;
 }): Promise<PaymentResponse> {
@@ -475,7 +488,12 @@ async function completePaymentForProvider(input: {
       .limit(1);
     const record = rows[0];
     if (!record) throw new Error("TEST_ORDER_NOT_FOUND");
-    if (record.finalAmountKrw !== input.amountKrw) throw new Error("ORDER_AMOUNT_MISMATCH");
+    // Toss does not include the amount in every failUrl redirect. Keep the
+    // strict amount comparison for an approval, while still allowing a
+    // terminal failure/cancellation to release an otherwise reserved coupon.
+    if (input.outcome === "success" && record.finalAmountKrw !== input.amountKrw) {
+      throw new Error("ORDER_AMOUNT_MISMATCH");
+    }
 
     const existingEntitlements = await tx
       .select({ id: entitlements.id })
@@ -643,5 +661,30 @@ export async function completeTossTestPayment(input: {
     amountKrw: approved.amountKrw,
     provider: "toss_pg",
     rawPayloadEncrypted: encryptCommerceValue(approved.rawPayload),
+  });
+}
+
+/**
+ * Completes only a non-approved Toss test redirect. This is intentionally
+ * limited by the existing Preview/test runtime guard in completePaymentForProvider.
+ * No Toss approval API is called and no entitlement can be issued here.
+ */
+export async function completeTossTestPaymentFailure(input: {
+  orderNumber: string;
+  errorCode: string;
+  errorMessage?: string;
+}): Promise<PaymentResponse> {
+  const outcome = getTossTestTerminalOutcome(input.errorCode);
+  const providerPaymentId = `toss-test-${outcome}-${input.orderNumber}`.slice(0, 160);
+  return completePaymentForProvider({
+    orderNumber: input.orderNumber,
+    providerPaymentId,
+    outcome,
+    provider: "toss_pg",
+    rawPayloadEncrypted: encryptCommerceValue(JSON.stringify({
+      redirect: "failUrl",
+      errorCode: input.errorCode,
+      errorMessage: input.errorMessage ?? null,
+    })),
   });
 }
