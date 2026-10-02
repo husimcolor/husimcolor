@@ -86,7 +86,7 @@ jobs:
         run: |
           cat > ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" << 'VCEOF'
           {
-            "runtime": "nodejs20.x",
+            "runtime": "nodejs22.x",
             "handler": "index.js",
             "launcherType": "Nodejs",
             "shouldAddHelpers": true
