@@ -21,10 +21,101 @@ export type RelationType =
 
 export type GenderType = '남성' | '여성';
 export type FaithType = '기독교' | '무교' | '기타';
+export type RelationshipRole = '남편' | '아내' | '남자친구' | '여자친구' | '아빠' | '엄마' | '아들' | '딸';
+
+const ROLE_GENDER: Record<RelationshipRole, GenderType> = {
+  남편: '남성', 아내: '여성', 남자친구: '남성', 여자친구: '여성',
+  아빠: '남성', 엄마: '여성', 아들: '남성', 딸: '여성',
+};
+
+const PARTNER_ROLE: Record<RelationshipRole, RelationshipRole> = {
+  남편: '아내', 아내: '남편', 남자친구: '여자친구', 여자친구: '남자친구',
+  아빠: '아들', 엄마: '아들', 아들: '아빠', 딸: '아빠',
+};
+
+/** 초대 링크 검사에서는 결제/검사 순서와 무관하게 각자가 실제 관계 역할을 선택한다. */
+export function getRelationshipRoleOptions(
+  relationType: RelationType,
+  gender: GenderType | undefined,
+  partnerRole?: RelationshipRole | null,
+): RelationshipRole[] {
+  if (!gender) return [];
+  let options: RelationshipRole[];
+  if (relationType === '부부') {
+    options = gender === '남성' ? ['남편'] : ['아내'];
+  } else if (relationType === '연인') {
+    options = gender === '남성' ? ['남자친구'] : ['여자친구'];
+  } else if (relationType === '부모-자녀') {
+    options = gender === '남성' ? ['아빠', '아들'] : ['엄마', '딸'];
+  } else if (relationType === '아빠-아들') {
+    options = gender === '남성' ? ['아빠', '아들'] : [];
+  } else if (relationType === '아빠-딸') {
+    options = gender === '남성' ? ['아빠'] : ['딸'];
+  } else if (relationType === '엄마-아들') {
+    options = gender === '남성' ? ['아들'] : ['엄마'];
+  } else if (relationType === '엄마-딸') {
+    options = gender === '남성' ? [] : ['엄마', '딸'];
+  } else {
+    return [];
+  }
+  if (!partnerRole) return options;
+  const expected = partnerRole === '아빠' || partnerRole === '엄마'
+    ? (gender === '남성' ? ['아들'] : ['딸'])
+    : partnerRole === '아들' || partnerRole === '딸'
+      ? (gender === '남성' ? ['아빠'] : ['엄마'])
+      : [PARTNER_ROLE[partnerRole]];
+  return options.filter((role) => expected.includes(role));
+}
+
+export function isRelationshipRoleForGender(role: RelationshipRole, gender: GenderType) {
+  return ROLE_GENDER[role] === gender;
+}
+
+export function isParentRelationshipRole(role: RelationshipRole) {
+  return role === '아빠' || role === '엄마';
+}
+
+/** 선택 순서와 무관하게 두 역할이 같은 관계의 올바른 짝인지 서버에서 확인한다. */
+export function isRelationshipRolePairValid(
+  relationType: RelationType,
+  roleA: RelationshipRole,
+  roleB: RelationshipRole,
+) {
+  const roles = new Set([roleA, roleB]);
+  if (roles.size !== 2) return false;
+  if (relationType === '부부') return roles.has('남편') && roles.has('아내');
+  if (relationType === '연인') return roles.has('남자친구') && roles.has('여자친구');
+  if (relationType === '부모-자녀') {
+    return (roles.has('아빠') || roles.has('엄마')) && (roles.has('아들') || roles.has('딸'));
+  }
+  if (relationType === '아빠-아들') return roles.has('아빠') && roles.has('아들');
+  if (relationType === '아빠-딸') return roles.has('아빠') && roles.has('딸');
+  if (relationType === '엄마-아들') return roles.has('엄마') && roles.has('아들');
+  if (relationType === '엄마-딸') return roles.has('엄마') && roles.has('딸');
+  return false;
+}
+
+/** 부모·자녀는 선택된 실제 역할을 조합해 기존 분석이 이해하는 구체 관계 유형으로 고정한다. */
+export function resolveRoleBasedRelationType(
+  relationType: RelationType,
+  roleA: RelationshipRole,
+  roleB: RelationshipRole,
+): RelationType {
+  const roles = new Set([roleA, roleB]);
+  if (relationType === '부모-자녀') {
+    if (roles.has('아빠') && roles.has('아들')) return '아빠-아들';
+    if (roles.has('아빠') && roles.has('딸')) return '아빠-딸';
+    if (roles.has('엄마') && roles.has('아들')) return '엄마-아들';
+    if (roles.has('엄마') && roles.has('딸')) return '엄마-딸';
+  }
+  return relationType;
+}
 
 export interface PersonInfo {
   gender: GenderType;
   faith: FaithType;
+  /** 각자 휴대폰 검사에서만 사용하는 실제 관계 역할. 기존 한 휴대폰 흐름에서는 비어 있을 수 있다. */
+  relationshipRole?: RelationshipRole;
 }
 
 export interface PersonSession {

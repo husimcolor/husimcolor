@@ -234,12 +234,14 @@ function writePerson(document: PdfWriter, person: CouplePdfDownloadPayload["pers
 
 function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayload) {
   const relation = payload.relationship;
+  const personA = relation.personLabels?.personA ?? "첫 번째 사람";
+  const personB = relation.personLabels?.personB ?? "두 번째 사람";
   addPage(document);
   writeSectionTitle(document, "두 사람의 관계 통합 분석", "#80649B", 120);
   writeCard(document, "왜 끌리는데 왜 힘든지", [{ text: relation.attractionAnalysis }], "#F6F1FA");
   writeCard(document, "두 사람의 관계 속 역할 분석", [
-    { label: `첫 번째 사람 · ${relation.roles.personATitle}`, text: relation.roles.personADescription },
-    { label: `두 번째 사람 · ${relation.roles.personBTitle}`, text: relation.roles.personBDescription },
+    { label: `${personA} · ${relation.roles.personATitle}`, text: relation.roles.personADescription },
+    { label: `${personB} · ${relation.roles.personBTitle}`, text: relation.roles.personBDescription },
     { label: "두 역할이 만났을 때", text: relation.roles.together },
   ], "#F6F1FA");
   writeSectionTitle(document, "관계 핵심", "#5F8069", 120);
@@ -249,7 +251,7 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
   ], "#EFF7F0");
   writeSectionTitle(document, "생활 속 관계 패턴", "#8B7259", 120);
   writeCard(document, relation.lifePattern.headline, relation.lifePattern.items.flatMap((item) => [
-    { label: item.label, text: `첫 번째 사람: ${item.personA}\n두 번째 사람: ${item.personB}` },
+    { label: item.label, text: `${personA}: ${item.personA}\n${personB}: ${item.personB}` },
     { label: "둘이 만났을 때 · 조율 포인트", text: item.tension },
   ]), "#FBF6EF");
   writeSectionTitle(document, "싸움 패턴", "#B16A75", 150);

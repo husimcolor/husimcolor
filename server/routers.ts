@@ -60,6 +60,12 @@ import {
   getPublicCoachingBlackoutDates,
   removeAdminCoachingBlackoutDate,
 } from "./commerce/coaching-blackout-service";
+  generateAndQueueRelationshipReport,
+  getRelationshipInviteContext,
+  getRelationshipResult,
+  saveRelationshipParticipantDraft,
+  submitRelationshipParticipant,
+} from "./commerce/relationship-invite-service";
 
 /**
  * PDFKit은 Vercel 함수 번들에서 상대 ICC 파일을 해석하지 못할 수 있으므로,
@@ -126,6 +132,8 @@ export const appRouter = router({
         .input(z.object({
           accessToken: z.string().min(20).max(2048),
           productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
+          relationshipMode: z.enum(["invite_link"]).optional(),
+          relationType: z.enum(["연인", "부부", "친구", "부모-자녀", "아빠-아들", "아빠-딸", "엄마-아들", "엄마-딸", "형제자매", "동료"]).optional(),
         }))
         .mutation(({ input }) => consumeEntitlementForAnalysisStart(input)),
     }),
@@ -299,6 +307,55 @@ export const appRouter = router({
         paidAnalysisPublicEnabled: isPublicPaidAnalysisEnabled(),
       })),
     }),
+  }),
+
+  relationshipInvites: router({
+    context: publicProcedure
+      .input(z.object({ accessToken: z.string().min(32).max(256) }))
+      .query(({ input }) => getRelationshipInviteContext(input.accessToken)),
+    saveDraft: publicProcedure
+      .input(z.object({
+        accessToken: z.string().min(32).max(256),
+        expectedRevision: z.number().int().min(0),
+        consentAccepted: z.boolean().optional(),
+        draft: z.object({
+          info: z.object({
+            gender: z.enum(["남성", "여성"]),
+            faith: z.enum(["기독교", "무교", "기타"]),
+            relationshipRole: z.enum(["남편", "아내", "남자친구", "여자친구", "아빠", "엄마", "아들", "딸"]),
+          }).optional(),
+          colors: z.array(z.string().min(1).max(64)).max(3).optional(),
+          cards: z.array(z.string().min(1).max(64)).max(3).optional(),
+        }),
+      }))
+      .mutation(({ input }) => saveRelationshipParticipantDraft(input)),
+    submit: publicProcedure
+      .input(z.object({
+        accessToken: z.string().min(32).max(256),
+        expectedRevision: z.number().int().min(0),
+        submission: z.object({
+          info: z.object({
+            gender: z.enum(["남성", "여성"]),
+            faith: z.enum(["기독교", "무교", "기타"]),
+            relationshipRole: z.enum(["남편", "아내", "남자친구", "여자친구", "아빠", "엄마", "아들", "딸"]),
+          }),
+          colors: z.array(z.string().min(1).max(64)).length(3),
+          cards: z.array(z.string().min(1).max(64)).length(3),
+        }),
+      }))
+      .mutation(async ({ input }) => {
+        const submitted = await submitRelationshipParticipant(input);
+        if (!submitted.shouldGenerateReport) return submitted.context;
+        try {
+          await generateAndQueueRelationshipReport(submitted.context.relationshipSessionId);
+        } catch {
+          // 세션은 failed 상태와 오류 코드로 남긴다. 제출 자체를 실패로 되돌려 재제출을 유도하지 않는다.
+        }
+        return getRelationshipInviteContext(input.accessToken);
+      }),
+    result: publicProcedure
+      .input(z.object({ resultToken: z.string().min(32).max(256) }))
+      .query(({ input }) => getRelationshipResult(input.resultToken)),
   }),
 
   // 통합 운영 관리 API. 모든 조회·변경은 서버의 users.role=admin을 요구한다.

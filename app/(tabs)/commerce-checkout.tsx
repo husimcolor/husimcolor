@@ -126,7 +126,7 @@ export default function CommerceCheckoutScreen() {
       return;
     }
     if (!relationType) throw new Error("RELATION_TYPE_REQUIRED_FOR_RELATIONSHIP_ANALYSIS");
-    router.replace({ pathname: "/(tabs)/couple-info", params: { relationType } } as any);
+    router.replace({ pathname: "/(tabs)/relationship-mode", params: { product: productCode, relationType } } as any);
   };
 
   useEffect(() => {

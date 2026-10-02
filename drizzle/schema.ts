@@ -477,6 +477,87 @@ export const analysisRuns = mysqlTable(
 
 export type AnalysisRun = typeof analysisRuns.$inferSelect;
 
+/**
+ * 한 주문의 관계 심화검사를 두 기기에서 안전하게 이어가기 위한 서버 세션이다.
+ * 기존 한 휴대폰 검사는 계속 AsyncStorage 경로를 사용하며 이 테이블을 만들지 않는다.
+ */
+export const relationshipSessions = mysqlTable(
+  "relationship_sessions",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    sessionCode: varchar("sessionCode", { length: 64 }).notNull(),
+    analysisRunId: int("analysisRunId").notNull(),
+    entitlementId: int("entitlementId").notNull(),
+    orderId: int("orderId"),
+    productId: int("productId").notNull(),
+    relationType: varchar("relationType", { length: 50 }).notNull(),
+    mode: mysqlEnum("mode", ["invite_link"]).notNull().default("invite_link"),
+    status: mysqlEnum("status", [
+      "collecting",
+      "awaiting_partner",
+      "report_generating",
+      "email_pending",
+      "completed",
+      "failed",
+    ]).notNull().default("collecting"),
+    /** 원문 토큰을 보관하지 않는다. 모든 토큰은 서버 HMAC 해시만 저장한다. */
+    ownerTokenHash: varchar("ownerTokenHash", { length: 128 }).notNull(),
+    inviteTokenHash: varchar("inviteTokenHash", { length: 128 }).notNull(),
+    resultTokenHash: varchar("resultTokenHash", { length: 128 }).notNull(),
+    /** 기존 결과·PDF 생성기에서 만든 고정 결과 스냅샷의 암호문이다. */
+    resultSnapshotEncrypted: text("resultSnapshotEncrypted"),
+    reportErrorCode: varchar("reportErrorCode", { length: 160 }),
+    reportGeneratedAt: timestamp("reportGeneratedAt"),
+    emailDeliveredAt: timestamp("emailDeliveredAt"),
+    completedAt: timestamp("completedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("relationship_sessions_code_unique").on(table.sessionCode),
+    uniqueIndex("relationship_sessions_analysis_run_unique").on(table.analysisRunId),
+    uniqueIndex("relationship_sessions_invite_token_unique").on(table.inviteTokenHash),
+    index("relationship_sessions_status_idx").on(table.status, table.updatedAt),
+    index("relationship_sessions_order_idx").on(table.orderId),
+  ],
+);
+
+export type RelationshipSession = typeof relationshipSessions.$inferSelect;
+
+/** 참여자별 초안과 최종 제출본을 분리·암호화하여 재접속과 동시 제출을 안전하게 처리한다. */
+export const relationshipParticipants = mysqlTable(
+  "relationship_participants",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    relationshipSessionId: int("relationshipSessionId").notNull(),
+    participant: mysqlEnum("participant", ["A", "B"]).notNull(),
+    status: mysqlEnum("status", ["not_started", "in_progress", "submitted"])
+      .notNull()
+      .default("not_started"),
+    consentAccepted: boolean("consentAccepted").notNull().default(false),
+    consentAcceptedAt: timestamp("consentAcceptedAt"),
+    draftEncrypted: text("draftEncrypted"),
+    submittedEncrypted: text("submittedEncrypted"),
+    draftRevision: int("draftRevision").notNull().default(0),
+    startedAt: timestamp("startedAt"),
+    submittedAt: timestamp("submittedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("relationship_participants_session_slot_unique").on(
+      table.relationshipSessionId,
+      table.participant,
+    ),
+    index("relationship_participants_session_status_idx").on(
+      table.relationshipSessionId,
+      table.status,
+    ),
+  ],
+);
+
+export type RelationshipParticipant = typeof relationshipParticipants.$inferSelect;
+
 /** private 저장 PDF의 위치·보관기한·생성 상태를 별도로 추적한다. */
 export const privateDocuments = mysqlTable(
   "private_documents",

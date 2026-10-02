@@ -10,6 +10,7 @@ import {
   isPreviewOutboxManualVerificationEnabled,
 } from "./preview-outbox-verification";
 import { sendResendEmail, sendResendPdfEmail } from "./resend-provider";
+import { markRelationshipSessionEmailDelivered } from "./relationship-session-completion";
 
 const MAX_AUTOMATIC_ATTEMPTS = 5;
 const RETRY_MINUTES = [5, 15, 60, 240, 1440] as const;
@@ -128,6 +129,7 @@ export async function deliverPrivatePdfOutboxItem(outboxId: number): Promise<{
       idempotencyKey: getOutboxEmailIdempotencyKey(claimed.id),
     });
     await db.update(emailOutbox).set({ status: "sent", providerMessageId: result.providerMessageId, sentAt: new Date(), lastErrorCode: null }).where(eq(emailOutbox.id, outboxId));
+    await markRelationshipSessionEmailDelivered(outboxId);
     return { status: "sent", attemptCount: claimed.attemptCount };
   } catch (error) {
     const errorCode = error instanceof Error ? error.message.slice(0, 160) : "EMAIL_DELIVERY_FAILED";

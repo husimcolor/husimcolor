@@ -14,7 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLOR_DATA, COLOR_ROLE_CONTENT } from '@/constants/colorData';
 import { CARD_DATA } from '@/constants/cardData';
 import {
-  generatePersonAnalysis, generateCoupleAnalysis, getRelationArchetype, getLightArchetype,
+  generatePersonAnalysis, generateCoupleAnalysis, getRelationArchetype, getLightArchetype, isParentRelationshipRole,
   type CoupleSessionData, type PersonAnalysis, type CoupleAnalysis, type ArchetypeResult, type LightArchetypeResult,
 } from '@/constants/coupleData';
 import { buildRomanticRelationTraits } from '@/lib/couple-romantic-relation-traits';
@@ -135,8 +135,9 @@ function buildCoupleShareSnapshot(
 // ─── 메인 화면 ───────────────────────────────────────────────────────────────
 export default function CoupleResultScreen() {
   const router = useRouter();
-  const routeParams = useLocalSearchParams<{ shareId?: string | string[]; qa?: string | string[] }>();
+  const routeParams = useLocalSearchParams<{ shareId?: string | string[]; resultToken?: string | string[]; qa?: string | string[] }>();
   const requestedShareId = typeof routeParams.shareId === 'string' ? routeParams.shareId : undefined;
+  const requestedResultToken = typeof routeParams.resultToken === 'string' ? routeParams.resultToken : undefined;
   const requestedQa = typeof routeParams.qa === 'string' ? routeParams.qa : undefined;
   const isPriorityPilot = process.env.NODE_ENV !== 'production'
     && requestedQa === PARENT_CHILD_PRIORITY_PILOT_QUERY;
@@ -176,15 +177,19 @@ export default function CoupleResultScreen() {
     { shareId: requestedShareId ?? '' },
     { enabled: Boolean(requestedShareId), retry: false },
   );
+  const relationshipResultQuery = trpc.relationshipInvites.result.useQuery(
+    { resultToken: requestedResultToken ?? '' },
+    { enabled: Boolean(requestedResultToken), retry: false },
+  );
 
   useEffect(() => {
-    if (requestedShareId) return;
+    if (requestedShareId || requestedResultToken) return;
     if (isPriorityPilot) {
       loadPriorityPilotSession();
       return;
     }
     loadLocalSession();
-  }, [requestedShareId, isPriorityPilot]);
+  }, [requestedShareId, requestedResultToken, isPriorityPilot]);
 
   useEffect(() => {
     if (!requestedShareId || sharedResultQuery.isLoading) return;
@@ -204,6 +209,27 @@ export default function CoupleResultScreen() {
     setLightArchetypeResult(snapshot.lightArchetypeResult);
     setLoading(false);
   }, [requestedShareId, sharedResultQuery.data, sharedResultQuery.isLoading]);
+
+  useEffect(() => {
+    if (!requestedResultToken || relationshipResultQuery.isLoading) return;
+    const snapshot = relationshipResultQuery.data?.snapshot;
+    if (!snapshot) {
+      setError(relationshipResultQuery.data?.status === 'completed'
+        ? '완료된 관계 결과를 불러오지 못했습니다.'
+        : '관계 리포트를 아직 준비하고 있습니다. 잠시 후 다시 확인해 주세요.');
+      setLoading(false);
+      return;
+    }
+    setSharedSnapshot(snapshot);
+    setActiveShareId(null);
+    setSessionData(snapshot.sessionData);
+    setPersonAAnalysis(snapshot.personAAnalysis);
+    setPersonBAnalysis(snapshot.personBAnalysis);
+    setCoupleAnalysis(snapshot.coupleAnalysis);
+    setArchetypeResult(snapshot.archetypeResult);
+    setLightArchetypeResult(snapshot.lightArchetypeResult);
+    setLoading(false);
+  }, [requestedResultToken, relationshipResultQuery.data, relationshipResultQuery.isLoading]);
 
   useEffect(() => () => {
     clearCouplePdfDownloadTimers();
@@ -526,17 +552,25 @@ export default function CoupleResultScreen() {
   const personBIntegratedAnalysis = isRomanticRel && sharedSnapshot
     ? sharedSnapshot.personBIntegratedAnalysis
     : calculatedPersonBIntegratedAnalysis;
-  const parentChildLabels = getParentChildLabels(relationType, personA.info.gender, personB.info.gender);
-  const personLabels = isParentChildRel
-    ? { personA: parentChildLabels.parent, personB: parentChildLabels.child }
-    : { personA: '첫 번째 사람', personB: '두 번째 사람' };
+  const roleA = personA.info.relationshipRole;
+  const roleB = personB.info.relationshipRole;
+  const isPersonAParent = roleA ? isParentRelationshipRole(roleA) : true;
+  const parentPerson = isPersonAParent ? personA : personB;
+  const childPerson = isPersonAParent ? personB : personA;
+  const parentChildLabels = roleA && roleB && isParentChildRel
+    ? { parent: isPersonAParent ? roleA : roleB, child: isPersonAParent ? roleB : roleA }
+    : getParentChildLabels(relationType, parentPerson.info.gender, childPerson.info.gender);
+  const personLabels = {
+    personA: roleA ?? (isParentChildRel ? (isPersonAParent ? parentChildLabels.parent : parentChildLabels.child) : '첫 번째 사람'),
+    personB: roleB ?? (isParentChildRel ? (isPersonAParent ? parentChildLabels.child : parentChildLabels.parent) : '두 번째 사람'),
+  };
   const generatedParentChildRelationshipAnalysis = isParentChildRel
     ? buildParentChildRelationshipAnalysis({
         relationType,
-        parentGender: personA.info.gender,
-        childGender: personB.info.gender,
-        parent: { colors: personA.colors, cards: definedCardsA },
-        child: { colors: personB.colors, cards: definedCardsB },
+        parentGender: parentPerson.info.gender,
+        childGender: childPerson.info.gender,
+        parent: { colors: parentPerson.colors, cards: isPersonAParent ? definedCardsA : definedCardsB },
+        child: { colors: childPerson.colors, cards: isPersonAParent ? definedCardsB : definedCardsA },
       })
     : null;
   const priorityPilot = isPriorityPilot && isParentChildRel ? PARENT_CHILD_PRIORITY_PILOT : null;
@@ -728,7 +762,7 @@ export default function CoupleResultScreen() {
           tensionDescription: archetypeResult.tensionDescription,
         },
         personA: {
-          label: '첫 번째 사람',
+          label: personLabels.personA,
           colors: getCouplePdfColorRows(colorsA),
           cards: getCouplePdfCardRows(cardsA),
           integratedAnalysis: personAIntegratedAnalysis,
@@ -738,7 +772,7 @@ export default function CoupleResultScreen() {
           coachingMessage: personAAnalysis.coachingMessage,
         },
         personB: {
-          label: '두 번째 사람',
+          label: personLabels.personB,
           colors: getCouplePdfColorRows(colorsB),
           cards: getCouplePdfCardRows(cardsB),
           integratedAnalysis: personBIntegratedAnalysis,
@@ -748,6 +782,7 @@ export default function CoupleResultScreen() {
           coachingMessage: personBAnalysis.coachingMessage,
         },
         relationship: {
+          personLabels,
           attractionAnalysis: coupleAnalysis.profileContrast || archetypeResult.profileContrastOverride?.attractionContrast || archetypeResult.tensionDescription,
           roles: {
             personATitle: romanticRelationshipRoles.personA.title,
@@ -830,7 +865,7 @@ export default function CoupleResultScreen() {
       const payload = buildParentChildPdfDownloadPayload({
         relationType,
         personA: {
-          label: `첫 번째 사람 - ${parentChildLabels.parent}`,
+          label: roleA ? personLabels.personA : `첫 번째 사람 - ${parentChildLabels.parent}`,
           colors: getCouplePdfColorRows(colorsA),
           cards: getCouplePdfCardRows(cardsA),
           integratedAnalysis: buildCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA),
@@ -840,7 +875,7 @@ export default function CoupleResultScreen() {
           coachingMessage: personAAnalysis.coachingMessage,
         },
         personB: {
-          label: `두 번째 사람 - ${parentChildLabels.child}`,
+          label: roleB ? personLabels.personB : `두 번째 사람 - ${parentChildLabels.child}`,
           colors: getCouplePdfColorRows(colorsB),
           cards: getCouplePdfCardRows(cardsB),
           integratedAnalysis: buildCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB),
@@ -1426,13 +1461,13 @@ export default function CoupleResultScreen() {
             <View style={archetypeStyles.speedRow}>
               <View style={archetypeStyles.speedBox}>
                 <Text style={archetypeStyles.speedIcon}>{getExprIcon(archetypeResult.expressionSpeed.personA)}</Text>
-                <Text style={archetypeStyles.speedPersonLabel}>첫 번째 사람</Text>
+                <Text style={archetypeStyles.speedPersonLabel}>{personLabels.personA}</Text>
                 <Text style={archetypeStyles.speedValue}>{archetypeResult.expressionSpeed.personA}</Text>
               </View>
               <Text style={archetypeStyles.speedArrow}>↔</Text>
               <View style={archetypeStyles.speedBox}>
                 <Text style={archetypeStyles.speedIcon}>{getExprIcon(archetypeResult.expressionSpeed.personB)}</Text>
-                <Text style={archetypeStyles.speedPersonLabel}>두 번째 사람</Text>
+                <Text style={archetypeStyles.speedPersonLabel}>{personLabels.personB}</Text>
                 <Text style={archetypeStyles.speedValue}>{archetypeResult.expressionSpeed.personB}</Text>
               </View>
             </View>
@@ -1478,12 +1513,12 @@ export default function CoupleResultScreen() {
             <SectionCard accentColor="#8A6BB8" label="관계 속 역할" title="두 사람의 관계 속 역할 분석" colors={colors}>
               <View style={archetypeStyles.rolePairRow}>
                 <View style={archetypeStyles.roleCard}>
-                  <Text style={[archetypeStyles.rolePersonLabel, { color: accentA }]}>첫 번째 사람</Text>
+                  <Text style={[archetypeStyles.rolePersonLabel, { color: accentA }]}>{personLabels.personA}</Text>
                   <Text style={[archetypeStyles.roleTitle, { color: colors.foreground }]}>{romanticRelationshipRoles.personA.title}</Text>
                   <Text style={[archetypeStyles.roleDescription, { color: colors.muted }]}>{romanticRelationshipRoles.personA.description}</Text>
                 </View>
                 <View style={archetypeStyles.roleCard}>
-                  <Text style={[archetypeStyles.rolePersonLabel, { color: accentB }]}>두 번째 사람</Text>
+                  <Text style={[archetypeStyles.rolePersonLabel, { color: accentB }]}>{personLabels.personB}</Text>
                   <Text style={[archetypeStyles.roleTitle, { color: colors.foreground }]}>{romanticRelationshipRoles.personB.title}</Text>
                   <Text style={[archetypeStyles.roleDescription, { color: colors.muted }]}>{romanticRelationshipRoles.personB.description}</Text>
                 </View>
@@ -1506,12 +1541,12 @@ export default function CoupleResultScreen() {
                   <View style={{ gap: 8, marginTop: 8 }}>
                     <View style={{ backgroundColor: '#4A3A2A', borderRadius: 10, padding: 14 }}>
                       <Text style={{ color: '#F0E8DC', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
-                        첫 번째 사람: {archetypeResult.lifestyleSections.finance.personA}
+                        {personLabels.personA}: {archetypeResult.lifestyleSections.finance.personA}
                       </Text>
                     </View>
                     <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
                       <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
-                        두 번째 사람: {archetypeResult.lifestyleSections.finance.personB}
+                        {personLabels.personB}: {archetypeResult.lifestyleSections.finance.personB}
                       </Text>
                     </View>
                     <View style={{ backgroundColor: '#FFE8C0', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#D4820A' }}>
@@ -1529,12 +1564,12 @@ export default function CoupleResultScreen() {
                   <View style={{ gap: 8, marginTop: 8 }}>
                     <View style={{ backgroundColor: '#2A3A2A', borderRadius: 10, padding: 14 }}>
                       <Text style={{ color: '#E0F0E4', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
-                        첫 번째 사람: {archetypeResult.lifestyleSections.cleaning.personA}
+                        {personLabels.personA}: {archetypeResult.lifestyleSections.cleaning.personA}
                       </Text>
                     </View>
                     <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
                       <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
-                        두 번째 사람: {archetypeResult.lifestyleSections.cleaning.personB}
+                        {personLabels.personB}: {archetypeResult.lifestyleSections.cleaning.personB}
                       </Text>
                     </View>
                     <View style={{ backgroundColor: '#D8F5E8', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#3A9A6A' }}>
@@ -1552,12 +1587,12 @@ export default function CoupleResultScreen() {
                   <View style={{ gap: 10, marginTop: 10 }}>
                     <View style={{ backgroundColor: '#2A3040', borderRadius: 10, padding: 14 }}>
                       <Text style={{ color: '#DCE8F8', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
-                        첫 번째 사람: {archetypeResult.lifestyleSections.rest.personA}
+                        {personLabels.personA}: {archetypeResult.lifestyleSections.rest.personA}
                       </Text>
                     </View>
                     <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
                       <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
-                        두 번째 사람: {archetypeResult.lifestyleSections.rest.personB}
+                        {personLabels.personB}: {archetypeResult.lifestyleSections.rest.personB}
                       </Text>
                     </View>
                     <View style={{ backgroundColor: '#D8EEFF', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#5080C0' }}>
@@ -1575,12 +1610,12 @@ export default function CoupleResultScreen() {
                   <View style={{ gap: 10, marginTop: 10 }}>
                     <View style={{ backgroundColor: '#3A2030', borderRadius: 10, padding: 14 }}>
                       <Text style={{ color: '#F8DCE8', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
-                        첫 번째 사람: {archetypeResult.lifestyleSections.affection.personA}
+                        {personLabels.personA}: {archetypeResult.lifestyleSections.affection.personA}
                       </Text>
                     </View>
                     <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
                       <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
-                        두 번째 사람: {archetypeResult.lifestyleSections.affection.personB}
+                        {personLabels.personB}: {archetypeResult.lifestyleSections.affection.personB}
                       </Text>
                     </View>
                     <View style={{ backgroundColor: '#FFE0EC', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#C05080' }}>
@@ -1598,12 +1633,12 @@ export default function CoupleResultScreen() {
                   <View style={{ gap: 10, marginTop: 10 }}>
                     <View style={{ backgroundColor: '#3A2A2A', borderRadius: 10, padding: 14 }}>
                       <Text style={{ color: '#F8E8E0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
-                        첫 번째 사람: {archetypeResult.lifestyleSections.conflict.personA}
+                        {personLabels.personA}: {archetypeResult.lifestyleSections.conflict.personA}
                       </Text>
                     </View>
                     <View style={{ backgroundColor: '#3A2A3A', borderRadius: 10, padding: 14 }}>
                       <Text style={{ color: '#F0E0F0', fontSize: 15, lineHeight: 26, fontStyle: 'italic' }}>
-                        두 번째 사람: {archetypeResult.lifestyleSections.conflict.personB}
+                        {personLabels.personB}: {archetypeResult.lifestyleSections.conflict.personB}
                       </Text>
                     </View>
                     <View style={{ backgroundColor: '#F5E8D0', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#B08050' }}>
@@ -1644,11 +1679,11 @@ export default function CoupleResultScreen() {
                     </View>
                     <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
                       <View style={{ flex: 1, backgroundColor: '#4A3020', borderRadius: 8, padding: 12 }}>
-                        <Text style={[styles.lifePatternPersonLabel, isRomanticRel && styles.lifePatternPersonLabelRomantic, { color: isRomanticRel ? '#F7EBD9' : accentA }]}>첫 번째 사람</Text>
+                        <Text style={[styles.lifePatternPersonLabel, isRomanticRel && styles.lifePatternPersonLabelRomantic, { color: isRomanticRel ? '#F7EBD9' : accentA }]}>{personLabels.personA}</Text>
                         <Text style={{ color: '#F0E8DC', fontSize: 14, lineHeight: 22 }}>{item.personA}</Text>
                       </View>
                       <View style={{ flex: 1, backgroundColor: '#2A2040', borderRadius: 8, padding: 12 }}>
-                        <Text style={[styles.lifePatternPersonLabel, isRomanticRel && styles.lifePatternPersonLabelRomantic, { color: isRomanticRel ? '#F7EBD9' : accentB }]}>두 번째 사람</Text>
+                        <Text style={[styles.lifePatternPersonLabel, isRomanticRel && styles.lifePatternPersonLabelRomantic, { color: isRomanticRel ? '#F7EBD9' : accentB }]}>{personLabels.personB}</Text>
                         <Text style={{ color: '#E8E0F8', fontSize: 14, lineHeight: 22 }}>{item.personB}</Text>
                       </View>
                     </View>
