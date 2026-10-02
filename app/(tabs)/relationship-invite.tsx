@@ -3,7 +3,6 @@ import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, 
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
-import { CARD_DATA, type CardData } from "@/constants/cardData";
 import { COLOR_DATA, type ColorData } from "@/constants/colorData";
 import { getRelationshipRoleOptions, type FaithType, type GenderType, type RelationshipRole } from "@/constants/coupleData";
 import { trpc } from "@/lib/trpc";
@@ -46,7 +45,6 @@ export default function RelationshipInviteScreen() {
     refetchInterval: (query) => query.state.data?.participantStatus === "submitted" ? 5_000 : false,
   });
   const saveDraft = trpc.relationshipInvites.saveDraft.useMutation();
-  const submit = trpc.relationshipInvites.submit.useMutation();
 
   const applyContext = (value: { draft: Draft | null; draftRevision: number; consentAccepted?: boolean } | undefined) => {
     if (!value) return;
@@ -89,7 +87,7 @@ export default function RelationshipInviteScreen() {
   };
 
   const toggleColor = (color: ColorData) => {
-    if (!context.data?.canEdit || submit.isPending || saveDraft.isPending) return;
+    if (!context.data?.canEdit || saveDraft.isPending) return;
     const selected = draft.colors ?? [];
     const next = selected.includes(color.id) ? selected.filter((id) => id !== color.id) : selected.length < 3 ? [...selected, color.id] : selected;
     setDraft((current) => ({ ...current, colors: next }));
@@ -99,29 +97,41 @@ export default function RelationshipInviteScreen() {
     if (!hasCompleteInfo(draft.info) || !consent || (draft.colors?.length ?? 0) !== 3) { setMessage("성별·관계 역할·기본 정보·동의와 컬러 3가지를 모두 확인해 주세요."); return; }
     await persist({ ...draft, colors: draft.colors });
   };
-  const toggleCard = (card: CardData) => {
-    if (!context.data?.canEdit || submit.isPending || saveDraft.isPending) return;
-    const selected = draft.cards ?? [];
-    const next = selected.includes(card.id) ? selected.filter((id) => id !== card.id) : selected.length < 3 ? [...selected, card.id] : selected;
-    setDraft((current) => ({ ...current, cards: next }));
-    if (next.length === 3 && hasCompleteInfo(draft.info) && consent) void persist({ ...draft, cards: next }, true);
-  };
-  const finish = async () => {
-    if (!hasCompleteInfo(draft.info) || !consent || (draft.colors?.length ?? 0) !== 3 || (draft.cards?.length ?? 0) !== 3) { setMessage("성별·관계 역할·동의와 각 단계의 답변을 모두 선택해 주세요."); return; }
-    try {
-      const result = await submit.mutateAsync({ accessToken: token, expectedRevision: revision, submission: { info: draft.info, colors: draft.colors!, cards: draft.cards! } });
-      applyContext(result);
-      await context.refetch();
-    } catch (error) {
-      setMessage(error instanceof Error && error.message.includes("REVISION_CONFLICT") ? "답변 상태가 바뀌어 최신 내용을 다시 불러왔습니다." : "최종 제출을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-      await context.refetch();
+  const continueToCardSelection = async () => {
+    if (!hasCompleteInfo(draft.info) || !consent || (draft.colors?.length ?? 0) !== 3) {
+      setMessage("성별·관계 역할·동의와 컬러 3가지를 먼저 확인해 주세요.");
+      return;
     }
+    // 과거 Preview 시험 화면에서 보였던 카드 초안은 지우고, 기존 비공개 카드 선택
+    // 화면에서 새로 선택하도록 한다. 카드 앞면 정보가 초대 참여자에게 미리 노출되지 않는다.
+    const { cards: _previousCards, ...draftWithoutCards } = draft;
+    const saved = await persist(draftWithoutCards, true);
+    if (!saved) return;
+    router.push({
+      pathname: "/(tabs)/couple-card-select",
+      params: {
+        person: current.participant,
+        relationshipToken: token,
+        inviteToken: inviteToken ?? "",
+        resultToken: resultToken ?? "",
+      },
+    } as any);
   };
 
   const shareInvite = async () => {
     if (!inviteToken) return;
     const link = Platform.OS === "web" && typeof window !== "undefined"
-      ? `${window.location.origin}/relationship-invite?token=${encodeURIComponent(inviteToken)}`
+      ? (() => {
+          // Shareable Link으로 연 Preview에서도 Vercel Authentication을 다시 요구하지 않도록
+          // 현재 URL의 단기 보호 우회 식별자만 초대 링크에 이어 붙인다. 비밀은 저장하지 않는다.
+          const currentSearch = new URLSearchParams(window.location.search);
+          const nextSearch = new URLSearchParams({ token: inviteToken });
+          for (const key of ["_vercel_share", "x-vercel-protection-bypass"]) {
+            const value = currentSearch.get(key);
+            if (value) nextSearch.set(key, value);
+          }
+          return `${window.location.origin}/relationship-invite?${nextSearch.toString()}`;
+        })()
       : inviteToken;
     try {
       if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.share) {
@@ -144,7 +154,6 @@ export default function RelationshipInviteScreen() {
   const isOwner = current.participant === "A";
   const roleOptions = getRelationshipRoleOptions(current.relationType, draft.info?.gender, current.partnerRole);
   const colors = (draft.colors ?? []).map((id) => COLOR_DATA.find((color) => color.id === id)).filter((color): color is ColorData => Boolean(color));
-  const cards = (draft.cards ?? []).map((id) => CARD_DATA.find((card) => card.id === id)).filter((card): card is CardData => Boolean(card));
 
   if (current.status === "completed") {
     return <ScreenContainer><View style={styles.center}><Text style={styles.completeTitle}>검사 완료</Text><Text style={styles.completeText}>이미 완료된 검사입니다. 검사 결과가 정상적으로 생성되었습니다.</Text>{isOwner && resultToken ? <Pressable style={styles.button} onPress={() => router.replace({ pathname: "/(tabs)/couple-result", params: { resultToken } } as any)}><Text style={styles.buttonText}>결과 보기</Text></Pressable> : null}</View></ScreenContainer>;
@@ -191,10 +200,14 @@ export default function RelationshipInviteScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>3. 심리카드 3장</Text>
-          <Text style={styles.sectionSub}>무의식 · 현재 · 다음 방향 순서로 표시됩니다.</Text>
-          <View style={styles.cardPreview}>{[0, 1, 2].map((index) => <View key={index} style={[styles.cardSlot, cards[index] && { backgroundColor: cards[index].colorHex }]}><Text style={[styles.cardPreviewText, cards[index] && { color: cards[index].colorKor === "화이트" ? "#6A512C" : "#FFFFFF" }]}>{cards[index] ? `${cards[index].colorKor}\n${cards[index].shapeKor}` : `${index + 1}번`}</Text></View>)}</View>
-          <View style={styles.cardGrid}>{CARD_DATA.map((card) => { const position = (draft.cards ?? []).indexOf(card.id); return <Pressable key={card.id} onPress={() => toggleCard(card)} style={[styles.cardTile, { backgroundColor: card.colorHex }, position >= 0 && styles.tileSelected]}><Text style={[styles.cardTileSymbol, { color: card.colorKor === "화이트" ? "#8B6B4A" : "#FFFFFF" }]}>{position >= 0 ? `${position + 1} ` : ""}{card.shapeSymbol}</Text><Text style={[styles.cardTileText, { color: card.colorKor === "화이트" ? "#59452F" : "#FFFFFF" }]}>{card.colorKor}</Text></Pressable>; })}</View>
-          <Pressable disabled={(draft.cards?.length ?? 0) !== 3 || submit.isPending || saveDraft.isPending} style={[styles.button, ((draft.cards?.length ?? 0) !== 3 || submit.isPending || saveDraft.isPending) && styles.disabled]} onPress={() => void finish()}>{submit.isPending || saveDraft.isPending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>검사 최종 제출</Text>}</Pressable>
+          <Text style={styles.sectionSub}>기존 커플 관계 검사와 같은 비공개 카드 선택 화면에서, 카드 뒷면을 보고 마음이 이끄는 3장을 선택합니다.</Text>
+          <Pressable
+            disabled={(draft.colors?.length ?? 0) !== 3 || saveDraft.isPending}
+            style={[styles.button, ((draft.colors?.length ?? 0) !== 3 || saveDraft.isPending) && styles.disabled]}
+            onPress={() => void continueToCardSelection()}
+          >
+            {saveDraft.isPending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>심리카드 선택으로 →</Text>}
+          </Pressable>
         </View>
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
@@ -211,6 +224,5 @@ const styles = StyleSheet.create({
   consent: { flexDirection: "row", alignItems: "flex-start", gap: 9, marginTop: 16, borderWidth: 1, borderColor: "#D7CABB", borderRadius: 12, padding: 12, backgroundColor: "#FFFDF9" }, consentOn: { borderColor: "#7CA377", backgroundColor: "#F1F8EF" }, check: { width: 18, height: 18, borderWidth: 1, borderColor: "#7CA377", borderRadius: 9, textAlign: "center", lineHeight: 16, color: "#356B53", fontWeight: "900" }, consentText: { flex: 1, color: "#5F4B3B", fontSize: 12.5, lineHeight: 20 },
   saveStage: { alignItems: "center", paddingVertical: 12, marginTop: 14, borderRadius: 12, backgroundColor: "#E8F1E6", borderWidth: 1, borderColor: "#92B48F" }, saveStageText: { color: "#3E653E", fontSize: 14, fontWeight: "800" }, disabled: { opacity: 0.48 },
   preview: { flexDirection: "row", gap: 8, marginBottom: 12 }, previewSlot: { flex: 1, height: 44, justifyContent: "center", alignItems: "center", backgroundColor: "#F0EAE0", borderWidth: 1, borderColor: "#D5C7B8", borderRadius: 10 }, previewText: { color: "#7B6D60", fontSize: 12, fontWeight: "800" }, colorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 }, colorTile: { width: "18%", aspectRatio: 1, borderRadius: 9, justifyContent: "flex-end", padding: 4, borderWidth: 1, borderColor: "rgba(0,0,0,0.08)" }, tileSelected: { borderWidth: 3, borderColor: "#C69A51", transform: [{ scale: 1.03 }] }, tileText: { fontSize: 8.5, lineHeight: 11, fontWeight: "800", textAlign: "center" },
-  cardPreview: { flexDirection: "row", gap: 8, marginBottom: 12 }, cardSlot: { flex: 1, minHeight: 58, backgroundColor: "#F0EAE0", borderWidth: 1, borderColor: "#D5C7B8", borderRadius: 10, alignItems: "center", justifyContent: "center", padding: 4 }, cardPreviewText: { color: "#7B6D60", fontSize: 11, lineHeight: 17, fontWeight: "800", textAlign: "center" }, cardGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 }, cardTile: { width: "13.4%", aspectRatio: 0.72, borderRadius: 8, justifyContent: "center", alignItems: "center", padding: 2, borderWidth: 1, borderColor: "rgba(0,0,0,0.08)" }, cardTileSymbol: { fontSize: 16, lineHeight: 19, fontWeight: "800" }, cardTileText: { fontSize: 7, lineHeight: 9, fontWeight: "800" },
   button: { alignItems: "center", borderRadius: 15, paddingVertical: 16, backgroundColor: "#527B52", marginTop: 16 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" }, message: { color: "#4E6C4A", fontSize: 13, lineHeight: 20, textAlign: "center", marginBottom: 10 }, inviteBox: { backgroundColor: "#EEF7EB", borderWidth: 1, borderColor: "#9FBE99", borderRadius: 16, padding: 16, marginTop: 2, marginBottom: 12 }, inviteTitle: { color: "#345C35", fontSize: 16, fontWeight: "800" }, inviteBody: { color: "#4F694D", fontSize: 13, lineHeight: 20, marginTop: 7 }, inviteButton: { backgroundColor: "#4E784E", alignItems: "center", borderRadius: 12, paddingVertical: 13, marginTop: 14 }, inviteButtonWide: { backgroundColor: "#4E784E", alignSelf: "stretch", alignItems: "center", borderRadius: 12, paddingVertical: 14, marginTop: 4 }, inviteButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" }, refreshButton: { borderWidth: 1, borderColor: "#B7A790", borderRadius: 12, paddingHorizontal: 18, paddingVertical: 11 }, refreshText: { color: "#68594C", fontSize: 14, fontWeight: "800" }, wait: { color: "#765D45", backgroundColor: "#F1E7DA", borderRadius: 12, padding: 14, fontSize: 13, lineHeight: 21, textAlign: "center", marginBottom: 24 },
 });

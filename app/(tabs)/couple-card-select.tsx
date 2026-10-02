@@ -8,7 +8,7 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet,
+  Alert, View, Text, ScrollView, StyleSheet,
   Dimensions, TouchableOpacity, Animated, Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -16,7 +16,8 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CARD_DATA, type CardData } from '@/constants/cardData';
-import type { CoupleSessionData } from '@/constants/coupleData';
+import type { CoupleSessionData, FaithType, GenderType, RelationshipRole } from '@/constants/coupleData';
+import { trpc } from '@/lib/trpc';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 48 - 32) / 5;
@@ -317,7 +318,21 @@ function NativeCard({
 export default function CoupleCardSelectScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { person } = useLocalSearchParams<{ person: 'A' | 'B' }>();
+  const { person, relationshipToken, inviteToken, resultToken } = useLocalSearchParams<{
+    person: 'A' | 'B';
+    relationshipToken?: string | string[];
+    inviteToken?: string | string[];
+    resultToken?: string | string[];
+  }>();
+  const inviteAccessToken = Array.isArray(relationshipToken) ? relationshipToken[0] : relationshipToken;
+  const relationshipInviteToken = Array.isArray(inviteToken) ? inviteToken[0] : inviteToken;
+  const relationshipResultToken = Array.isArray(resultToken) ? resultToken[0] : resultToken;
+  const relationshipContext = trpc.relationshipInvites.context.useQuery(
+    { accessToken: inviteAccessToken ?? '' },
+    { enabled: Boolean(inviteAccessToken && inviteAccessToken.length >= 32), retry: false },
+  );
+  const submitRelationshipParticipant = trpc.relationshipInvites.submit.useMutation();
+  const isInviteParticipant = Boolean(inviteAccessToken);
   const personLabel = person === 'A' ? '첫 번째 사람' : '두 번째 사람';
   const accentColor = person === 'A' ? '#3D6B3D' : '#7B5EA7';
   const accentBg = person === 'A' ? '#8BAF8B11' : '#7B5EA711';
@@ -347,9 +362,10 @@ export default function CoupleCardSelectScreen() {
     flipAnims.forEach(anim => anim.setValue(0));
     const timer = setTimeout(() => setIsShuffling(false), 2100);
     return () => clearTimeout(timer);
-  }, [person]);
+  }, [person, inviteAccessToken]);
 
   useEffect(() => {
+    if (isInviteParticipant) return;
     AsyncStorage.getItem('@couple_session').then(raw => {
       if (raw) {
         const data: CoupleSessionData = JSON.parse(raw);
@@ -363,7 +379,15 @@ export default function CoupleCardSelectScreen() {
         }
       }
     });
-  }, [person]);
+  }, [person, isInviteParticipant]);
+
+  useEffect(() => {
+    if (!isInviteParticipant || !relationshipContext.data) return;
+    const colorIds = relationshipContext.data.draft?.colors ?? [];
+    const { COLOR_DATA: CD } = require('@/constants/colorData');
+    const found = colorIds.map((id: string) => CD.find((color: any) => color.id === id)).filter(Boolean);
+    setPrevColors(found);
+  }, [isInviteParticipant, relationshipContext.data?.draftRevision]);
 
   useEffect(() => {
     injectCoupleCSS();
@@ -413,6 +437,38 @@ export default function CoupleCardSelectScreen() {
 
   const handleConfirm = async () => {
     if (selectedCount < 3) return;
+    if (isInviteParticipant) {
+      const current = relationshipContext.data;
+      const info = current?.draft?.info;
+      const colors = current?.draft?.colors;
+      if (!current || !info?.gender || !info.faith || !info.relationshipRole || !colors || colors.length !== 3 || !inviteAccessToken) {
+        Alert.alert('검사 정보를 다시 확인해 주세요', '초대 세션 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+      try {
+        await submitRelationshipParticipant.mutateAsync({
+          accessToken: inviteAccessToken,
+          expectedRevision: current.draftRevision,
+          submission: {
+            info: info as { gender: GenderType; faith: FaithType; relationshipRole: RelationshipRole },
+            colors,
+            cards: selectedCards.filter(Boolean).map((card) => card!.id),
+          },
+        });
+        router.replace({
+          pathname: '/(tabs)/relationship-invite',
+          params: {
+            token: inviteAccessToken,
+            inviteToken: relationshipInviteToken ?? '',
+            resultToken: relationshipResultToken ?? '',
+          },
+        } as any);
+      } catch (error) {
+        const conflict = error instanceof Error && error.message.includes('REVISION_CONFLICT');
+        Alert.alert('제출하지 못했습니다', conflict ? '다른 창에서 변경된 내용이 있습니다. 초대 링크를 다시 열어 최신 상태를 확인해 주세요.' : '네트워크를 확인한 뒤 다시 시도해 주세요.');
+      }
+      return;
+    }
     if (!sessionData) return;
     const cards = selectedCards.filter(Boolean) as CardData[];
     const cardIds = cards.map(c => c.id);
@@ -561,12 +617,16 @@ export default function CoupleCardSelectScreen() {
           ]}
           onPress={handleConfirm}
           activeOpacity={0.8}
-          disabled={selectedCount < 3}
+          disabled={selectedCount < 3 || submitRelationshipParticipant.isPending}
         >
           <Text style={styles.confirmButtonText}>
-            {selectedCount === 3
-              ? person === 'A' ? '두 번째 사람 선택으로 →' : '커플 코칭 결과 보기 →'
-              : `${selectedCount} / 3 선택됨`}
+            {submitRelationshipParticipant.isPending
+              ? '검사 제출 중...'
+              : selectedCount === 3
+                ? isInviteParticipant
+                  ? '검사 최종 제출'
+                  : person === 'A' ? '두 번째 사람 선택으로 →' : '커플 코칭 결과 보기 →'
+                : `${selectedCount} / 3 선택됨`}
           </Text>
         </TouchableOpacity>
       </ScrollView>

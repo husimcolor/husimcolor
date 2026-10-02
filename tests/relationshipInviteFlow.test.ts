@@ -35,9 +35,10 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(service).toContain('resultTokenHash: hashCommerceValue(resultToken)');
   });
 
-  it("단계별 초안은 revision 기반으로 저장하며 최종 제출 뒤에는 수정할 수 없다", () => {
+  it("단계별 초안은 revision 기반으로 저장하고 기존 비공개 카드 선택 화면으로 연결한다", () => {
     const service = read("server/commerce/relationship-invite-service.ts");
     const screen = read("app/(tabs)/relationship-invite.tsx");
+    const cardSelect = read("app/(tabs)/couple-card-select.tsx");
     expect(service).toContain('draftRevision: current.draftRevision + 1');
     expect(service).toContain('consentAccepted: current.consentAccepted');
     expect(service).toContain('eq(relationshipParticipants.draftRevision, input.expectedRevision)');
@@ -46,7 +47,12 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(screen).toContain("이 단계의 답변이 저장되었습니다.");
     expect(screen).toContain('setConsent(value.consentAccepted)');
     expect(screen).toContain("colors: draft.colors");
-    expect(screen).toContain("cards: draft.cards!");
+    expect(screen).toContain('pathname: "/(tabs)/couple-card-select"');
+    expect(screen).toContain('심리카드 선택으로 →');
+    expect(screen).not.toContain('CARD_DATA.map');
+    expect(cardSelect).toContain('relationshipToken');
+    expect(cardSelect).toContain('submitRelationshipParticipant.mutateAsync');
+    expect(cardSelect).toContain('검사 최종 제출');
   });
 
   it("양측 최종 제출을 모두 확인한 한 요청만 리포트 생성을 선점한다", () => {
@@ -79,6 +85,7 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(screen).toContain('finalConsonant === 0 || finalConsonant === 8 ? "로" : "으로"');
     expect(screen).toContain("본인의 정보를 선택한 후 검사를 시작해 주세요.");
     expect(screen).toContain("상대방이 검사를 완료하면 두 분의 관계 리포트가 자동으로 생성됩니다.");
+    expect(screen).toContain('_vercel_share');
     expect(screen).not.toContain("가능한 역할만 표시합니다.");
   });
 
