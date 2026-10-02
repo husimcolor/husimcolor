@@ -91,6 +91,7 @@ export default function CommerceCheckoutScreen() {
     channel?: string | string[];
     review?: string | string[];
     reviewResult?: string | string[];
+    testLifecycle?: string | string[];
   }>();
   const productCode = getSingleParam(params.product);
   const relationType = getSingleParam(params.relationType);
@@ -101,6 +102,10 @@ export default function CommerceCheckoutScreen() {
   const failureCode = getSingleParam(params.code);
   const failureMessage = getSingleParam(params.message);
   const requestedCardReview = getSingleParam(params.review) === "toss-card-review";
+  // Preview QA can opt into the persistent Toss test lifecycle without
+  // changing the normal card-review path. The runtime/server guards still
+  // reject this outside the explicitly configured Preview test environment.
+  const requestedPreviewLifecycle = getSingleParam(params.testLifecycle) === "toss-test-lifecycle";
   const reviewResult = getSingleParam(params.reviewResult);
   const product = productCode ? getCommerceProduct(productCode) : undefined;
   const [email, setEmail] = useState("");
@@ -115,7 +120,11 @@ export default function CommerceCheckoutScreen() {
   const paidAnalysisPublicEnabled = testMode.data?.paidAnalysisPublicEnabled ?? false;
   // When card review is enabled, every paid-analysis entry uses the non-persistent
   // review handoff first, even though Preview also has test-payment mode enabled.
-  const automaticCardReview = Boolean(testMode.data?.tossCardReviewEnabled && isPaidAnalysisCode(productCode));
+  const automaticCardReview = Boolean(
+    testMode.data?.tossCardReviewEnabled &&
+    isPaidAnalysisCode(productCode) &&
+    !requestedPreviewLifecycle,
+  );
   const cardReviewMode = requestedCardReview || automaticCardReview;
   const cardReview = trpc.commerce.checkout.cardReview.useQuery(
     { productCode: productCode as "personal_deep" | "couple_love_deep" | "parent_child_deep" | "personal_coaching" | "couple_coaching" },
@@ -195,6 +204,7 @@ export default function CommerceCheckoutScreen() {
         product: productCode,
         ...(relationType ? { relationType } : {}),
         ...(channel === "web" ? { channel } : {}),
+        ...(requestedPreviewLifecycle ? { testLifecycle: "toss-test-lifecycle" } : {}),
       }).toString();
       await payment.requestPayment({
         method: "CARD",
