@@ -59,6 +59,8 @@ export default function AdminScreen() {
   const [expandedPaymentId, setExpandedPaymentId] = useState<number | null>(null);
   const [memo, setMemo] = useState<Record<number, string>>({});
   const [schedule, setSchedule] = useState<Record<number, string>>({});
+  const [blackoutDate, setBlackoutDate] = useState("");
+  const [blackoutNote, setBlackoutNote] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [legacyAdmin, setLegacyAdmin] = useState(false);
   const [legacyLoading, setLegacyLoading] = useState(true);
@@ -102,6 +104,7 @@ export default function AdminScreen() {
   const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: hasAdminAccess && customerId !== null });
   const delivery = trpc.commerce.adminDelivery.list.useQuery({ limit: 50 }, secured);
   const bookings = trpc.admin.coachingBookings.useQuery({ limit: 50 }, secured);
+  const blackoutDates = trpc.admin.coachingBlackoutDates.useQuery(undefined, secured);
   const supportTickets = trpc.admin.supportTickets.useQuery({ limit: 100 }, secured);
   const coupons = trpc.admin.coupons.useQuery({ limit: 100 }, secured);
   const legacy = trpc.admin.legacyPayments.useQuery({ limit: 100 }, secured);
@@ -112,12 +115,30 @@ export default function AdminScreen() {
   const updateLegacy = trpc.admin.updateLegacyPayment.useMutation({ onSuccess: () => { legacy.refetch(); dashboard.refetch(); } });
   const retryMail = trpc.commerce.adminDelivery.retry.useMutation({ onSuccess: () => delivery.refetch() });
   const updateBooking = trpc.admin.updateCoachingBooking.useMutation({ onSuccess: () => { bookings.refetch(); dashboard.refetch(); } });
+  const createBlackoutDate = trpc.admin.createCoachingBlackoutDate.useMutation({
+    onSuccess: (result) => {
+      if (!result.created) {
+        const detail = result.reason === "CONFIRMED_BOOKINGS_EXIST"
+          ? `해당 날짜에 확정된 대면 예약이 ${result.confirmedBookingCount}건 있어 임시 휴무일로 지정하지 않았습니다.`
+          : "이미 임시 휴무일로 지정된 날짜입니다.";
+        Alert.alert("예약 불가일 미지정", detail);
+        return;
+      }
+      setBlackoutDate("");
+      setBlackoutNote("");
+      void blackoutDates.refetch();
+      Alert.alert("예약 불가일 지정", "선택한 날짜는 신규 대면 코칭 예약에서 제외됩니다. 기존 예약은 변경하지 않았습니다.");
+    },
+  });
+  const removeBlackoutDate = trpc.admin.removeCoachingBlackoutDate.useMutation({
+    onSuccess: () => { void blackoutDates.refetch(); },
+  });
   const updateSupportTicket = trpc.admin.updateSupportTicket.useMutation({ onSuccess: () => supportTickets.refetch() });
   const deleteReview = trpc.admin.deleteReview.useMutation({ onSuccess: () => reviews.refetch() });
 
   const refresh = async () => {
     setRefreshing(true);
-    await Promise.all([auth.refetch(), dashboard.refetch(), orders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), supportTickets.refetch(), coupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
+    await Promise.all([auth.refetch(), dashboard.refetch(), orders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), blackoutDates.refetch(), supportTickets.refetch(), coupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
     setRefreshing(false);
   };
   const updatePayment = (id: number, status: LegacyStatus) => Alert.alert("과거 신청 상태", `“${legacyLabels[status]}”으로 변경하시겠습니까?`, [
@@ -132,6 +153,20 @@ export default function AdminScreen() {
   const changeBookingStatus = (bookingId: number, status: "change_requested" | "completed" | "cancelled" | "no_show") => {
     Alert.alert("예약 상태 변경", `“${bookingLabels[status]}” 상태로 변경하시겠습니까?`, [
       { text: "취소", style: "cancel" }, { text: "변경", onPress: () => updateBooking.mutate({ bookingId, status }) },
+    ]);
+  };
+  const createBlackout = () => {
+    const date = blackoutDate.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      Alert.alert("날짜 형식", "예: 2026-10-01 형식으로 날짜를 입력해 주세요.");
+      return;
+    }
+    createBlackoutDate.mutate({ date, note: blackoutNote.trim() || undefined });
+  };
+  const removeBlackout = (date: string) => {
+    Alert.alert("예약 불가일 해제", `${date}의 임시 휴무 설정을 해제하시겠습니까? 기존 예약에는 영향을 주지 않습니다.`, [
+      { text: "취소", style: "cancel" },
+      { text: "해제", style: "destructive", onPress: () => removeBlackoutDate.mutate({ date }) },
     ]);
   };
 
@@ -155,6 +190,22 @@ export default function AdminScreen() {
           <TouchableOpacity style={styles.logout} onPress={() => legacyAdmin ? void logoutLegacyAdmin() : logout.mutate()}><Text style={styles.logoutText}>로그아웃</Text></TouchableOpacity>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>{tabs.map((item) => <TouchableOpacity key={item} onPress={() => setTab(item)} style={[styles.tab, tab === item && styles.tabActive]}><Text style={[styles.tabText, tab === item && styles.tabTextActive]}>{item}</Text></TouchableOpacity>)}</ScrollView>
+
+        {tab === "코칭예약" && <>
+          <Text style={[styles.section, { color: colors.foreground }]}>예약 불가일 (임시 휴무)</Text>
+          <Panel>
+            <Text style={styles.noticeTitle}>대면 코칭 신규 예약만 제한</Text>
+            <Text style={styles.noticeText}>일요일·설날 당일·추석 당일·당일 예약 불가 규칙은 자동 적용됩니다. 여기서 지정하는 날짜는 개인 일정 등 추가 임시 휴무일입니다. 기존 확정 예약을 취소하거나 변경하지 않습니다.</Text>
+            <TextInput value={blackoutDate} onChangeText={setBlackoutDate} placeholder="날짜 (예: 2026-10-01)" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} />
+            <TextInput value={blackoutNote} onChangeText={setBlackoutNote} placeholder="관리자 메모 (예: 외부 일정, 고객에게 미노출)" placeholderTextColor={colors.muted} maxLength={500} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} />
+            <TouchableOpacity style={styles.action} disabled={createBlackoutDate.isPending} onPress={createBlackout}><Text style={styles.actionText}>{createBlackoutDate.isPending ? "확인 중…" : "예약 불가일 지정"}</Text></TouchableOpacity>
+          </Panel>
+          {blackoutDates.data?.map((item) => <Panel key={item.date}>
+            <View style={styles.row}><View><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.date}</Text><Text style={[styles.meta, { color: colors.muted }]}>{item.note ?? "메모 없음"}</Text></View><Badge text="임시 휴무" tone="warn" /></View>
+            <TouchableOpacity style={styles.dangerAction} disabled={removeBlackoutDate.isPending} onPress={() => removeBlackout(item.date)}><Text style={styles.dangerActionText}>예약 불가일 해제</Text></TouchableOpacity>
+          </Panel>)}
+          {blackoutDates.data?.length === 0 && <Panel><Text style={styles.noticeText}>등록된 임시 휴무일이 없습니다.</Text></Panel>}
+        </>}
 
         {tab === "운영 홈" && <>
           <Text style={[styles.section, { color: colors.foreground }]}>오늘의 운영 신호</Text>

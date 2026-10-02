@@ -1,9 +1,11 @@
 name: Deploy to Vercel
 
 on:
+
   push:
     branches:
       - main
+
   pull_request:
     branches:
       - main
@@ -86,7 +88,7 @@ jobs:
         run: |
           cat > ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" << 'VCEOF'
           {
-            "runtime": "nodejs20.x",
+            "runtime": "nodejs22.x",
             "handler": "index.js",
             "launcherType": "Nodejs",
             "shouldAddHelpers": true
@@ -129,7 +131,7 @@ jobs:
 
       - name: Deploy prebuilt to Vercel
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
           else
             vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
