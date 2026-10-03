@@ -37,6 +37,8 @@ export default function PremiumInfoScreen() {
   const [profileFaith, setProfileFaith] = useState('');
   const [profileConcerns, setProfileConcerns] = useState<string[]>([]);
   const [accessError, setAccessError] = useState<string | null>(null);
+  const [hasStartGrant, setHasStartGrant] = useState(false);
+  const [grantChecked, setGrantChecked] = useState(false);
   const consumeEntitlement = trpc.commerce.entitlement.consumeForAnalysisStart.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
@@ -55,6 +57,12 @@ export default function PremiumInfoScreen() {
     loadProfile();
   }, []);
 
+  useEffect(() => {
+    getCommerceStartGrant('personal_deep')
+      .then((grant) => setHasStartGrant(Boolean(grant)))
+      .finally(() => setGrantChecked(true));
+  }, []);
+
   const toggleConcern = (item: string) => {
     setProfileConcerns((previous) => {
       if (previous.includes(item)) return previous.filter((concern) => concern !== item);
@@ -63,11 +71,11 @@ export default function PremiumInfoScreen() {
     });
   };
 
-  const canContinue = Boolean(profileAge && profileJob && profileFaith) && !paidAnalysisPreparing;
+  const canContinue = Boolean(profileAge && profileJob && profileFaith) && grantChecked && (!paidAnalysisPreparing || hasStartGrant);
 
   const handleContinue = async () => {
     if (!canContinue) return;
-    if (paidAnalysisPreparing) {
+    if (paidAnalysisPreparing && !hasStartGrant) {
       setAccessError('개인 심화분석은 정식 오픈 준비중입니다.');
       return;
     }
@@ -92,6 +100,7 @@ export default function PremiumInfoScreen() {
         if (grant) {
           const consumed = await consumeEntitlement.mutateAsync({ accessToken: grant.accessToken, productCode: 'personal_deep' });
           await removeCommerceStartGrant('personal_deep');
+          setHasStartGrant(false);
           await markCommerceAnalysisStarted('personal_deep');
           await saveCommerceAnalysisDelivery(consumed.deliveryGrant);
         }
@@ -191,7 +200,7 @@ export default function PremiumInfoScreen() {
             onPress={handleContinue}
             disabled={!canContinue}
           >
-            <Text style={styles.continueButtonText}>{paidAnalysisPreparing ? '정식 오픈 준비중' : '컬러 선택하기 →'}</Text>
+            <Text style={styles.continueButtonText}>{paidAnalysisPreparing && !hasStartGrant ? '정식 오픈 준비중' : '컬러 선택하기 →'}</Text>
           </Pressable>
           {accessError ? <Text style={styles.accessError}>{accessError}</Text> : null}
           <Text style={[styles.privacyNote, { color: colors.muted }]}>입력하신 정보는 결과 해석에만 활용되며{`\n`}외부로 전송되지 않습니다.</Text>

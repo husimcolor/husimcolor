@@ -111,6 +111,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="admin-test-access"
+        options={{
+          title: "테스트 이용권",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="business-info"
         options={{
           title: "사업자정보",

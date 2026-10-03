@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -66,6 +66,10 @@ export default function AdminScreen() {
   const [legacyLoading, setLegacyLoading] = useState(true);
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState(false);
+  const [trialEmail, setTrialEmail] = useState("");
+  const [trialProduct, setTrialProduct] = useState<"personal_deep" | "couple_love_deep" | "parent_child_deep">("personal_deep");
+  const [trialRelationType, setTrialRelationType] = useState<"연인" | "부부" | "부모-자녀">("연인");
+  const [trialUrl, setTrialUrl] = useState<string | null>(null);
   const apiBaseUrl = getApiBaseUrl();
 
   const refreshLegacySession = async () => {
@@ -135,6 +139,42 @@ export default function AdminScreen() {
   });
   const updateSupportTicket = trpc.admin.updateSupportTicket.useMutation({ onSuccess: () => supportTickets.refetch() });
   const deleteReview = trpc.admin.deleteReview.useMutation({ onSuccess: () => reviews.refetch() });
+  const issueTestEntitlement = trpc.admin.issueTestEntitlement.useMutation({
+    onSuccess: (result) => {
+      if (!result.startGrant) {
+        setTrialUrl(null);
+        return;
+      }
+      const base = typeof window !== "undefined" ? window.location.origin : "";
+      const params = new URLSearchParams({
+        product: result.productCode,
+        grant: result.startGrant.accessToken,
+        expiresAt: result.startGrant.expiresAt,
+      });
+      if (result.productCode === "couple_love_deep" || result.productCode === "parent_child_deep") {
+        params.set("relationType", trialRelationType);
+      }
+      setTrialUrl(`${base}/admin-test-access?${params.toString()}`);
+      Alert.alert(
+        result.outcome === "issued" ? "테스트 이용권 발급" : "테스트 링크 재발급",
+        "결제·쿠폰·주문은 만들지 않았습니다. 아래 URL은 이 화면에서만 복사해 대상자에게 전달하세요.",
+      );
+    },
+    onError: (error) => {
+      const message = error.message.includes("RECIPIENT_LIMIT")
+        ? "현재 유효한 체험 담당자가 2명입니다. 만료 또는 회수 후 새로 발급할 수 있습니다."
+        : error.message.includes("ALREADY_USED")
+          ? "이 이메일의 해당 체험권은 이미 사용되었습니다. 새 체험권은 발급하지 않았습니다."
+          : "체험 이용권을 발급하지 못했습니다. 이메일과 상품을 확인해 주세요.";
+      Alert.alert("발급 불가", message);
+    },
+  });
+  const revokeTestEntitlement = trpc.admin.revokeTestEntitlement.useMutation({
+    onSuccess: (result) => {
+      setTrialUrl(null);
+      Alert.alert(result.revoked ? "체험 이용권 회수" : "회수 불가", result.revoked ? "검사 시작 전 체험 이용권을 회수했습니다." : "활성 상태의 미사용 체험 이용권이 없습니다.");
+    },
+  });
 
   const refresh = async () => {
     setRefreshing(true);
@@ -167,6 +207,35 @@ export default function AdminScreen() {
     Alert.alert("예약 불가일 해제", `${date}의 임시 휴무 설정을 해제하시겠습니까? 기존 예약에는 영향을 주지 않습니다.`, [
       { text: "취소", style: "cancel" },
       { text: "해제", style: "destructive", onPress: () => removeBlackoutDate.mutate({ date }) },
+    ]);
+  };
+  const isRelationshipTrial = trialProduct !== "personal_deep";
+  const availableRelationTypes = useMemo(() => trialProduct === "couple_love_deep" ? ["연인", "부부"] as const : ["부모-자녀"] as const, [trialProduct]);
+  const issueTrial = () => {
+    const email = trialEmail.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      Alert.alert("이메일 확인", "체험 담당자 이메일 주소를 입력해 주세요.");
+      return;
+    }
+    const relationType = isRelationshipTrial ? trialRelationType : null;
+    if (relationType && !availableRelationTypes.includes(relationType as never)) {
+      Alert.alert("관계 유형 확인", "선택한 상품에 맞는 관계 유형을 선택해 주세요.");
+      return;
+    }
+    Alert.alert("체험 이용권 발급", "최대 7일·1회 체험 권한을 발급합니다. 주문·결제·쿠폰은 생성하지 않으며, 검사 시작 전에는 회수할 수 있습니다.", [
+      { text: "취소", style: "cancel" },
+      { text: "발급", onPress: () => issueTestEntitlement.mutate({ email, productCode: trialProduct }) },
+    ]);
+  };
+  const revokeTrial = () => {
+    const email = trialEmail.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      Alert.alert("이메일 확인", "회수할 체험 담당자 이메일 주소를 입력해 주세요.");
+      return;
+    }
+    Alert.alert("체험 이용권 회수", "아직 검사를 시작하지 않은 권한만 회수합니다. 이미 시작한 검사는 중단하거나 삭제하지 않습니다.", [
+      { text: "취소", style: "cancel" },
+      { text: "회수", style: "destructive", onPress: () => revokeTestEntitlement.mutate({ email, productCode: trialProduct }) },
     ]);
   };
 
@@ -240,7 +309,22 @@ export default function AdminScreen() {
 
         {tab === "PDF·이메일" && <><Text style={[styles.section, { color: colors.foreground }]}>Private PDF·이메일 Outbox</Text><Text style={[styles.helper, { color: colors.muted }]}>실패 건만 재시도하며, PDF 본문·분석 결과·공유 스냅샷은 수정하지 않습니다.</Text>{delivery.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>주문 #{item.orderId ?? "—"} · 문서 #{item.privateDocumentId ?? "—"}</Text><Badge text={item.status} tone={item.status === "sent" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>시도 {item.attemptCount}회 · 다음 시도 {dateText(item.nextAttemptAt)}</Text>{item.status === "failed" && <TouchableOpacity style={styles.action} onPress={() => retryMail.mutate({ outboxId: item.id })}><Text style={styles.actionText}>발송 재시도</Text></TouchableOpacity>}</Panel>)}</>}
 
-        {tab === "상품·쿠폰" && <><Text style={[styles.section, { color: colors.foreground }]}>상품·쿠폰</Text><Text style={[styles.helper, { color: colors.muted }]}>기존 상품 가격·쿠폰 할인 규칙은 변경하지 않고 사용·예약 상태만 조회합니다.</Text>{coupons.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.code}</Text><Badge text={item.status} tone={item.status === "active" ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.discountType === "percent" ? `${item.discountValue}% 할인` : `${item.discountValue.toLocaleString()}원 할인`} · 사용 {item.redemptionCount}건 · 예약 {item.reservedCount}건</Text><Text style={[styles.meta, { color: colors.muted }]}>종료 {dateText(item.endsAt)}</Text></Panel>)}{!coupons.data?.length && <Panel><Text style={styles.noticeText}>등록된 쿠폰이 없습니다.</Text></Panel>}</>}
+        {tab === "상품·쿠폰" && <>
+          <Text style={[styles.section, { color: colors.foreground }]}>홍보 담당자 테스트 이용권</Text>
+          <Panel>
+            <Text style={styles.noticeTitle}>관리자 한정 · 최대 2명 · 7일 · 상품당 1회</Text>
+            <Text style={styles.noticeText}>유료 심화분석 3종만 대상입니다. 이 발급은 공통 customer·entitlement 원장만 사용하며 주문·결제·쿠폰을 만들지 않습니다. 링크는 체험 대상자에게만 전달하고, 검사 시작 전에는 회수할 수 있습니다.</Text>
+            <TextInput value={trialEmail} onChangeText={(value) => { setTrialEmail(value); setTrialUrl(null); }} autoCapitalize="none" keyboardType="email-address" placeholder="체험 담당자 이메일" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} />
+            <View style={styles.actions}>{([
+              ["personal_deep", "개인 심화분석"],
+              ["couple_love_deep", "부부·연인 관계분석"],
+              ["parent_child_deep", "부모·자녀 관계분석"],
+            ] as const).map(([code, label]) => <TouchableOpacity key={code} style={trialProduct === code ? styles.action : styles.smallAction} onPress={() => { setTrialProduct(code); setTrialRelationType(code === "parent_child_deep" ? "부모-자녀" : "연인"); setTrialUrl(null); }}><Text style={trialProduct === code ? styles.actionText : styles.smallActionText}>{label}</Text></TouchableOpacity>)}</View>
+            {isRelationshipTrial && <><Text style={[styles.meta, { color: colors.muted }]}>관계 유형</Text><View style={styles.actions}>{availableRelationTypes.map((value) => <TouchableOpacity key={value} style={trialRelationType === value ? styles.action : styles.smallAction} onPress={() => { setTrialRelationType(value); setTrialUrl(null); }}><Text style={trialRelationType === value ? styles.actionText : styles.smallActionText}>{value}</Text></TouchableOpacity>)}</View></>}
+            <View style={styles.actions}><TouchableOpacity style={styles.action} disabled={issueTestEntitlement.isPending} onPress={issueTrial}><Text style={styles.actionText}>{issueTestEntitlement.isPending ? "발급 중…" : "테스트 링크 발급"}</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} disabled={revokeTestEntitlement.isPending} onPress={revokeTrial}><Text style={styles.dangerActionText}>미사용 권한 회수</Text></TouchableOpacity></View>
+            {trialUrl && <><Text style={[styles.meta, { color: "#9a6a12" }]}>아래 링크는 현재 화면에서만 표시됩니다. 길게 눌러 전체 URL을 복사해 체험 담당자에게 전달해 주세요.</Text><TextInput value={trialUrl} editable={false} multiline selectTextOnFocus style={[styles.input, styles.trialUrl, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /></>}
+          </Panel>
+          <Text style={[styles.section, { color: colors.foreground }]}>상품·쿠폰</Text><Text style={[styles.helper, { color: colors.muted }]}>기존 상품 가격·쿠폰 할인 규칙은 변경하지 않고 사용·예약 상태만 조회합니다.</Text>{coupons.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.code}</Text><Badge text={item.status} tone={item.status === "active" ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.discountType === "percent" ? `${item.discountValue}% 할인` : `${item.discountValue.toLocaleString()}원 할인`} · 사용 {item.redemptionCount}건 · 예약 {item.reservedCount}건</Text><Text style={[styles.meta, { color: colors.muted }]}>종료 {dateText(item.endsAt)}</Text></Panel>)}{!coupons.data?.length && <Panel><Text style={styles.noticeText}>등록된 쿠폰이 없습니다.</Text></Panel>}</>}
 
         {tab === "코칭예약" && <><Text style={[styles.section, { color: colors.foreground }]}>코칭 예약 운영</Text><Text style={[styles.helper, { color: colors.muted }]}>결제 완료 코칭 주문은 일정 대기로 생성되어 운영자가 확정합니다.</Text>{bookings.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={bookingLabels[item.status] ?? item.status} tone={item.status === "completed" ? "good" : item.status === "cancelled" || item.status === "no_show" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.orderNumber}</Text><Text style={[styles.meta, { color: colors.muted }]}>확정 일시 {dateText(item.scheduledAt)} · {item.sessionMode === "online" ? "온라인" : item.sessionMode === "in_person" ? "대면" : "방식 미정"}</Text>{(item.status === "pending_schedule" || item.status === "change_requested") && <><TextInput value={schedule[item.id] ?? ""} onChangeText={(value) => setSchedule((old) => ({ ...old, [item.id]: value }))} placeholder="예: 2026-10-01 14:00" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><View style={styles.actions}><TouchableOpacity style={styles.action} onPress={() => confirmSchedule(item.id)}><Text style={styles.actionText}>일정 확정</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View></>}{item.status === "scheduled" && <View style={styles.actions}><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "completed")}><Text style={styles.smallActionText}>완료</Text></TouchableOpacity><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "change_requested")}><Text style={styles.smallActionText}>변경 요청</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "no_show")}><Text style={styles.dangerActionText}>노쇼</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View>}</Panel>)}</>}
 
@@ -268,5 +352,5 @@ const styles = StyleSheet.create({
   panel: { borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 15, padding: 14, gap: 7 }, row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }, cardTitle: { fontSize: 14, fontWeight: "800", flexShrink: 1 }, meta: { fontSize: 11, lineHeight: 17 },
   badge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }, badgeText: { fontSize: 10, fontWeight: "800" }, noticeTitle: { color: "#3f7b52", fontSize: 14, fontWeight: "800" }, noticeText: { color: "#55705a", fontSize: 12, lineHeight: 19 },
   action: { alignSelf: "flex-start", backgroundColor: "#3f7b52", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }, actionText: { color: "#fff", fontSize: 12, fontWeight: "800" }, input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, fontSize: 12 }, passwordInput: { width: "100%", maxWidth: 320 }, passwordError: { color: "#b5584f", fontSize: 12, textAlign: "center" }, actions: { flexDirection: "row", flexWrap: "wrap", gap: 7 }, smallAction: { borderWidth: 1, borderColor: "#a9c8ae", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, smallActionText: { color: "#3f7b52", fontSize: 11, fontWeight: "800" }, dangerAction: { borderWidth: 1, borderColor: "#e3aaa3", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, dangerActionText: { color: "#b5584f", fontSize: 11, fontWeight: "800" },
-  expanded: { borderTopWidth: 1, borderTopColor: "#ded9ce", paddingTop: 10, gap: 8 }, delete: { color: "#b5584f", fontSize: 11, fontWeight: "800" }, review: { fontSize: 12, lineHeight: 18 },
+  expanded: { borderTopWidth: 1, borderTopColor: "#ded9ce", paddingTop: 10, gap: 8 }, delete: { color: "#b5584f", fontSize: 11, fontWeight: "800" }, review: { fontSize: 12, lineHeight: 18 }, trialUrl: { minHeight: 84, textAlignVertical: "top", fontSize: 10, lineHeight: 15 },
 });

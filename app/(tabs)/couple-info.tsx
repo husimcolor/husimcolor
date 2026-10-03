@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -56,13 +56,27 @@ export default function CoupleInfoScreen() {
   const [genderB, setGenderB] = useState<GenderType | null>(null);
   const [faithB, setFaithB] = useState<FaithType | null>(null);
   const [accessError, setAccessError] = useState<string | null>(null);
+  const [hasStartGrant, setHasStartGrant] = useState(false);
+  const [grantChecked, setGrantChecked] = useState(false);
   const consumeEntitlement = trpc.commerce.entitlement.consumeForAnalysisStart.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
   const paidProductCodeForRelation = relationType ? getPaidProductCode(relationType) : null;
   const paidRelationPreparing = Boolean(paidProductCodeForRelation && !commerceTestMode.isLoading && !paidAnalysisPublicEnabled);
 
-  const canProceed = Boolean(relationType && relationLabel && genderA && faithA && genderB && faithB) && !paidRelationPreparing;
+  useEffect(() => {
+    if (!paidProductCodeForRelation) {
+      setHasStartGrant(false);
+      setGrantChecked(true);
+      return;
+    }
+    setGrantChecked(false);
+    getCommerceStartGrant(paidProductCodeForRelation)
+      .then((grant) => setHasStartGrant(Boolean(grant)))
+      .finally(() => setGrantChecked(true));
+  }, [paidProductCodeForRelation]);
+
+  const canProceed = Boolean(relationType && relationLabel && genderA && faithA && genderB && faithB) && grantChecked && (!paidRelationPreparing || hasStartGrant);
 
   const renderChip = (label: string, selected: boolean, onPress: () => void) => (
     <Pressable
@@ -80,7 +94,7 @@ export default function CoupleInfoScreen() {
 
   const handleStart = async () => {
     if (!canProceed || !relationType || !genderA || !faithA || !genderB || !faithB) return;
-    if (paidRelationPreparing) {
+    if (paidRelationPreparing && !hasStartGrant) {
       setAccessError('이 관계 심화분석은 정식 오픈 준비중입니다.');
       return;
     }
@@ -96,6 +110,7 @@ export default function CoupleInfoScreen() {
         if (grant) {
           const consumed = await consumeEntitlement.mutateAsync({ accessToken: grant.accessToken, productCode: paidProductCode });
           await removeCommerceStartGrant(paidProductCode);
+          setHasStartGrant(false);
           await markCommerceAnalysisStarted(paidProductCode);
           await saveCommerceAnalysisDelivery(consumed.deliveryGrant);
         }
@@ -158,7 +173,7 @@ export default function CoupleInfoScreen() {
           onPress={handleStart}
           disabled={!canProceed}
         >
-          <Text style={[styles.startButtonText, { color: canProceed ? '#FFFFFF' : colors.muted }]}>{paidRelationPreparing ? '정식 오픈 준비중' : '첫 번째 사람 컬러 선택하기 →'}</Text>
+          <Text style={[styles.startButtonText, { color: canProceed ? '#FFFFFF' : colors.muted }]}>{paidRelationPreparing && !hasStartGrant ? '정식 오픈 준비중' : '첫 번째 사람 컬러 선택하기 →'}</Text>
         </Pressable>
         {accessError ? <Text style={styles.accessError}>{accessError}</Text> : null}
       </ScrollView>

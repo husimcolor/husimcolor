@@ -38,6 +38,10 @@ import {
 import { isKakaoLoginEnabled } from "./_core/kakao-oauth";
 import { createSupportInquiry } from "./commerce/support-service";
 import { resolveAdminAuditActor } from "./commerce/admin-audit-actor";
+import {
+  issueAdminTestEntitlement,
+  revokeAdminTestEntitlement,
+} from "./commerce/admin-test-entitlement-service";
 import { getSupportTicketSchemaAudit } from "./commerce/support-ticket-schema-audit";
 import {
   deleteAdminReview,
@@ -486,6 +490,24 @@ export const appRouter = router({
       .mutation(({ input, ctx }) => {
         const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
         return removeAdminCoachingBlackoutDate({ ...input, ...auditActor, auditActor });
+      }),
+    issueTestEntitlement: adminProcedure
+      .input(z.object({
+        email: z.string().email().max(320),
+        productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
+      }))
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return issueAdminTestEntitlement({ ...input, ...auditActor, auditActor });
+      }),
+    revokeTestEntitlement: adminProcedure
+      .input(z.object({
+        email: z.string().email().max(320),
+        productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
+      }))
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return revokeAdminTestEntitlement({ ...input, ...auditActor, auditActor });
       }),
   }),
 
