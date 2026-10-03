@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, eq, inArray, or } from "drizzle-orm";
 
 import {
@@ -6,6 +6,7 @@ import {
   emailOutbox,
   entitlements,
   orderItems,
+  orders,
   privateDocuments,
   products,
   relationshipParticipants,
@@ -73,6 +74,12 @@ const RELATION_TYPES = new Set<RelationType>([
 ]);
 const PAID_RELATION_PRODUCTS = new Set<CommerceProductCode>(["couple_love_deep", "parent_child_deep"]);
 const EDITABLE_STATUSES = new Set<SessionStatus>(["collecting", "awaiting_partner"]);
+
+function isAuthorizedPreviewRecoveryKey(value: string): boolean {
+  const expected = process.env.PREVIEW_RELATIONSHIP_RECOVERY_KEY;
+  if (!expected || !value || Buffer.byteLength(expected, "utf8") !== Buffer.byteLength(value, "utf8")) return false;
+  return timingSafeEqual(Buffer.from(expected, "utf8"), Buffer.from(value, "utf8"));
+}
 
 function secureToken(): string {
   return randomBytes(32).toString("base64url");
@@ -416,6 +423,58 @@ export async function createRelationshipInviteSession(tx: any, input: {
     { relationshipSessionId, participant: "B", status: "not_started" },
   ]);
   return { relationshipSessionId, ownerAccessToken, inviteToken, resultToken };
+}
+
+/**
+ * Preview에서만, 제출 완료 뒤 PDF 생성에 실패한 테스트 세션의 접근 토큰을 새로 발급한다.
+ * DB에는 토큰 원문을 저장하지 않으므로 기존 링크는 복원하지 않고 모두 교체한다.
+ */
+export async function createPreviewFailedRelationshipRecovery(input: {
+  relationshipSessionId: number;
+  recoveryKey: string;
+}): Promise<RelationshipInviteStart> {
+  if (process.env.VERCEL_ENV !== "preview" || process.env.COMMERCE_TEST_MODE !== "true" || !isAuthorizedPreviewRecoveryKey(input.recoveryKey)) {
+    throw new Error("PREVIEW_RELATIONSHIP_RECOVERY_NOT_ALLOWED");
+  }
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+
+  const rows = await db
+    .select({ session: relationshipSessions })
+    .from(relationshipSessions)
+    .innerJoin(orders, eq(relationshipSessions.orderId, orders.id))
+    .where(and(
+      eq(relationshipSessions.id, input.relationshipSessionId),
+      eq(relationshipSessions.status, "failed"),
+      eq(orders.isTest, true),
+      eq(orders.status, "paid"),
+    ))
+    .limit(1);
+  const session = rows[0]?.session;
+  if (!session) throw new Error("PREVIEW_RELATIONSHIP_RECOVERY_SESSION_NOT_FOUND");
+
+  const participants = await db
+    .select({ status: relationshipParticipants.status })
+    .from(relationshipParticipants)
+    .where(eq(relationshipParticipants.relationshipSessionId, session.id));
+  if (participants.length !== 2 || participants.some((participant) => participant.status !== "submitted")) {
+    throw new Error("PREVIEW_RELATIONSHIP_RECOVERY_SUBMISSIONS_INCOMPLETE");
+  }
+
+  const ownerAccessToken = secureToken();
+  const inviteToken = secureToken();
+  const resultToken = secureToken();
+  const updated = await db
+    .update(relationshipSessions)
+    .set({
+      ownerTokenHash: hashCommerceValue(ownerAccessToken),
+      inviteTokenHash: hashCommerceValue(inviteToken),
+      resultTokenHash: hashCommerceValue(resultToken),
+    })
+    .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "failed")));
+  if (Number(updated[0]?.affectedRows ?? 0) !== 1) throw new Error("PREVIEW_RELATIONSHIP_RECOVERY_CONFLICT");
+
+  return { relationshipSessionId: session.id, ownerAccessToken, inviteToken, resultToken };
 }
 
 async function loadSessionByAccessToken(accessToken: string) {

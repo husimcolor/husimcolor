@@ -74,6 +74,21 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(service).toContain('eq(relationshipSessions.status, "failed")');
   });
 
+  it("기존 토큰을 복원하지 않고 Preview 테스트 실패 세션에만 새 복구 토큰을 발급한다", () => {
+    const service = read("server/commerce/relationship-invite-service.ts");
+    const router = read("server/routers.ts");
+    expect(service).toContain('createPreviewFailedRelationshipRecovery');
+    expect(service).toContain('process.env.VERCEL_ENV !== "preview"');
+    expect(service).toContain('process.env.COMMERCE_TEST_MODE !== "true"');
+    expect(service).toContain('timingSafeEqual');
+    expect(service).toContain('eq(relationshipSessions.status, "failed")');
+    expect(service).toContain('eq(orders.isTest, true)');
+    expect(service).toContain('participant.status !== "submitted"');
+    expect(service).toContain('ownerTokenHash: hashCommerceValue(ownerAccessToken)');
+    expect(service).not.toContain('inviteToken: varchar(');
+    expect(router).toContain('previewRecoveryLink: publicProcedure');
+  });
+
   it("리포트 이메일 발송 성공 후에만 세션을 completed로 전이하고 초대 링크 권한은 결과 권한과 분리한다", () => {
     const service = read("server/commerce/relationship-invite-service.ts");
     const completion = read("server/commerce/relationship-session-completion.ts");

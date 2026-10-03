@@ -63,6 +63,7 @@ import {
 } from "./commerce/coaching-blackout-service";
 import {
   generateAndQueueRelationshipReport,
+  createPreviewFailedRelationshipRecovery,
   getRelationshipInviteContext,
   getRelationshipResult,
   retryFailedRelationshipReport,
@@ -379,6 +380,12 @@ export const appRouter = router({
         }
         return getRelationshipInviteContext(input.accessToken);
       }),
+    previewRecoveryLink: publicProcedure
+      .input(z.object({
+        relationshipSessionId: z.number().int().positive(),
+        recoveryKey: z.string().min(32).max(512),
+      }))
+      .mutation(({ input }) => createPreviewFailedRelationshipRecovery(input)),
     result: publicProcedure
       .input(z.object({ resultToken: z.string().min(32).max(256) }))
       .query(({ input }) => getRelationshipResult(input.resultToken)),
