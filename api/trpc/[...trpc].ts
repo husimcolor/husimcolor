@@ -12,6 +12,7 @@ import { createContext } from "../../server/_core/context";
 import { createOAuthLoginUrl, getProductionFrontendOrigin } from "../../server/_core/oauth";
 import { ENV } from "../../server/_core/env";
 import { registerLegacyAdminRoutes } from "../../server/_core/legacy-admin";
+import { runWithVercelRequestContext } from "../../server/vercel-request-context";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const app = express();
@@ -83,5 +84,5 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     requestUrl.searchParams.delete("legacyAdminRoute");
     req.url = `/api/auth/${routeName}${requestUrl.search}`;
   }
-  return app(req as any, res as any);
+  return runWithVercelRequestContext(req.headers, () => app(req as any, res as any));
 }
