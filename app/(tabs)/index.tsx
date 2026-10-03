@@ -133,6 +133,14 @@ export default function HomeScreen() {
 
   const handlePersonalDeepEntry = () => {
     if (!paidAnalysisPublicEnabled && !tossCardReviewEnabled) return;
+    // The isolated Preview runtime deliberately enables both the historical
+    // card-review page and the persistent Toss lifecycle. Prefer the latter
+    // only when Preview has explicitly opened paid-analysis QA; Production
+    // remains on its review-only route because this flag stays false there.
+    if (paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled) {
+      router.push('/(tabs)/commerce-checkout?product=personal_deep&testLifecycle=toss-test-lifecycle' as any);
+      return;
+    }
     if (tossCardReviewEnabled) {
       router.push('/(tabs)/commerce-checkout?product=personal_deep&review=toss-card-review' as any);
       return;

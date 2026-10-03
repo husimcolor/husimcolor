@@ -104,7 +104,7 @@ export default function CoupleInfoScreen() {
       if (paidProductCode) {
         const grant = await getCommerceStartGrant(paidProductCode);
         if (commerceTestMode.data?.tossTestEnabled && !grant) {
-          router.replace(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(relationType)}` as any);
+          router.replace(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(relationType)}&testLifecycle=toss-test-lifecycle` as any);
           return;
         }
         if (grant) {

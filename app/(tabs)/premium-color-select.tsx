@@ -71,7 +71,7 @@ export default function PremiumColorSelectScreen() {
       if (commerceTestMode.isLoading) return;
       if (commerceTestMode.data?.tossTestEnabled) {
         const started = await hasCommerceAnalysisStarted("personal_deep");
-        if (!started) router.replace("/commerce-checkout?product=personal_deep" as any);
+        if (!started) router.replace("/commerce-checkout?product=personal_deep&testLifecycle=toss-test-lifecycle" as any);
         return;
       }
       const active = await isPremiumActive();

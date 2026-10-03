@@ -85,6 +85,13 @@ export default function CoupleStartScreen() {
   const handleStart = () => {
     if (!effectiveRelationType) return;
     if (paidProductCode && !paidAnalysisPublicEnabled && !tossCardReviewEnabled) return;
+    // Preview supports real test-key lifecycle QA alongside card review.
+    // Make that path explicit so the ordinary product CTA does not fall back
+    // to the non-persistent review-only payment page.
+    if (paidProductCode && paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled) {
+      router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}&testLifecycle=toss-test-lifecycle` as any);
+      return;
+    }
     if (paidProductCode && tossCardReviewEnabled) {
       router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}&review=toss-card-review` as any);
       return;

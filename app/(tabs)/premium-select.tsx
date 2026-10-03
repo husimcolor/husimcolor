@@ -399,7 +399,7 @@ export default function PremiumSelectScreen() {
       if (commerceTestMode.isLoading) return;
       if (commerceTestMode.data?.tossTestEnabled) {
         if (!await hasCommerceAnalysisStarted("personal_deep")) {
-          router.replace("/commerce-checkout?product=personal_deep" as any);
+          router.replace("/commerce-checkout?product=personal_deep&testLifecycle=toss-test-lifecycle" as any);
         }
         return;
       }
