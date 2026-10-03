@@ -72,7 +72,9 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(service).toContain('queuePrivateAnalysisPdfDelivery');
     expect(service).toContain('import { buildCouplePdfDownloadPayload } from "../../lib/couple-pdf-download"');
     expect(service).toContain('import { buildParentChildPdfDownloadPayload } from "../../lib/parent-child-pdf-download"');
+    expect(service).toContain('import { queuePrivateAnalysisPdfDelivery } from "./pdf-delivery-service"');
     expect(service).not.toContain('await import("../../lib/couple-pdf-download")');
+    expect(service).not.toContain('await import("./pdf-delivery-service")');
     expect(service).toContain('RELATIONSHIP_REPORT_${stage.toUpperCase()}');
     expect(service).toContain('console.error("[relationship-report] generation failed"');
     expect(service).toContain('retryFailedRelationshipReport');

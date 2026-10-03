@@ -38,6 +38,7 @@ import { parseCoupleShareSnapshot, type CoupleShareSnapshot } from "../../shared
 import type { CommerceProductCode } from "../../shared/commerce";
 import { getDb } from "../db";
 import { decryptCommerceValue, encryptCommerceValue, hashCommerceValue } from "./crypto";
+import { queuePrivateAnalysisPdfDelivery } from "./pdf-delivery-service";
 
 export type RelationshipParticipantSlot = "A" | "B";
 export type RelationshipInviteMode = "invite_link";
@@ -743,7 +744,6 @@ export async function generateAndQueueRelationshipReport(relationshipSessionId: 
       .set({ resultSnapshotEncrypted: encryptCommerceValue(JSON.stringify(snapshot)), reportGeneratedAt: new Date(), reportErrorCode: null })
       .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "report_generating")));
     stage = "queue_private_pdf";
-    const { queuePrivateAnalysisPdfDelivery } = await import("./pdf-delivery-service");
     const queued = await queuePrivateAnalysisPdfDelivery({
       analysisRunId: session.analysisRunId,
       kind: session.productCode,
