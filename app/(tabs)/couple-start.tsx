@@ -19,6 +19,7 @@ import {
   type VisibleRelationProduct,
 } from '@/constants/relationProducts';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
+import { isOpeningCampaignActive } from '@/shared/opening-campaign';
 
 const ROMANTIC_RELATION_TYPES: { value: Extract<RelationType, '연인' | '부부'>; label: string; emoji: string }[] = [
   { value: '연인', label: '연인', emoji: '💑' },
@@ -54,6 +55,7 @@ export default function CoupleStartScreen() {
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
   const tossCardReviewEnabled = commerceTestMode.data?.tossCardReviewEnabled ?? false;
+  const openingCampaignActive = isOpeningCampaignActive();
   useEffect(() => {
     const track = async () => {
       try {
@@ -185,6 +187,10 @@ export default function CoupleStartScreen() {
           {/* 관계 분석 상품 */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: '#2D2420' }]}>관계 분석 상품 선택</Text>
+            {openingCampaignActive && <View style={styles.openingCampaign}>
+              <Text style={styles.openingCampaignTitle}>유료 심화분석 오픈 기념 20% 할인</Text>
+              <Text style={styles.openingCampaignText}>10월 30일까지 · 회원가입 없이 이용 가능 · 오프라인 코칭 제외</Text>
+            </View>}
             <View style={styles.productList}>
               {VISIBLE_RELATION_PRODUCTS.map((product) => (
                 <Pressable
@@ -205,6 +211,7 @@ export default function CoupleStartScreen() {
                   <Text style={[styles.productPrice, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>
                     {product.price}
                   </Text>
+                  {openingCampaignActive && product.id !== 'friend' ? <Text style={[styles.productCampaignPrice, { color: selectedProductId === product.id ? '#FFF0CA' : '#775B26' }]}>{product.id === 'romantic' ? '20% 적용 시 47,200원' : '20% 적용 시 31,200원'}</Text> : null}
                   {product.id !== 'friend' && !paidAnalysisPublicEnabled && !tossCardReviewEnabled ? (
                     <Text style={[styles.productPreparing, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>정식 오픈 준비중</Text>
                   ) : null}
@@ -280,6 +287,9 @@ const styles = StyleSheet.create({
   },
   infoText: { fontSize: 15, lineHeight: 26, textAlign: 'center' },
   section: { marginBottom: 24 },
+  openingCampaign: { marginBottom: 10, borderRadius: 11, borderWidth: 1, borderColor: '#E4C978', backgroundColor: '#FFF7DA', padding: 11, gap: 3 },
+  openingCampaignTitle: { color: '#75561B', fontSize: 13, fontWeight: '800' },
+  openingCampaignText: { color: '#8D6B25', fontSize: 11, lineHeight: 16 },
   productList: { gap: 10 },
   productCard: {
     minHeight: 70,
@@ -294,6 +304,7 @@ const styles = StyleSheet.create({
   },
   productTitle: { flex: 1, fontSize: 16, lineHeight: 23, fontWeight: '700' },
   productPrice: { fontSize: 16, fontWeight: '800', letterSpacing: 0.2 },
+  productCampaignPrice: { position: 'absolute', right: 16, top: 43, fontSize: 10, fontWeight: '800' },
   productPreparing: { fontSize: 11, fontWeight: '700', position: 'absolute', right: 16, bottom: 10 },
   subSection: {
     borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 20, marginTop: -12,

@@ -26,11 +26,13 @@ describe("administrator test entitlements", () => {
     const accessScreen = read("app/(tabs)/admin-test-access.tsx");
     expect(router).toContain("issueTestEntitlement: adminProcedure");
     expect(router).toContain("revokeTestEntitlement: adminProcedure");
-    expect(adminScreen).toContain("테스트 이용권 발급");
+    expect(adminScreen).toContain("테스트 링크 발급");
     expect(adminScreen).toContain("최대 2명 · 7일 · 상품당 1회");
     expect(accessScreen).toContain("체험 이용권을 확인하고 있습니다.");
     expect(accessScreen).toContain("saveCommerceStartGrant");
     expect(adminScreen).toContain("관계 유형");
+    expect(adminScreen).toContain("체험 이용권을 확인·발급하고 있습니다");
+    expect(adminScreen).toContain("기존 미사용 체험권의 링크를 재발급했습니다");
   });
 
   it("lets a valid entitlement grant pass the released UI gate while preserving the normal public closed gate", () => {

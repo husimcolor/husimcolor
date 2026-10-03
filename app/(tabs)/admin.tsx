@@ -70,6 +70,7 @@ export default function AdminScreen() {
   const [trialProduct, setTrialProduct] = useState<"personal_deep" | "couple_love_deep" | "parent_child_deep">("personal_deep");
   const [trialRelationType, setTrialRelationType] = useState<"연인" | "부부" | "부모-자녀">("연인");
   const [trialUrl, setTrialUrl] = useState<string | null>(null);
+  const [trialStatus, setTrialStatus] = useState<string | null>(null);
   const apiBaseUrl = getApiBaseUrl();
 
   const refreshLegacySession = async () => {
@@ -143,6 +144,11 @@ export default function AdminScreen() {
     onSuccess: (result) => {
       if (!result.startGrant) {
         setTrialUrl(null);
+        setTrialStatus(result.outcome === "already_used"
+          ? "이 이메일의 해당 체험권은 이미 사용되었습니다. 새 권한이나 링크를 만들지 않았습니다."
+          : result.outcome === "expired"
+            ? "기존 체험권이 만료되었습니다. 새 권한은 자동으로 만들지 않았습니다."
+            : "기존 체험권은 사용할 수 없는 상태입니다. 새 권한은 자동으로 만들지 않았습니다.");
         return;
       }
       const base = typeof window !== "undefined" ? window.location.origin : "";
@@ -155,10 +161,9 @@ export default function AdminScreen() {
         params.set("relationType", trialRelationType);
       }
       setTrialUrl(`${base}/admin-test-access?${params.toString()}`);
-      Alert.alert(
-        result.outcome === "issued" ? "테스트 이용권 발급" : "테스트 링크 재발급",
-        "결제·쿠폰·주문은 만들지 않았습니다. 아래 URL은 이 화면에서만 복사해 대상자에게 전달하세요.",
-      );
+      setTrialStatus(result.outcome === "issued"
+        ? "테스트 이용권을 발급했습니다. 결제·쿠폰·주문은 만들지 않았습니다. 아래 URL을 복사해 전달하세요."
+        : "기존 미사용 체험권의 링크를 재발급했습니다. 중복 권한은 만들지 않았습니다.");
     },
     onError: (error) => {
       const message = error.message.includes("RECIPIENT_LIMIT")
@@ -166,7 +171,8 @@ export default function AdminScreen() {
         : error.message.includes("ALREADY_USED")
           ? "이 이메일의 해당 체험권은 이미 사용되었습니다. 새 체험권은 발급하지 않았습니다."
           : "체험 이용권을 발급하지 못했습니다. 이메일과 상품을 확인해 주세요.";
-      Alert.alert("발급 불가", message);
+      setTrialUrl(null);
+      setTrialStatus(message);
     },
   });
   const revokeTestEntitlement = trpc.admin.revokeTestEntitlement.useMutation({
@@ -214,18 +220,17 @@ export default function AdminScreen() {
   const issueTrial = () => {
     const email = trialEmail.trim();
     if (!/^\S+@\S+\.\S+$/.test(email)) {
-      Alert.alert("이메일 확인", "체험 담당자 이메일 주소를 입력해 주세요.");
+      setTrialStatus("체험 담당자 이메일 주소를 입력해 주세요.");
       return;
     }
     const relationType = isRelationshipTrial ? trialRelationType : null;
     if (relationType && !availableRelationTypes.includes(relationType as never)) {
-      Alert.alert("관계 유형 확인", "선택한 상품에 맞는 관계 유형을 선택해 주세요.");
+      setTrialStatus("선택한 상품에 맞는 관계 유형을 선택해 주세요.");
       return;
     }
-    Alert.alert("체험 이용권 발급", "최대 7일·1회 체험 권한을 발급합니다. 주문·결제·쿠폰은 생성하지 않으며, 검사 시작 전에는 회수할 수 있습니다.", [
-      { text: "취소", style: "cancel" },
-      { text: "발급", onPress: () => issueTestEntitlement.mutate({ email, productCode: trialProduct }) },
-    ]);
+    setTrialUrl(null);
+    setTrialStatus("체험 이용권을 확인·발급하고 있습니다…");
+    issueTestEntitlement.mutate({ email, productCode: trialProduct });
   };
   const revokeTrial = () => {
     const email = trialEmail.trim();
@@ -314,14 +319,15 @@ export default function AdminScreen() {
           <Panel>
             <Text style={styles.noticeTitle}>관리자 한정 · 최대 2명 · 7일 · 상품당 1회</Text>
             <Text style={styles.noticeText}>유료 심화분석 3종만 대상입니다. 이 발급은 공통 customer·entitlement 원장만 사용하며 주문·결제·쿠폰을 만들지 않습니다. 링크는 체험 대상자에게만 전달하고, 검사 시작 전에는 회수할 수 있습니다.</Text>
-            <TextInput value={trialEmail} onChangeText={(value) => { setTrialEmail(value); setTrialUrl(null); }} autoCapitalize="none" keyboardType="email-address" placeholder="체험 담당자 이메일" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} />
+            <TextInput value={trialEmail} onChangeText={(value) => { setTrialEmail(value); setTrialUrl(null); setTrialStatus(null); }} autoCapitalize="none" keyboardType="email-address" placeholder="체험 담당자 이메일" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} />
             <View style={styles.actions}>{([
               ["personal_deep", "개인 심화분석"],
               ["couple_love_deep", "부부·연인 관계분석"],
               ["parent_child_deep", "부모·자녀 관계분석"],
-            ] as const).map(([code, label]) => <TouchableOpacity key={code} style={trialProduct === code ? styles.action : styles.smallAction} onPress={() => { setTrialProduct(code); setTrialRelationType(code === "parent_child_deep" ? "부모-자녀" : "연인"); setTrialUrl(null); }}><Text style={trialProduct === code ? styles.actionText : styles.smallActionText}>{label}</Text></TouchableOpacity>)}</View>
-            {isRelationshipTrial && <><Text style={[styles.meta, { color: colors.muted }]}>관계 유형</Text><View style={styles.actions}>{availableRelationTypes.map((value) => <TouchableOpacity key={value} style={trialRelationType === value ? styles.action : styles.smallAction} onPress={() => { setTrialRelationType(value); setTrialUrl(null); }}><Text style={trialRelationType === value ? styles.actionText : styles.smallActionText}>{value}</Text></TouchableOpacity>)}</View></>}
+            ] as const).map(([code, label]) => <TouchableOpacity key={code} style={trialProduct === code ? styles.action : styles.smallAction} onPress={() => { setTrialProduct(code); setTrialRelationType(code === "parent_child_deep" ? "부모-자녀" : "연인"); setTrialUrl(null); setTrialStatus(null); }}><Text style={trialProduct === code ? styles.actionText : styles.smallActionText}>{label}</Text></TouchableOpacity>)}</View>
+            {isRelationshipTrial && <><Text style={[styles.meta, { color: colors.muted }]}>관계 유형</Text><View style={styles.actions}>{availableRelationTypes.map((value) => <TouchableOpacity key={value} style={trialRelationType === value ? styles.action : styles.smallAction} onPress={() => { setTrialRelationType(value); setTrialUrl(null); setTrialStatus(null); }}><Text style={trialRelationType === value ? styles.actionText : styles.smallActionText}>{value}</Text></TouchableOpacity>)}</View></>}
             <View style={styles.actions}><TouchableOpacity style={styles.action} disabled={issueTestEntitlement.isPending} onPress={issueTrial}><Text style={styles.actionText}>{issueTestEntitlement.isPending ? "발급 중…" : "테스트 링크 발급"}</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} disabled={revokeTestEntitlement.isPending} onPress={revokeTrial}><Text style={styles.dangerActionText}>미사용 권한 회수</Text></TouchableOpacity></View>
+            {trialStatus && <Text style={[styles.noticeText, { color: trialStatus.includes("발급") || trialStatus.includes("재발급") ? "#3f7b52" : "#b5584f" }]}>{trialStatus}</Text>}
             {trialUrl && <><Text style={[styles.meta, { color: "#9a6a12" }]}>아래 링크는 현재 화면에서만 표시됩니다. 길게 눌러 전체 URL을 복사해 체험 담당자에게 전달해 주세요.</Text><TextInput value={trialUrl} editable={false} multiline selectTextOnFocus style={[styles.input, styles.trialUrl, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /></>}
           </Panel>
           <Text style={[styles.section, { color: colors.foreground }]}>상품·쿠폰</Text><Text style={[styles.helper, { color: colors.muted }]}>기존 상품 가격·쿠폰 할인 규칙은 변경하지 않고 사용·예약 상태만 조회합니다.</Text>{coupons.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.code}</Text><Badge text={item.status} tone={item.status === "active" ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.discountType === "percent" ? `${item.discountValue}% 할인` : `${item.discountValue.toLocaleString()}원 할인`} · 사용 {item.redemptionCount}건 · 예약 {item.reservedCount}건</Text><Text style={[styles.meta, { color: colors.muted }]}>종료 {dateText(item.endsAt)}</Text></Panel>)}{!coupons.data?.length && <Panel><Text style={styles.noticeText}>등록된 쿠폰이 없습니다.</Text></Panel>}</>}
