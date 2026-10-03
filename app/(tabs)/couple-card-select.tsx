@@ -16,7 +16,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CARD_DATA, type CardData } from '@/constants/cardData';
-import type { CoupleSessionData, FaithType, GenderType, RelationshipRole } from '@/constants/coupleData';
+import type { CoupleSessionData } from '@/constants/coupleData';
 import { trpc } from '@/lib/trpc';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -331,7 +331,7 @@ export default function CoupleCardSelectScreen() {
     { accessToken: inviteAccessToken ?? '' },
     { enabled: Boolean(inviteAccessToken && inviteAccessToken.length >= 32), retry: false },
   );
-  const submitRelationshipParticipant = trpc.relationshipInvites.submit.useMutation();
+  const saveRelationshipDraft = trpc.relationshipInvites.saveDraft.useMutation();
   const isInviteParticipant = Boolean(inviteAccessToken);
   const personLabel = person === 'A' ? '첫 번째 사람' : '두 번째 사람';
   const accentColor = person === 'A' ? '#3D6B3D' : '#7B5EA7';
@@ -446,26 +446,24 @@ export default function CoupleCardSelectScreen() {
         return;
       }
       try {
-        await submitRelationshipParticipant.mutateAsync({
+        await saveRelationshipDraft.mutateAsync({
           accessToken: inviteAccessToken,
           expectedRevision: current.draftRevision,
-          submission: {
-            info: info as { gender: GenderType; faith: FaithType; relationshipRole: RelationshipRole },
-            colors,
-            cards: selectedCards.filter(Boolean).map((card) => card!.id),
-          },
+          consentAccepted: true,
+          draft: { info, colors, cards: selectedCards.filter(Boolean).map((card) => card!.id) },
         });
-        router.replace({
-          pathname: '/(tabs)/relationship-invite',
+        router.push({
+          pathname: '/(tabs)/couple-card-result',
           params: {
-            token: inviteAccessToken,
+            person,
+            relationshipToken: inviteAccessToken,
             inviteToken: relationshipInviteToken ?? '',
             resultToken: relationshipResultToken ?? '',
           },
         } as any);
       } catch (error) {
         const conflict = error instanceof Error && error.message.includes('REVISION_CONFLICT');
-        Alert.alert('제출하지 못했습니다', conflict ? '다른 창에서 변경된 내용이 있습니다. 초대 링크를 다시 열어 최신 상태를 확인해 주세요.' : '네트워크를 확인한 뒤 다시 시도해 주세요.');
+        Alert.alert('카드를 저장하지 못했습니다', conflict ? '다른 창에서 변경된 내용이 있습니다. 초대 링크를 다시 열어 최신 상태를 확인해 주세요.' : '네트워크를 확인한 뒤 다시 시도해 주세요.');
       }
       return;
     }
@@ -617,14 +615,14 @@ export default function CoupleCardSelectScreen() {
           ]}
           onPress={handleConfirm}
           activeOpacity={0.8}
-          disabled={selectedCount < 3 || submitRelationshipParticipant.isPending}
+          disabled={selectedCount < 3 || saveRelationshipDraft.isPending}
         >
           <Text style={styles.confirmButtonText}>
-            {submitRelationshipParticipant.isPending
-              ? '검사 제출 중...'
+            {saveRelationshipDraft.isPending
+              ? '카드 저장 중...'
               : selectedCount === 3
                 ? isInviteParticipant
-                  ? '검사 최종 제출'
+                  ? '카드 해석 보기 →'
                   : person === 'A' ? '두 번째 사람 선택으로 →' : '커플 코칭 결과 보기 →'
                 : `${selectedCount} / 3 선택됨`}
           </Text>

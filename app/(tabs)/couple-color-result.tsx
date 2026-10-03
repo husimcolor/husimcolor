@@ -18,8 +18,10 @@ import { COLOR_DATA } from '@/constants/colorData';
 import {
   generatePersonAnalysis,
   type CoupleSessionData,
+  type PersonSession,
   type PersonAnalysis,
 } from '@/constants/coupleData';
+import { trpc } from '@/lib/trpc';
 
 function splitReadableParagraphs(text?: string): string[] {
   return (text ?? "")
@@ -49,10 +51,27 @@ function ReadableParagraphs({ text, textStyle }: { text?: string; textStyle: obj
   );
 }
 
+function one(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default function CoupleColorResultScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { person } = useLocalSearchParams<{ person: 'A' | 'B' }>();
+  const { person, relationshipToken, inviteToken, resultToken } = useLocalSearchParams<{
+    person: 'A' | 'B';
+    relationshipToken?: string | string[];
+    inviteToken?: string | string[];
+    resultToken?: string | string[];
+  }>();
+  const inviteAccessToken = one(relationshipToken);
+  const relationshipInviteToken = one(inviteToken);
+  const relationshipResultToken = one(resultToken);
+  const relationshipContext = trpc.relationshipInvites.context.useQuery(
+    { accessToken: inviteAccessToken ?? '' },
+    { enabled: Boolean(inviteAccessToken && inviteAccessToken.length >= 32), retry: false },
+  );
+  const isInviteParticipant = Boolean(inviteAccessToken);
   const personLabel = person === 'A' ? '첫 번째 사람' : '두 번째 사람';
   const accentColor = person === 'A' ? '#3D6B3D' : '#7B5EA7';
   const accentBg = person === 'A' ? '#F0F5F0' : '#F5F0FA';
@@ -64,6 +83,23 @@ export default function CoupleColorResultScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (isInviteParticipant) {
+      const draft = relationshipContext.data?.draft;
+      if (!draft?.info || !draft.colors || draft.colors.length !== 3) return;
+      const colors = draft.colors
+        .map(id => COLOR_DATA.find(c => c.id === id))
+        .filter(Boolean) as typeof COLOR_DATA;
+      const invitePerson: PersonSession = {
+        info: draft.info,
+        colors: draft.colors,
+        cards: draft.cards ?? [],
+      };
+      setSelectedColors(colors.map(c => ({ id: c.id, korName: c.korName, hex: c.hex })));
+      setAnalysis(generatePersonAnalysis(invitePerson, person as 'A' | 'B'));
+      setIsLoading(false);
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+      return;
+    }
     AsyncStorage.getItem('@couple_session').then(raw => {
       if (!raw) return;
       const data: CoupleSessionData = JSON.parse(raw);
@@ -87,10 +123,20 @@ export default function CoupleColorResultScreen() {
         useNativeDriver: true,
       }).start();
     });
-  }, [person]);
+  }, [person, isInviteParticipant, relationshipContext.data?.draftRevision]);
 
   const handleNext = () => {
-    router.push({ pathname: '/(tabs)/couple-card-select', params: { person } } as any);
+    router.push({
+      pathname: '/(tabs)/couple-card-select',
+      params: isInviteParticipant
+        ? {
+            person,
+            relationshipToken: inviteAccessToken,
+            inviteToken: relationshipInviteToken ?? '',
+            resultToken: relationshipResultToken ?? '',
+          }
+        : { person },
+    } as any);
   };
 
   if (isLoading) {

@@ -35,10 +35,13 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(service).toContain('resultTokenHash: hashCommerceValue(resultToken)');
   });
 
-  it("단계별 초안은 revision 기반으로 저장하고 기존 비공개 카드 선택 화면으로 연결한다", () => {
+  it("단계별 초안은 revision 기반으로 저장하고 기존 컬러·카드 해석 화면 순서로 연결한다", () => {
     const service = read("server/commerce/relationship-invite-service.ts");
     const screen = read("app/(tabs)/relationship-invite.tsx");
+    const colorSelect = read("app/(tabs)/couple-select.tsx");
+    const colorResult = read("app/(tabs)/couple-color-result.tsx");
     const cardSelect = read("app/(tabs)/couple-card-select.tsx");
+    const cardResult = read("app/(tabs)/couple-card-result.tsx");
     expect(service).toContain('draftRevision: current.draftRevision + 1');
     expect(service).toContain('consentAccepted: current.consentAccepted');
     expect(service).toContain('eq(relationshipParticipants.draftRevision, input.expectedRevision)');
@@ -46,13 +49,18 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(service).toContain('current.status === "submitted"');
     expect(screen).toContain("이 단계의 답변이 저장되었습니다.");
     expect(screen).toContain('setConsent(value.consentAccepted)');
-    expect(screen).toContain("colors: draft.colors");
-    expect(screen).toContain('pathname: "/(tabs)/couple-card-select"');
-    expect(screen).toContain('심리카드 선택으로 →');
+    expect(screen).toContain('pathname: "/(tabs)/couple-select"');
+    expect(screen).toContain('컬러 선택 시작하기 →');
     expect(screen).not.toContain('CARD_DATA.map');
+    expect(colorSelect).toContain('pathname: \'/(tabs)/couple-color-result\'');
+    expect(colorSelect).toContain('saveRelationshipDraft.mutateAsync');
+    expect(colorResult).toContain('pathname: \'/(tabs)/couple-card-select\'');
+    expect(colorResult).toContain('generatePersonAnalysis(invitePerson');
     expect(cardSelect).toContain('relationshipToken');
-    expect(cardSelect).toContain('submitRelationshipParticipant.mutateAsync');
-    expect(cardSelect).toContain('검사 최종 제출');
+    expect(cardSelect).toContain('saveRelationshipDraft.mutateAsync');
+    expect(cardSelect).toContain('카드 해석 보기 →');
+    expect(cardResult).toContain('submitRelationshipParticipant.mutateAsync');
+    expect(cardResult).toContain('내 검사 최종 제출');
   });
 
   it("양측 최종 제출을 모두 확인한 한 요청만 리포트 생성을 선점한다", () => {

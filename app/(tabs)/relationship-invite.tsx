@@ -3,7 +3,6 @@ import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, 
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
-import { COLOR_DATA, type ColorData } from "@/constants/colorData";
 import { getRelationshipRoleOptions, type FaithType, type GenderType, type RelationshipRole } from "@/constants/coupleData";
 import { trpc } from "@/lib/trpc";
 
@@ -18,11 +17,6 @@ function roleParticipationParticle(role: RelationshipRole) {
   const finalConsonant = finalCode >= 0xAC00 && finalCode <= 0xD7A3 ? (finalCode - 0xAC00) % 28 : 0;
   return finalConsonant === 0 || finalConsonant === 8 ? "로" : "으로";
 }
-function textOn(hex: string) {
-  const value = parseInt(hex.slice(1, 3), 16) * 0.299 + parseInt(hex.slice(3, 5), 16) * 0.587 + parseInt(hex.slice(5, 7), 16) * 0.114;
-  return value > 190 ? "#4A3B2E" : "#FFFFFF";
-}
-
 export default function RelationshipInviteScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ token?: string | string[]; inviteToken?: string | string[]; resultToken?: string | string[]; initialGender?: string | string[]; initialRole?: string | string[]; initialFaith?: string | string[]; consent?: string | string[] }>();
@@ -86,29 +80,15 @@ export default function RelationshipInviteScreen() {
     if (hasCompleteInfo(info) && consent) await persist({ ...draft, info });
   };
 
-  const toggleColor = (color: ColorData) => {
-    if (!context.data?.canEdit || saveDraft.isPending) return;
-    const selected = draft.colors ?? [];
-    const next = selected.includes(color.id) ? selected.filter((id) => id !== color.id) : selected.length < 3 ? [...selected, color.id] : selected;
-    setDraft((current) => ({ ...current, colors: next }));
-    if (next.length === 3 && hasCompleteInfo(draft.info) && consent) void persist({ ...draft, colors: next }, true);
-  };
-  const saveColors = async () => {
-    if (!hasCompleteInfo(draft.info) || !consent || (draft.colors?.length ?? 0) !== 3) { setMessage("성별·관계 역할·기본 정보·동의와 컬러 3가지를 모두 확인해 주세요."); return; }
-    await persist({ ...draft, colors: draft.colors });
-  };
-  const continueToCardSelection = async () => {
-    if (!hasCompleteInfo(draft.info) || !consent || (draft.colors?.length ?? 0) !== 3) {
-      setMessage("성별·관계 역할·동의와 컬러 3가지를 먼저 확인해 주세요.");
+  const startExistingColorFlow = async () => {
+    if (!hasCompleteInfo(draft.info) || !consent) {
+      setMessage("성별·관계 역할과 참여 동의를 먼저 확인해 주세요.");
       return;
     }
-    // 과거 Preview 시험 화면에서 보였던 카드 초안은 지우고, 기존 비공개 카드 선택
-    // 화면에서 새로 선택하도록 한다. 카드 앞면 정보가 초대 참여자에게 미리 노출되지 않는다.
-    const { cards: _previousCards, ...draftWithoutCards } = draft;
-    const saved = await persist(draftWithoutCards, true);
+    const saved = await persist(draft, true);
     if (!saved) return;
     router.push({
-      pathname: "/(tabs)/couple-card-select",
+      pathname: "/(tabs)/couple-select",
       params: {
         person: current.participant,
         relationshipToken: token,
@@ -153,8 +133,6 @@ export default function RelationshipInviteScreen() {
   const current = context.data;
   const isOwner = current.participant === "A";
   const roleOptions = getRelationshipRoleOptions(current.relationType, draft.info?.gender, current.partnerRole);
-  const colors = (draft.colors ?? []).map((id) => COLOR_DATA.find((color) => color.id === id)).filter((color): color is ColorData => Boolean(color));
-
   if (current.status === "completed") {
     return <ScreenContainer><View style={styles.center}><Text style={styles.completeTitle}>검사 완료</Text><Text style={styles.completeText}>이미 완료된 검사입니다. 검사 결과가 정상적으로 생성되었습니다.</Text>{isOwner && resultToken ? <Pressable style={styles.button} onPress={() => router.replace({ pathname: "/(tabs)/couple-result", params: { resultToken } } as any)}><Text style={styles.buttonText}>결과 보기</Text></Pressable> : null}</View></ScreenContainer>;
   }
@@ -191,22 +169,14 @@ export default function RelationshipInviteScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>2. 마음이 이끄는 컬러 3가지</Text>
-          <Text style={styles.sectionSub}>세 가지를 모두 고르면 자동 저장되며, 재접속해도 이어집니다.</Text>
-          <View style={styles.preview}>{[0, 1, 2].map((index) => <View key={index} style={[styles.previewSlot, colors[index] && { backgroundColor: colors[index].hex, borderColor: colors[index].hex }]}><Text style={[styles.previewText, colors[index] && { color: textOn(colors[index].hex) }]}>{colors[index]?.korName ?? `${index + 1}번`}</Text></View>)}</View>
-          <View style={styles.colorGrid}>{COLOR_DATA.map((color) => { const position = (draft.colors ?? []).indexOf(color.id); return <Pressable key={color.id} onPress={() => toggleColor(color)} style={[styles.colorTile, { backgroundColor: color.hex }, position >= 0 && styles.tileSelected]}><Text style={[styles.tileText, { color: textOn(color.hex) }]}>{position >= 0 ? `${position + 1} · ` : ""}{color.korName}</Text></Pressable>; })}</View>
-          <Pressable disabled={(draft.colors?.length ?? 0) !== 3} style={[styles.saveStage, (draft.colors?.length ?? 0) !== 3 && styles.disabled]} onPress={() => void saveColors()}><Text style={styles.saveStageText}>{draft.colors?.length ?? 0} / 3 컬러 단계 저장</Text></Pressable>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>3. 심리카드 3장</Text>
-          <Text style={styles.sectionSub}>기존 커플 관계 검사와 같은 비공개 카드 선택 화면에서, 카드 뒷면을 보고 마음이 이끄는 3장을 선택합니다.</Text>
+          <Text style={styles.sectionTitle}>다음 단계 · 기존 컬러 검사 시작</Text>
+          <Text style={styles.sectionSub}>기존 관계 검사의 순서를 그대로 사용합니다. 컬러 3가지를 선택한 뒤 컬러 해석을 확인하고, 카드 뒷면에서 심리카드 3장을 선택합니다.</Text>
           <Pressable
-            disabled={(draft.colors?.length ?? 0) !== 3 || saveDraft.isPending}
-            style={[styles.button, ((draft.colors?.length ?? 0) !== 3 || saveDraft.isPending) && styles.disabled]}
-            onPress={() => void continueToCardSelection()}
+            disabled={!hasCompleteInfo(draft.info) || !consent || saveDraft.isPending}
+            style={[styles.button, (!hasCompleteInfo(draft.info) || !consent || saveDraft.isPending) && styles.disabled]}
+            onPress={() => void startExistingColorFlow()}
           >
-            {saveDraft.isPending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>심리카드 선택으로 →</Text>}
+            {saveDraft.isPending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>컬러 선택 시작하기 →</Text>}
           </Pressable>
         </View>
 
@@ -223,6 +193,5 @@ const styles = StyleSheet.create({
   section: { backgroundColor: "#FFFDF9", borderColor: "#DCCDBB", borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 14 }, sectionTitle: { color: "#3A3029", fontSize: 16, lineHeight: 24, fontWeight: "800" }, sectionSub: { color: "#75675B", fontSize: 12, lineHeight: 19, marginTop: 5, marginBottom: 12 }, label: { color: "#44382F", fontSize: 14, fontWeight: "800", marginTop: 14, marginBottom: 8 }, labelGap: { marginTop: 17 }, roleHelp: { color: "#75675B", fontSize: 12, lineHeight: 18, marginTop: -3, marginBottom: 9 }, chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 }, chip: { borderWidth: 1, borderColor: "#CDBEAE", backgroundColor: "#F7F0E6", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }, chipOn: { borderColor: "#527B52", backgroundColor: "#527B52" }, chipText: { color: "#4E4035", fontSize: 13, fontWeight: "700" }, chipTextOn: { color: "#FFFFFF" },
   consent: { flexDirection: "row", alignItems: "flex-start", gap: 9, marginTop: 16, borderWidth: 1, borderColor: "#D7CABB", borderRadius: 12, padding: 12, backgroundColor: "#FFFDF9" }, consentOn: { borderColor: "#7CA377", backgroundColor: "#F1F8EF" }, check: { width: 18, height: 18, borderWidth: 1, borderColor: "#7CA377", borderRadius: 9, textAlign: "center", lineHeight: 16, color: "#356B53", fontWeight: "900" }, consentText: { flex: 1, color: "#5F4B3B", fontSize: 12.5, lineHeight: 20 },
   saveStage: { alignItems: "center", paddingVertical: 12, marginTop: 14, borderRadius: 12, backgroundColor: "#E8F1E6", borderWidth: 1, borderColor: "#92B48F" }, saveStageText: { color: "#3E653E", fontSize: 14, fontWeight: "800" }, disabled: { opacity: 0.48 },
-  preview: { flexDirection: "row", gap: 8, marginBottom: 12 }, previewSlot: { flex: 1, height: 44, justifyContent: "center", alignItems: "center", backgroundColor: "#F0EAE0", borderWidth: 1, borderColor: "#D5C7B8", borderRadius: 10 }, previewText: { color: "#7B6D60", fontSize: 12, fontWeight: "800" }, colorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 }, colorTile: { width: "18%", aspectRatio: 1, borderRadius: 9, justifyContent: "flex-end", padding: 4, borderWidth: 1, borderColor: "rgba(0,0,0,0.08)" }, tileSelected: { borderWidth: 3, borderColor: "#C69A51", transform: [{ scale: 1.03 }] }, tileText: { fontSize: 8.5, lineHeight: 11, fontWeight: "800", textAlign: "center" },
   button: { alignItems: "center", borderRadius: 15, paddingVertical: 16, backgroundColor: "#527B52", marginTop: 16 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" }, message: { color: "#4E6C4A", fontSize: 13, lineHeight: 20, textAlign: "center", marginBottom: 10 }, inviteBox: { backgroundColor: "#EEF7EB", borderWidth: 1, borderColor: "#9FBE99", borderRadius: 16, padding: 16, marginTop: 2, marginBottom: 12 }, inviteTitle: { color: "#345C35", fontSize: 16, fontWeight: "800" }, inviteBody: { color: "#4F694D", fontSize: 13, lineHeight: 20, marginTop: 7 }, inviteButton: { backgroundColor: "#4E784E", alignItems: "center", borderRadius: 12, paddingVertical: 13, marginTop: 14 }, inviteButtonWide: { backgroundColor: "#4E784E", alignSelf: "stretch", alignItems: "center", borderRadius: 12, paddingVertical: 14, marginTop: 4 }, inviteButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" }, refreshButton: { borderWidth: 1, borderColor: "#B7A790", borderRadius: 12, paddingHorizontal: 18, paddingVertical: 11 }, refreshText: { color: "#68594C", fontSize: 14, fontWeight: "800" }, wait: { color: "#765D45", backgroundColor: "#F1E7DA", borderRadius: 12, padding: 14, fontSize: 13, lineHeight: 21, textAlign: "center", marginBottom: 24 },
 });
