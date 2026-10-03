@@ -90,9 +90,14 @@ export function createEntitlementStartGrant(input: {
   entitlementId: number;
   customerId: number | null;
   productCode: CommerceProductCode;
+  /** 이용권 만료일을 넘는 시작 링크는 만들지 않는다. */
+  expiresAt?: Date;
 }): EntitlementStartGrant {
   if (!input.customerId) throw new Error("ENTITLEMENT_CUSTOMER_REQUIRED");
-  const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
+  const tokenExpiresAt = new Date(Date.now() + TOKEN_TTL_MS);
+  const expiresAt = input.expiresAt && input.expiresAt.getTime() > Date.now()
+    ? new Date(Math.min(tokenExpiresAt.getTime(), input.expiresAt.getTime()))
+    : tokenExpiresAt;
   const payload: EntitlementTokenPayload = {
     v: TOKEN_VERSION,
     entitlementId: input.entitlementId,

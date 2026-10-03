@@ -380,6 +380,8 @@ export const coupons = mysqlTable(
   {
     id: int("id").autoincrement().primaryKey(),
     code: varchar("code", { length: 64 }).notNull(),
+    /** Null for public campaigns; set only for a single administrator-designated customer. */
+    assignedCustomerId: int("assignedCustomerId"),
     discountType: mysqlEnum("discountType", ["fixed", "percent"]).notNull(),
     discountValue: int("discountValue").notNull(),
     minOrderAmountKrw: int("minOrderAmountKrw").notNull().default(0),
@@ -391,7 +393,10 @@ export const coupons = mysqlTable(
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
-  (table) => [uniqueIndex("coupons_code_unique").on(table.code)],
+  (table) => [
+    uniqueIndex("coupons_code_unique").on(table.code),
+    index("coupons_assigned_customer_idx").on(table.assignedCustomerId, table.status),
+  ],
 );
 
 export type Coupon = typeof coupons.$inferSelect;

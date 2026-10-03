@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -66,6 +66,18 @@ export default function AdminScreen() {
   const [legacyLoading, setLegacyLoading] = useState(true);
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState(false);
+  const [trialEmail, setTrialEmail] = useState("");
+  const [trialProduct, setTrialProduct] = useState<"personal_deep" | "couple_love_deep" | "parent_child_deep">("personal_deep");
+  const [trialRelationType, setTrialRelationType] = useState<"연인" | "부부" | "부모-자녀">("연인");
+  const [trialUrl, setTrialUrl] = useState<string | null>(null);
+  const [trialStatus, setTrialStatus] = useState<string | null>(null);
+  const [targetCouponEmail, setTargetCouponEmail] = useState("");
+  const [targetCouponProduct, setTargetCouponProduct] = useState<"personal_deep" | "couple_love_deep" | "parent_child_deep" | "personal_coaching" | "couple_coaching">("personal_coaching");
+  const [targetCouponDiscountType, setTargetCouponDiscountType] = useState<"fixed" | "percent">("fixed");
+  const [targetCouponDiscountValue, setTargetCouponDiscountValue] = useState("10000");
+  const [targetCouponValidDays, setTargetCouponValidDays] = useState("30");
+  const [targetCouponCode, setTargetCouponCode] = useState<string | null>(null);
+  const [targetCouponStatus, setTargetCouponStatus] = useState<string | null>(null);
   const apiBaseUrl = getApiBaseUrl();
 
   const refreshLegacySession = async () => {
@@ -107,6 +119,7 @@ export default function AdminScreen() {
   const blackoutDates = trpc.admin.coachingBlackoutDates.useQuery(undefined, secured);
   const supportTickets = trpc.admin.supportTickets.useQuery({ limit: 100 }, secured);
   const coupons = trpc.admin.coupons.useQuery({ limit: 100 }, secured);
+  const targetedCoupons = trpc.admin.targetedCoupons.useQuery({ limit: 20 }, secured);
   const legacy = trpc.admin.legacyPayments.useQuery({ limit: 100 }, secured);
   const reviews = trpc.admin.reviews.useQuery({ limit: 100 }, secured);
   const visits = trpc.visitors.stats.useQuery(undefined, secured);
@@ -135,10 +148,75 @@ export default function AdminScreen() {
   });
   const updateSupportTicket = trpc.admin.updateSupportTicket.useMutation({ onSuccess: () => supportTickets.refetch() });
   const deleteReview = trpc.admin.deleteReview.useMutation({ onSuccess: () => reviews.refetch() });
+  const issueTestEntitlement = trpc.admin.issueTestEntitlement.useMutation({
+    onSuccess: (result) => {
+      if (!result.startGrant) {
+        setTrialUrl(null);
+        setTrialStatus(result.outcome === "already_used"
+          ? "이 이메일의 해당 체험권은 이미 사용되었습니다. 새 권한이나 링크를 만들지 않았습니다."
+          : result.outcome === "expired"
+            ? "기존 체험권이 만료되었습니다. 새 권한은 자동으로 만들지 않았습니다."
+            : "기존 체험권은 사용할 수 없는 상태입니다. 새 권한은 자동으로 만들지 않았습니다.");
+        return;
+      }
+      const base = typeof window !== "undefined" ? window.location.origin : "";
+      const params = new URLSearchParams({
+        product: result.productCode,
+        grant: result.startGrant.accessToken,
+        expiresAt: result.startGrant.expiresAt,
+      });
+      if (result.productCode === "couple_love_deep" || result.productCode === "parent_child_deep") {
+        params.set("relationType", trialRelationType);
+      }
+      setTrialUrl(`${base}/admin-test-access?${params.toString()}`);
+      setTrialStatus(result.outcome === "issued"
+        ? "테스트 이용권을 발급했습니다. 결제·쿠폰·주문은 만들지 않았습니다. 아래 URL을 복사해 전달하세요."
+        : "기존 미사용 체험권의 링크를 재발급했습니다. 중복 권한은 만들지 않았습니다.");
+    },
+    onError: (error) => {
+      const message = error.message.includes("RECIPIENT_LIMIT")
+        ? "현재 유효한 체험 담당자가 2명입니다. 만료 또는 회수 후 새로 발급할 수 있습니다."
+        : error.message.includes("ALREADY_USED")
+          ? "이 이메일의 해당 체험권은 이미 사용되었습니다. 새 체험권은 발급하지 않았습니다."
+          : "체험 이용권을 발급하지 못했습니다. 이메일과 상품을 확인해 주세요.";
+      setTrialUrl(null);
+      setTrialStatus(message);
+    },
+  });
+  const revokeTestEntitlement = trpc.admin.revokeTestEntitlement.useMutation({
+    onSuccess: (result) => {
+      setTrialUrl(null);
+      Alert.alert(result.revoked ? "체험 이용권 회수" : "회수 불가", result.revoked ? "검사 시작 전 체험 이용권을 회수했습니다." : "활성 상태의 미사용 체험 이용권이 없습니다.");
+    },
+  });
+  const issueTargetedCoupon = trpc.admin.issueTargetedCoupon.useMutation({
+    onSuccess: (result) => {
+      setTargetCouponCode(result.code);
+      setTargetCouponStatus(`${result.customerEmailMasked} 고객에게 1회용 개별 쿠폰을 발급했습니다. 코드는 아래에서만 확인됩니다.`);
+      void targetedCoupons.refetch();
+      void coupons.refetch();
+    },
+    onError: (error) => {
+      setTargetCouponCode(null);
+      const message = error.message.includes("CODE_DUPLICATE")
+        ? "같은 코드가 이미 있습니다. 다른 코드를 입력하거나 비워 두고 자동 생성해 주세요."
+        : error.message.includes("EMAIL_INVALID")
+          ? "지정 고객 이메일 주소를 확인해 주세요."
+          : "개별 쿠폰을 발급하지 못했습니다. 대상 상품과 할인 조건을 확인해 주세요.";
+      setTargetCouponStatus(message);
+    },
+  });
+  const revokeTargetedCoupon = trpc.admin.revokeTargetedCoupon.useMutation({
+    onSuccess: (result) => {
+      Alert.alert(result.revoked ? "개별 쿠폰 회수" : "회수 불가", result.revoked ? "아직 사용되지 않은 개별 쿠폰을 중지했습니다." : "이미 비활성화되었거나 찾을 수 없습니다.");
+      void targetedCoupons.refetch();
+      void coupons.refetch();
+    },
+  });
 
   const refresh = async () => {
     setRefreshing(true);
-    await Promise.all([auth.refetch(), dashboard.refetch(), orders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), blackoutDates.refetch(), supportTickets.refetch(), coupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
+    await Promise.all([auth.refetch(), dashboard.refetch(), orders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), blackoutDates.refetch(), supportTickets.refetch(), coupons.refetch(), targetedCoupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
     setRefreshing(false);
   };
   const updatePayment = (id: number, status: LegacyStatus) => Alert.alert("과거 신청 상태", `“${legacyLabels[status]}”으로 변경하시겠습니까?`, [
@@ -167,6 +245,66 @@ export default function AdminScreen() {
     Alert.alert("예약 불가일 해제", `${date}의 임시 휴무 설정을 해제하시겠습니까? 기존 예약에는 영향을 주지 않습니다.`, [
       { text: "취소", style: "cancel" },
       { text: "해제", style: "destructive", onPress: () => removeBlackoutDate.mutate({ date }) },
+    ]);
+  };
+  const isRelationshipTrial = trialProduct !== "personal_deep";
+  const availableRelationTypes = useMemo(() => trialProduct === "couple_love_deep" ? ["연인", "부부"] as const : ["부모-자녀"] as const, [trialProduct]);
+  const issueTrial = () => {
+    const email = trialEmail.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setTrialStatus("체험 담당자 이메일 주소를 입력해 주세요.");
+      return;
+    }
+    const relationType = isRelationshipTrial ? trialRelationType : null;
+    if (relationType && !availableRelationTypes.includes(relationType as never)) {
+      setTrialStatus("선택한 상품에 맞는 관계 유형을 선택해 주세요.");
+      return;
+    }
+    setTrialUrl(null);
+    setTrialStatus("체험 이용권을 확인·발급하고 있습니다…");
+    issueTestEntitlement.mutate({ email, productCode: trialProduct });
+  };
+  const revokeTrial = () => {
+    const email = trialEmail.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      Alert.alert("이메일 확인", "회수할 체험 담당자 이메일 주소를 입력해 주세요.");
+      return;
+    }
+    Alert.alert("체험 이용권 회수", "아직 검사를 시작하지 않은 권한만 회수합니다. 이미 시작한 검사는 중단하거나 삭제하지 않습니다.", [
+      { text: "취소", style: "cancel" },
+      { text: "회수", style: "destructive", onPress: () => revokeTestEntitlement.mutate({ email, productCode: trialProduct }) },
+    ]);
+  };
+  const issueCustomerCoupon = () => {
+    const email = targetCouponEmail.trim();
+    const discountValue = Number(targetCouponDiscountValue);
+    const validDays = Number(targetCouponValidDays);
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setTargetCouponStatus("지정 고객 이메일 주소를 입력해 주세요.");
+      return;
+    }
+    if (!Number.isInteger(discountValue) || discountValue <= 0 || (targetCouponDiscountType === "percent" && discountValue > 100)) {
+      setTargetCouponStatus(targetCouponDiscountType === "percent" ? "할인율은 1~100 사이의 정수로 입력해 주세요." : "할인 금액을 원 단위 정수로 입력해 주세요.");
+      return;
+    }
+    if (!Number.isInteger(validDays) || validDays < 1 || validDays > 365) {
+      setTargetCouponStatus("유효기간은 1~365일 사이의 정수로 입력해 주세요.");
+      return;
+    }
+    setTargetCouponCode(null);
+    setTargetCouponStatus("개별 쿠폰을 발급하고 있습니다…");
+    issueTargetedCoupon.mutate({
+      email,
+      productCodes: [targetCouponProduct],
+      discountType: targetCouponDiscountType,
+      discountValue,
+      validDays,
+    });
+  };
+  const revokeCustomerCoupon = (couponId: number) => {
+    Alert.alert("개별 쿠폰 회수", "아직 사용되지 않은 지정 고객 쿠폰을 중지하시겠습니까? 이미 사용된 주문은 변경하지 않습니다.", [
+      { text: "취소", style: "cancel" },
+      { text: "회수", style: "destructive", onPress: () => revokeTargetedCoupon.mutate({ couponId }) },
     ]);
   };
 
@@ -240,7 +378,42 @@ export default function AdminScreen() {
 
         {tab === "PDF·이메일" && <><Text style={[styles.section, { color: colors.foreground }]}>Private PDF·이메일 Outbox</Text><Text style={[styles.helper, { color: colors.muted }]}>실패 건만 재시도하며, PDF 본문·분석 결과·공유 스냅샷은 수정하지 않습니다.</Text>{delivery.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>주문 #{item.orderId ?? "—"} · 문서 #{item.privateDocumentId ?? "—"}</Text><Badge text={item.status} tone={item.status === "sent" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>시도 {item.attemptCount}회 · 다음 시도 {dateText(item.nextAttemptAt)}</Text>{item.status === "failed" && <TouchableOpacity style={styles.action} onPress={() => retryMail.mutate({ outboxId: item.id })}><Text style={styles.actionText}>발송 재시도</Text></TouchableOpacity>}</Panel>)}</>}
 
-        {tab === "상품·쿠폰" && <><Text style={[styles.section, { color: colors.foreground }]}>상품·쿠폰</Text><Text style={[styles.helper, { color: colors.muted }]}>기존 상품 가격·쿠폰 할인 규칙은 변경하지 않고 사용·예약 상태만 조회합니다.</Text>{coupons.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.code}</Text><Badge text={item.status} tone={item.status === "active" ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.discountType === "percent" ? `${item.discountValue}% 할인` : `${item.discountValue.toLocaleString()}원 할인`} · 사용 {item.redemptionCount}건 · 예약 {item.reservedCount}건</Text><Text style={[styles.meta, { color: colors.muted }]}>종료 {dateText(item.endsAt)}</Text></Panel>)}{!coupons.data?.length && <Panel><Text style={styles.noticeText}>등록된 쿠폰이 없습니다.</Text></Panel>}</>}
+        {tab === "상품·쿠폰" && <>
+          <Text style={[styles.section, { color: colors.foreground }]}>홍보 담당자 테스트 이용권</Text>
+          <Panel>
+            <Text style={styles.noticeTitle}>관리자 한정 · 최대 2명 · 7일 · 상품당 1회</Text>
+            <Text style={styles.noticeText}>유료 심화분석 3종만 대상입니다. 이 발급은 공통 customer·entitlement 원장만 사용하며 주문·결제·쿠폰을 만들지 않습니다. 링크는 체험 대상자에게만 전달하고, 검사 시작 전에는 회수할 수 있습니다.</Text>
+            <TextInput value={trialEmail} onChangeText={(value) => { setTrialEmail(value); setTrialUrl(null); setTrialStatus(null); }} autoCapitalize="none" keyboardType="email-address" placeholder="체험 담당자 이메일" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} />
+            <View style={styles.actions}>{([
+              ["personal_deep", "개인 심화분석"],
+              ["couple_love_deep", "부부·연인 관계분석"],
+              ["parent_child_deep", "부모·자녀 관계분석"],
+            ] as const).map(([code, label]) => <TouchableOpacity key={code} style={trialProduct === code ? styles.action : styles.smallAction} onPress={() => { setTrialProduct(code); setTrialRelationType(code === "parent_child_deep" ? "부모-자녀" : "연인"); setTrialUrl(null); setTrialStatus(null); }}><Text style={trialProduct === code ? styles.actionText : styles.smallActionText}>{label}</Text></TouchableOpacity>)}</View>
+            {isRelationshipTrial && <><Text style={[styles.meta, { color: colors.muted }]}>관계 유형</Text><View style={styles.actions}>{availableRelationTypes.map((value) => <TouchableOpacity key={value} style={trialRelationType === value ? styles.action : styles.smallAction} onPress={() => { setTrialRelationType(value); setTrialUrl(null); setTrialStatus(null); }}><Text style={trialRelationType === value ? styles.actionText : styles.smallActionText}>{value}</Text></TouchableOpacity>)}</View></>}
+            <View style={styles.actions}><TouchableOpacity style={styles.action} disabled={issueTestEntitlement.isPending} onPress={issueTrial}><Text style={styles.actionText}>{issueTestEntitlement.isPending ? "발급 중…" : "테스트 링크 발급"}</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} disabled={revokeTestEntitlement.isPending} onPress={revokeTrial}><Text style={styles.dangerActionText}>미사용 권한 회수</Text></TouchableOpacity></View>
+            {trialStatus && <Text style={[styles.noticeText, { color: trialStatus.includes("발급") || trialStatus.includes("재발급") ? "#3f7b52" : "#b5584f" }]}>{trialStatus}</Text>}
+            {trialUrl && <><Text style={[styles.meta, { color: "#9a6a12" }]}>아래 링크는 현재 화면에서만 표시됩니다. 길게 눌러 전체 URL을 복사해 체험 담당자에게 전달해 주세요.</Text><TextInput value={trialUrl} editable={false} multiline selectTextOnFocus style={[styles.input, styles.trialUrl, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /></>}
+          </Panel>
+          <Text style={[styles.section, { color: colors.foreground }]}>지정 고객 개별 쿠폰</Text>
+          <Panel>
+            <Text style={styles.noticeTitle}>관리자 한정 · 이메일 1명 · 1회 사용</Text>
+            <Text style={styles.noticeText}>공통 customer·coupon 원장에만 발급합니다. 지정한 이메일과 실제 결제 이메일이 같을 때만 적용되며, 공개 오픈기념 행사와 중복 적용할 수 없습니다.</Text>
+            <TextInput value={targetCouponEmail} onChangeText={(value) => { setTargetCouponEmail(value); setTargetCouponCode(null); setTargetCouponStatus(null); }} autoCapitalize="none" keyboardType="email-address" placeholder="지정 고객 이메일" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} />
+            <Text style={[styles.meta, { color: colors.muted }]}>적용 상품</Text>
+            <View style={styles.actions}>{([
+              ["personal_coaching", "1:1 코칭"], ["couple_coaching", "부부·커플 코칭"], ["personal_deep", "개인 심화"], ["couple_love_deep", "부부·연인"], ["parent_child_deep", "부모·자녀"],
+            ] as const).map(([code, label]) => <TouchableOpacity key={code} style={targetCouponProduct === code ? styles.action : styles.smallAction} onPress={() => { setTargetCouponProduct(code); setTargetCouponCode(null); setTargetCouponStatus(null); }}><Text style={targetCouponProduct === code ? styles.actionText : styles.smallActionText}>{label}</Text></TouchableOpacity>)}</View>
+            <Text style={[styles.meta, { color: colors.muted }]}>할인 방식</Text>
+            <View style={styles.actions}><TouchableOpacity style={targetCouponDiscountType === "fixed" ? styles.action : styles.smallAction} onPress={() => setTargetCouponDiscountType("fixed")}><Text style={targetCouponDiscountType === "fixed" ? styles.actionText : styles.smallActionText}>금액 할인</Text></TouchableOpacity><TouchableOpacity style={targetCouponDiscountType === "percent" ? styles.action : styles.smallAction} onPress={() => setTargetCouponDiscountType("percent")}><Text style={targetCouponDiscountType === "percent" ? styles.actionText : styles.smallActionText}>비율 할인</Text></TouchableOpacity></View>
+            <View style={styles.actions}><TextInput value={targetCouponDiscountValue} onChangeText={setTargetCouponDiscountValue} keyboardType="number-pad" placeholder={targetCouponDiscountType === "fixed" ? "예: 10000" : "예: 20"} placeholderTextColor={colors.muted} style={[styles.input, styles.compactInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><Text style={[styles.meta, { color: colors.muted }]}>{targetCouponDiscountType === "fixed" ? "원 할인" : "% 할인"}</Text><TextInput value={targetCouponValidDays} onChangeText={setTargetCouponValidDays} keyboardType="number-pad" placeholder="30" placeholderTextColor={colors.muted} style={[styles.input, styles.compactInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><Text style={[styles.meta, { color: colors.muted }]}>일 유효</Text></View>
+            <TouchableOpacity style={styles.action} disabled={issueTargetedCoupon.isPending} onPress={issueCustomerCoupon}><Text style={styles.actionText}>{issueTargetedCoupon.isPending ? "발급 중…" : "지정 고객 쿠폰 발급"}</Text></TouchableOpacity>
+            {targetCouponStatus && <Text style={[styles.noticeText, { color: targetCouponStatus.includes("발급했습니다") ? "#3f7b52" : "#b5584f" }]}>{targetCouponStatus}</Text>}
+            {targetCouponCode && <><Text style={[styles.meta, { color: "#9a6a12" }]}>발급 코드는 지금 이 화면에서만 표시됩니다. 지정 고객에게 별도로 전달해 주세요.</Text><TextInput value={targetCouponCode} editable={false} selectTextOnFocus style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /></>}
+          </Panel>
+          <Text style={[styles.section, { color: colors.foreground }]}>최근 지정 고객 쿠폰</Text>
+          {targetedCoupons.data?.map((item) => <Panel key={`targeted-${item.id}`}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.assignedCustomerEmailMasked}</Text><Badge text={item.status} tone={item.status === "active" ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.discountType === "percent" ? `${item.discountValue}% 할인` : `${item.discountValue.toLocaleString()}원 할인`} · 종료 {dateText(item.endsAt)}</Text>{item.status === "active" && <TouchableOpacity style={styles.dangerAction} disabled={revokeTargetedCoupon.isPending} onPress={() => revokeCustomerCoupon(item.id)}><Text style={styles.dangerActionText}>미사용 쿠폰 회수</Text></TouchableOpacity>}</Panel>)}
+          {!targetedCoupons.data?.length && <Panel><Text style={styles.noticeText}>최근 발급한 지정 고객 쿠폰이 없습니다.</Text></Panel>}
+          <Text style={[styles.section, { color: colors.foreground }]}>상품·쿠폰</Text><Text style={[styles.helper, { color: colors.muted }]}>공개 행사와 지정 고객 쿠폰의 사용·예약 상태를 표시합니다. 한 주문에는 쿠폰 하나만 적용됩니다.</Text>{coupons.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.code}</Text><Badge text={item.status} tone={item.status === "active" ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.discountType === "percent" ? `${item.discountValue}% 할인` : `${item.discountValue.toLocaleString()}원 할인`} · 사용 {item.redemptionCount}건 · 예약 {item.reservedCount}건</Text><Text style={[styles.meta, { color: colors.muted }]}>종료 {dateText(item.endsAt)}</Text></Panel>)}{!coupons.data?.length && <Panel><Text style={styles.noticeText}>등록된 쿠폰이 없습니다.</Text></Panel>}</>}
 
         {tab === "코칭예약" && <><Text style={[styles.section, { color: colors.foreground }]}>코칭 예약 운영</Text><Text style={[styles.helper, { color: colors.muted }]}>결제 완료 코칭 주문은 일정 대기로 생성되어 운영자가 확정합니다.</Text>{bookings.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={bookingLabels[item.status] ?? item.status} tone={item.status === "completed" ? "good" : item.status === "cancelled" || item.status === "no_show" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.orderNumber}</Text><Text style={[styles.meta, { color: colors.muted }]}>확정 일시 {dateText(item.scheduledAt)} · {item.sessionMode === "online" ? "온라인" : item.sessionMode === "in_person" ? "대면" : "방식 미정"}</Text>{(item.status === "pending_schedule" || item.status === "change_requested") && <><TextInput value={schedule[item.id] ?? ""} onChangeText={(value) => setSchedule((old) => ({ ...old, [item.id]: value }))} placeholder="예: 2026-10-01 14:00" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><View style={styles.actions}><TouchableOpacity style={styles.action} onPress={() => confirmSchedule(item.id)}><Text style={styles.actionText}>일정 확정</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View></>}{item.status === "scheduled" && <View style={styles.actions}><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "completed")}><Text style={styles.smallActionText}>완료</Text></TouchableOpacity><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "change_requested")}><Text style={styles.smallActionText}>변경 요청</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "no_show")}><Text style={styles.dangerActionText}>노쇼</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View>}</Panel>)}</>}
 
@@ -268,5 +441,5 @@ const styles = StyleSheet.create({
   panel: { borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 15, padding: 14, gap: 7 }, row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }, cardTitle: { fontSize: 14, fontWeight: "800", flexShrink: 1 }, meta: { fontSize: 11, lineHeight: 17 },
   badge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }, badgeText: { fontSize: 10, fontWeight: "800" }, noticeTitle: { color: "#3f7b52", fontSize: 14, fontWeight: "800" }, noticeText: { color: "#55705a", fontSize: 12, lineHeight: 19 },
   action: { alignSelf: "flex-start", backgroundColor: "#3f7b52", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }, actionText: { color: "#fff", fontSize: 12, fontWeight: "800" }, input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, fontSize: 12 }, passwordInput: { width: "100%", maxWidth: 320 }, passwordError: { color: "#b5584f", fontSize: 12, textAlign: "center" }, actions: { flexDirection: "row", flexWrap: "wrap", gap: 7 }, smallAction: { borderWidth: 1, borderColor: "#a9c8ae", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, smallActionText: { color: "#3f7b52", fontSize: 11, fontWeight: "800" }, dangerAction: { borderWidth: 1, borderColor: "#e3aaa3", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, dangerActionText: { color: "#b5584f", fontSize: 11, fontWeight: "800" },
-  expanded: { borderTopWidth: 1, borderTopColor: "#ded9ce", paddingTop: 10, gap: 8 }, delete: { color: "#b5584f", fontSize: 11, fontWeight: "800" }, review: { fontSize: 12, lineHeight: 18 },
+  expanded: { borderTopWidth: 1, borderTopColor: "#ded9ce", paddingTop: 10, gap: 8 }, delete: { color: "#b5584f", fontSize: 11, fontWeight: "800" }, review: { fontSize: 12, lineHeight: 18 }, trialUrl: { minHeight: 84, textAlignVertical: "top", fontSize: 10, lineHeight: 15 }, compactInput: { width: 96 },
 });

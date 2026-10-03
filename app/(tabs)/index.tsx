@@ -8,6 +8,7 @@ import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
+import { isOpeningCampaignActive } from '@/shared/opening-campaign';
 
 const { width, height } = Dimensions.get('window');
 
@@ -65,6 +66,7 @@ export default function HomeScreen() {
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
   const tossCardReviewEnabled = commerceTestMode.data?.tossCardReviewEnabled ?? false;
+  const openingCampaignActive = isOpeningCampaignActive();
   useEffect(() => {
     const trackVisit = async () => {
       try {
@@ -190,9 +192,14 @@ export default function HomeScreen() {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <Text style={[styles.description, { color: colors.muted }]}>
-            지금의 나와 두 사람의 관계를{'\n'}
+            지금의 나와 두 사람의 관계를{''}
             원하는 방식으로 천천히 살펴보세요.
           </Text>
+          {openingCampaignActive && <View style={styles.openingCampaign}>
+            <Text style={styles.openingCampaignTitle}>휴심컬러 유료 심화분석 오픈 기념 20% 할인</Text>
+            <Text style={styles.openingCampaignText}>10월 30일까지 · 회원가입 없이 이용 가능</Text>
+            <Text style={styles.openingCampaignNote}>개인·부부/연인·부모/자녀 심화분석 대상 · 오프라인 코칭 제외</Text>
+          </View>}
         </Animated.View>
 
         {/* 세 가지 서비스 진입 */}
@@ -310,6 +317,10 @@ const styles = StyleSheet.create({
   logoSection: {
     alignItems: 'center',
   },
+  openingCampaign: { width: '100%', marginTop: 16, borderRadius: 14, borderWidth: 1, borderColor: '#E4C978', backgroundColor: '#FFF7DA', padding: 14, gap: 4 },
+  openingCampaignTitle: { color: '#75561B', fontSize: 14, fontWeight: '800', textAlign: 'center' },
+  openingCampaignText: { color: '#8D6B25', fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  openingCampaignNote: { color: '#806F50', fontSize: 11, lineHeight: 16, textAlign: 'center' },
   logoContainer: {
     width: 122,
     height: 122,
