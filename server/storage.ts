@@ -14,7 +14,10 @@ export type StorageBackend = "vercel_blob" | "manus_forge" | "unconfigured";
  * are present; local WebDev continues to use the existing Forge storage path.
  */
 export function resolveStorageBackend(env: StorageEnvironment = process.env): StorageBackend {
-  const hasVercelOidc = Boolean(env.BLOB_STORE_ID && env.VERCEL_OIDC_TOKEN);
+  // A Vercel Blob connection supplies BLOB_STORE_ID. Its SDK obtains and
+  // refreshes the function's Vercel OIDC credential itself, so the OIDC token
+  // need not be materialised in process.env before selecting this backend.
+  const hasVercelOidc = Boolean(env.BLOB_STORE_ID);
   const hasVercelStaticToken = Boolean(env.BLOB_READ_WRITE_TOKEN);
   if (hasVercelOidc || hasVercelStaticToken) return "vercel_blob";
   if (env.BUILT_IN_FORGE_API_URL && env.BUILT_IN_FORGE_API_KEY) return "manus_forge";
