@@ -3,6 +3,7 @@
 // Downloads return /manus-storage/{key} paths served via 307 redirect.
 
 import { ENV } from "./_core/env";
+import { getCurrentVercelOidcToken } from "./vercel-request-context";
 
 type StorageEnvironment = Record<string, string | undefined>;
 
@@ -14,9 +15,8 @@ export type StorageBackend = "vercel_blob" | "manus_forge" | "unconfigured";
  * are present; local WebDev continues to use the existing Forge storage path.
  */
 export function resolveStorageBackend(env: StorageEnvironment = process.env): StorageBackend {
-  // A Vercel Blob connection supplies BLOB_STORE_ID. Its SDK obtains and
-  // refreshes the function's Vercel OIDC credential itself, so the OIDC token
-  // need not be materialised in process.env before selecting this backend.
+  // A Vercel Blob connection supplies BLOB_STORE_ID. The request-scoped OIDC
+  // header is passed directly to the SDK by this module when it is available.
   const hasVercelOidc = Boolean(env.BLOB_STORE_ID);
   const hasVercelStaticToken = Boolean(env.BLOB_READ_WRITE_TOKEN);
   if (hasVercelOidc || hasVercelStaticToken) return "vercel_blob";
@@ -57,6 +57,19 @@ function appendHashSuffix(relKey: string): string {
   return `${relKey.slice(0, lastDot)}_${hash}${relKey.slice(lastDot)}`;
 }
 
+function getVercelBlobRequestAuth(): { oidcToken?: string; storeId?: string } {
+  const oidcToken = getCurrentVercelOidcToken();
+  const storeId = process.env.BLOB_STORE_ID;
+
+  if (oidcToken && storeId) {
+    return { oidcToken, storeId };
+  }
+
+  // A locally configured BLOB_READ_WRITE_TOKEN remains a supported fallback.
+  // Never persist or expose either credential in a response or database row.
+  return {};
+}
+
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
@@ -71,6 +84,7 @@ export async function storagePut(
       access: "private",
       addRandomSuffix: true,
       contentType,
+      ...getVercelBlobRequestAuth(),
     });
     // The private Blob URL is an opaque server-side storage key; clients never
     // receive it without an authenticated, short-lived signed URL.
@@ -127,7 +141,12 @@ export async function storageGetSignedUrl(relKey: string): Promise<string> {
     const { issueSignedToken, presignUrl } = await import("@vercel/blob");
     const pathname = new URL(relKey).pathname.replace(/^\/+/, "");
     const validUntil = Date.now() + 5 * 60 * 1000;
-    const signedToken = await issueSignedToken({ pathname, operations: ["get"], validUntil });
+    const signedToken = await issueSignedToken({
+      pathname,
+      operations: ["get"],
+      validUntil,
+      ...getVercelBlobRequestAuth(),
+    });
     return (await presignUrl(signedToken, {
       operation: "get",
       pathname,
@@ -162,7 +181,11 @@ export async function storageGetBuffer(relKey: string): Promise<Buffer> {
       throw new Error("Private Blob storage is not configured for this runtime");
     }
     const { get } = await import("@vercel/blob");
-    const result = await get(relKey, { access: "private", useCache: false });
+    const result = await get(relKey, {
+      access: "private",
+      useCache: false,
+      ...getVercelBlobRequestAuth(),
+    });
     if (!result || result.statusCode !== 200 || !result.stream) throw new Error("PRIVATE_PDF_READ_FAILED");
     return Buffer.from(await new Response(result.stream).arrayBuffer());
   }
