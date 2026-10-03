@@ -28,8 +28,10 @@ import {
   type RelationType,
 } from "../../constants/coupleData";
 import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from "../../lib/couple-color-card-analysis";
+import { buildCouplePdfDownloadPayload } from "../../lib/couple-pdf-download";
 import { buildParentChildRelationshipAnalysis } from "../../lib/parent-child-relationship-analysis";
 import { getParentChildLabels } from "../../lib/parent-child-coaching";
+import { buildParentChildPdfDownloadPayload } from "../../lib/parent-child-pdf-download";
 import { buildRomanticRelationTraits } from "../../lib/couple-romantic-relation-traits";
 import { buildRomanticRelationshipRoles } from "../../lib/couple-romantic-relationship-roles";
 import { parseCoupleShareSnapshot, type CoupleShareSnapshot } from "../../shared/couple-share";
@@ -257,7 +259,6 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
     if (!roles || !unified) throw new Error("RELATIONSHIP_ROMANTIC_REPORT_DATA_INVALID");
     const hasFaith = personA.info.faith === "기독교" || personB.info.faith === "기독교";
     const recommendedColors = archetypeResult.recommendedColors ?? coupleAnalysis.coupleRoutine.recommendedColors;
-    const { buildCouplePdfDownloadPayload } = await import("../../lib/couple-pdf-download");
     return buildCouplePdfDownloadPayload({
       relationType,
       couple: {
@@ -343,7 +344,6 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
     parent: { colors: parent.colors, cards: parentCards.filter((card): card is NonNullable<typeof card> => Boolean(card)) },
     child: { colors: child.colors, cards: childCards.filter((card): card is NonNullable<typeof card> => Boolean(card)) },
   });
-  const { buildParentChildPdfDownloadPayload } = await import("../../lib/parent-child-pdf-download");
   return buildParentChildPdfDownloadPayload({
     relationType,
       personA: {
