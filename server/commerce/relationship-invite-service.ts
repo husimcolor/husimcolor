@@ -725,34 +725,43 @@ export async function generateAndQueueRelationshipReport(relationshipSessionId: 
     throw new Error("RELATIONSHIP_REPORT_PRODUCT_INVALID");
   }
 
+  let stage = "load_participants";
   try {
     const participants = await db
       .select()
       .from(relationshipParticipants)
       .where(eq(relationshipParticipants.relationshipSessionId, session.id));
+    stage = "build_snapshot";
     const personA = parseSubmittedPayload(participants.find((row) => row.participant === "A")?.submittedEncrypted ?? null);
     const personB = parseSubmittedPayload(participants.find((row) => row.participant === "B")?.submittedEncrypted ?? null);
     const snapshot = buildResultSnapshot(asSessionData(session.relationType as RelationType, personA, personB));
+    stage = "build_delivery_payload";
     const payload = await buildDeliveryPayload(snapshot, session.productCode);
+    stage = "save_result_snapshot";
     await db
       .update(relationshipSessions)
       .set({ resultSnapshotEncrypted: encryptCommerceValue(JSON.stringify(snapshot)), reportGeneratedAt: new Date(), reportErrorCode: null })
       .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "report_generating")));
+    stage = "queue_private_pdf";
     const { queuePrivateAnalysisPdfDelivery } = await import("./pdf-delivery-service");
     const queued = await queuePrivateAnalysisPdfDelivery({
       analysisRunId: session.analysisRunId,
       kind: session.productCode,
       payload,
     });
+    stage = "mark_email_pending";
     await db
       .update(relationshipSessions)
       .set({ status: "email_pending", reportErrorCode: null })
       .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "report_generating")));
     return { outboxId: queued.outboxId };
   } catch (error) {
+    const message = error instanceof Error ? error.message.slice(0, 120) : "RELATIONSHIP_REPORT_FAILED";
+    const reportErrorCode = `RELATIONSHIP_REPORT_${stage.toUpperCase()}:${message}`.slice(0, 160);
+    console.error("[relationship-report] generation failed", { relationshipSessionId, stage, message });
     await db
       .update(relationshipSessions)
-      .set({ status: "failed", reportErrorCode: error instanceof Error ? error.message.slice(0, 160) : "RELATIONSHIP_REPORT_FAILED" })
+      .set({ status: "failed", reportErrorCode })
       .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "report_generating")));
     throw error;
   }
