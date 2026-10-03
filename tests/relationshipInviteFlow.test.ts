@@ -91,6 +91,7 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
 
   it("초대받은 상대와 대기 중인 결제자에게 고객용 안내 문구를 표시한다", () => {
     const screen = read("app/(tabs)/relationship-invite.tsx");
+    const cardResult = read("app/(tabs)/couple-card-result.tsx");
     expect(screen).toContain("roleParticipationParticle(current.partnerRole)");
     expect(screen).toContain('finalConsonant === 0 || finalConsonant === 8 ? "로" : "으로"');
     expect(screen).toContain("본인의 정보를 선택한 후 검사를 시작해 주세요.");
@@ -98,6 +99,8 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(screen).toContain('_vercel_share');
     expect(screen).toContain('검사를 다시 시작할 필요가 없습니다.');
     expect(screen).toContain('저장된 답변으로 리포트 다시 생성');
+    expect(cardResult).toContain('const submittedContext = await submitRelationshipParticipant.mutateAsync');
+    expect(cardResult).toContain('trpcUtils.relationshipInvites.context.setData');
     expect(screen).not.toContain("가능한 역할만 표시합니다.");
   });
 

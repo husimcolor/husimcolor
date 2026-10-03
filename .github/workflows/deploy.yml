@@ -67,6 +67,7 @@ jobs:
         run: |
           npx esbuild "api/couple-pdf-report.ts" --bundle --platform=node --target=node20 --format=cjs --external:pdfkit --outfile=".vercel/output/functions/api/couple-pdf-report.func/index.js"
           npx esbuild "api/parent-child-pdf-report.ts" --bundle --platform=node --target=node20 --format=cjs --external:pdfkit --outfile=".vercel/output/functions/api/parent-child-pdf-report.func/index.js"
+          cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/trpc/[...trpc].func/HusimPdfKorean.ttf"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/couple-pdf-report.func/HusimPdfKorean.ttf"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/parent-child-pdf-report.func/HusimPdfKorean.ttf"
 

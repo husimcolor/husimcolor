@@ -326,6 +326,7 @@ export default function CoupleCardResultScreen() {
     { accessToken: inviteAccessToken ?? '' },
     { enabled: Boolean(inviteAccessToken && inviteAccessToken.length >= 32), retry: false },
   );
+  const trpcUtils = trpc.useUtils();
   const submitRelationshipParticipant = trpc.relationshipInvites.submit.useMutation();
   const isInviteParticipant = Boolean(inviteAccessToken);
   const personLabel = person === 'A' ? '첫 번째 사람' : '두 번째 사람';
@@ -402,7 +403,7 @@ export default function CoupleCardResultScreen() {
         return;
       }
       try {
-        await submitRelationshipParticipant.mutateAsync({
+        const submittedContext = await submitRelationshipParticipant.mutateAsync({
           accessToken: inviteAccessToken,
           expectedRevision: current.draftRevision,
           submission: {
@@ -411,6 +412,13 @@ export default function CoupleCardResultScreen() {
             cards: draft.cards,
           },
         });
+        // The server returns the authoritative post-submit status. Store it
+        // before navigating so an already-submitted participant never sees the
+        // editable basic-information screen again due to a stale query cache.
+        trpcUtils.relationshipInvites.context.setData(
+          { accessToken: inviteAccessToken },
+          submittedContext,
+        );
         router.replace({
           pathname: '/(tabs)/relationship-invite',
           params: {

@@ -1,8 +1,8 @@
 import path from "node:path";
 import { existsSync } from "node:fs";
-import PDFDocument from "pdfkit";
 import type { CouplePdfPerson, CouplePdfShape } from "../shared/couple-pdf-download";
 import type { ParentChildPdfDownloadPayload } from "../shared/parent-child-pdf-download";
+import { PDFDocument } from "./pdfkit-runtime";
 
 const PAGE_LEFT = 43;
 const PAGE_TOP = 43;
