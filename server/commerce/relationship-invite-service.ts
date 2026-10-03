@@ -805,12 +805,24 @@ export async function generateAndQueueRelationshipReport(relationshipSessionId: 
   }
 }
 
-export async function getRelationshipResult(resultToken: string): Promise<{ status: SessionStatus; snapshot: CoupleShareSnapshot | null }> {
-  const db = await getDb();
-  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
-  const hash = hashCommerceValue(requiredToken(resultToken));
-  const rows = await db.select().from(relationshipSessions).where(eq(relationshipSessions.resultTokenHash, hash)).limit(1);
-  const session = rows[0];
+export async function getRelationshipResult(input: {
+  resultToken?: string;
+  accessToken?: string;
+}): Promise<{ status: SessionStatus; snapshot: CoupleShareSnapshot | null }> {
+  let session: typeof relationshipSessions.$inferSelect | undefined;
+  if (input.accessToken) {
+    // A의 기존 세션 링크와 B의 기존 초대 링크는 각각 다른 접근 토큰이다.
+    // 완료 후에는 두 토큰 모두 동일한 통합 결과만 읽을 수 있도록 허용한다.
+    session = (await loadSessionByAccessToken(input.accessToken)).session;
+  } else if (input.resultToken) {
+    const db = await getDb();
+    if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+    const hash = hashCommerceValue(requiredToken(input.resultToken));
+    const rows = await db.select().from(relationshipSessions).where(eq(relationshipSessions.resultTokenHash, hash)).limit(1);
+    session = rows[0];
+  } else {
+    throw new Error("RELATIONSHIP_RESULT_ACCESS_REQUIRED");
+  }
   if (!session) throw new Error("RELATIONSHIP_RESULT_NOT_FOUND");
   const status = session.status as SessionStatus;
   if (status !== "completed" || !session.resultSnapshotEncrypted) return { status, snapshot: null };

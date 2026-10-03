@@ -145,7 +145,23 @@ export default function RelationshipInviteScreen() {
   const isOwner = current.participant === "A";
   const roleOptions = getRelationshipRoleOptions(current.relationType, draft.info?.gender, current.partnerRole);
   if (current.status === "completed") {
-    return <ScreenContainer><View style={styles.center}><Text style={styles.completeTitle}>검사 완료</Text><Text style={styles.completeText}>이미 완료된 검사입니다. 검사 결과가 정상적으로 생성되었습니다.</Text>{isOwner && resultToken ? <Pressable style={styles.button} onPress={() => router.replace({ pathname: "/(tabs)/couple-result", params: { resultToken } } as any)}><Text style={styles.buttonText}>결과 보기</Text></Pressable> : null}</View></ScreenContainer>;
+    return (
+      <ScreenContainer><View style={styles.center}>
+        <Text style={styles.completeTitle}>검사 완료</Text>
+        <Text style={styles.completeText}>두 분의 관계 통합해석과 PDF 리포트가 준비되었습니다.</Text>
+        <Text style={styles.waitingGuide}>이 링크에서는 검사를 다시 시작하지 않고, 같은 관계검사 결과를 확인할 수 있습니다.</Text>
+        <Pressable
+          style={styles.button}
+          onPress={() => router.replace({
+            pathname: "/(tabs)/couple-result",
+            // A의 세션 링크와 B의 초대 링크 모두 같은 완료 세션의 결과 권한으로 확인한다.
+            params: { relationshipToken: token, resultToken: resultToken ?? "" },
+          } as any)}
+        >
+          <Text style={styles.buttonText}>통합해석·PDF 리포트 보기</Text>
+        </Pressable>
+      </View></ScreenContainer>
+    );
   }
   if (current.participantStatus === "submitted" && (current.status === "collecting" || current.status === "awaiting_partner")) {
     return (

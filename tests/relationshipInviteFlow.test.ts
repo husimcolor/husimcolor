@@ -114,8 +114,24 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(outbox).toContain('markRelationshipSessionEmailDelivered(outboxId)');
     expect(service).toContain('eq(relationshipSessions.resultTokenHash, hash)');
     expect(service).toContain('status !== "completed" || !session.resultSnapshotEncrypted');
-    expect(screen).toContain('이미 완료된 검사입니다. 검사 결과가 정상적으로 생성되었습니다.');
+    expect(screen).toContain('두 분의 관계 통합해석과 PDF 리포트가 준비되었습니다.');
     expect(result).toContain('trpc.relationshipInvites.result.useQuery');
+  });
+
+  it("A의 기존 세션 링크와 B의 기존 초대 링크 모두 완료된 통합해석과 PDF 화면으로 연결한다", () => {
+    const service = read("server/commerce/relationship-invite-service.ts");
+    const router = read("server/routers.ts");
+    const screen = read("app/(tabs)/relationship-invite.tsx");
+    const result = read("app/(tabs)/couple-result.tsx");
+    expect(service).toContain('(await loadSessionByAccessToken(input.accessToken)).session');
+    expect(service).toContain('status !== "completed" || !session.resultSnapshotEncrypted');
+    expect(router).toContain('accessToken: z.string().min(32).max(256).optional()');
+    expect(screen).toContain('두 분의 관계 통합해석과 PDF 리포트가 준비되었습니다.');
+    expect(screen).toContain('통합해석·PDF 리포트 보기');
+    expect(screen).toContain('params: { relationshipToken: token, resultToken: resultToken ?? "" }');
+    expect(result).toContain('requestedRelationshipToken');
+    expect(result).toContain('{ accessToken: requestedRelationshipToken }');
+    expect(result).toContain('PDF 리포트 다운로드');
   });
 
   it("초대받은 상대와 대기 중인 결제자에게 고객용 안내 문구를 표시한다", () => {

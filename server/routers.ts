@@ -391,8 +391,13 @@ export const appRouter = router({
       }))
       .mutation(({ input }) => createPreviewFailedRelationshipRecovery(input)),
     result: publicProcedure
-      .input(z.object({ resultToken: z.string().min(32).max(256) }))
-      .query(({ input }) => getRelationshipResult(input.resultToken)),
+      .input(z.object({
+        resultToken: z.string().min(32).max(256).optional(),
+        accessToken: z.string().min(32).max(256).optional(),
+      }).refine((value) => Boolean(value.resultToken || value.accessToken), {
+        message: "RELATIONSHIP_RESULT_ACCESS_REQUIRED",
+      }))
+      .query(({ input }) => getRelationshipResult(input)),
   }),
 
   // 통합 운영 관리 API. 모든 조회·변경은 서버의 users.role=admin을 요구한다.

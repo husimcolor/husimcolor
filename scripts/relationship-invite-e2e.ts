@@ -248,7 +248,7 @@ async function main() {
     .from(privateDocuments)
     .where(eq(privateDocuments.analysisRunId, consumed.analysisRunId));
   assert(document?.status === "generated" && document.storageKey, "PDF가 private storage에 generated 상태로 보관되지 않았습니다.");
-  const resultBeforeEmail = await getRelationshipResult(invite.resultToken);
+  const resultBeforeEmail = await getRelationshipResult({ resultToken: invite.resultToken });
   assert(resultBeforeEmail.status === "email_pending" && resultBeforeEmail.snapshot === null, "이메일 성공 전 결과 토큰이 리포트를 노출했습니다.");
   checks.push({ name: "양측 완료 후 private PDF 생성", status: "passed", detail: "한 번의 outbox와 private PDF 문서를 생성하고 이메일 완료 전에는 결과 토큰을 닫았습니다." });
 
@@ -275,7 +275,7 @@ async function main() {
     submission: B_SUBMISSION,
   }), "RELATIONSHIP_INVITE_COMPLETED");
 
-  const result = await getRelationshipResult(invite.resultToken);
+  const result = await getRelationshipResult({ resultToken: invite.resultToken });
   assert(result.status === "completed" && result.snapshot, "별도 결과 토큰으로 완료 결과를 조회하지 못했습니다.");
   assert(result.snapshot.sessionData.personA.info.relationshipRole === "남편" && result.snapshot.sessionData.personB.info.relationshipRole === "아내", "결과 스냅샷에 실제 관계 역할이 보존되지 않았습니다.");
   checks.push({ name: "완료 후 초대 링크 만료 및 결과 토큰 분리", status: "passed", detail: "초대 링크의 수정·재제출을 차단하고 별도 결과 토큰에서만 완료 스냅샷을 조회했습니다." });
