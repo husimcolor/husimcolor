@@ -127,6 +127,13 @@
       "when": 1790754342382,
       "tag": "0017_relationship_invite_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1790754342383,
+      "tag": "0018_targeted_customer_coupons",
+      "breakpoints": true
     }
   ]
 }

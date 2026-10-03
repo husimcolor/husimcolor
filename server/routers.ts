@@ -42,6 +42,11 @@ import {
   issueAdminTestEntitlement,
   revokeAdminTestEntitlement,
 } from "./commerce/admin-test-entitlement-service";
+import {
+  getAdminTargetedCouponList,
+  issueAdminTargetedCoupon,
+  revokeAdminTargetedCoupon,
+} from "./commerce/admin-targeted-coupon-service";
 import { getSupportTicketSchemaAudit } from "./commerce/support-ticket-schema-audit";
 import {
   deleteAdminReview,
@@ -427,6 +432,34 @@ export const appRouter = router({
     coupons: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
       .query(({ input }) => getAdminCouponOverview(input.limit)),
+    targetedCoupons: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(50).default(20) }))
+      .query(({ input }) => getAdminTargetedCouponList(input.limit)),
+    issueTargetedCoupon: adminProcedure
+      .input(z.object({
+        email: z.string().email().max(320),
+        productCodes: z.array(z.enum([
+          "personal_deep",
+          "couple_love_deep",
+          "parent_child_deep",
+          "personal_coaching",
+          "couple_coaching",
+        ])).min(1).max(5),
+        discountType: z.enum(["fixed", "percent"]),
+        discountValue: z.number().int().positive(),
+        validDays: z.number().int().min(1).max(365),
+        requestedCode: z.string().max(64).optional(),
+      }))
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return issueAdminTargetedCoupon({ ...input, ...auditActor, auditActor });
+      }),
+    revokeTargetedCoupon: adminProcedure
+      .input(z.object({ couponId: z.number().int().positive() }))
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return revokeAdminTargetedCoupon({ ...input, ...auditActor, auditActor });
+      }),
     customerDetail: adminProcedure
       .input(z.object({ customerId: z.number().int().positive() }))
       .query(({ input }) => getAdminCustomerDetail(input.customerId)),
