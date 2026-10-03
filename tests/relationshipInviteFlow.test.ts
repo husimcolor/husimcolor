@@ -65,6 +65,7 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
 
   it("양측 최종 제출을 모두 확인한 한 요청만 리포트 생성을 선점한다", () => {
     const service = read("server/commerce/relationship-invite-service.ts");
+    const router = read("server/routers.ts");
     expect(service).toContain('allParticipants.length === 2 && allParticipants.every');
     expect(service).toContain('set({ status: "report_generating", reportErrorCode: null })');
     expect(service).toContain('inArray(relationshipSessions.status, ["collecting", "awaiting_partner"])');
@@ -78,6 +79,12 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(service).toContain('RELATIONSHIP_REPORT_${stage.toUpperCase()}');
     expect(service).toContain('console.error("[relationship-report] generation failed"');
     expect(service).toContain('retryFailedRelationshipReport');
+    expect(service).toContain('deliverPreviewRelationshipReport');
+    expect(service).toContain('PREVIEW_RELATIONSHIP_DELIVERY_DISABLED');
+    expect(service).toContain('eq(orders.isTest, true)');
+    expect(service).toContain('eq(relationshipSessions.ownerTokenHash, ownerTokenHash)');
+    expect(service).toContain('eq(emailOutbox.status, "queued")');
+    expect(router).toContain('deliverPreviewReport: publicProcedure');
     expect(service).toContain('eq(relationshipSessions.status, "failed")');
   });
 

@@ -38,7 +38,9 @@ import { parseCoupleShareSnapshot, type CoupleShareSnapshot } from "../../shared
 import type { CommerceProductCode } from "../../shared/commerce";
 import { getDb } from "../db";
 import { decryptCommerceValue, encryptCommerceValue, hashCommerceValue } from "./crypto";
+import { deliverPrivatePdfOutboxItem } from "./email-outbox-service";
 import { queuePrivateAnalysisPdfDelivery } from "./pdf-delivery-service";
+import { isExplicitTestPaymentRuntime } from "./test-runtime";
 
 export type RelationshipParticipantSlot = "A" | "B";
 export type RelationshipInviteMode = "invite_link";
@@ -673,6 +675,42 @@ export async function retryFailedRelationshipReport(accessToken: string): Promis
     return Number(claimed[0]?.affectedRows ?? 0) === 1;
   });
   return { relationshipSessionId: session.id, shouldGenerateReport };
+}
+
+/**
+ * Preview 결제 QA에서만 결제자가 자신의 이미 생성된 관계 PDF outbox를 한 번 전달해
+ * 이메일 완료 전이와 중복 발송 방지를 확인한다. Production과 비테스트 주문은 항상 차단한다.
+ */
+export async function deliverPreviewRelationshipReport(accessToken: string): Promise<{
+  status: "sent" | "retry_scheduled" | "not_claimed";
+  attemptCount?: number;
+}> {
+  if (!isExplicitTestPaymentRuntime() || process.env.VERCEL_ENV !== "preview") {
+    throw new Error("PREVIEW_RELATIONSHIP_DELIVERY_DISABLED");
+  }
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const ownerTokenHash = hashCommerceValue(requiredToken(accessToken));
+  const sessions = await db
+    .select({ id: relationshipSessions.id, analysisRunId: relationshipSessions.analysisRunId, status: relationshipSessions.status })
+    .from(relationshipSessions)
+    .innerJoin(orders, eq(relationshipSessions.orderId, orders.id))
+    .where(and(eq(relationshipSessions.ownerTokenHash, ownerTokenHash), eq(orders.isTest, true)))
+    .limit(1);
+  const session = sessions[0];
+  if (!session || session.status !== "email_pending") throw new Error("PREVIEW_RELATIONSHIP_DELIVERY_NOT_READY");
+  const outboxes = await db
+    .select({ id: emailOutbox.id })
+    .from(emailOutbox)
+    .innerJoin(privateDocuments, eq(emailOutbox.privateDocumentId, privateDocuments.id))
+    .where(and(
+      eq(privateDocuments.analysisRunId, session.analysisRunId),
+      eq(emailOutbox.purpose, "analysis_result_pdf"),
+      eq(emailOutbox.status, "queued"),
+    ))
+    .limit(1);
+  if (!outboxes[0]) throw new Error("PREVIEW_RELATIONSHIP_DELIVERY_NOT_READY");
+  return deliverPrivatePdfOutboxItem(outboxes[0].id);
 }
 
 async function claimRelationshipReportGeneration(relationshipSessionId: number): Promise<boolean> {

@@ -62,6 +62,7 @@ import {
   removeAdminCoachingBlackoutDate,
 } from "./commerce/coaching-blackout-service";
 import {
+  deliverPreviewRelationshipReport,
   generateAndQueueRelationshipReport,
   createPreviewFailedRelationshipRecovery,
   getRelationshipInviteContext,
@@ -380,6 +381,9 @@ export const appRouter = router({
         }
         return getRelationshipInviteContext(input.accessToken);
       }),
+    deliverPreviewReport: publicProcedure
+      .input(z.object({ accessToken: z.string().min(32).max(256) }))
+      .mutation(({ input }) => deliverPreviewRelationshipReport(input.accessToken)),
     previewRecoveryLink: publicProcedure
       .input(z.object({
         relationshipSessionId: z.number().int().positive(),
