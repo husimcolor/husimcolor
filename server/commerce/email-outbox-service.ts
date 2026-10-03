@@ -2,7 +2,7 @@ import { and, asc, eq, inArray, lt, lte, sql } from "drizzle-orm";
 
 import { accountLinkChallenges, analysisRuns, emailOutbox, privateDocuments, products, supportTickets } from "../../drizzle/schema";
 import { getDb } from "../db";
-import { storageGetSignedUrl } from "../storage";
+import { storageGetBuffer } from "../storage";
 import { decryptCommerceEmail, decryptCommerceValue } from "./crypto";
 import { getPrivatePdfFilename } from "./pdf-delivery-policy";
 import {
@@ -67,10 +67,7 @@ function supportEmailHtml(input: { contactEmail: string; subject: string; messag
 }
 
 async function readPrivatePdf(storageKey: string): Promise<Buffer> {
-  const signedUrl = await storageGetSignedUrl(storageKey);
-  const response = await fetch(signedUrl);
-  if (!response.ok) throw new Error(`PRIVATE_PDF_READ_FAILED_${response.status}`);
-  return Buffer.from(await response.arrayBuffer());
+  return storageGetBuffer(storageKey);
 }
 
 async function claimPrivatePdfOutboxItem(outboxId: number) {

@@ -70,6 +70,8 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(service).toContain('inArray(relationshipSessions.status, ["collecting", "awaiting_partner"])');
     expect(service).toContain('shouldGenerateReport = Number(claimed[0]?.affectedRows ?? 0) === 1');
     expect(service).toContain('queuePrivateAnalysisPdfDelivery');
+    expect(service).toContain('retryFailedRelationshipReport');
+    expect(service).toContain('eq(relationshipSessions.status, "failed")');
   });
 
   it("리포트 이메일 발송 성공 후에만 세션을 completed로 전이하고 초대 링크 권한은 결과 권한과 분리한다", () => {
@@ -94,6 +96,8 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(screen).toContain("본인의 정보를 선택한 후 검사를 시작해 주세요.");
     expect(screen).toContain("상대방이 검사를 완료하면 두 분의 관계 리포트가 자동으로 생성됩니다.");
     expect(screen).toContain('_vercel_share');
+    expect(screen).toContain('검사를 다시 시작할 필요가 없습니다.');
+    expect(screen).toContain('저장된 답변으로 리포트 다시 생성');
     expect(screen).not.toContain("가능한 역할만 표시합니다.");
   });
 

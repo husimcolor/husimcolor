@@ -65,6 +65,7 @@ import {
   generateAndQueueRelationshipReport,
   getRelationshipInviteContext,
   getRelationshipResult,
+  retryFailedRelationshipReport,
   saveRelationshipParticipantDraft,
   submitRelationshipParticipant,
 } from "./commerce/relationship-invite-service";
@@ -361,6 +362,20 @@ export const appRouter = router({
           await generateAndQueueRelationshipReport(submitted.context.relationshipSessionId);
         } catch {
           // 세션은 failed 상태와 오류 코드로 남긴다. 제출 자체를 실패로 되돌려 재제출을 유도하지 않는다.
+        }
+        return getRelationshipInviteContext(input.accessToken);
+      }),
+    retryReport: publicProcedure
+      .input(z.object({ accessToken: z.string().min(32).max(256) }))
+      .mutation(async ({ input }) => {
+        const retry = await retryFailedRelationshipReport(input.accessToken);
+        if (retry.shouldGenerateReport) {
+          try {
+            await generateAndQueueRelationshipReport(retry.relationshipSessionId);
+          } catch {
+            // The failure remains recorded as failed; submitted participants
+            // never return to the editable examination flow.
+          }
         }
         return getRelationshipInviteContext(input.accessToken);
       }),

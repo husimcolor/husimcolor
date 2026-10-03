@@ -4,6 +4,32 @@
 
 import { ENV } from "./_core/env";
 
+type StorageEnvironment = Record<string, string | undefined>;
+
+export type StorageBackend = "vercel_blob" | "manus_forge" | "unconfigured";
+
+/**
+ * Vercel deployments do not receive Manus WebDev's Forge credentials. A private
+ * Vercel Blob store is therefore preferred when its project-scoped credentials
+ * are present; local WebDev continues to use the existing Forge storage path.
+ */
+export function resolveStorageBackend(env: StorageEnvironment = process.env): StorageBackend {
+  const hasVercelOidc = Boolean(env.BLOB_STORE_ID && env.VERCEL_OIDC_TOKEN);
+  const hasVercelStaticToken = Boolean(env.BLOB_READ_WRITE_TOKEN);
+  if (hasVercelOidc || hasVercelStaticToken) return "vercel_blob";
+  if (env.BUILT_IN_FORGE_API_URL && env.BUILT_IN_FORGE_API_KEY) return "manus_forge";
+  return "unconfigured";
+}
+
+function isVercelBlobKey(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname.endsWith(".blob.vercel-storage.com");
+  } catch {
+    return false;
+  }
+}
+
 function getForgeConfig() {
   const forgeUrl = ENV.forgeApiUrl;
   const forgeKey = ENV.forgeApiKey;
@@ -33,8 +59,22 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream",
 ): Promise<{ key: string; url: string }> {
-  const { forgeUrl, forgeKey } = getForgeConfig();
   const key = appendHashSuffix(normalizeKey(relKey));
+
+  if (resolveStorageBackend() === "vercel_blob") {
+    const { put } = await import("@vercel/blob");
+    const uploadData = typeof data === "string" ? data : Buffer.from(data);
+    const stored = await put(key, uploadData, {
+      access: "private",
+      addRandomSuffix: true,
+      contentType,
+    });
+    // The private Blob URL is an opaque server-side storage key; clients never
+    // receive it without an authenticated, short-lived signed URL.
+    return { key: stored.url, url: stored.url };
+  }
+
+  const { forgeUrl, forgeKey } = getForgeConfig();
 
   // 1. Get presigned PUT URL from Forge
   const presignUrl = new URL("v1/storage/presign/put", forgeUrl + "/");
@@ -77,6 +117,22 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
 }
 
 export async function storageGetSignedUrl(relKey: string): Promise<string> {
+  if (isVercelBlobKey(relKey)) {
+    if (resolveStorageBackend() !== "vercel_blob") {
+      throw new Error("Private Blob storage is not configured for this runtime");
+    }
+    const { issueSignedToken, presignUrl } = await import("@vercel/blob");
+    const pathname = new URL(relKey).pathname.replace(/^\/+/, "");
+    const validUntil = Date.now() + 5 * 60 * 1000;
+    const signedToken = await issueSignedToken({ pathname, operations: ["get"], validUntil });
+    return (await presignUrl(signedToken, {
+      operation: "get",
+      pathname,
+      access: "private",
+      validUntil,
+    })).presignedUrl;
+  }
+
   const { forgeUrl, forgeKey } = getForgeConfig();
   const key = normalizeKey(relKey);
 
@@ -94,4 +150,22 @@ export async function storageGetSignedUrl(relKey: string): Promise<string> {
 
   const { url } = (await resp.json()) as { url: string };
   return url;
+}
+
+/** Reads either private Blob content or the existing Forge-backed object. */
+export async function storageGetBuffer(relKey: string): Promise<Buffer> {
+  if (isVercelBlobKey(relKey)) {
+    if (resolveStorageBackend() !== "vercel_blob") {
+      throw new Error("Private Blob storage is not configured for this runtime");
+    }
+    const { get } = await import("@vercel/blob");
+    const result = await get(relKey, { access: "private", useCache: false });
+    if (!result || result.statusCode !== 200 || !result.stream) throw new Error("PRIVATE_PDF_READ_FAILED");
+    return Buffer.from(await new Response(result.stream).arrayBuffer());
+  }
+
+  const signedUrl = await storageGetSignedUrl(relKey);
+  const response = await fetch(signedUrl);
+  if (!response.ok) throw new Error(`PRIVATE_PDF_READ_FAILED_${response.status}`);
+  return Buffer.from(await response.arrayBuffer());
 }

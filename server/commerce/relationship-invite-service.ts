@@ -584,6 +584,37 @@ export async function submitRelationshipParticipant(input: {
   return { context: await buildContext(session.id, participant, true), shouldGenerateReport };
 }
 
+/**
+ * A failed document-delivery attempt must never make either participant redo a
+ * submitted examination. This compare-and-set claims exactly one safe retry
+ * after both encrypted submissions have already been persisted.
+ */
+export async function retryFailedRelationshipReport(accessToken: string): Promise<{
+  relationshipSessionId: number;
+  shouldGenerateReport: boolean;
+}> {
+  const { db, session } = await loadSessionByAccessToken(accessToken);
+  const shouldGenerateReport = await (db as any).transaction(async (tx: any) => {
+    const sessionRows = await tx
+      .select({ status: relationshipSessions.status })
+      .from(relationshipSessions)
+      .where(eq(relationshipSessions.id, session.id))
+      .limit(1);
+    if (sessionRows[0]?.status !== "failed") return false;
+    const participants = await tx
+      .select({ status: relationshipParticipants.status })
+      .from(relationshipParticipants)
+      .where(eq(relationshipParticipants.relationshipSessionId, session.id));
+    if (participants.length !== 2 || !participants.every((row: { status: string }) => row.status === "submitted")) return false;
+    const claimed = await tx
+      .update(relationshipSessions)
+      .set({ status: "report_generating", reportErrorCode: null })
+      .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "failed")));
+    return Number(claimed[0]?.affectedRows ?? 0) === 1;
+  });
+  return { relationshipSessionId: session.id, shouldGenerateReport };
+}
+
 async function claimRelationshipReportGeneration(relationshipSessionId: number): Promise<boolean> {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");

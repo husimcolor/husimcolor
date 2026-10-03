@@ -39,6 +39,7 @@ export default function RelationshipInviteScreen() {
     refetchInterval: (query) => query.state.data?.participantStatus === "submitted" ? 5_000 : false,
   });
   const saveDraft = trpc.relationshipInvites.saveDraft.useMutation();
+  const retryReport = trpc.relationshipInvites.retryReport.useMutation();
 
   const applyContext = (value: { draft: Draft | null; draftRevision: number; consentAccepted?: boolean } | undefined) => {
     if (!value) return;
@@ -128,6 +129,16 @@ export default function RelationshipInviteScreen() {
     }
   };
 
+  const retryFailedReport = async () => {
+    try {
+      await retryReport.mutateAsync({ accessToken: token });
+      setMessage("저장된 답변으로 리포트 생성을 다시 확인하고 있습니다.");
+      await context.refetch();
+    } catch {
+      setMessage("리포트 생성을 다시 시작하지 못했습니다. 답변은 보존되어 있습니다.");
+    }
+  };
+
   if (!token || context.isLoading) return <ScreenContainer><View style={styles.center}><ActivityIndicator color="#527B52" /><Text style={styles.loading}>검사 세션을 확인하고 있습니다.</Text></View></ScreenContainer>;
   if (!context.data) return <ScreenContainer><View style={styles.center}><Text style={styles.loading}>유효하지 않거나 만료된 검사 링크입니다.</Text></View></ScreenContainer>;
   const current = context.data;
@@ -144,6 +155,23 @@ export default function RelationshipInviteScreen() {
         <Text style={styles.waitingGuide}>상대방이 검사를 완료하면 두 분의 관계 리포트가 자동으로 생성됩니다.</Text>
         {isOwner && inviteToken ? <Pressable style={styles.inviteButtonWide} onPress={() => void shareInvite()}><Text style={styles.inviteButtonText}>상대방에게 검사 링크 보내기</Text></Pressable> : null}
         <Pressable style={styles.refreshButton} onPress={() => void context.refetch()}><Text style={styles.refreshText}>상태 새로고침</Text></Pressable>
+      </View></ScreenContainer>
+    );
+  }
+  if (current.participantStatus === "submitted") {
+    const progressText = current.status === "report_generating"
+      ? "두 사람의 답변을 확인했습니다. 관계 리포트를 생성하고 있습니다."
+      : current.status === "email_pending"
+        ? "리포트를 준비했습니다. 이메일 발송 처리를 기다리고 있습니다."
+        : "리포트 생성 중 문제가 발생했습니다. 두 사람의 답변은 안전하게 제출되어 있으며, 검사를 다시 시작할 필요가 없습니다.";
+    return (
+      <ScreenContainer><View style={styles.center}>
+        {current.status !== "failed" ? <ActivityIndicator color="#527B52" /> : null}
+        <Text style={styles.completeTitle}>검사 제출 완료</Text>
+        <Text style={styles.completeText}>{progressText}</Text>
+        {current.status === "failed" ? <Pressable disabled={retryReport.isPending} style={[styles.refreshButton, retryReport.isPending && styles.disabled]} onPress={() => void retryFailedReport()}><Text style={styles.refreshText}>{retryReport.isPending ? "리포트 재시도 중" : "저장된 답변으로 리포트 다시 생성"}</Text></Pressable> : null}
+        <Pressable style={styles.refreshButton} onPress={() => void context.refetch()}><Text style={styles.refreshText}>상태 새로고침</Text></Pressable>
+        {message ? <Text style={styles.message}>{message}</Text> : null}
       </View></ScreenContainer>
     );
   }
@@ -181,7 +209,6 @@ export default function RelationshipInviteScreen() {
         </View>
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
-        {isOwner && current.participantStatus === "submitted" && inviteToken ? <View style={styles.inviteBox}><Text style={styles.inviteTitle}>상대방에게 검사 링크 보내기</Text><Text style={styles.inviteBody}>상대방이 같은 링크에서 자신의 검사 2단계를 완료할 수 있습니다.</Text><Pressable style={styles.inviteButton} onPress={() => void shareInvite()}><Text style={styles.inviteButtonText}>초대 링크 공유 또는 복사</Text></Pressable></View> : null}
       </ScrollView>
     </ScreenContainer>
   );
