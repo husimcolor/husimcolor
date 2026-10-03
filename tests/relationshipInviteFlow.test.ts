@@ -149,6 +149,21 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(screen).not.toContain("가능한 역할만 표시합니다.");
   });
 
+  it("A·B 모두 기본 정보를 명시적으로 저장한 뒤에만 컬러 검사로 진행하고, 제출 후에는 편집 화면으로 돌아가지 않는다", () => {
+    const screen = read("app/(tabs)/relationship-invite.tsx");
+    const ownerStart = read("app/(tabs)/relationship-invite-start.tsx");
+    expect(screen).toContain("정보를 선택한 뒤 ‘기본 정보 저장’을 눌러 주세요. 저장된 정보가 관계 분석과 리포트에 반영됩니다.");
+    expect(screen).toContain("기본 정보가 저장되었습니다. 컬러 검사를 시작해 주세요.");
+    expect(screen).toContain("정보를 변경하면 ‘기본 정보 저장’을 다시 눌러 주세요.");
+    expect(screen).toContain("컬러 검사를 시작하기 전에 기본 정보를 저장해 주세요.");
+    expect(screen).toContain("const saveBasicInfo = async () =>");
+    expect(screen).toContain("basicInfoSaveKey(draft.info, consent) !== savedInfoKey");
+    expect(screen).toContain('if (current.status === "completed")');
+    expect(screen).toContain('if (current.participantStatus === "submitted"');
+    expect(ownerStart).toContain('pathname: "/(tabs)/relationship-invite"');
+    expect(ownerStart).toContain('initialGender: gender');
+  });
+
   it("유료 공개 gate와 무료 친구 관계 경로를 변경하지 않는다", () => {
     const start = read("app/(tabs)/couple-start.tsx");
     const checkout = read("app/(tabs)/commerce-checkout.tsx");
