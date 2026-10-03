@@ -643,12 +643,68 @@ export async function completeTestPayment(input: {
   return completePaymentForProvider({ ...input, provider: "test" });
 }
 
+/**
+ * A browser can revisit the success URL after the first server-side approval.
+ * In that case, do not send the same paymentKey to Toss a second time: read the
+ * locally final transaction first and return the original entitlement instead.
+ */
+async function getKnownTossTestSuccess(input: {
+  orderNumber: string;
+  paymentKey: string;
+  amountKrw: number;
+}): Promise<PaymentResponse | null> {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+
+  const rows = await (db as any)
+    .select({
+      transactionStatus: paymentTransactions.status,
+      savedPaymentId: paymentTransactions.providerPaymentId,
+      orderId: orders.id,
+      orderNumber: orders.orderNumber,
+      finalAmountKrw: orders.finalAmountKrw,
+      orderItemId: orderItems.id,
+    })
+    .from(paymentTransactions)
+    .innerJoin(orders, eq(paymentTransactions.orderId, orders.id))
+    .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+    .where(and(eq(paymentTransactions.provider, "toss_pg"), eq(orders.orderNumber, input.orderNumber)))
+    .limit(1);
+  const record = rows[0];
+  if (!record) return null;
+  if (record.finalAmountKrw !== input.amountKrw) throw new Error("ORDER_AMOUNT_MISMATCH");
+
+  if (record.transactionStatus === "approved") {
+    if (record.savedPaymentId !== input.paymentKey) throw new Error("TEST_PAYMENT_ID_CONFLICT");
+    const entitlementRows = await (db as any)
+      .select({ id: entitlements.id })
+      .from(entitlements)
+      .where(eq(entitlements.orderItemId, record.orderItemId))
+      .limit(1);
+    return {
+      orderNumber: record.orderNumber,
+      paymentId: record.savedPaymentId,
+      status: "paid",
+      entitlementId: entitlementRows[0]?.id ?? null,
+      startGrant: null,
+      alreadyProcessed: true,
+    };
+  }
+  if (record.transactionStatus === "failed" || record.transactionStatus === "cancelled") {
+    throw new Error("TEST_ORDER_ALREADY_TERMINAL");
+  }
+  return null;
+}
+
 /** 토스 승인 응답과 DB 주문 스냅샷을 모두 대조한 뒤에만 구매권한을 부여한다. */
 export async function completeTossTestPayment(input: {
   orderNumber: string;
   paymentKey: string;
   amountKrw: number;
 }): Promise<PaymentResponse> {
+  if (!isTossTestPaymentEnabled()) throw new Error("TOSS_TEST_PAYMENT_DISABLED");
+  const known = await getKnownTossTestSuccess(input);
+  if (known) return known;
   const approved = await confirmTossTestPayment({
     paymentKey: input.paymentKey,
     orderNumber: input.orderNumber,
