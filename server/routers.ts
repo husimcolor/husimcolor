@@ -9,6 +9,7 @@ import { getCommerceEmailProtectionStatus } from "./commerce/crypto";
 import {
   completeTestPayment,
   completeTossTestPayment,
+  completeTossTestPaymentFailure,
   createTestCheckout,
   createTossTestCheckout,
   isTestPaymentEnabled,
@@ -61,9 +62,12 @@ import {
   removeAdminCoachingBlackoutDate,
 } from "./commerce/coaching-blackout-service";
 import {
+  deliverPreviewRelationshipReport,
   generateAndQueueRelationshipReport,
+  createPreviewFailedRelationshipRecovery,
   getRelationshipInviteContext,
   getRelationshipResult,
+  retryFailedRelationshipReport,
   saveRelationshipParticipantDraft,
   submitRelationshipParticipant,
 } from "./commerce/relationship-invite-service";
@@ -281,6 +285,15 @@ export const appRouter = router({
           }),
         )
         .mutation(({ input }) => completeTossTestPayment(input)),
+      completeTossTestFailure: publicProcedure
+        .input(
+          z.object({
+            orderNumber: z.string().min(8).max(64),
+            errorCode: z.string().min(1).max(120),
+            errorMessage: z.string().max(500).optional(),
+          }),
+        )
+        .mutation(({ input }) => completeTossTestPaymentFailure(input)),
       cardReview: publicProcedure
         .input(z.object({
           productCode: z.enum([
@@ -354,9 +367,37 @@ export const appRouter = router({
         }
         return getRelationshipInviteContext(input.accessToken);
       }),
+    retryReport: publicProcedure
+      .input(z.object({ accessToken: z.string().min(32).max(256) }))
+      .mutation(async ({ input }) => {
+        const retry = await retryFailedRelationshipReport(input.accessToken);
+        if (retry.shouldGenerateReport) {
+          try {
+            await generateAndQueueRelationshipReport(retry.relationshipSessionId);
+          } catch {
+            // The failure remains recorded as failed; submitted participants
+            // never return to the editable examination flow.
+          }
+        }
+        return getRelationshipInviteContext(input.accessToken);
+      }),
+    deliverPreviewReport: publicProcedure
+      .input(z.object({ accessToken: z.string().min(32).max(256) }))
+      .mutation(({ input }) => deliverPreviewRelationshipReport(input.accessToken)),
+    previewRecoveryLink: publicProcedure
+      .input(z.object({
+        relationshipSessionId: z.number().int().positive(),
+        recoveryKey: z.string().min(32).max(512),
+      }))
+      .mutation(({ input }) => createPreviewFailedRelationshipRecovery(input)),
     result: publicProcedure
-      .input(z.object({ resultToken: z.string().min(32).max(256) }))
-      .query(({ input }) => getRelationshipResult(input.resultToken)),
+      .input(z.object({
+        resultToken: z.string().min(32).max(256).optional(),
+        accessToken: z.string().min(32).max(256).optional(),
+      }).refine((value) => Boolean(value.resultToken || value.accessToken), {
+        message: "RELATIONSHIP_RESULT_ACCESS_REQUIRED",
+      }))
+      .query(({ input }) => getRelationshipResult(input)),
   }),
 
   // 통합 운영 관리 API. 모든 조회·변경은 서버의 users.role=admin을 요구한다.

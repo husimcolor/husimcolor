@@ -135,9 +135,10 @@ function buildCoupleShareSnapshot(
 // ─── 메인 화면 ───────────────────────────────────────────────────────────────
 export default function CoupleResultScreen() {
   const router = useRouter();
-  const routeParams = useLocalSearchParams<{ shareId?: string | string[]; resultToken?: string | string[]; qa?: string | string[] }>();
+  const routeParams = useLocalSearchParams<{ shareId?: string | string[]; resultToken?: string | string[]; relationshipToken?: string | string[]; qa?: string | string[] }>();
   const requestedShareId = typeof routeParams.shareId === 'string' ? routeParams.shareId : undefined;
   const requestedResultToken = typeof routeParams.resultToken === 'string' ? routeParams.resultToken : undefined;
+  const requestedRelationshipToken = typeof routeParams.relationshipToken === 'string' ? routeParams.relationshipToken : undefined;
   const requestedQa = typeof routeParams.qa === 'string' ? routeParams.qa : undefined;
   const isPriorityPilot = process.env.NODE_ENV !== 'production'
     && requestedQa === PARENT_CHILD_PRIORITY_PILOT_QUERY;
@@ -178,12 +179,16 @@ export default function CoupleResultScreen() {
     { enabled: Boolean(requestedShareId), retry: false },
   );
   const relationshipResultQuery = trpc.relationshipInvites.result.useQuery(
-    { resultToken: requestedResultToken ?? '' },
-    { enabled: Boolean(requestedResultToken), retry: false },
+    {
+      ...(requestedResultToken ? { resultToken: requestedResultToken } : {}),
+      // 결과 토큰을 직접 포함하지 않았던 기존 A/B 검사 링크도 각자의 접근 토큰으로 같은 완료 결과를 읽는다.
+      ...(requestedRelationshipToken ? { accessToken: requestedRelationshipToken } : {}),
+    },
+    { enabled: Boolean(requestedResultToken || requestedRelationshipToken), retry: false },
   );
 
   useEffect(() => {
-    if (requestedShareId || requestedResultToken) return;
+    if (requestedShareId || requestedResultToken || requestedRelationshipToken) return;
     if (isPriorityPilot) {
       loadPriorityPilotSession();
       return;
@@ -211,7 +216,7 @@ export default function CoupleResultScreen() {
   }, [requestedShareId, sharedResultQuery.data, sharedResultQuery.isLoading]);
 
   useEffect(() => {
-    if (!requestedResultToken || relationshipResultQuery.isLoading) return;
+    if ((!requestedResultToken && !requestedRelationshipToken) || relationshipResultQuery.isLoading) return;
     const snapshot = relationshipResultQuery.data?.snapshot;
     if (!snapshot) {
       setError(relationshipResultQuery.data?.status === 'completed'
@@ -229,7 +234,7 @@ export default function CoupleResultScreen() {
     setArchetypeResult(snapshot.archetypeResult);
     setLightArchetypeResult(snapshot.lightArchetypeResult);
     setLoading(false);
-  }, [requestedResultToken, relationshipResultQuery.data, relationshipResultQuery.isLoading]);
+  }, [requestedResultToken, requestedRelationshipToken, relationshipResultQuery.data, relationshipResultQuery.isLoading]);
 
   useEffect(() => () => {
     clearCouplePdfDownloadTimers();

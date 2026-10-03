@@ -1,7 +1,7 @@
 import { createReadStream } from "node:fs";
 import path from "node:path";
-import PDFDocument from "pdfkit";
 import type { PremiumPdfDownloadPayload } from "../shared/premium-pdf-download";
+import { PDFDocument } from "./pdfkit-runtime";
 
 const PAGE_BOTTOM = 799;
 const PAGE_LEFT = 43;

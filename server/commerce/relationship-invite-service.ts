@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, eq, inArray, or } from "drizzle-orm";
 
 import {
@@ -6,6 +6,7 @@ import {
   emailOutbox,
   entitlements,
   orderItems,
+  orders,
   privateDocuments,
   products,
   relationshipParticipants,
@@ -27,14 +28,19 @@ import {
   type RelationType,
 } from "../../constants/coupleData";
 import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from "../../lib/couple-color-card-analysis";
+import { buildCouplePdfDownloadPayload } from "../../lib/couple-pdf-download";
 import { buildParentChildRelationshipAnalysis } from "../../lib/parent-child-relationship-analysis";
 import { getParentChildLabels } from "../../lib/parent-child-coaching";
+import { buildParentChildPdfDownloadPayload } from "../../lib/parent-child-pdf-download";
 import { buildRomanticRelationTraits } from "../../lib/couple-romantic-relation-traits";
 import { buildRomanticRelationshipRoles } from "../../lib/couple-romantic-relationship-roles";
 import { parseCoupleShareSnapshot, type CoupleShareSnapshot } from "../../shared/couple-share";
 import type { CommerceProductCode } from "../../shared/commerce";
 import { getDb } from "../db";
 import { decryptCommerceValue, encryptCommerceValue, hashCommerceValue } from "./crypto";
+import { deliverPrivatePdfOutboxItem } from "./email-outbox-service";
+import { queuePrivateAnalysisPdfDelivery } from "./pdf-delivery-service";
+import { isExplicitTestPaymentRuntime } from "./test-runtime";
 
 export type RelationshipParticipantSlot = "A" | "B";
 export type RelationshipInviteMode = "invite_link";
@@ -73,6 +79,12 @@ const RELATION_TYPES = new Set<RelationType>([
 ]);
 const PAID_RELATION_PRODUCTS = new Set<CommerceProductCode>(["couple_love_deep", "parent_child_deep"]);
 const EDITABLE_STATUSES = new Set<SessionStatus>(["collecting", "awaiting_partner"]);
+
+function isAuthorizedPreviewRecoveryKey(value: string): boolean {
+  const expected = process.env.PREVIEW_RELATIONSHIP_RECOVERY_KEY;
+  if (!expected || !value || Buffer.byteLength(expected, "utf8") !== Buffer.byteLength(value, "utf8")) return false;
+  return timingSafeEqual(Buffer.from(expected, "utf8"), Buffer.from(value, "utf8"));
+}
 
 function secureToken(): string {
   return randomBytes(32).toString("base64url");
@@ -250,7 +262,6 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
     if (!roles || !unified) throw new Error("RELATIONSHIP_ROMANTIC_REPORT_DATA_INVALID");
     const hasFaith = personA.info.faith === "기독교" || personB.info.faith === "기독교";
     const recommendedColors = archetypeResult.recommendedColors ?? coupleAnalysis.coupleRoutine.recommendedColors;
-    const { buildCouplePdfDownloadPayload } = await import("../../lib/couple-pdf-download");
     return buildCouplePdfDownloadPayload({
       relationType,
       couple: {
@@ -336,7 +347,6 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
     parent: { colors: parent.colors, cards: parentCards.filter((card): card is NonNullable<typeof card> => Boolean(card)) },
     child: { colors: child.colors, cards: childCards.filter((card): card is NonNullable<typeof card> => Boolean(card)) },
   });
-  const { buildParentChildPdfDownloadPayload } = await import("../../lib/parent-child-pdf-download");
   return buildParentChildPdfDownloadPayload({
     relationType,
       personA: {
@@ -416,6 +426,58 @@ export async function createRelationshipInviteSession(tx: any, input: {
     { relationshipSessionId, participant: "B", status: "not_started" },
   ]);
   return { relationshipSessionId, ownerAccessToken, inviteToken, resultToken };
+}
+
+/**
+ * Preview에서만, 제출 완료 뒤 PDF 생성에 실패한 테스트 세션의 접근 토큰을 새로 발급한다.
+ * DB에는 토큰 원문을 저장하지 않으므로 기존 링크는 복원하지 않고 모두 교체한다.
+ */
+export async function createPreviewFailedRelationshipRecovery(input: {
+  relationshipSessionId: number;
+  recoveryKey: string;
+}): Promise<RelationshipInviteStart> {
+  if (process.env.VERCEL_ENV !== "preview" || process.env.COMMERCE_TEST_MODE !== "true" || !isAuthorizedPreviewRecoveryKey(input.recoveryKey)) {
+    throw new Error("PREVIEW_RELATIONSHIP_RECOVERY_NOT_ALLOWED");
+  }
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+
+  const rows = await db
+    .select({ session: relationshipSessions })
+    .from(relationshipSessions)
+    .innerJoin(orders, eq(relationshipSessions.orderId, orders.id))
+    .where(and(
+      eq(relationshipSessions.id, input.relationshipSessionId),
+      eq(relationshipSessions.status, "failed"),
+      eq(orders.isTest, true),
+      eq(orders.status, "paid"),
+    ))
+    .limit(1);
+  const session = rows[0]?.session;
+  if (!session) throw new Error("PREVIEW_RELATIONSHIP_RECOVERY_SESSION_NOT_FOUND");
+
+  const participants = await db
+    .select({ status: relationshipParticipants.status })
+    .from(relationshipParticipants)
+    .where(eq(relationshipParticipants.relationshipSessionId, session.id));
+  if (participants.length !== 2 || participants.some((participant) => participant.status !== "submitted")) {
+    throw new Error("PREVIEW_RELATIONSHIP_RECOVERY_SUBMISSIONS_INCOMPLETE");
+  }
+
+  const ownerAccessToken = secureToken();
+  const inviteToken = secureToken();
+  const resultToken = secureToken();
+  const updated = await db
+    .update(relationshipSessions)
+    .set({
+      ownerTokenHash: hashCommerceValue(ownerAccessToken),
+      inviteTokenHash: hashCommerceValue(inviteToken),
+      resultTokenHash: hashCommerceValue(resultToken),
+    })
+    .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "failed")));
+  if (Number(updated[0]?.affectedRows ?? 0) !== 1) throw new Error("PREVIEW_RELATIONSHIP_RECOVERY_CONFLICT");
+
+  return { relationshipSessionId: session.id, ownerAccessToken, inviteToken, resultToken };
 }
 
 async function loadSessionByAccessToken(accessToken: string) {
@@ -584,6 +646,73 @@ export async function submitRelationshipParticipant(input: {
   return { context: await buildContext(session.id, participant, true), shouldGenerateReport };
 }
 
+/**
+ * A failed document-delivery attempt must never make either participant redo a
+ * submitted examination. This compare-and-set claims exactly one safe retry
+ * after both encrypted submissions have already been persisted.
+ */
+export async function retryFailedRelationshipReport(accessToken: string): Promise<{
+  relationshipSessionId: number;
+  shouldGenerateReport: boolean;
+}> {
+  const { db, session } = await loadSessionByAccessToken(accessToken);
+  const shouldGenerateReport = await (db as any).transaction(async (tx: any) => {
+    const sessionRows = await tx
+      .select({ status: relationshipSessions.status })
+      .from(relationshipSessions)
+      .where(eq(relationshipSessions.id, session.id))
+      .limit(1);
+    if (sessionRows[0]?.status !== "failed") return false;
+    const participants = await tx
+      .select({ status: relationshipParticipants.status })
+      .from(relationshipParticipants)
+      .where(eq(relationshipParticipants.relationshipSessionId, session.id));
+    if (participants.length !== 2 || !participants.every((row: { status: string }) => row.status === "submitted")) return false;
+    const claimed = await tx
+      .update(relationshipSessions)
+      .set({ status: "report_generating", reportErrorCode: null })
+      .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "failed")));
+    return Number(claimed[0]?.affectedRows ?? 0) === 1;
+  });
+  return { relationshipSessionId: session.id, shouldGenerateReport };
+}
+
+/**
+ * Preview 결제 QA에서만 결제자가 자신의 이미 생성된 관계 PDF outbox를 한 번 전달해
+ * 이메일 완료 전이와 중복 발송 방지를 확인한다. Production과 비테스트 주문은 항상 차단한다.
+ */
+export async function deliverPreviewRelationshipReport(accessToken: string): Promise<{
+  status: "sent" | "retry_scheduled" | "not_claimed";
+  attemptCount?: number;
+}> {
+  if (!isExplicitTestPaymentRuntime() || process.env.VERCEL_ENV !== "preview") {
+    throw new Error("PREVIEW_RELATIONSHIP_DELIVERY_DISABLED");
+  }
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const ownerTokenHash = hashCommerceValue(requiredToken(accessToken));
+  const sessions = await db
+    .select({ id: relationshipSessions.id, analysisRunId: relationshipSessions.analysisRunId, status: relationshipSessions.status })
+    .from(relationshipSessions)
+    .innerJoin(orders, eq(relationshipSessions.orderId, orders.id))
+    .where(and(eq(relationshipSessions.ownerTokenHash, ownerTokenHash), eq(orders.isTest, true)))
+    .limit(1);
+  const session = sessions[0];
+  if (!session || session.status !== "email_pending") throw new Error("PREVIEW_RELATIONSHIP_DELIVERY_NOT_READY");
+  const outboxes = await db
+    .select({ id: emailOutbox.id })
+    .from(emailOutbox)
+    .innerJoin(privateDocuments, eq(emailOutbox.privateDocumentId, privateDocuments.id))
+    .where(and(
+      eq(privateDocuments.analysisRunId, session.analysisRunId),
+      eq(emailOutbox.purpose, "analysis_result_pdf"),
+      eq(emailOutbox.status, "queued"),
+    ))
+    .limit(1);
+  if (!outboxes[0]) throw new Error("PREVIEW_RELATIONSHIP_DELIVERY_NOT_READY");
+  return deliverPrivatePdfOutboxItem(outboxes[0].id);
+}
+
 async function claimRelationshipReportGeneration(relationshipSessionId: number): Promise<boolean> {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -635,45 +764,65 @@ export async function generateAndQueueRelationshipReport(relationshipSessionId: 
     throw new Error("RELATIONSHIP_REPORT_PRODUCT_INVALID");
   }
 
+  let stage = "load_participants";
   try {
     const participants = await db
       .select()
       .from(relationshipParticipants)
       .where(eq(relationshipParticipants.relationshipSessionId, session.id));
+    stage = "build_snapshot";
     const personA = parseSubmittedPayload(participants.find((row) => row.participant === "A")?.submittedEncrypted ?? null);
     const personB = parseSubmittedPayload(participants.find((row) => row.participant === "B")?.submittedEncrypted ?? null);
     const snapshot = buildResultSnapshot(asSessionData(session.relationType as RelationType, personA, personB));
+    stage = "build_delivery_payload";
     const payload = await buildDeliveryPayload(snapshot, session.productCode);
+    stage = "save_result_snapshot";
     await db
       .update(relationshipSessions)
       .set({ resultSnapshotEncrypted: encryptCommerceValue(JSON.stringify(snapshot)), reportGeneratedAt: new Date(), reportErrorCode: null })
       .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "report_generating")));
-    const { queuePrivateAnalysisPdfDelivery } = await import("./pdf-delivery-service");
+    stage = "queue_private_pdf";
     const queued = await queuePrivateAnalysisPdfDelivery({
       analysisRunId: session.analysisRunId,
       kind: session.productCode,
       payload,
     });
+    stage = "mark_email_pending";
     await db
       .update(relationshipSessions)
       .set({ status: "email_pending", reportErrorCode: null })
       .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "report_generating")));
     return { outboxId: queued.outboxId };
   } catch (error) {
+    const message = error instanceof Error ? error.message.slice(0, 120) : "RELATIONSHIP_REPORT_FAILED";
+    const reportErrorCode = `RELATIONSHIP_REPORT_${stage.toUpperCase()}:${message}`.slice(0, 160);
+    console.error("[relationship-report] generation failed", { relationshipSessionId, stage, message });
     await db
       .update(relationshipSessions)
-      .set({ status: "failed", reportErrorCode: error instanceof Error ? error.message.slice(0, 160) : "RELATIONSHIP_REPORT_FAILED" })
+      .set({ status: "failed", reportErrorCode })
       .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "report_generating")));
     throw error;
   }
 }
 
-export async function getRelationshipResult(resultToken: string): Promise<{ status: SessionStatus; snapshot: CoupleShareSnapshot | null }> {
-  const db = await getDb();
-  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
-  const hash = hashCommerceValue(requiredToken(resultToken));
-  const rows = await db.select().from(relationshipSessions).where(eq(relationshipSessions.resultTokenHash, hash)).limit(1);
-  const session = rows[0];
+export async function getRelationshipResult(input: {
+  resultToken?: string;
+  accessToken?: string;
+}): Promise<{ status: SessionStatus; snapshot: CoupleShareSnapshot | null }> {
+  let session: typeof relationshipSessions.$inferSelect | undefined;
+  if (input.accessToken) {
+    // A의 기존 세션 링크와 B의 기존 초대 링크는 각각 다른 접근 토큰이다.
+    // 완료 후에는 두 토큰 모두 동일한 통합 결과만 읽을 수 있도록 허용한다.
+    session = (await loadSessionByAccessToken(input.accessToken)).session;
+  } else if (input.resultToken) {
+    const db = await getDb();
+    if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+    const hash = hashCommerceValue(requiredToken(input.resultToken));
+    const rows = await db.select().from(relationshipSessions).where(eq(relationshipSessions.resultTokenHash, hash)).limit(1);
+    session = rows[0];
+  } else {
+    throw new Error("RELATIONSHIP_RESULT_ACCESS_REQUIRED");
+  }
   if (!session) throw new Error("RELATIONSHIP_RESULT_NOT_FOUND");
   const status = session.status as SessionStatus;
   if (status !== "completed" || !session.resultSnapshotEncrypted) return { status, snapshot: null };

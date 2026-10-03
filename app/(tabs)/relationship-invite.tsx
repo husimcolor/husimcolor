@@ -3,8 +3,6 @@ import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, 
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
-import { CARD_DATA, type CardData } from "@/constants/cardData";
-import { COLOR_DATA, type ColorData } from "@/constants/colorData";
 import { getRelationshipRoleOptions, type FaithType, type GenderType, type RelationshipRole } from "@/constants/coupleData";
 import { trpc } from "@/lib/trpc";
 
@@ -13,17 +11,16 @@ type Draft = { info?: DraftInfo; colors?: string[]; cards?: string[] };
 function hasCompleteInfo(value: DraftInfo | undefined): value is { gender: GenderType; faith: FaithType; relationshipRole: RelationshipRole } {
   return Boolean(value?.gender && value?.faith && value?.relationshipRole);
 }
+function basicInfoSaveKey(value: DraftInfo | undefined, consentAccepted: boolean): string | null {
+  if (!hasCompleteInfo(value) || !consentAccepted) return null;
+  return [value.gender, value.relationshipRole, value.faith, "consent"].join("|");
+}
 function one(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 function roleParticipationParticle(role: RelationshipRole) {
   const finalCode = role.charCodeAt(role.length - 1);
   const finalConsonant = finalCode >= 0xAC00 && finalCode <= 0xD7A3 ? (finalCode - 0xAC00) % 28 : 0;
   return finalConsonant === 0 || finalConsonant === 8 ? "로" : "으로";
 }
-function textOn(hex: string) {
-  const value = parseInt(hex.slice(1, 3), 16) * 0.299 + parseInt(hex.slice(3, 5), 16) * 0.587 + parseInt(hex.slice(5, 7), 16) * 0.114;
-  return value > 190 ? "#4A3B2E" : "#FFFFFF";
-}
-
 export default function RelationshipInviteScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ token?: string | string[]; inviteToken?: string | string[]; resultToken?: string | string[]; initialGender?: string | string[]; initialRole?: string | string[]; initialFaith?: string | string[]; consent?: string | string[] }>();
@@ -37,8 +34,9 @@ export default function RelationshipInviteScreen() {
   const [draft, setDraft] = useState<Draft>({});
   const [revision, setRevision] = useState(0);
   const [consent, setConsent] = useState(false);
+  const [savedInfoKey, setSavedInfoKey] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const initialSaved = useRef(false);
+  const initialDraftSeeded = useRef(false);
   const context = trpc.relationshipInvites.context.useQuery({ accessToken: token }, {
     enabled: token.length >= 32,
     retry: false,
@@ -46,22 +44,27 @@ export default function RelationshipInviteScreen() {
     refetchInterval: (query) => query.state.data?.participantStatus === "submitted" ? 5_000 : false,
   });
   const saveDraft = trpc.relationshipInvites.saveDraft.useMutation();
-  const submit = trpc.relationshipInvites.submit.useMutation();
+  const retryReport = trpc.relationshipInvites.retryReport.useMutation();
 
   const applyContext = (value: { draft: Draft | null; draftRevision: number; consentAccepted?: boolean } | undefined) => {
     if (!value) return;
     setDraft(value.draft ?? {});
     setRevision(value.draftRevision);
     if (typeof value.consentAccepted === "boolean") setConsent(value.consentAccepted);
+    setSavedInfoKey(basicInfoSaveKey(value.draft?.info, Boolean(value.consentAccepted)));
   };
   useEffect(() => { applyContext(context.data); }, [context.data?.draftRevision]);
   useEffect(() => {
-    if (!context.data || initialSaved.current || !initialGender || !initialRole || !initialFaith) return;
-    initialSaved.current = true;
-    void persist({ info: { gender: initialGender, relationshipRole: initialRole, faith: initialFaith } }, initialConsent);
+    if (!context.data || initialDraftSeeded.current || !initialGender || !initialRole || !initialFaith) return;
+    // A의 첫 화면도 B와 동일하게 기존 정보를 먼저 보여 주되, 사용자가
+    // 기본 정보 저장을 누르기 전에는 컬러 검사로 진행하지 않는다.
+    initialDraftSeeded.current = true;
+    setDraft({ info: { gender: initialGender, relationshipRole: initialRole, faith: initialFaith } });
+    setConsent(initialConsent);
+    setSavedInfoKey(null);
   }, [context.data, initialGender, initialRole, initialFaith]);
 
-  const persist = async (next: Draft, consentAccepted = consent) => {
+  const persist = async (next: Draft, consentAccepted = consent, successMessage = "이 단계의 답변이 저장되었습니다.") => {
     try {
       const { info, ...partialDraft } = next;
       const draftForSave = hasCompleteInfo(info) ? { ...partialDraft, info } : partialDraft;
@@ -69,7 +72,8 @@ export default function RelationshipInviteScreen() {
       setDraft(saved.draft ?? next);
       setRevision(saved.draftRevision);
       setConsent(consentAccepted);
-      setMessage("이 단계의 답변이 저장되었습니다.");
+      setSavedInfoKey(basicInfoSaveKey((saved.draft ?? next).info, consentAccepted));
+      setMessage(successMessage);
       return saved;
     } catch (error) {
       const conflict = error instanceof Error && error.message.includes("REVISION_CONFLICT");
@@ -85,43 +89,53 @@ export default function RelationshipInviteScreen() {
       delete info.relationshipRole;
     }
     setDraft((current) => ({ ...current, info }));
-    if (hasCompleteInfo(info) && consent) await persist({ ...draft, info });
+    if (savedInfoKey && basicInfoSaveKey(info, consent) !== savedInfoKey) {
+      setMessage("정보를 변경하면 ‘기본 정보 저장’을 다시 눌러 주세요.");
+    }
   };
 
-  const toggleColor = (color: ColorData) => {
-    if (!context.data?.canEdit || submit.isPending || saveDraft.isPending) return;
-    const selected = draft.colors ?? [];
-    const next = selected.includes(color.id) ? selected.filter((id) => id !== color.id) : selected.length < 3 ? [...selected, color.id] : selected;
-    setDraft((current) => ({ ...current, colors: next }));
-    if (next.length === 3 && hasCompleteInfo(draft.info) && consent) void persist({ ...draft, colors: next }, true);
-  };
-  const saveColors = async () => {
-    if (!hasCompleteInfo(draft.info) || !consent || (draft.colors?.length ?? 0) !== 3) { setMessage("성별·관계 역할·기본 정보·동의와 컬러 3가지를 모두 확인해 주세요."); return; }
-    await persist({ ...draft, colors: draft.colors });
-  };
-  const toggleCard = (card: CardData) => {
-    if (!context.data?.canEdit || submit.isPending || saveDraft.isPending) return;
-    const selected = draft.cards ?? [];
-    const next = selected.includes(card.id) ? selected.filter((id) => id !== card.id) : selected.length < 3 ? [...selected, card.id] : selected;
-    setDraft((current) => ({ ...current, cards: next }));
-    if (next.length === 3 && hasCompleteInfo(draft.info) && consent) void persist({ ...draft, cards: next }, true);
-  };
-  const finish = async () => {
-    if (!hasCompleteInfo(draft.info) || !consent || (draft.colors?.length ?? 0) !== 3 || (draft.cards?.length ?? 0) !== 3) { setMessage("성별·관계 역할·동의와 각 단계의 답변을 모두 선택해 주세요."); return; }
-    try {
-      const result = await submit.mutateAsync({ accessToken: token, expectedRevision: revision, submission: { info: draft.info, colors: draft.colors!, cards: draft.cards! } });
-      applyContext(result);
-      await context.refetch();
-    } catch (error) {
-      setMessage(error instanceof Error && error.message.includes("REVISION_CONFLICT") ? "답변 상태가 바뀌어 최신 내용을 다시 불러왔습니다." : "최종 제출을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-      await context.refetch();
+  const saveBasicInfo = async () => {
+    if (!hasCompleteInfo(draft.info) || !consent) {
+      setMessage("성별·관계 역할·종교와 참여 동의를 확인한 뒤 기본 정보를 저장해 주세요.");
+      return null;
     }
+    return persist(draft, true, "기본 정보가 저장되었습니다. 컬러 검사를 시작해 주세요.");
+  };
+
+  const startExistingColorFlow = async () => {
+    if (!hasCompleteInfo(draft.info) || !consent) {
+      setMessage("컬러 검사를 시작하기 전에 기본 정보를 저장해 주세요.");
+      return;
+    }
+    if (basicInfoSaveKey(draft.info, consent) !== savedInfoKey) {
+      setMessage("컬러 검사를 시작하기 전에 기본 정보를 저장해 주세요.");
+      return;
+    }
+    router.push({
+      pathname: "/(tabs)/couple-select",
+      params: {
+        person: current.participant,
+        relationshipToken: token,
+        inviteToken: inviteToken ?? "",
+        resultToken: resultToken ?? "",
+      },
+    } as any);
   };
 
   const shareInvite = async () => {
     if (!inviteToken) return;
     const link = Platform.OS === "web" && typeof window !== "undefined"
-      ? `${window.location.origin}/relationship-invite?token=${encodeURIComponent(inviteToken)}`
+      ? (() => {
+          // Shareable Link으로 연 Preview에서도 Vercel Authentication을 다시 요구하지 않도록
+          // 현재 URL의 단기 보호 우회 식별자만 초대 링크에 이어 붙인다. 비밀은 저장하지 않는다.
+          const currentSearch = new URLSearchParams(window.location.search);
+          const nextSearch = new URLSearchParams({ token: inviteToken });
+          for (const key of ["_vercel_share", "x-vercel-protection-bypass"]) {
+            const value = currentSearch.get(key);
+            if (value) nextSearch.set(key, value);
+          }
+          return `${window.location.origin}/relationship-invite?${nextSearch.toString()}`;
+        })()
       : inviteToken;
     try {
       if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.share) {
@@ -138,16 +152,39 @@ export default function RelationshipInviteScreen() {
     }
   };
 
+  const retryFailedReport = async () => {
+    try {
+      await retryReport.mutateAsync({ accessToken: token });
+      setMessage("저장된 답변으로 리포트 생성을 다시 확인하고 있습니다.");
+      await context.refetch();
+    } catch {
+      setMessage("리포트 생성을 다시 시작하지 못했습니다. 답변은 보존되어 있습니다.");
+    }
+  };
+
   if (!token || context.isLoading) return <ScreenContainer><View style={styles.center}><ActivityIndicator color="#527B52" /><Text style={styles.loading}>검사 세션을 확인하고 있습니다.</Text></View></ScreenContainer>;
   if (!context.data) return <ScreenContainer><View style={styles.center}><Text style={styles.loading}>유효하지 않거나 만료된 검사 링크입니다.</Text></View></ScreenContainer>;
   const current = context.data;
   const isOwner = current.participant === "A";
   const roleOptions = getRelationshipRoleOptions(current.relationType, draft.info?.gender, current.partnerRole);
-  const colors = (draft.colors ?? []).map((id) => COLOR_DATA.find((color) => color.id === id)).filter((color): color is ColorData => Boolean(color));
-  const cards = (draft.cards ?? []).map((id) => CARD_DATA.find((card) => card.id === id)).filter((card): card is CardData => Boolean(card));
-
   if (current.status === "completed") {
-    return <ScreenContainer><View style={styles.center}><Text style={styles.completeTitle}>검사 완료</Text><Text style={styles.completeText}>이미 완료된 검사입니다. 검사 결과가 정상적으로 생성되었습니다.</Text>{isOwner && resultToken ? <Pressable style={styles.button} onPress={() => router.replace({ pathname: "/(tabs)/couple-result", params: { resultToken } } as any)}><Text style={styles.buttonText}>결과 보기</Text></Pressable> : null}</View></ScreenContainer>;
+    return (
+      <ScreenContainer><View style={styles.center}>
+        <Text style={styles.completeTitle}>검사 완료</Text>
+        <Text style={styles.completeText}>두 분의 관계 통합해석과 PDF 리포트가 준비되었습니다.</Text>
+        <Text style={styles.waitingGuide}>이 링크에서는 검사를 다시 시작하지 않고, 같은 관계검사 결과를 확인할 수 있습니다.</Text>
+        <Pressable
+          style={styles.button}
+          onPress={() => router.replace({
+            pathname: "/(tabs)/couple-result",
+            // A의 세션 링크와 B의 초대 링크 모두 같은 완료 세션의 결과 권한으로 확인한다.
+            params: { relationshipToken: token, resultToken: resultToken ?? "" },
+          } as any)}
+        >
+          <Text style={styles.buttonText}>통합해석·PDF 리포트 보기</Text>
+        </Pressable>
+      </View></ScreenContainer>
+    );
   }
   if (current.participantStatus === "submitted" && (current.status === "collecting" || current.status === "awaiting_partner")) {
     return (
@@ -157,6 +194,23 @@ export default function RelationshipInviteScreen() {
         <Text style={styles.waitingGuide}>상대방이 검사를 완료하면 두 분의 관계 리포트가 자동으로 생성됩니다.</Text>
         {isOwner && inviteToken ? <Pressable style={styles.inviteButtonWide} onPress={() => void shareInvite()}><Text style={styles.inviteButtonText}>상대방에게 검사 링크 보내기</Text></Pressable> : null}
         <Pressable style={styles.refreshButton} onPress={() => void context.refetch()}><Text style={styles.refreshText}>상태 새로고침</Text></Pressable>
+      </View></ScreenContainer>
+    );
+  }
+  if (current.participantStatus === "submitted") {
+    const progressText = current.status === "report_generating"
+      ? "두 사람의 답변을 확인했습니다. 관계 리포트를 생성하고 있습니다."
+      : current.status === "email_pending"
+        ? "리포트를 준비했습니다. 이메일 발송 처리를 기다리고 있습니다."
+        : "리포트 생성 중 문제가 발생했습니다. 두 사람의 답변은 안전하게 제출되어 있으며, 검사를 다시 시작할 필요가 없습니다.";
+    return (
+      <ScreenContainer><View style={styles.center}>
+        {current.status !== "failed" ? <ActivityIndicator color="#527B52" /> : null}
+        <Text style={styles.completeTitle}>검사 제출 완료</Text>
+        <Text style={styles.completeText}>{progressText}</Text>
+        {current.status === "failed" ? <Pressable disabled={retryReport.isPending} style={[styles.refreshButton, retryReport.isPending && styles.disabled]} onPress={() => void retryFailedReport()}><Text style={styles.refreshText}>{retryReport.isPending ? "리포트 재시도 중" : "저장된 답변으로 리포트 다시 생성"}</Text></Pressable> : null}
+        <Pressable style={styles.refreshButton} onPress={() => void context.refetch()}><Text style={styles.refreshText}>상태 새로고침</Text></Pressable>
+        {message ? <Text style={styles.message}>{message}</Text> : null}
       </View></ScreenContainer>
     );
   }
@@ -177,28 +231,25 @@ export default function RelationshipInviteScreen() {
           <Text style={styles.label}>성별</Text><View style={styles.chips}>{(["남성", "여성"] as GenderType[]).map((value) => <Pressable key={value} style={[styles.chip, draft.info?.gender === value && styles.chipOn]} onPress={() => void selectInfo("gender", value)}><Text style={[styles.chipText, draft.info?.gender === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View>
           <Text style={[styles.label, styles.labelGap]}>관계 역할</Text><Text style={styles.roleHelp}>{current.partnerRole ? `상대방이 ‘${current.partnerRole}’${roleParticipationParticle(current.partnerRole)} 참여하고 있습니다. 본인의 정보를 선택한 후 검사를 시작해 주세요.` : "결제 또는 검사 순서와 관계없이 실제 역할을 선택해 주세요."}</Text><View style={styles.chips}>{roleOptions.map((value) => <Pressable key={value} style={[styles.chip, draft.info?.relationshipRole === value && styles.chipOn]} onPress={() => void selectInfo("relationshipRole", value)}><Text style={[styles.chipText, draft.info?.relationshipRole === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View>
           <Text style={[styles.label, styles.labelGap]}>종교</Text><View style={styles.chips}>{(["기독교", "무교", "기타"] as FaithType[]).map((value) => <Pressable key={value} style={[styles.chip, draft.info?.faith === value && styles.chipOn]} onPress={() => void selectInfo("faith", value)}><Text style={[styles.chipText, draft.info?.faith === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View>
-          <Pressable style={[styles.consent, consent && styles.consentOn]} onPress={() => { const next = !consent; setConsent(next); if (next && hasCompleteInfo(draft.info)) void persist(draft, true); }}><Text style={styles.check}>{consent ? "✓" : ""}</Text><Text style={styles.consentText}>관계 검사 결과 생성을 위해 선택 정보와 검사 답변을 안전하게 처리하는 데 동의합니다.</Text></Pressable>
-          {hasCompleteInfo(draft.info) && consent ? <Pressable style={styles.saveStage} onPress={() => void persist(draft, true)}><Text style={styles.saveStageText}>기본 정보 저장</Text></Pressable> : null}
+          <Pressable style={[styles.consent, consent && styles.consentOn]} onPress={() => { const next = !consent; setConsent(next); if (savedInfoKey && basicInfoSaveKey(draft.info, next) !== savedInfoKey) setMessage("정보를 변경하면 ‘기본 정보 저장’을 다시 눌러 주세요."); }}><Text style={styles.check}>{consent ? "✓" : ""}</Text><Text style={styles.consentText}>관계 검사 결과 생성을 위해 선택 정보와 검사 답변을 안전하게 처리하는 데 동의합니다.</Text></Pressable>
+          <Text style={styles.saveGuide}>정보를 선택한 뒤 ‘기본 정보 저장’을 눌러 주세요. 저장된 정보가 관계 분석과 리포트에 반영됩니다.</Text>
+          {savedInfoKey && basicInfoSaveKey(draft.info, consent) !== savedInfoKey ? <Text style={styles.dirtyGuide}>정보를 변경했습니다. 컬러 검사를 시작하기 전에 기본 정보를 다시 저장해 주세요.</Text> : null}
+          <Pressable disabled={!hasCompleteInfo(draft.info) || !consent || saveDraft.isPending} style={[styles.saveStage, (!hasCompleteInfo(draft.info) || !consent || saveDraft.isPending) && styles.disabled]} onPress={() => void saveBasicInfo()}><Text style={styles.saveStageText}>기본 정보 저장</Text></Pressable>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>2. 마음이 이끄는 컬러 3가지</Text>
-          <Text style={styles.sectionSub}>세 가지를 모두 고르면 자동 저장되며, 재접속해도 이어집니다.</Text>
-          <View style={styles.preview}>{[0, 1, 2].map((index) => <View key={index} style={[styles.previewSlot, colors[index] && { backgroundColor: colors[index].hex, borderColor: colors[index].hex }]}><Text style={[styles.previewText, colors[index] && { color: textOn(colors[index].hex) }]}>{colors[index]?.korName ?? `${index + 1}번`}</Text></View>)}</View>
-          <View style={styles.colorGrid}>{COLOR_DATA.map((color) => { const position = (draft.colors ?? []).indexOf(color.id); return <Pressable key={color.id} onPress={() => toggleColor(color)} style={[styles.colorTile, { backgroundColor: color.hex }, position >= 0 && styles.tileSelected]}><Text style={[styles.tileText, { color: textOn(color.hex) }]}>{position >= 0 ? `${position + 1} · ` : ""}{color.korName}</Text></Pressable>; })}</View>
-          <Pressable disabled={(draft.colors?.length ?? 0) !== 3} style={[styles.saveStage, (draft.colors?.length ?? 0) !== 3 && styles.disabled]} onPress={() => void saveColors()}><Text style={styles.saveStageText}>{draft.colors?.length ?? 0} / 3 컬러 단계 저장</Text></Pressable>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>3. 심리카드 3장</Text>
-          <Text style={styles.sectionSub}>무의식 · 현재 · 다음 방향 순서로 표시됩니다.</Text>
-          <View style={styles.cardPreview}>{[0, 1, 2].map((index) => <View key={index} style={[styles.cardSlot, cards[index] && { backgroundColor: cards[index].colorHex }]}><Text style={[styles.cardPreviewText, cards[index] && { color: cards[index].colorKor === "화이트" ? "#6A512C" : "#FFFFFF" }]}>{cards[index] ? `${cards[index].colorKor}\n${cards[index].shapeKor}` : `${index + 1}번`}</Text></View>)}</View>
-          <View style={styles.cardGrid}>{CARD_DATA.map((card) => { const position = (draft.cards ?? []).indexOf(card.id); return <Pressable key={card.id} onPress={() => toggleCard(card)} style={[styles.cardTile, { backgroundColor: card.colorHex }, position >= 0 && styles.tileSelected]}><Text style={[styles.cardTileSymbol, { color: card.colorKor === "화이트" ? "#8B6B4A" : "#FFFFFF" }]}>{position >= 0 ? `${position + 1} ` : ""}{card.shapeSymbol}</Text><Text style={[styles.cardTileText, { color: card.colorKor === "화이트" ? "#59452F" : "#FFFFFF" }]}>{card.colorKor}</Text></Pressable>; })}</View>
-          <Pressable disabled={(draft.cards?.length ?? 0) !== 3 || submit.isPending || saveDraft.isPending} style={[styles.button, ((draft.cards?.length ?? 0) !== 3 || submit.isPending || saveDraft.isPending) && styles.disabled]} onPress={() => void finish()}>{submit.isPending || saveDraft.isPending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>검사 최종 제출</Text>}</Pressable>
+          <Text style={styles.sectionTitle}>다음 단계 · 기존 컬러 검사 시작</Text>
+          <Text style={styles.sectionSub}>기존 관계 검사의 순서를 그대로 사용합니다. 컬러 3가지를 선택한 뒤 컬러 해석을 확인하고, 카드 뒷면에서 심리카드 3장을 선택합니다.</Text>
+          <Pressable
+            disabled={saveDraft.isPending}
+            style={[styles.button, saveDraft.isPending && styles.disabled]}
+            onPress={() => void startExistingColorFlow()}
+          >
+            {saveDraft.isPending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>컬러 선택 시작하기 →</Text>}
+          </Pressable>
         </View>
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
-        {isOwner && current.participantStatus === "submitted" && inviteToken ? <View style={styles.inviteBox}><Text style={styles.inviteTitle}>상대방에게 검사 링크 보내기</Text><Text style={styles.inviteBody}>상대방이 같은 링크에서 자신의 검사 2단계를 완료할 수 있습니다.</Text><Pressable style={styles.inviteButton} onPress={() => void shareInvite()}><Text style={styles.inviteButtonText}>초대 링크 공유 또는 복사</Text></Pressable></View> : null}
       </ScrollView>
     </ScreenContainer>
   );
@@ -209,8 +260,6 @@ const styles = StyleSheet.create({
   eyebrow: { color: "#63815F", fontSize: 13, fontWeight: "800", letterSpacing: 0.8, marginTop: 8 }, title: { color: "#2D2420", fontSize: 24, lineHeight: 33, fontWeight: "800", marginTop: 8 }, subtitle: { color: "#68594C", fontSize: 14, lineHeight: 22, marginTop: 8, marginBottom: 18 },
   section: { backgroundColor: "#FFFDF9", borderColor: "#DCCDBB", borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 14 }, sectionTitle: { color: "#3A3029", fontSize: 16, lineHeight: 24, fontWeight: "800" }, sectionSub: { color: "#75675B", fontSize: 12, lineHeight: 19, marginTop: 5, marginBottom: 12 }, label: { color: "#44382F", fontSize: 14, fontWeight: "800", marginTop: 14, marginBottom: 8 }, labelGap: { marginTop: 17 }, roleHelp: { color: "#75675B", fontSize: 12, lineHeight: 18, marginTop: -3, marginBottom: 9 }, chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 }, chip: { borderWidth: 1, borderColor: "#CDBEAE", backgroundColor: "#F7F0E6", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }, chipOn: { borderColor: "#527B52", backgroundColor: "#527B52" }, chipText: { color: "#4E4035", fontSize: 13, fontWeight: "700" }, chipTextOn: { color: "#FFFFFF" },
   consent: { flexDirection: "row", alignItems: "flex-start", gap: 9, marginTop: 16, borderWidth: 1, borderColor: "#D7CABB", borderRadius: 12, padding: 12, backgroundColor: "#FFFDF9" }, consentOn: { borderColor: "#7CA377", backgroundColor: "#F1F8EF" }, check: { width: 18, height: 18, borderWidth: 1, borderColor: "#7CA377", borderRadius: 9, textAlign: "center", lineHeight: 16, color: "#356B53", fontWeight: "900" }, consentText: { flex: 1, color: "#5F4B3B", fontSize: 12.5, lineHeight: 20 },
-  saveStage: { alignItems: "center", paddingVertical: 12, marginTop: 14, borderRadius: 12, backgroundColor: "#E8F1E6", borderWidth: 1, borderColor: "#92B48F" }, saveStageText: { color: "#3E653E", fontSize: 14, fontWeight: "800" }, disabled: { opacity: 0.48 },
-  preview: { flexDirection: "row", gap: 8, marginBottom: 12 }, previewSlot: { flex: 1, height: 44, justifyContent: "center", alignItems: "center", backgroundColor: "#F0EAE0", borderWidth: 1, borderColor: "#D5C7B8", borderRadius: 10 }, previewText: { color: "#7B6D60", fontSize: 12, fontWeight: "800" }, colorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 }, colorTile: { width: "18%", aspectRatio: 1, borderRadius: 9, justifyContent: "flex-end", padding: 4, borderWidth: 1, borderColor: "rgba(0,0,0,0.08)" }, tileSelected: { borderWidth: 3, borderColor: "#C69A51", transform: [{ scale: 1.03 }] }, tileText: { fontSize: 8.5, lineHeight: 11, fontWeight: "800", textAlign: "center" },
-  cardPreview: { flexDirection: "row", gap: 8, marginBottom: 12 }, cardSlot: { flex: 1, minHeight: 58, backgroundColor: "#F0EAE0", borderWidth: 1, borderColor: "#D5C7B8", borderRadius: 10, alignItems: "center", justifyContent: "center", padding: 4 }, cardPreviewText: { color: "#7B6D60", fontSize: 11, lineHeight: 17, fontWeight: "800", textAlign: "center" }, cardGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 }, cardTile: { width: "13.4%", aspectRatio: 0.72, borderRadius: 8, justifyContent: "center", alignItems: "center", padding: 2, borderWidth: 1, borderColor: "rgba(0,0,0,0.08)" }, cardTileSymbol: { fontSize: 16, lineHeight: 19, fontWeight: "800" }, cardTileText: { fontSize: 7, lineHeight: 9, fontWeight: "800" },
+  saveGuide: { color: "#4E6C4A", fontSize: 13, lineHeight: 20, marginTop: 14, fontWeight: "700" }, dirtyGuide: { color: "#9A5A30", fontSize: 12.5, lineHeight: 19, marginTop: 8, fontWeight: "700" }, saveStage: { alignItems: "center", paddingVertical: 12, marginTop: 10, borderRadius: 12, backgroundColor: "#E8F1E6", borderWidth: 1, borderColor: "#92B48F" }, saveStageText: { color: "#3E653E", fontSize: 14, fontWeight: "800" }, disabled: { opacity: 0.48 },
   button: { alignItems: "center", borderRadius: 15, paddingVertical: 16, backgroundColor: "#527B52", marginTop: 16 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" }, message: { color: "#4E6C4A", fontSize: 13, lineHeight: 20, textAlign: "center", marginBottom: 10 }, inviteBox: { backgroundColor: "#EEF7EB", borderWidth: 1, borderColor: "#9FBE99", borderRadius: 16, padding: 16, marginTop: 2, marginBottom: 12 }, inviteTitle: { color: "#345C35", fontSize: 16, fontWeight: "800" }, inviteBody: { color: "#4F694D", fontSize: 13, lineHeight: 20, marginTop: 7 }, inviteButton: { backgroundColor: "#4E784E", alignItems: "center", borderRadius: 12, paddingVertical: 13, marginTop: 14 }, inviteButtonWide: { backgroundColor: "#4E784E", alignSelf: "stretch", alignItems: "center", borderRadius: 12, paddingVertical: 14, marginTop: 4 }, inviteButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" }, refreshButton: { borderWidth: 1, borderColor: "#B7A790", borderRadius: 12, paddingHorizontal: 18, paddingVertical: 11 }, refreshText: { color: "#68594C", fontSize: 14, fontWeight: "800" }, wait: { color: "#765D45", backgroundColor: "#F1E7DA", borderRadius: 12, padding: 14, fontSize: 13, lineHeight: 21, textAlign: "center", marginBottom: 24 },
 });

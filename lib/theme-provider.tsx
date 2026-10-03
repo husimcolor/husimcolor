@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Appearance, View, useColorScheme as useSystemColorScheme } from "react-native";
+import { Appearance, Platform, View, useColorScheme as useSystemColorScheme } from "react-native";
 import { colorScheme as nativewindColorScheme, vars } from "nativewind";
 
 import { SchemeColors, type ColorScheme } from "@/constants/theme";
@@ -14,7 +14,10 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // 웹에서는 항상 라이트 모드 강제 (삼성 인터넷 등 강제 다크모드 방지)
   const systemScheme = useSystemColorScheme() ?? "light";
-  const isWeb = typeof document !== "undefined";
+  // Static web output is rendered before `document` exists. Platform.OS stays
+  // stable across that build render and browser hydration, so it prevents a
+  // dark native palette from being serialized into an otherwise light page.
+  const isWeb = Platform.OS === "web";
   const [colorScheme, setColorSchemeState] = useState<ColorScheme>(isWeb ? "light" : systemScheme);
 
   const applyScheme = useCallback((scheme: ColorScheme) => {

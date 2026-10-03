@@ -9,7 +9,7 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet,
+  View, Text, ScrollView, StyleSheet, Alert,
   TouchableOpacity, Animated,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -21,6 +21,7 @@ import { COLOR_DATA } from '@/constants/colorData';
 import type { CoupleSessionData, PersonSession } from '@/constants/coupleData';
 import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
 import { splitCoupleReadableParagraphs } from '@/lib/couple-readable-text';
+import { trpc } from '@/lib/trpc';
 
 const POSITION_LABELS = ['무의식 · 내면 에너지', '현재 현실 에너지', '미래 · 회복 · 희망 에너지'];
 const POSITION_DESCS = [
@@ -305,10 +306,29 @@ function ReadableParagraphs({
   );
 }
 
+function one(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default function CoupleCardResultScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { person } = useLocalSearchParams<{ person: 'A' | 'B' }>();
+  const { person, relationshipToken, inviteToken, resultToken } = useLocalSearchParams<{
+    person: 'A' | 'B';
+    relationshipToken?: string | string[];
+    inviteToken?: string | string[];
+    resultToken?: string | string[];
+  }>();
+  const inviteAccessToken = one(relationshipToken);
+  const relationshipInviteToken = one(inviteToken);
+  const relationshipResultToken = one(resultToken);
+  const relationshipContext = trpc.relationshipInvites.context.useQuery(
+    { accessToken: inviteAccessToken ?? '' },
+    { enabled: Boolean(inviteAccessToken && inviteAccessToken.length >= 32), retry: false },
+  );
+  const trpcUtils = trpc.useUtils();
+  const submitRelationshipParticipant = trpc.relationshipInvites.submit.useMutation();
+  const isInviteParticipant = Boolean(inviteAccessToken);
   const personLabel = person === 'A' ? '첫 번째 사람' : '두 번째 사람';
   const accentColor = person === 'A' ? '#3D6B3D' : '#7B5EA7';
   const accentBg = person === 'A' ? '#F0F5F0' : '#F5F0FA';
@@ -321,16 +341,11 @@ export default function CoupleCardResultScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    AsyncStorage.getItem('@couple_session').then(raw => {
-      if (!raw) return;
-      const data: CoupleSessionData = JSON.parse(raw);
-      const session: PersonSession = person === 'A' ? data.personA : data.personB;
-      if (!session?.cards?.length) return;
-
+    const applyExistingCardAnalysis = (session: PersonSession, relationType: string) => {
+      if (!session?.cards || session.cards.length !== 3 || !session?.colors || session.colors.length !== 3) return;
       const cards = session.cards
         .map(id => CARD_DATA.find(c => c.id === id))
         .filter(Boolean) as typeof CARD_DATA;
-
       setSelectedCards(cards.map(c => ({
         id: c.id,
         colorId: (c as any).color,
@@ -343,8 +358,7 @@ export default function CoupleCardResultScreen() {
         recoveryDirection: c.recoveryDirection,
       })));
 
-      const colorIds = session.colors ?? [];
-      const colors = colorIds
+      const colors = session.colors
         .map((id: string) => COLOR_DATA.find((color) => color.id === id))
         .filter((color): color is (typeof COLOR_DATA)[number] => Boolean(color));
       const prevColorsMapped = colors.map((c: any) => ({ korName: c.korName, hex: c.hex }));
@@ -352,18 +366,73 @@ export default function CoupleCardResultScreen() {
 
       // 기존 코칭·보완 루틴은 유지하고, 통합 분석 본문만 1단계 컬러 3개와 2단계 카드 3개를 함께 연결한다.
       const flow = buildCardFlowAnalysis(cards as any, prevColorsMapped, session.info?.faith ?? '무교');
-      const isRomanticRel = data.relationType === '연인' || data.relationType === '부부';
+      const isRomanticRel = relationType === '연인' || relationType === '부부';
       flow.flow = isRomanticRel
         ? buildRomanticCoupleColorCardIntegratedAnalysis(colors, cards)
         : buildCoupleColorCardIntegratedAnalysis(colors, cards);
       setCardFlow(flow);
-
       setIsLoading(false);
       Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
-    });
-  }, [person]);
+    };
 
-  const handleNext = () => {
+    if (isInviteParticipant) {
+      const inviteContext = relationshipContext.data;
+      const draft = inviteContext?.draft;
+      if (!inviteContext || !draft?.info?.gender || !draft.info.faith || !draft.info.relationshipRole || !draft.colors || !draft.cards) return;
+      applyExistingCardAnalysis({
+        info: draft.info,
+        colors: draft.colors,
+        cards: draft.cards,
+      }, inviteContext.relationType);
+      return;
+    }
+    AsyncStorage.getItem('@couple_session').then(raw => {
+      if (!raw) return;
+      const data: CoupleSessionData = JSON.parse(raw);
+      const session: PersonSession = person === 'A' ? data.personA : data.personB;
+      applyExistingCardAnalysis(session, data.relationType);
+    });
+  }, [person, isInviteParticipant, relationshipContext.data?.draftRevision]);
+
+  const handleNext = async () => {
+    if (isInviteParticipant) {
+      const current = relationshipContext.data;
+      const draft = current?.draft;
+      if (!current || !draft?.info?.gender || !draft.info.faith || !draft.info.relationshipRole || !draft.colors || draft.colors.length !== 3 || !draft.cards || draft.cards.length !== 3 || !inviteAccessToken) {
+        Alert.alert('검사 정보를 다시 확인해 주세요', '초대 세션 답변을 불러오지 못했습니다. 초대 링크를 다시 열어 주세요.');
+        return;
+      }
+      try {
+        const submittedContext = await submitRelationshipParticipant.mutateAsync({
+          accessToken: inviteAccessToken,
+          expectedRevision: current.draftRevision,
+          submission: {
+            info: draft.info,
+            colors: draft.colors,
+            cards: draft.cards,
+          },
+        });
+        // The server returns the authoritative post-submit status. Store it
+        // before navigating so an already-submitted participant never sees the
+        // editable basic-information screen again due to a stale query cache.
+        trpcUtils.relationshipInvites.context.setData(
+          { accessToken: inviteAccessToken },
+          submittedContext,
+        );
+        router.replace({
+          pathname: '/(tabs)/relationship-invite',
+          params: {
+            token: inviteAccessToken,
+            inviteToken: relationshipInviteToken ?? '',
+            resultToken: relationshipResultToken ?? '',
+          },
+        } as any);
+      } catch (error) {
+        const conflict = error instanceof Error && error.message.includes('REVISION_CONFLICT');
+        Alert.alert('검사를 제출하지 못했습니다', conflict ? '다른 창에서 변경된 내용이 있습니다. 초대 링크를 다시 열어 최신 상태를 확인해 주세요.' : '네트워크를 확인한 뒤 다시 시도해 주세요.');
+      }
+      return;
+    }
     if (person === 'A') {
       router.push({ pathname: '/(tabs)/couple-select', params: { person: 'B' } } as any);
     } else {
@@ -523,11 +592,18 @@ export default function CoupleCardResultScreen() {
           {/* 다음 버튼 */}
           <TouchableOpacity
             style={[styles.nextBtn, { backgroundColor: accentColor }]}
-            onPress={handleNext}
+            onPress={() => void handleNext()}
             activeOpacity={0.85}
+            disabled={isInviteParticipant && submitRelationshipParticipant.isPending}
           >
             <Text style={styles.nextBtnText}>
-              {person === 'A' ? '🌿 두 번째 사람 시작하기 →' : '🌿 커플 통합 결과 보기 →'}
+              {isInviteParticipant
+                ? submitRelationshipParticipant.isPending
+                  ? '검사 최종 제출 중...'
+                  : person === 'A'
+                    ? '🌿 내 검사 최종 제출 · 초대 링크 보내기 →'
+                    : '🌿 내 검사 최종 제출 →'
+                : person === 'A' ? '🌿 두 번째 사람 시작하기 →' : '🌿 커플 통합 결과 보기 →'}
             </Text>
           </TouchableOpacity>
         </Animated.View>

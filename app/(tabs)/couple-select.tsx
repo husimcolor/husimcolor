@@ -46,10 +46,28 @@ function getSwatchTextShadow(hex: string): object {
   return { textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 };
 }
 
+function one(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default function CoupleSelectScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { person } = useLocalSearchParams<{ person: 'A' | 'B' }>();
+  const { person, relationshipToken, inviteToken, resultToken } = useLocalSearchParams<{
+    person: 'A' | 'B';
+    relationshipToken?: string | string[];
+    inviteToken?: string | string[];
+    resultToken?: string | string[];
+  }>();
+  const inviteAccessToken = one(relationshipToken);
+  const relationshipInviteToken = one(inviteToken);
+  const relationshipResultToken = one(resultToken);
+  const relationshipContext = trpc.relationshipInvites.context.useQuery(
+    { accessToken: inviteAccessToken ?? '' },
+    { enabled: Boolean(inviteAccessToken && inviteAccessToken.length >= 32), retry: false },
+  );
+  const saveRelationshipDraft = trpc.relationshipInvites.saveDraft.useMutation();
+  const isInviteParticipant = Boolean(inviteAccessToken);
   const personLabel = person === 'A' ? '첫 번째 사람' : '두 번째 사람';
   const accentColor = person === 'A' ? '#3D6B3D' : '#7B5EA7';
   const accentBg = person === 'A' ? '#8BAF8B11' : '#7B5EA711';
@@ -61,6 +79,15 @@ export default function CoupleSelectScreen() {
   const [sessionData, setSessionData] = useState<CoupleSessionData | null>(null);
 
   useEffect(() => {
+    if (!isInviteParticipant || !relationshipContext.data) return;
+    const selected = (relationshipContext.data.draft?.colors ?? [])
+      .map((id) => COLOR_DATA.find((color) => color.id === id))
+      .filter((color): color is ColorData => Boolean(color));
+    setSelectedColors(selected);
+  }, [isInviteParticipant, relationshipContext.data?.draftRevision]);
+
+  useEffect(() => {
+    if (isInviteParticipant) return;
     // person이 바뀔 때마다 선택 상태 완전 초기화
     setSelectedColors([]);
     const loadSession = async () => {
@@ -80,7 +107,7 @@ export default function CoupleSelectScreen() {
       setSessionData(session);
     };
     loadSession().catch(() => router.replace('/couple-start' as any));
-  }, [person, commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled]);
+  }, [person, isInviteParticipant, commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled]);
 
   const handleColorToggle = (color: ColorData) => {
     setSelectedColors(prev => {
@@ -99,9 +126,38 @@ export default function CoupleSelectScreen() {
       Alert.alert('컬러 선택', '마음이 이끄는 컬러 3가지를 선택해 주세요.');
       return;
     }
+    const colorIds = selectedColors.map(c => c.id);
+    if (isInviteParticipant) {
+      const current = relationshipContext.data;
+      const info = current?.draft?.info;
+      if (!current || !info?.gender || !info.faith || !info.relationshipRole || !current.consentAccepted || !inviteAccessToken) {
+        Alert.alert('검사 정보를 다시 확인해 주세요', '초대 세션 정보를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+      try {
+        await saveRelationshipDraft.mutateAsync({
+          accessToken: inviteAccessToken,
+          expectedRevision: current.draftRevision,
+          consentAccepted: true,
+          draft: { info, colors: colorIds, cards: current.draft?.cards },
+        });
+        router.push({
+          pathname: '/(tabs)/couple-color-result',
+          params: {
+            person,
+            relationshipToken: inviteAccessToken,
+            inviteToken: relationshipInviteToken ?? '',
+            resultToken: relationshipResultToken ?? '',
+          },
+        } as any);
+      } catch (error) {
+        const conflict = error instanceof Error && error.message.includes('REVISION_CONFLICT');
+        Alert.alert('컬러를 저장하지 못했습니다', conflict ? '다른 창에서 변경된 내용이 있습니다. 초대 링크를 다시 열어 최신 상태를 확인해 주세요.' : '네트워크를 확인한 뒤 다시 시도해 주세요.');
+      }
+      return;
+    }
     if (!sessionData) return;
     const updated = { ...sessionData };
-    const colorIds = selectedColors.map(c => c.id);
     if (person === 'A') {
       updated.personA = { ...updated.personA, colors: colorIds };
     } else {
@@ -218,12 +274,15 @@ export default function CoupleSelectScreen() {
           ]}
           onPress={handleConfirm}
           activeOpacity={0.8}
+          disabled={isInviteParticipant && (relationshipContext.isLoading || saveRelationshipDraft.isPending)}
         >
           <Text style={[
             styles.confirmBtnText,
             { color: selectedColors.length === 3 ? '#fff' : '#8A7A68' },
           ]}>
-            {selectedColors.length === 3
+            {saveRelationshipDraft.isPending
+              ? '컬러 저장 중...'
+              : selectedColors.length === 3
               ? '🌿 컬러 선택 완료 · 다음 단계로'
               : `${selectedColors.length} / 3 컬러 선택 중`}
           </Text>
