@@ -138,6 +138,7 @@ export default function CommerceCheckoutScreen() {
       couponCode: couponCode.trim(),
       productCode: productCode as "personal_deep" | "couple_love_deep" | "parent_child_deep",
       listAmountKrw: product?.amountKrw ?? 0,
+      email: email.trim() || undefined,
     },
     { enabled: Boolean(isPaidAnalysisCode(productCode) && couponCode.trim() && product?.amountKrw) },
   );

@@ -138,6 +138,7 @@ export const appRouter = router({
           couponCode: z.string().min(1).max(64),
           productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
           listAmountKrw: z.number().int().min(0).max(1_000_000),
+          email: z.string().email().max(320).optional(),
         }))
         .query(({ input }) => previewCoupon(input)),
     }),
