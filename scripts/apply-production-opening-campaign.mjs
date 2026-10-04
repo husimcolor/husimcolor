@@ -13,20 +13,15 @@ const CAMPAIGN_STARTS_AT = new Date("2026-09-30T15:00:00.000Z"); // 2026-10-01 0
 const CAMPAIGN_ENDS_AT = new Date("2026-10-30T14:59:59.000Z"); // 2026-10-30 23:59:59 KST
 const PRODUCT_CODES = ["personal_deep", "couple_love_deep", "parent_child_deep"];
 
-function safeDatabaseUrl(raw) {
-  return raw.replace(/[?&]ssl=[^&]*/g, "").replace(/\?$/, "");
-}
-
 async function queryScalar(connection, sql, params = []) {
   const [rows] = await connection.query(sql, params);
   return Number(rows?.[0]?.count ?? 0);
 }
 
 async function main() {
-  const connection = await mysql.createConnection({
-    uri: safeDatabaseUrl(databaseUrl),
-    ssl: { rejectUnauthorized: false, minVersion: "TLSv1.2" },
-  });
+  // Vercel stores the exact TiDB-compatible connection string, including its
+  // TLS options. Do not log, rewrite, or persist that secret locally.
+  const connection = await mysql.createConnection(databaseUrl);
 
   try {
     const [schemaRows] = await connection.query("SELECT DATABASE() AS schemaName");
