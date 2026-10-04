@@ -47,6 +47,7 @@ import {
   issueAdminTargetedCoupon,
   revokeAdminTargetedCoupon,
 } from "./commerce/admin-targeted-coupon-service";
+import { applyProductionOpeningCampaignConfiguration } from "./commerce/production-opening-campaign-config-service";
 import { getSupportTicketSchemaAudit } from "./commerce/support-ticket-schema-audit";
 import {
   deleteAdminReview,
@@ -465,6 +466,11 @@ export const appRouter = router({
       .mutation(({ input, ctx }) => {
         const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
         return revokeAdminTargetedCoupon({ ...input, ...auditActor, auditActor });
+      }),
+    applyProductionOpeningCampaign: adminProcedure
+      .mutation(({ ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return applyProductionOpeningCampaignConfiguration({ ...auditActor, auditActor });
       }),
     customerDetail: adminProcedure
       .input(z.object({ customerId: z.number().int().positive() }))

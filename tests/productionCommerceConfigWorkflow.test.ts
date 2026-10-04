@@ -15,6 +15,7 @@ describe("Production 공개 테스트 운영 설정", () => {
 
   it("migration은 additive targeted-coupon column과 공개 20% 행사만 구성한다", () => {
     const script = read("scripts/apply-production-opening-campaign.mjs");
+    const service = read("server/commerce/production-opening-campaign-config-service.ts");
     expect(script).toContain("ADD COLUMN `assignedCustomerId` int NULL");
     expect(script).toContain("CREATE INDEX `coupons_assigned_customer_idx`");
     expect(script).toContain("discountValue = 20");
@@ -23,5 +24,9 @@ describe("Production 공개 테스트 운영 설정", () => {
     expect(script).toContain('"personal_deep", "couple_love_deep", "parent_child_deep"');
     expect(script).not.toContain("DROP TABLE");
     expect(script).not.toContain("DELETE FROM");
+    expect(service).toContain("PRODUCTION_SCHEMA_IDENTITY_REJECTED");
+    expect(service).toContain("ALTER TABLE `coupons` ADD COLUMN `assignedCustomerId` int NULL");
+    expect(service).toContain("CREATE INDEX `coupons_assigned_customer_idx`");
+    expect(service).toContain('action: "production_opening_campaign_configured"');
   });
 });
