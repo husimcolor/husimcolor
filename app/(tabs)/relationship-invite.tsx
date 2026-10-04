@@ -37,6 +37,7 @@ export default function RelationshipInviteScreen() {
   const [savedInfoKey, setSavedInfoKey] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const initialDraftSeeded = useRef(false);
+  const previewDeliveryTriggeredFor = useRef<string | null>(null);
   const context = trpc.relationshipInvites.context.useQuery({ accessToken: token }, {
     enabled: token.length >= 32,
     retry: false,
@@ -45,6 +46,7 @@ export default function RelationshipInviteScreen() {
   });
   const saveDraft = trpc.relationshipInvites.saveDraft.useMutation();
   const retryReport = trpc.relationshipInvites.retryReport.useMutation();
+  const deliverPreviewReport = trpc.relationshipInvites.deliverPreviewReport.useMutation();
 
   const applyContext = (value: { draft: Draft | null; draftRevision: number; consentAccepted?: boolean } | undefined) => {
     if (!value) return;
@@ -63,6 +65,25 @@ export default function RelationshipInviteScreen() {
     setConsent(initialConsent);
     setSavedInfoKey(null);
   }, [context.data, initialGender, initialRole, initialFaith]);
+
+  useEffect(() => {
+    // Preview에서 이미 생성된 PDF가 이메일 outbox에만 남아 있던 기존 세션도
+    // A가 같은 링크를 다시 열면 한 번만 전달을 재개한다. 서버 outbox lock과
+    // provider idempotency가 동시 호출·중복 발송을 막는다.
+    if (
+      context.data?.status !== "email_pending"
+      || context.data.participant !== "A"
+      || !token
+      || previewDeliveryTriggeredFor.current === token
+    ) return;
+    previewDeliveryTriggeredFor.current = token;
+    void deliverPreviewReport.mutateAsync({ accessToken: token })
+      .then(() => context.refetch())
+      .catch(() => {
+        // Production 및 비테스트 링크에서는 이 Preview-only fallback이 차단된다.
+        // 결과 접근은 이메일 상태와 분리되어 계속 가능하다.
+      });
+  }, [context.data?.status, context.data?.participant, token]);
 
   const persist = async (next: Draft, consentAccepted = consent, successMessage = "이 단계의 답변이 저장되었습니다.") => {
     try {
@@ -167,12 +188,15 @@ export default function RelationshipInviteScreen() {
   const current = context.data;
   const isOwner = current.participant === "A";
   const roleOptions = getRelationshipRoleOptions(current.relationType, draft.info?.gender, current.partnerRole);
-  if (current.status === "completed") {
+  if (current.status === "completed" || current.status === "email_pending") {
+    const emailPending = current.status === "email_pending";
     return (
       <ScreenContainer><View style={styles.center}>
         <Text style={styles.completeTitle}>검사 완료</Text>
         <Text style={styles.completeText}>두 분의 관계 통합해석과 PDF 리포트가 준비되었습니다.</Text>
-        <Text style={styles.waitingGuide}>이 링크에서는 검사를 다시 시작하지 않고, 같은 관계검사 결과를 확인할 수 있습니다.</Text>
+        <Text style={styles.waitingGuide}>{emailPending
+          ? "이메일은 자동 발송 처리 중입니다. 기다리지 않고 지금 결과와 PDF를 확인할 수 있습니다."
+          : "이 링크에서는 검사를 다시 시작하지 않고, 같은 관계검사 결과를 확인할 수 있습니다."}</Text>
         <Pressable
           style={styles.button}
           onPress={() => router.replace({
@@ -200,9 +224,7 @@ export default function RelationshipInviteScreen() {
   if (current.participantStatus === "submitted") {
     const progressText = current.status === "report_generating"
       ? "두 사람의 답변을 확인했습니다. 관계 리포트를 생성하고 있습니다."
-      : current.status === "email_pending"
-        ? "리포트를 준비했습니다. 이메일 발송 처리를 기다리고 있습니다."
-        : "리포트 생성 중 문제가 발생했습니다. 두 사람의 답변은 안전하게 제출되어 있으며, 검사를 다시 시작할 필요가 없습니다.";
+      : "리포트 생성 중 문제가 발생했습니다. 두 사람의 답변은 안전하게 제출되어 있으며, 검사를 다시 시작할 필요가 없습니다.";
     return (
       <ScreenContainer><View style={styles.center}>
         {current.status !== "failed" ? <ActivityIndicator color="#527B52" /> : null}
@@ -215,7 +237,7 @@ export default function RelationshipInviteScreen() {
     );
   }
   if (!current.canEdit) {
-    const progressText = current.status === "report_generating" ? "두 사람의 답변을 확인했습니다. 관계 리포트를 생성하고 있습니다." : current.status === "email_pending" ? "리포트를 준비했고 이메일 발송을 처리하고 있습니다." : "리포트 생성 처리 중 문제가 발생했습니다. 답변은 안전하게 제출되어 있습니다.";
+    const progressText = current.status === "report_generating" ? "두 사람의 답변을 확인했습니다. 관계 리포트를 생성하고 있습니다." : "리포트 생성 처리 중 문제가 발생했습니다. 답변은 안전하게 제출되어 있습니다.";
     return <ScreenContainer><View style={styles.center}><ActivityIndicator color="#527B52" /><Text style={styles.completeTitle}>검사 제출 완료</Text><Text style={styles.completeText}>{progressText}</Text></View></ScreenContainer>;
   }
 

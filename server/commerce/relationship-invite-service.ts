@@ -825,7 +825,12 @@ export async function getRelationshipResult(input: {
   }
   if (!session) throw new Error("RELATIONSHIP_RESULT_NOT_FOUND");
   const status = session.status as SessionStatus;
-  if (status !== "completed" || !session.resultSnapshotEncrypted) return { status, snapshot: null };
+  // PDF 생성과 immutable result snapshot은 이메일 outbox보다 먼저 준비된다.
+  // 발송 대기 때문에 A/B의 이미 완료된 통합해석·PDF 확인을 막지 않는다.
+  // 이메일 delivery 전이는 여전히 completed 상태와 단일 발송 idempotency를 맡는다.
+  if ((status !== "completed" && status !== "email_pending") || !session.resultSnapshotEncrypted) {
+    return { status, snapshot: null };
+  }
   const snapshot = parseCoupleShareSnapshot(decryptCommerceValue(session.resultSnapshotEncrypted));
   if (!snapshot) throw new Error("RELATIONSHIP_RESULT_UNREADABLE");
   return { status, snapshot };

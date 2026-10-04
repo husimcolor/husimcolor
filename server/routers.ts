@@ -371,7 +371,11 @@ export const appRouter = router({
         const submitted = await submitRelationshipParticipant(input);
         if (!submitted.shouldGenerateReport) return submitted.context;
         try {
-          await generateAndQueueRelationshipReport(submitted.context.relationshipSessionId);
+          const report = await generateAndQueueRelationshipReport(submitted.context.relationshipSessionId);
+          // Queueing has already persisted both submissions and the immutable PDF.
+          // Send once through the locked outbox now so a completed A/B session is
+          // not left waiting for an opportunistic cron invocation.
+          if (report.outboxId) await deliverPrivatePdfOutboxItem(report.outboxId);
         } catch {
           // 세션은 failed 상태와 오류 코드로 남긴다. 제출 자체를 실패로 되돌려 재제출을 유도하지 않는다.
         }

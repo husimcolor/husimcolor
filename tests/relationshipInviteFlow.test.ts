@@ -113,9 +113,22 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(completion).toContain('eq(relationshipSessions.status, "email_pending")');
     expect(outbox).toContain('markRelationshipSessionEmailDelivered(outboxId)');
     expect(service).toContain('eq(relationshipSessions.resultTokenHash, hash)');
-    expect(service).toContain('status !== "completed" || !session.resultSnapshotEncrypted');
+    expect(service).toContain('status !== "completed" && status !== "email_pending"');
     expect(screen).toContain('두 분의 관계 통합해석과 PDF 리포트가 준비되었습니다.');
     expect(result).toContain('trpc.relationshipInvites.result.useQuery');
+  });
+
+  it("이메일 outbox 대기 중에도 생성된 통합해석과 PDF는 A/B가 확인하고, 제출 직후 발송을 시도한다", () => {
+    const service = read("server/commerce/relationship-invite-service.ts");
+    const router = read("server/routers.ts");
+    const screen = read("app/(tabs)/relationship-invite.tsx");
+    expect(service).toContain('status !== "completed" && status !== "email_pending"');
+    expect(router).toContain('const report = await generateAndQueueRelationshipReport');
+    expect(router).toContain('await deliverPrivatePdfOutboxItem(report.outboxId)');
+    expect(screen).toContain('current.status === "completed" || current.status === "email_pending"');
+    expect(screen).toContain('이메일은 자동 발송 처리 중입니다. 기다리지 않고 지금 결과와 PDF를 확인할 수 있습니다.');
+    expect(screen).toContain('trpc.relationshipInvites.deliverPreviewReport.useMutation');
+    expect(screen).toContain('previewDeliveryTriggeredFor');
   });
 
   it("A의 기존 세션 링크와 B의 기존 초대 링크 모두 완료된 통합해석과 PDF 화면으로 연결한다", () => {
@@ -124,7 +137,7 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     const screen = read("app/(tabs)/relationship-invite.tsx");
     const result = read("app/(tabs)/couple-result.tsx");
     expect(service).toContain('(await loadSessionByAccessToken(input.accessToken)).session');
-    expect(service).toContain('status !== "completed" || !session.resultSnapshotEncrypted');
+    expect(service).toContain('status !== "completed" && status !== "email_pending"');
     expect(router).toContain('accessToken: z.string().min(32).max(256).optional()');
     expect(screen).toContain('두 분의 관계 통합해석과 PDF 리포트가 준비되었습니다.');
     expect(screen).toContain('통합해석·PDF 리포트 보기');
@@ -158,7 +171,7 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(screen).toContain("컬러 검사를 시작하기 전에 기본 정보를 저장해 주세요.");
     expect(screen).toContain("const saveBasicInfo = async () =>");
     expect(screen).toContain("basicInfoSaveKey(draft.info, consent) !== savedInfoKey");
-    expect(screen).toContain('if (current.status === "completed")');
+    expect(screen).toContain('if (current.status === "completed" || current.status === "email_pending")');
     expect(screen).toContain('if (current.participantStatus === "submitted"');
     expect(ownerStart).toContain('pathname: "/(tabs)/relationship-invite"');
     expect(ownerStart).toContain('initialGender: gender');
