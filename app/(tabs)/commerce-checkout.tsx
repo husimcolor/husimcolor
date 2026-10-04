@@ -119,11 +119,13 @@ export default function CommerceCheckoutScreen() {
   const completeFailedCheckout = trpc.commerce.checkout.completeTossTestFailure.useMutation();
   const testMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = testMode.data?.paidAnalysisPublicEnabled ?? false;
-  // When card review is enabled, every paid-analysis entry uses the non-persistent
-  // review handoff first, even though Preview also has test-payment mode enabled.
+  // 심사용 review-only는 공개 유료 분석 gate가 닫힌 상태에서만 기본 경로다.
+  // 공개 테스트 운영 중에는 일반 product URL도 persistent Toss test lifecycle으로
+  // 들어가며, 심사용 화면은 명시적 review 파라미터로만 유지한다.
   const automaticCardReview = Boolean(
     testMode.data?.tossCardReviewEnabled &&
     isPaidAnalysisCode(productCode) &&
+    !paidAnalysisPublicEnabled &&
     !requestedPreviewLifecycle,
   );
   const cardReviewMode = requestedCardReview || automaticCardReview;
