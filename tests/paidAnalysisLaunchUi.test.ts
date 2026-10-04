@@ -31,4 +31,13 @@ describe("유료 분석 정식 오픈 준비중 UI", () => {
     expect(coupleInfo).toContain("이 관계 심화분석은 정식 오픈 준비중입니다.");
     expect(coupleInfo).toContain("paidProductCodeForRelation");
   });
+
+  it("공개 테스트 운영에서는 홈·관계 상품·checkout에 실제 청구 없음 안내를 표시한다", () => {
+    const home = read("app/(tabs)/index.tsx");
+    const relationship = read("app/(tabs)/couple-start.tsx");
+    const checkout = read("app/(tabs)/commerce-checkout.tsx");
+    expect(home).toContain("현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음");
+    expect(relationship).toContain("현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음");
+    expect(checkout).toContain("현재 테스트 운영 중입니다. Toss 테스트키로만 동작하며 실제 청구는 발생하지 않습니다.");
+  });
 });

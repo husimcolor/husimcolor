@@ -331,7 +331,7 @@ export default function CommerceCheckoutScreen() {
         <Text style={styles.eyebrow}>휴심컬러 테스트 결제</Text>
         <Text style={styles.title}>{product.name}</Text>
         <Text style={styles.price}>{product.amountKrw?.toLocaleString()}원</Text>
-        <Text style={styles.notice}>토스 심사 완료 전에는 테스트 키로만 동작하며 실제 청구는 발생하지 않습니다.</Text>
+        <Text style={styles.notice}>현재 테스트 운영 중입니다. Toss 테스트키로만 동작하며 실제 청구는 발생하지 않습니다.</Text>
         <View style={styles.servicePeriodCard}>
           <Text style={styles.servicePeriodTitle}>서비스 제공기간</Text>
           <Text style={styles.servicePeriodText}>{ANALYSIS_SERVICE_PERIOD}</Text>

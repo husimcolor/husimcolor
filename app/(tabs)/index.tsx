@@ -249,6 +249,9 @@ export default function HomeScreen() {
             <Text style={[styles.serviceCta, !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCta]}>
               {paidAnalysisPublicEnabled ? '나를 깊이 알아보기 →' : tossCardReviewEnabled ? '심사용 Toss 테스트 결제 열기 →' : '정식 오픈 준비중'}
             </Text>
+            {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled ? (
+              <Text style={styles.openingCampaignNote}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text>
+            ) : null}
           </Pressable>
 
           <Pressable

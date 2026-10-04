@@ -197,6 +197,7 @@ export default function CoupleStartScreen() {
             {openingCampaignActive && <View style={styles.openingCampaign}>
               <Text style={styles.openingCampaignTitle}>유료 심화분석 오픈 기념 20% 할인</Text>
               <Text style={styles.openingCampaignText}>10월 30일까지 · 회원가입 없이 이용 가능 · 오프라인 코칭 제외</Text>
+              {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled ? <Text style={styles.openingCampaignText}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text> : null}
             </View>}
             <View style={styles.productList}>
               {VISIBLE_RELATION_PRODUCTS.map((product) => (
