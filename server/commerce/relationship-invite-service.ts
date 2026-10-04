@@ -745,15 +745,16 @@ export async function retryFailedRelationshipReport(accessToken: string): Promis
 }
 
 /**
- * Preview 결제 QA에서만 결제자가 자신의 이미 생성된 관계 PDF outbox를 한 번 전달해
- * 이메일 완료 전이와 중복 발송 방지를 확인한다. Production과 비테스트 주문은 항상 차단한다.
+ * Toss 테스트 결제 runtime에서만 결제자가 자신의 이미 생성된 관계 PDF outbox를 한 번 전달해
+ * 이메일 완료 전이와 중복 발송 방지를 확인한다. 대상 주문은 isTest=true로 다시 제한하므로
+ * 실제 청구 환경과 비테스트 주문에는 노출되지 않는다.
  */
 export async function deliverPreviewRelationshipReport(accessToken: string): Promise<{
   status: "sent" | "retry_scheduled" | "not_claimed";
   attemptCount?: number;
 }> {
-  if (!isExplicitTestPaymentRuntime() || process.env.VERCEL_ENV !== "preview") {
-    throw new Error("PREVIEW_RELATIONSHIP_DELIVERY_DISABLED");
+  if (!isExplicitTestPaymentRuntime()) {
+    throw new Error("TEST_RELATIONSHIP_DELIVERY_DISABLED");
   }
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -765,7 +766,7 @@ export async function deliverPreviewRelationshipReport(accessToken: string): Pro
     .where(and(eq(relationshipSessions.ownerTokenHash, ownerTokenHash), eq(orders.isTest, true)))
     .limit(1);
   const session = sessions[0];
-  if (!session || session.status !== "email_pending") throw new Error("PREVIEW_RELATIONSHIP_DELIVERY_NOT_READY");
+  if (!session || session.status !== "email_pending") throw new Error("TEST_RELATIONSHIP_DELIVERY_NOT_READY");
   const outboxes = await db
     .select({ id: emailOutbox.id })
     .from(emailOutbox)
@@ -776,7 +777,7 @@ export async function deliverPreviewRelationshipReport(accessToken: string): Pro
       eq(emailOutbox.status, "queued"),
     ))
     .limit(1);
-  if (!outboxes[0]) throw new Error("PREVIEW_RELATIONSHIP_DELIVERY_NOT_READY");
+  if (!outboxes[0]) throw new Error("TEST_RELATIONSHIP_DELIVERY_NOT_READY");
   return deliverPrivatePdfOutboxItem(outboxes[0].id);
 }
 

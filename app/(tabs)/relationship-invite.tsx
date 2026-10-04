@@ -67,7 +67,7 @@ export default function RelationshipInviteScreen() {
   }, [context.data, initialGender, initialRole, initialFaith]);
 
   useEffect(() => {
-    // Preview에서 이미 생성된 PDF가 이메일 outbox에만 남아 있던 기존 세션도
+    // Toss 테스트 운영에서 이미 생성된 PDF가 이메일 outbox에만 남아 있던 세션도
     // A가 같은 링크를 다시 열면 한 번만 전달을 재개한다. 서버 outbox lock과
     // provider idempotency가 동시 호출·중복 발송을 막는다.
     if (
@@ -80,7 +80,7 @@ export default function RelationshipInviteScreen() {
     void deliverPreviewReport.mutateAsync({ accessToken: token })
       .then(() => context.refetch())
       .catch(() => {
-        // Production 및 비테스트 링크에서는 이 Preview-only fallback이 차단된다.
+        // 비테스트 링크에서는 이 테스트 runtime fallback이 차단된다.
         // 결과 접근은 이메일 상태와 분리되어 계속 가능하다.
       });
   }, [context.data?.status, context.data?.participant, token]);

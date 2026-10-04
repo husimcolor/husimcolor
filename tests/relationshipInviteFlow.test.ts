@@ -80,7 +80,7 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(service).toContain('console.error("[relationship-report] generation failed"');
     expect(service).toContain('retryFailedRelationshipReport');
     expect(service).toContain('deliverPreviewRelationshipReport');
-    expect(service).toContain('PREVIEW_RELATIONSHIP_DELIVERY_DISABLED');
+    expect(service).toContain('TEST_RELATIONSHIP_DELIVERY_DISABLED');
     expect(service).toContain('eq(orders.isTest, true)');
     expect(service).toContain('eq(relationshipSessions.ownerTokenHash, ownerTokenHash)');
     expect(service).toContain('eq(emailOutbox.status, "queued")');
@@ -120,6 +120,10 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
 
   it("이메일 outbox 대기 중에도 생성된 통합해석과 PDF는 A/B가 확인하고, 제출 직후 발송을 시도한다", () => {
     const service = read("server/commerce/relationship-invite-service.ts");
+    const deliveryService = service.slice(
+      service.indexOf("export async function deliverPreviewRelationshipReport"),
+      service.indexOf("async function claimRelationshipReportGeneration"),
+    );
     const router = read("server/routers.ts");
     const screen = read("app/(tabs)/relationship-invite.tsx");
     const result = read("app/(tabs)/couple-result.tsx");
@@ -133,6 +137,7 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(result).toContain('const deliverPreviewReport = trpc.relationshipInvites.deliverPreviewReport.useMutation');
     expect(result).toContain("relationshipResultQuery.data?.status !== 'email_pending'");
     expect(result).toContain('previewDeliveryTriggeredFor.current === requestedRelationshipToken');
+    expect(deliveryService).not.toContain('process.env.VERCEL_ENV !== "preview"');
   });
 
   it("Preview 관리자만 제출 완료 세션의 A/B 접근 링크를 재발급하고, 답변·결과·outbox는 보존한다", () => {
