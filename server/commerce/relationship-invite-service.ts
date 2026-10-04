@@ -2,6 +2,7 @@ import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, eq, inArray, or } from "drizzle-orm";
 
 import {
+  adminAuditLogs,
   analysisRuns,
   emailOutbox,
   entitlements,
@@ -37,6 +38,7 @@ import { buildRomanticRelationshipRoles } from "../../lib/couple-romantic-relati
 import { parseCoupleShareSnapshot, type CoupleShareSnapshot } from "../../shared/couple-share";
 import type { CommerceProductCode } from "../../shared/commerce";
 import { getDb } from "../db";
+import type { AdminAuditActor } from "./admin-audit-actor";
 import { decryptCommerceValue, encryptCommerceValue, hashCommerceValue } from "./crypto";
 import { deliverPrivatePdfOutboxItem } from "./email-outbox-service";
 import { queuePrivateAnalysisPdfDelivery } from "./pdf-delivery-service";
@@ -478,6 +480,71 @@ export async function createPreviewFailedRelationshipRecovery(input: {
   if (Number(updated[0]?.affectedRows ?? 0) !== 1) throw new Error("PREVIEW_RELATIONSHIP_RECOVERY_CONFLICT");
 
   return { relationshipSessionId: session.id, ownerAccessToken, inviteToken, resultToken };
+}
+
+/**
+ * Preview 결제 QA에서만 관리자가 이미 제출된 A/B 결과 접근 링크를 다시 발급한다.
+ * 원문 토큰은 DB에 보관하지 않으므로 기존 링크는 함께 무효화되며, 답변·결과·PDF·outbox는 변경하지 않는다.
+ */
+export async function reissuePreviewRelationshipResultAccess(input: {
+  relationshipSessionId: number;
+  adminUserId: number | null;
+  auditActor: AdminAuditActor;
+}): Promise<RelationshipInviteStart> {
+  if (process.env.VERCEL_ENV !== "preview" || !isExplicitTestPaymentRuntime()) {
+    throw new Error("PREVIEW_RELATIONSHIP_RESULT_REISSUE_NOT_ALLOWED");
+  }
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+
+  return (db as any).transaction(async (tx: any) => {
+    const rows = await tx
+      .select({ session: relationshipSessions, isTest: orders.isTest, orderStatus: orders.status })
+      .from(relationshipSessions)
+      .innerJoin(orders, eq(relationshipSessions.orderId, orders.id))
+      .where(eq(relationshipSessions.id, input.relationshipSessionId))
+      .limit(1);
+    const row = rows[0];
+    const session = row?.session;
+    if (!session || !row.isTest || row.orderStatus !== "paid") {
+      throw new Error("PREVIEW_RELATIONSHIP_RESULT_REISSUE_SESSION_NOT_FOUND");
+    }
+    if (!session.resultSnapshotEncrypted || !["email_pending", "completed"].includes(session.status)) {
+      throw new Error("PREVIEW_RELATIONSHIP_RESULT_REISSUE_NOT_READY");
+    }
+    const participants = await tx
+      .select({ status: relationshipParticipants.status })
+      .from(relationshipParticipants)
+      .where(eq(relationshipParticipants.relationshipSessionId, session.id));
+    if (participants.length !== 2 || participants.some((participant: { status: string }) => participant.status !== "submitted")) {
+      throw new Error("PREVIEW_RELATIONSHIP_RESULT_REISSUE_SUBMISSIONS_INCOMPLETE");
+    }
+
+    const ownerAccessToken = secureToken();
+    const inviteToken = secureToken();
+    const resultToken = secureToken();
+    const updated = await tx
+      .update(relationshipSessions)
+      .set({
+        ownerTokenHash: hashCommerceValue(ownerAccessToken),
+        inviteTokenHash: hashCommerceValue(inviteToken),
+        resultTokenHash: hashCommerceValue(resultToken),
+      })
+      .where(and(
+        eq(relationshipSessions.id, session.id),
+        inArray(relationshipSessions.status, ["email_pending", "completed"]),
+      ));
+    if (Number(updated[0]?.affectedRows ?? 0) !== 1) throw new Error("PREVIEW_RELATIONSHIP_RESULT_REISSUE_CONFLICT");
+    await tx.insert(adminAuditLogs).values({
+      adminUserId: input.adminUserId,
+      action: "preview_relationship_result_access_reissued",
+      entityType: "relationship_session",
+      entityId: String(session.id),
+      beforeJson: JSON.stringify({ status: session.status, auditActor: input.auditActor.subject }),
+      afterJson: JSON.stringify({ linksReissued: true, status: session.status, auditActor: input.auditActor.subject }),
+    });
+    return { relationshipSessionId: session.id, ownerAccessToken, inviteToken, resultToken };
+  });
 }
 
 async function loadSessionByAccessToken(accessToken: string) {

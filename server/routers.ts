@@ -74,6 +74,7 @@ import {
   deliverPreviewRelationshipReport,
   generateAndQueueRelationshipReport,
   createPreviewFailedRelationshipRecovery,
+  reissuePreviewRelationshipResultAccess,
   getRelationshipInviteContext,
   getRelationshipResult,
   retryFailedRelationshipReport,
@@ -546,6 +547,12 @@ export const appRouter = router({
       .mutation(({ input, ctx }) => {
         const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
         return revokeAdminTestEntitlement({ ...input, ...auditActor, auditActor });
+      }),
+    reissuePreviewRelationshipResults: adminProcedure
+      .input(z.object({ relationshipSessionId: z.number().int().positive() }))
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return reissuePreviewRelationshipResultAccess({ ...input, ...auditActor, auditActor });
       }),
   }),
 

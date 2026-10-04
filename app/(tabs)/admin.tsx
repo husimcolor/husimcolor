@@ -78,6 +78,9 @@ export default function AdminScreen() {
   const [targetCouponValidDays, setTargetCouponValidDays] = useState("30");
   const [targetCouponCode, setTargetCouponCode] = useState<string | null>(null);
   const [targetCouponStatus, setTargetCouponStatus] = useState<string | null>(null);
+  const [relationshipRecoverySessionId, setRelationshipRecoverySessionId] = useState("");
+  const [relationshipRecoveryUrls, setRelationshipRecoveryUrls] = useState<{ owner: string; partner: string } | null>(null);
+  const [relationshipRecoveryStatus, setRelationshipRecoveryStatus] = useState<string | null>(null);
   const apiBaseUrl = getApiBaseUrl();
 
   const refreshLegacySession = async () => {
@@ -213,6 +216,28 @@ export default function AdminScreen() {
       void coupons.refetch();
     },
   });
+  const reissuePreviewRelationshipResults = trpc.admin.reissuePreviewRelationshipResults.useMutation({
+    onSuccess: (result) => {
+      const base = typeof window !== "undefined" ? window.location.origin : "";
+      const inherited = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+      const withPreviewAccess = (token: string) => {
+        const params = new URLSearchParams({ token, inviteToken: result.inviteToken, resultToken: result.resultToken });
+        for (const key of ["_vercel_share", "x-vercel-protection-bypass"]) {
+          const value = inherited.get(key);
+          if (value) params.set(key, value);
+        }
+        return `${base}/relationship-invite?${params.toString()}`;
+      };
+      setRelationshipRecoveryUrls({ owner: withPreviewAccess(result.ownerAccessToken), partner: withPreviewAccess(result.inviteToken) });
+      setRelationshipRecoveryStatus("제출 답변·통합 결과·PDF·이메일 outbox는 보존한 채, 새 A/B 결과 접근 링크만 발급했습니다. 이전 A/B 링크는 보안을 위해 더 이상 사용할 수 없습니다.");
+    },
+    onError: (error) => {
+      setRelationshipRecoveryUrls(null);
+      setRelationshipRecoveryStatus(error.message.includes("NOT_READY")
+        ? "두 사람의 제출과 결과 PDF가 모두 준비된 Preview 테스트 세션만 재발급할 수 있습니다."
+        : "Preview 결과 링크를 재발급하지 못했습니다. 세션 번호와 Preview 관리자 로그인을 확인해 주세요.");
+    },
+  });
 
   const refresh = async () => {
     setRefreshing(true);
@@ -307,6 +332,16 @@ export default function AdminScreen() {
       { text: "회수", style: "destructive", onPress: () => revokeTargetedCoupon.mutate({ couponId }) },
     ]);
   };
+  const reissueRelationshipResults = () => {
+    const relationshipSessionId = Number(relationshipRecoverySessionId);
+    if (!Number.isInteger(relationshipSessionId) || relationshipSessionId <= 0) {
+      setRelationshipRecoveryStatus("Preview 관계 세션 번호를 숫자로 입력해 주세요.");
+      return;
+    }
+    setRelationshipRecoveryUrls(null);
+    setRelationshipRecoveryStatus("제출 답변을 변경하지 않고 새 A/B 결과 링크를 발급하고 있습니다…");
+    reissuePreviewRelationshipResults.mutate({ relationshipSessionId });
+  };
 
   if (auth.isLoading || legacyLoading) return <ScreenContainer><View style={styles.center}><ActivityIndicator color="#3f7b52" /></View></ScreenContainer>;
   if (!hasAdminAccess) return (
@@ -370,7 +405,7 @@ export default function AdminScreen() {
 
         {tab === "주문·결제" && <><Text style={[styles.section, { color: colors.foreground }]}>주문·결제</Text><Text style={[styles.helper, { color: colors.muted }]}>고객 → 주문 → 결제 → 이용권 흐름의 공통 원장을 표시합니다. 이메일은 마스킹됩니다.</Text>{orders.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {dateText(item.createdAt)}</Text><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · 결제 {item.finalAmountKrw.toLocaleString()}원 · 할인 {item.discountAmountKrw.toLocaleString()}원 · {item.provider ?? "결제 대기"} · {item.channel === "web" ? "홈페이지 유입" : "앱 유입"}{item.isTest ? " · 테스트 주문(매출 제외)" : ""}</Text><Text style={[styles.meta, { color: colors.muted }]}>결제 상태 {item.paymentStatus ?? "—"} · 이용권 {item.entitlementStatus ?? "—"}</Text></Panel>)}</>}
 
-        {tab === "Preview 검증" && <><Text style={[styles.section, { color: colors.foreground }]}>Preview 원장 검증</Text><Text style={[styles.helper, { color: colors.muted }]}>Preview·관리자 역할에서만 테스트 주문과 인증·문의 Outbox 상태를 마스킹하여 조회합니다. 이 화면에는 수정·재발송·다운로드 기능이 없습니다.</Text>{previewVerification.data?.available === false && <Panel><Text style={styles.noticeTitle}>Preview 환경에서만 사용할 수 있습니다</Text><Text style={styles.noticeText}>Production에서는 검증 데이터가 반환되지 않습니다.</Text></Panel>}{previewVerification.data?.available && <><Text style={[styles.section, { color: colors.foreground }]}>테스트 주문</Text>{previewVerification.data.testOrders.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {item.customerEmailMasked} · {item.channel === "web" ? "홈페이지 유입" : "앱 유입"}</Text><Text style={[styles.meta, { color: colors.muted }]}>결제 {item.paymentStatus ?? "—"} · 이용권 {item.entitlementStatus ?? "—"} · {dateText(item.createdAt)}</Text></Panel>)}{previewVerification.data.testOrders.length === 0 && <Panel><Text style={styles.noticeText}>표시할 테스트 주문이 없습니다.</Text></Panel>}<Text style={[styles.section, { color: colors.foreground }]}>인증·문의 Outbox</Text>{previewVerification.data.outbox.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.purpose === "account_link" ? "이력 연결 인증" : "고객 문의 알림"}</Text><Badge text={item.status} tone={item.status === "sent" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.recipientEmailMasked} · 시도 {item.attemptCount}회 · {dateText(item.sentAt ?? item.createdAt)}</Text>{item.lastErrorCode && <Text style={[styles.meta, { color: "#b5584f" }]}>오류 코드 {item.lastErrorCode}</Text>}</Panel>)}{previewVerification.data.outbox.length === 0 && <Panel><Text style={styles.noticeText}>표시할 인증·문의 Outbox가 없습니다.</Text></Panel>}</>}</>}
+        {tab === "Preview 검증" && <><Text style={[styles.section, { color: colors.foreground }]}>Preview 원장 검증</Text><Text style={[styles.helper, { color: colors.muted }]}>Preview·관리자 역할에서만 테스트 주문과 인증·문의 Outbox 상태를 마스킹하여 조회합니다. 이 화면에는 수정·재발송·다운로드 기능이 없습니다.</Text>{previewVerification.data?.available === false && <Panel><Text style={styles.noticeTitle}>Preview 환경에서만 사용할 수 있습니다</Text><Text style={styles.noticeText}>Production에서는 검증 데이터가 반환되지 않습니다.</Text></Panel>}{previewVerification.data?.available && <><Panel><Text style={styles.noticeTitle}>제출 완료 관계검사 결과 링크 복구</Text><Text style={styles.noticeText}>Preview 테스트에서 A·B 모두 제출·PDF 생성까지 끝난 세션만 대상으로 합니다. 답변·통합 결과·PDF·이메일 outbox는 변경하지 않고, 새 A/B 접근 링크만 발급합니다. 기존 A/B 링크는 무효화됩니다.</Text><TextInput value={relationshipRecoverySessionId} onChangeText={(value) => { setRelationshipRecoverySessionId(value); setRelationshipRecoveryUrls(null); setRelationshipRecoveryStatus(null); }} keyboardType="number-pad" placeholder="관계 세션 번호" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><TouchableOpacity style={styles.action} disabled={reissuePreviewRelationshipResults.isPending} onPress={reissueRelationshipResults}><Text style={styles.actionText}>{reissuePreviewRelationshipResults.isPending ? "재발급 중…" : "A/B 결과 링크 재발급"}</Text></TouchableOpacity>{relationshipRecoveryStatus && <Text style={[styles.noticeText, { color: relationshipRecoveryUrls ? "#3f7b52" : "#b5584f" }]}>{relationshipRecoveryStatus}</Text>}{relationshipRecoveryUrls && <><Text style={[styles.meta, { color: "#9a6a12" }]}>A 결과 링크</Text><TextInput value={relationshipRecoveryUrls.owner} editable={false} multiline selectTextOnFocus style={[styles.input, styles.trialUrl, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><Text style={[styles.meta, { color: "#9a6a12" }]}>B 결과 링크</Text><TextInput value={relationshipRecoveryUrls.partner} editable={false} multiline selectTextOnFocus style={[styles.input, styles.trialUrl, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /></>}</Panel><Text style={[styles.section, { color: colors.foreground }]}>테스트 주문</Text>{previewVerification.data.testOrders.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {item.customerEmailMasked} · {item.channel === "web" ? "홈페이지 유입" : "앱 유입"}</Text><Text style={[styles.meta, { color: colors.muted }]}>결제 {item.paymentStatus ?? "—"} · 이용권 {item.entitlementStatus ?? "—"} · {dateText(item.createdAt)}</Text></Panel>)}{previewVerification.data.testOrders.length === 0 && <Panel><Text style={styles.noticeText}>표시할 테스트 주문이 없습니다.</Text></Panel>}<Text style={[styles.section, { color: colors.foreground }]}>인증·문의 Outbox</Text>{previewVerification.data.outbox.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.purpose === "account_link" ? "이력 연결 인증" : "고객 문의 알림"}</Text><Badge text={item.status} tone={item.status === "sent" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.recipientEmailMasked} · 시도 {item.attemptCount}회 · {dateText(item.sentAt ?? item.createdAt)}</Text>{item.lastErrorCode && <Text style={[styles.meta, { color: "#b5584f" }]}>오류 코드 {item.lastErrorCode}</Text>}</Panel>)}{previewVerification.data.outbox.length === 0 && <Panel><Text style={styles.noticeText}>표시할 인증·문의 Outbox가 없습니다.</Text></Panel>}</>}</>}
 
         {tab === "고객·회원" && <><Text style={[styles.section, { color: colors.foreground }]}>고객·회원</Text><Text style={[styles.helper, { color: colors.muted }]}>이메일은 마스킹해 표시합니다. 행을 누르면 공통 원장의 고객 흐름 수를 확인할 수 있습니다.</Text>{customers.data?.map((item) => <TouchableOpacity key={item.id} onPress={() => setCustomerId(item.id)}><Panel><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.emailMasked}</Text><Badge text={item.userId ? "회원 연결" : "비회원"} tone={item.userId ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>주문 {item.orderCount}건 · 최근 주문 {dateText(item.latestOrderAt)}</Text></Panel></TouchableOpacity>)}{customer.data && <Panel><Text style={styles.noticeTitle}>{customer.data.customer.emailMasked} 고객 흐름</Text><Text style={styles.noticeText}>주문 {customer.data.orders.length} · 이용권 {customer.data.entitlements.length} · 검사 {customer.data.analysisRuns.length} · PDF {customer.data.privateDocuments.length} · 이메일 {customer.data.emailOutbox.length} · 예약 {customer.data.coachingBookings.length}</Text></Panel>}</>}
 

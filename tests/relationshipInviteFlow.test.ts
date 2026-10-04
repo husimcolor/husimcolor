@@ -131,6 +131,19 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(screen).toContain('previewDeliveryTriggeredFor');
   });
 
+  it("Preview 관리자만 제출 완료 세션의 A/B 접근 링크를 재발급하고, 답변·결과·outbox는 보존한다", () => {
+    const service = read("server/commerce/relationship-invite-service.ts");
+    const router = read("server/routers.ts");
+    const admin = read("app/(tabs)/admin.tsx");
+    expect(service).toContain('reissuePreviewRelationshipResultAccess');
+    expect(service).toContain('PREVIEW_RELATIONSHIP_RESULT_REISSUE_NOT_ALLOWED');
+    expect(service).toContain('linksReissued: true');
+    expect(service).toContain('inArray(relationshipSessions.status, ["email_pending", "completed"])');
+    expect(router).toContain('reissuePreviewRelationshipResults: adminProcedure');
+    expect(admin).toContain('제출 완료 관계검사 결과 링크 복구');
+    expect(admin).toContain('기존 A/B 링크는 무효화됩니다.');
+  });
+
   it("A의 기존 세션 링크와 B의 기존 초대 링크 모두 완료된 통합해석과 PDF 화면으로 연결한다", () => {
     const service = read("server/commerce/relationship-invite-service.ts");
     const router = read("server/routers.ts");
