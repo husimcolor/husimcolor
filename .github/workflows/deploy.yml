@@ -40,6 +40,7 @@ jobs:
           mkdir -p .vercel/output/static
           cp -r dist/. .vercel/output/static/
           mkdir -p ".vercel/output/functions/api/trpc/[...trpc].func"
+          mkdir -p ".vercel/output/functions/api/private-pdf-download.func"
           mkdir -p ".vercel/output/functions/api/couple-pdf-report.func"
           mkdir -p ".vercel/output/functions/api/parent-child-pdf-report.func"
           mkdir -p ".vercel/output/functions/api/auth/kakao/login.func"
@@ -65,15 +66,17 @@ jobs:
 
       - name: Build PDF report API functions
         run: |
+          npx esbuild "api/private-pdf-download.ts" --bundle --platform=node --target=node20 --format=cjs --external:pdfkit --outfile=".vercel/output/functions/api/private-pdf-download.func/index.js"
           npx esbuild "api/couple-pdf-report.ts" --bundle --platform=node --target=node20 --format=cjs --external:pdfkit --outfile=".vercel/output/functions/api/couple-pdf-report.func/index.js"
           npx esbuild "api/parent-child-pdf-report.ts" --bundle --platform=node --target=node20 --format=cjs --external:pdfkit --outfile=".vercel/output/functions/api/parent-child-pdf-report.func/index.js"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/trpc/[...trpc].func/HusimPdfKorean.ttf"
+          cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/private-pdf-download.func/HusimPdfKorean.ttf"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/couple-pdf-report.func/HusimPdfKorean.ttf"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/parent-child-pdf-report.func/HusimPdfKorean.ttf"
 
       - name: Include PDFKit serverless runtime
         run: |
-          for function in "trpc/[...trpc]" couple-pdf-report parent-child-pdf-report; do
+          for function in "trpc/[...trpc]" private-pdf-download couple-pdf-report parent-child-pdf-report; do
             runtime=".vercel/output/functions/api/${function}.func/node_modules"
             mkdir -p "${runtime}/@noble" "${runtime}/@swc"
             for package in pdfkit fflate fontkit linebreak png-js brotli clone dfa fast-deep-equal restructure tiny-inflate unicode-properties unicode-trie base64-js pako tslib; do
@@ -95,6 +98,7 @@ jobs:
             "shouldAddHelpers": true
           }
           VCEOF
+          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/private-pdf-download.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/couple-pdf-report.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/parent-child-pdf-report.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/kakao/login.func/.vc-config.json"
@@ -113,6 +117,7 @@ jobs:
               { "src": "/api/auth/legacy-admin-session", "dest": "/api/auth/legacy-admin-session" },
               { "src": "/api/auth/legacy-admin-logout", "dest": "/api/auth/legacy-admin-logout" },
               { "src": "/api/trpc/(.*)", "dest": "/api/trpc/[...trpc]"},
+              { "src": "/api/private-pdf-download", "dest": "/api/private-pdf-download" },
               { "src": "/api/couple-pdf-report", "dest": "/api/couple-pdf-report" },
               { "src": "/api/parent-child-pdf-report", "dest": "/api/parent-child-pdf-report" },
               { "src": "/_expo/static/js/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },

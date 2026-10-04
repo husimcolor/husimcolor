@@ -23,6 +23,7 @@ import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardInt
 import { buildCouplePdfDownloadPayload } from '@/lib/couple-pdf-download';
 import { buildParentChildPdfDownloadPayload } from '@/lib/parent-child-pdf-download';
 import { getParentChildLabels } from '@/lib/parent-child-coaching';
+import { buildPrivatePdfDownloadUrl, isKakaoTalkInAppBrowser, openInExternalBrowser, requestWebPdfDownload } from '@/lib/kakao-pdf-download';
 import { buildParentChildRelationshipAnalysis } from '@/lib/parent-child-relationship-analysis';
 import {
   PARENT_CHILD_PRIORITY_PILOT,
@@ -764,7 +765,16 @@ export default function CoupleResultScreen() {
     window.setTimeout(() => form.remove(), 1_000);
   };
 
-  const handleCouplePdfDownload = () => {
+  const getStoredRelationshipPdfUrl = () => {
+    if (Platform.OS !== 'web' || (!requestedRelationshipToken && !requestedResultToken)) return null;
+    return buildPrivatePdfDownloadUrl(window.location.origin, {
+      kind: 'relationship',
+      ...(requestedRelationshipToken ? { accessToken: requestedRelationshipToken } : {}),
+      ...(requestedResultToken ? { resultToken: requestedResultToken } : {}),
+    });
+  };
+
+  const handleCouplePdfDownload = async () => {
     if (couplePdfDownloadLockRef.current || !isRomanticRel) return;
     const unified = archetypeResult.unifiedSections;
     if (!unified || !romanticRelationshipRoles) {
@@ -846,6 +856,22 @@ export default function CoupleResultScreen() {
       }
       setCouplePdfDownloadState('requesting');
       setCouplePdfDownloadMessage('다운로드 중입니다. 잠시만 기다려 주세요.');
+      const storedPdfUrl = getStoredRelationshipPdfUrl();
+      // B의 초대 접근 토큰도 A와 같은 이미 생성된 private PDF의 읽기만 허용한다.
+      // PDF 재생성·메일 재발송 없이 카카오 권장 GET 다운로드 헤더를 사용한다.
+      if (storedPdfUrl && isKakaoTalkInAppBrowser()) {
+        const available = await fetch(storedPdfUrl, { method: 'HEAD', cache: 'no-store' })
+          .then((response) => response.ok)
+          .catch(() => false);
+        if (available && requestWebPdfDownload(storedPdfUrl)) {
+          clearCouplePdfDownloadTimers();
+          couplePdfDownloadLockRef.current = false;
+          setCouplePdfDownloadState('idle');
+          setCouplePdfDownloadMessage('카카오톡 다운로드 창을 확인해 주세요. 저장이 되지 않으면 아래 외부 Chrome 버튼을 이용해 주세요.');
+          couplePdfDownloadTimersRef.current.push(setTimeout(() => setCouplePdfDownloadMessage(null), 8_000));
+          return;
+        }
+      }
       const requestId = `couple_pdf_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
       document.cookie = 'husim_couple_pdf_download=; Max-Age=0; Path=/; SameSite=Lax';
       couplePdfDownloadPollRef.current = setInterval(() => {
@@ -879,7 +905,7 @@ export default function CoupleResultScreen() {
     }
   };
 
-  const handleParentChildPdfDownload = () => {
+  const handleParentChildPdfDownload = async () => {
     if (parentChildPdfDownloadLockRef.current || !isParentChildRel || !parentChildRelationshipAnalysis || !parentChildCoaching || !parentChildSummary) return;
     parentChildPdfDownloadLockRef.current = true;
     clearParentChildPdfDownloadTimers();
@@ -887,6 +913,20 @@ export default function CoupleResultScreen() {
     setParentChildPdfDownloadMessage('부모·자녀 PDF 리포트를 준비하고 있습니다.');
     try {
       if (Platform.OS !== 'web') throw new Error('부모·자녀 PDF는 모바일 웹 브라우저에서 저장할 수 있습니다.');
+      const storedPdfUrl = getStoredRelationshipPdfUrl();
+      if (storedPdfUrl && isKakaoTalkInAppBrowser()) {
+        const available = await fetch(storedPdfUrl, { method: 'HEAD', cache: 'no-store' })
+          .then((response) => response.ok)
+          .catch(() => false);
+        if (available && requestWebPdfDownload(storedPdfUrl)) {
+          clearParentChildPdfDownloadTimers();
+          parentChildPdfDownloadLockRef.current = false;
+          setParentChildPdfDownloadState('idle');
+          setParentChildPdfDownloadMessage('카카오톡 다운로드 창을 확인해 주세요. 저장이 되지 않으면 아래 외부 Chrome 버튼을 이용해 주세요.');
+          parentChildPdfDownloadTimersRef.current.push(setTimeout(() => setParentChildPdfDownloadMessage(null), 8_000));
+          return;
+        }
+      }
       const payload = buildParentChildPdfDownloadPayload({
         relationType,
         personA: {
@@ -961,6 +1001,18 @@ export default function CoupleResultScreen() {
       parentChildPdfDownloadLockRef.current = false;
       setParentChildPdfDownloadState('failed');
       setParentChildPdfDownloadMessage(downloadError instanceof Error ? downloadError.message : '다운로드에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  const handleExternalRelationshipPdf = (kind: 'couple' | 'parent') => {
+    const setMessage = kind === 'couple' ? setCouplePdfDownloadMessage : setParentChildPdfDownloadMessage;
+    const url = getStoredRelationshipPdfUrl();
+    if (!url) {
+      setMessage('현재 링크의 PDF 접근 정보를 찾지 못했습니다. 결과 링크를 다시 열어 주세요.');
+      return;
+    }
+    if (!openInExternalBrowser(url)) {
+      setMessage('카카오톡 메뉴에서 “다른 브라우저로 열기”를 선택한 뒤 다시 다운로드해 주세요.');
     }
   };
 
@@ -1982,6 +2034,11 @@ export default function CoupleResultScreen() {
                 </Text>
               </TouchableOpacity>
               <Text style={styles.couplePdfCaption}>두 사람의 개인 결과와 관계 통합 분석을 A4 리포트로 저장합니다.</Text>
+              {Platform.OS === 'web' && isKakaoTalkInAppBrowser() && (requestedRelationshipToken || requestedResultToken) ? (
+                <TouchableOpacity style={styles.externalBrowserButton} onPress={() => handleExternalRelationshipPdf('couple')} activeOpacity={0.8}>
+                  <Text style={styles.externalBrowserButtonText}>외부 Chrome에서 PDF 열기</Text>
+                </TouchableOpacity>
+              ) : null}
               {couplePdfDownloadMessage ? (
                 <Text style={[styles.couplePdfNotice, couplePdfDownloadState === 'failed' && styles.couplePdfNoticeError]}>{couplePdfDownloadMessage}</Text>
               ) : null}
@@ -2004,6 +2061,11 @@ export default function CoupleResultScreen() {
                 </Text>
               </TouchableOpacity>
               <Text style={styles.couplePdfCaption}>현재 부모·자녀 분석과 두 사람의 개인 결과를 A4 리포트로 저장합니다.</Text>
+              {Platform.OS === 'web' && isKakaoTalkInAppBrowser() && (requestedRelationshipToken || requestedResultToken) ? (
+                <TouchableOpacity style={styles.externalBrowserButton} onPress={() => handleExternalRelationshipPdf('parent')} activeOpacity={0.8}>
+                  <Text style={styles.externalBrowserButtonText}>외부 Chrome에서 PDF 열기</Text>
+                </TouchableOpacity>
+              ) : null}
               {parentChildPdfDownloadMessage ? (
                 <Text style={[styles.couplePdfNotice, parentChildPdfDownloadState === 'failed' && styles.couplePdfNoticeError]}>{parentChildPdfDownloadMessage}</Text>
               ) : null}
@@ -2226,6 +2288,11 @@ const styles = StyleSheet.create({
   couplePdfButtonIcon: { color: '#FFFFFF', fontSize: 23, lineHeight: 24, fontWeight: '700' },
   couplePdfButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   couplePdfCaption: { color: '#75695D', fontSize: 12.5, lineHeight: 20, textAlign: 'center', marginTop: 8 },
+  externalBrowserButton: {
+    borderRadius: 12, borderWidth: 1, borderColor: '#567C62', backgroundColor: '#F1F7F0',
+    paddingVertical: 12, alignItems: 'center', marginTop: 10,
+  },
+  externalBrowserButtonText: { color: '#315E3E', fontSize: 14, fontWeight: '800' },
   couplePdfNotice: { color: '#5C7F68', fontSize: 13, lineHeight: 21, textAlign: 'center', marginTop: 8, fontWeight: '600' },
   couplePdfNoticeError: { color: '#B34D4D' },
   restartBtn: {

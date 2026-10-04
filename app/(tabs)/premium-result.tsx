@@ -31,6 +31,7 @@ import { PremiumShareSummaryCard } from "@/components/premium-share-summary-card
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
 import { getCommerceAnalysisDelivery } from "@/lib/commerce-access";
+import { buildPrivatePdfDownloadUrl, isKakaoTalkInAppBrowser, openInExternalBrowser, requestWebPdfDownload } from "@/lib/kakao-pdf-download";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
@@ -872,6 +873,30 @@ export default function PremiumResultScreen() {
       if (Platform.OS === 'web') {
         setPdfDownloadState('requesting');
         setPdfDownloadMessage('다운로드 중입니다. 잠시만 기다려 주세요.');
+        const delivery = await getCommerceAnalysisDelivery("personal_deep");
+        const privatePdfUrl = delivery
+          ? buildPrivatePdfDownloadUrl(window.location.origin, {
+              kind: "analysis",
+              analysisRunId: delivery.analysisRunId,
+              productCode: "personal_deep",
+              deliveryToken: delivery.accessToken,
+            })
+          : null;
+        // 카카오 인앱 브라우저에서는 이미 보관된 private PDF를 GET으로 받는다.
+        // 이 경로는 PDF/이메일을 새로 만들지 않고 Content-Disposition 다운로드 헤더만 반환한다.
+        if (privatePdfUrl && isKakaoTalkInAppBrowser()) {
+          const available = await fetch(privatePdfUrl, { method: 'HEAD', cache: 'no-store' })
+            .then((response) => response.ok)
+            .catch(() => false);
+          if (available && requestWebPdfDownload(privatePdfUrl)) {
+            clearPdfDownloadTimers();
+            pdfDownloadLockRef.current = false;
+            setPdfDownloadState('idle');
+            setPdfDownloadMessage('카카오톡 다운로드 창을 확인해 주세요. 저장이 되지 않으면 아래 외부 Chrome 버튼을 이용해 주세요.');
+            pdfDownloadTimersRef.current.push(setTimeout(() => setPdfDownloadMessage(null), 8_000));
+            return;
+          }
+        }
         const requestId = `pdf_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
         document.cookie = 'husim_pdf_download=; Max-Age=0; Path=/; SameSite=Lax';
         pdfDownloadPollRef.current = setInterval(() => {
@@ -1403,6 +1428,28 @@ export default function PremiumResultScreen() {
           {pdfDownloadState === 'idle' || pdfDownloadState === 'failed' ? <Text style={styles.pdfButtonIcon}>↓</Text> : <ActivityIndicator color="#FFFFFF" size="small" style={styles.pdfButtonSpinner} />}
           <Text style={styles.pdfButtonText}>{pdfDownloadState === 'idle' || pdfDownloadState === 'failed' ? 'PDF 리포트 다운로드' : '다운로드 중...'}</Text>
         </TouchableOpacity>
+        {Platform.OS === 'web' && isKakaoTalkInAppBrowser() ? (
+          <TouchableOpacity
+            style={styles.externalBrowserButton}
+            onPress={async () => {
+              const delivery = await getCommerceAnalysisDelivery("personal_deep");
+              if (!delivery) {
+                setPdfDownloadMessage('보관된 PDF를 찾지 못했습니다. 잠시 후 다시 시도해 주세요.');
+                return;
+              }
+              const url = buildPrivatePdfDownloadUrl(window.location.origin, {
+                kind: "analysis",
+                analysisRunId: delivery.analysisRunId,
+                productCode: "personal_deep",
+                deliveryToken: delivery.accessToken,
+              });
+              if (!openInExternalBrowser(url)) setPdfDownloadMessage('카카오톡 메뉴에서 “다른 브라우저로 열기”를 선택한 뒤 다시 다운로드해 주세요.');
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.externalBrowserButtonText}>외부 Chrome에서 PDF 열기</Text>
+          </TouchableOpacity>
+        ) : null}
         {pdfDownloadMessage ? (
           <Text style={[styles.pdfDownloadNotice, pdfDownloadState === 'failed' && styles.pdfDownloadNoticeError]}>
             {pdfDownloadMessage}
@@ -2151,6 +2198,21 @@ const styles = StyleSheet.create({
   },
   pdfButtonBusy: {
     opacity: 0.82,
+  },
+  externalBrowserButton: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#3D6B5A',
+    backgroundColor: '#F2F7F2',
+    paddingVertical: 13,
+    alignItems: 'center',
+    marginTop: -4,
+    marginBottom: 12,
+  },
+  externalBrowserButtonText: {
+    color: '#315646',
+    fontSize: 14,
+    fontWeight: '700',
   },
   pdfDownloadNotice: {
     color: '#5A6B62',

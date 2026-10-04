@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, gt, inArray, or } from "drizzle-orm";
 
 import {
   adminAuditLogs,
@@ -38,9 +38,11 @@ import { buildRomanticRelationshipRoles } from "../../lib/couple-romantic-relati
 import { parseCoupleShareSnapshot, type CoupleShareSnapshot } from "../../shared/couple-share";
 import type { CommerceProductCode } from "../../shared/commerce";
 import { getDb } from "../db";
+import { storageGetBuffer } from "../storage";
 import type { AdminAuditActor } from "./admin-audit-actor";
 import { decryptCommerceValue, encryptCommerceValue, hashCommerceValue } from "./crypto";
 import { deliverPrivatePdfOutboxItem } from "./email-outbox-service";
+import { getPrivatePdfFilename, type AnalysisPdfKind } from "./pdf-delivery-policy";
 import { queuePrivateAnalysisPdfDelivery } from "./pdf-delivery-service";
 import { isExplicitTestPaymentRuntime } from "./test-runtime";
 
@@ -902,6 +904,54 @@ export async function getRelationshipResult(input: {
   const snapshot = parseCoupleShareSnapshot(decryptCommerceValue(session.resultSnapshotEncrypted));
   if (!snapshot) throw new Error("RELATIONSHIP_RESULT_UNREADABLE");
   return { status, snapshot };
+}
+
+/**
+ * Both A and B may read the already-generated relationship PDF with their own
+ * relationship access token. This is read-only: it neither regenerates a PDF
+ * nor touches the purchaser-only email outbox.
+ */
+export async function getRelationshipPrivatePdfDownload(input: {
+  accessToken?: string;
+  resultToken?: string;
+}): Promise<{ filename: string; content: Buffer }> {
+  let session: typeof relationshipSessions.$inferSelect | undefined;
+  if (input.accessToken) {
+    session = (await loadSessionByAccessToken(input.accessToken)).session;
+  } else if (input.resultToken) {
+    const db = await getDb();
+    if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+    const hash = hashCommerceValue(requiredToken(input.resultToken));
+    const rows = await db.select().from(relationshipSessions).where(eq(relationshipSessions.resultTokenHash, hash)).limit(1);
+    session = rows[0];
+  } else {
+    throw new Error("RELATIONSHIP_RESULT_ACCESS_REQUIRED");
+  }
+  if (!session || !["completed", "email_pending"].includes(session.status)) {
+    throw new Error("RELATIONSHIP_RESULT_NOT_READY");
+  }
+
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const rows = await db
+    .select({ storageKey: privateDocuments.storageKey, productCode: products.code })
+    .from(privateDocuments)
+    .innerJoin(analysisRuns, eq(privateDocuments.analysisRunId, analysisRuns.id))
+    .innerJoin(products, eq(analysisRuns.productId, products.id))
+    .where(and(
+      eq(privateDocuments.analysisRunId, session.analysisRunId),
+      eq(privateDocuments.status, "generated"),
+      gt(privateDocuments.retentionExpiresAt, new Date()),
+    ))
+    .limit(1);
+  const document = rows[0];
+  const validProduct = document?.productCode === "couple_love_deep" || document?.productCode === "parent_child_deep";
+  if (!document?.storageKey || !validProduct) throw new Error("PRIVATE_PDF_NOT_AVAILABLE");
+
+  return {
+    filename: getPrivatePdfFilename(document.productCode as AnalysisPdfKind),
+    content: await storageGetBuffer(document.storageKey),
+  };
 }
 
 /** 관리자/worker가 상태 연결을 확인할 때 사용하는 최소 조회. 원문 답변은 반환하지 않는다. */
