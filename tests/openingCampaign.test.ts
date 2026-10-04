@@ -21,6 +21,6 @@ describe("opening campaign", () => {
   });
 
   it("uses one public event code only through the campaign control", () => {
-    expect(OPENING_CAMPAIGN_COUPON_CODE).toBe("OCT20PREVIEW2026");
+    expect(OPENING_CAMPAIGN_COUPON_CODE).toBe("OCT20OPEN2026");
   });
 });

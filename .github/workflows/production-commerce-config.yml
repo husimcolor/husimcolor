@@ -1,0 +1,38 @@
+name: Apply approved Production commerce configuration
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type APPLY_PRODUCTION_TEST_CAMPAIGN to run the approved additive migration and campaign configuration"
+        required: true
+        type: string
+
+jobs:
+  apply:
+    if: github.event.inputs.confirmation == 'APPLY_PRODUCTION_TEST_CAMPAIGN'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout approved main revision
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Pull Production environment privately
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes vercel@latest env pull .env.production --environment production --yes --scope husimcolors-projects
+      - name: Apply additive schema migration and campaign configuration
+        env:
+          PRODUCTION_ENV_FILE: .env.production
+          REMOVE_PRODUCTION_ENV_FILE: 'true'
+        run: node scripts/apply-production-opening-campaign.mjs
