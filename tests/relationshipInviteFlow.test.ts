@@ -122,6 +122,7 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     const service = read("server/commerce/relationship-invite-service.ts");
     const router = read("server/routers.ts");
     const screen = read("app/(tabs)/relationship-invite.tsx");
+    const result = read("app/(tabs)/couple-result.tsx");
     expect(service).toContain('status !== "completed" && status !== "email_pending"');
     expect(router).toContain('const report = await generateAndQueueRelationshipReport');
     expect(router).toContain('await deliverPrivatePdfOutboxItem(report.outboxId)');
@@ -129,6 +130,9 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(screen).toContain('이메일은 자동 발송 처리 중입니다. 기다리지 않고 지금 결과와 PDF를 확인할 수 있습니다.');
     expect(screen).toContain('trpc.relationshipInvites.deliverPreviewReport.useMutation');
     expect(screen).toContain('previewDeliveryTriggeredFor');
+    expect(result).toContain('const deliverPreviewReport = trpc.relationshipInvites.deliverPreviewReport.useMutation');
+    expect(result).toContain("relationshipResultQuery.data?.status !== 'email_pending'");
+    expect(result).toContain('previewDeliveryTriggeredFor.current === requestedRelationshipToken');
   });
 
   it("Preview 관리자만 제출 완료 세션의 A/B 접근 링크를 재발급하고, 답변·결과·outbox는 보존한다", () => {

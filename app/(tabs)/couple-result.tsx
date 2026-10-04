@@ -163,6 +163,7 @@ export default function CoupleResultScreen() {
   const shareCardRef = useRef<ViewShotRef>(null);
   const couplePdfDownloadLockRef = useRef(false);
   const parentChildPdfDownloadLockRef = useRef(false);
+  const previewDeliveryTriggeredFor = useRef<string | null>(null);
   const coupleShareRequestRef = useRef<{
     sessionSignature: string;
     request: Promise<string>;
@@ -186,6 +187,25 @@ export default function CoupleResultScreen() {
     },
     { enabled: Boolean(requestedResultToken || requestedRelationshipToken), retry: false },
   );
+  const deliverPreviewReport = trpc.relationshipInvites.deliverPreviewReport.useMutation();
+
+  useEffect(() => {
+    // 완료 화면으로 즉시 전환해도 Preview 구매자 A의 발송 요청은 계속된다.
+    // B 토큰은 서버에서 소유자 토큰으로 매칭되지 않아 무해하게 거절되고,
+    // 실제 send는 outbox lock과 provider idempotency key로 한 번만 수행된다.
+    if (
+      relationshipResultQuery.data?.status !== 'email_pending'
+      || !requestedRelationshipToken
+      || previewDeliveryTriggeredFor.current === requestedRelationshipToken
+    ) return;
+    previewDeliveryTriggeredFor.current = requestedRelationshipToken;
+    void deliverPreviewReport.mutateAsync({ accessToken: requestedRelationshipToken })
+      .then(() => relationshipResultQuery.refetch())
+      .catch(() => {
+        // Preview 전용 delivery route가 아닌 환경과 B의 접근 토큰은 조용히 건너뛴다.
+        // 결과와 PDF 접근은 이메일 전이와 독립적으로 유지한다.
+      });
+  }, [relationshipResultQuery.data?.status, requestedRelationshipToken]);
 
   useEffect(() => {
     if (requestedShareId || requestedResultToken || requestedRelationshipToken) return;
