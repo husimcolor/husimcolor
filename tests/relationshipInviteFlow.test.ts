@@ -66,6 +66,7 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
   it("양측 최종 제출을 모두 확인한 한 요청만 리포트 생성을 선점한다", () => {
     const service = read("server/commerce/relationship-invite-service.ts");
     const router = read("server/routers.ts");
+    const relationshipAnalysis = read("constants/coupleData.ts");
     expect(service).toContain('allParticipants.length === 2 && allParticipants.every');
     expect(service).toContain('set({ status: "report_generating", reportErrorCode: null })');
     expect(service).toContain('inArray(relationshipSessions.status, ["collecting", "awaiting_partner"])');
@@ -86,6 +87,8 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(service).toContain('eq(emailOutbox.status, "queued")');
     expect(router).toContain('deliverPreviewReport: publicProcedure');
     expect(service).toContain('eq(relationshipSessions.status, "failed")');
+    expect(relationshipAnalysis).toContain('(globalThis as typeof globalThis & { __DEV__?: boolean }).__DEV__ === true');
+    expect(relationshipAnalysis).not.toContain('if (__DEV__)');
   });
 
   it("관리자는 Toss 테스트 주문의 실패한 리포트만 원문 답변 재제출 없이 복구할 수 있다", () => {

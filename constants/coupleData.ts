@@ -3069,8 +3069,9 @@ function buildDynamicProfileContrast(
     ? `${name1B}+${name2B} 컬러를 가진 두 번째 사람은 ${trait1B} 성향이 있으면서도 ${trait2B} 면이 함께 작용합니다.`
     : `${name1B} 컬러를 가진 두 번째 사람은 ${trait1B} 성향이 있습니다.`;
 
-  // [DEV LOG] 컬러 기준 확인용 — 고객 화면에는 표시되지 않음
-  if (__DEV__) {
+  // [DEV LOG] 컬러 기준 확인용 — Vercel Node runtime에는 Expo의 __DEV__
+  // 전역값이 없으므로 안전하게 존재 여부를 확인한다.
+  if ((globalThis as typeof globalThis & { __DEV__?: boolean }).__DEV__ === true) {
     console.log(
       `[커플 분석 DEV] 첫 번째 사람: ${name1A}+${name2A}(${c1A}+${c2A}) | 두 번째 사람: ${name1B}+${name2B}(${c1B}+${c2B})`,
       '\n→ descA:', descA,
