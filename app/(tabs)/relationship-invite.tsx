@@ -232,7 +232,6 @@ export default function RelationshipInviteScreen() {
         <Text style={styles.completeText}>{progressText}</Text>
         {current.status === "failed" ? <Pressable disabled={retryReport.isPending} style={[styles.refreshButton, retryReport.isPending && styles.disabled]} onPress={() => void retryFailedReport()}><Text style={styles.refreshText}>{retryReport.isPending ? "리포트 재시도 중" : "저장된 답변으로 리포트 다시 생성"}</Text></Pressable> : null}
         <Pressable style={styles.refreshButton} onPress={() => void context.refetch()}><Text style={styles.refreshText}>상태 새로고침</Text></Pressable>
-        {message ? <Text style={styles.message}>{message}</Text> : null}
       </View></ScreenContainer>
     );
   }

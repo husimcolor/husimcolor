@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
-import { and, eq, gt, inArray, or } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, or } from "drizzle-orm";
 
 import {
   adminAuditLogs,
@@ -744,6 +744,140 @@ export async function retryFailedRelationshipReport(accessToken: string): Promis
     return Number(claimed[0]?.affectedRows ?? 0) === 1;
   });
   return { relationshipSessionId: session.id, shouldGenerateReport };
+}
+
+export type AdminRelationshipReportRecoverySnapshot = {
+  relationshipSessionId: number;
+  orderId: number;
+  analysisRunId: number;
+  productCode: "couple_love_deep" | "parent_child_deep";
+  status: SessionStatus;
+  reportErrorCode: string | null;
+  participants: Array<{ participant: RelationshipParticipantSlot; status: "not_started" | "in_progress" | "submitted" }>;
+  privateDocument: { status: "queued" | "generated" | "failed" | "deleted"; errorCode: string | null } | null;
+  outbox: { status: "queued" | "sending" | "sent" | "failed" | "cancelled"; attemptCount: number; lastErrorCode: string | null } | null;
+};
+
+/**
+ * Test-operation administrators can inspect only the lifecycle metadata of a
+ * test order. The encrypted A/B submissions, contact email, and PDF bytes are
+ * deliberately not returned.
+ */
+export async function getAdminTestRelationshipReportRecoverySnapshot(orderId: number): Promise<AdminRelationshipReportRecoverySnapshot | null> {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const rows = await db
+    .select({
+      relationshipSessionId: relationshipSessions.id,
+      orderId: relationshipSessions.orderId,
+      analysisRunId: relationshipSessions.analysisRunId,
+      productCode: products.code,
+      status: relationshipSessions.status,
+      reportErrorCode: relationshipSessions.reportErrorCode,
+    })
+    .from(relationshipSessions)
+    .innerJoin(orders, eq(relationshipSessions.orderId, orders.id))
+    .innerJoin(products, eq(relationshipSessions.productId, products.id))
+    .where(and(eq(orders.id, orderId), eq(orders.isTest, true)))
+    .limit(1);
+  const session = rows[0];
+  if (!session || (session.productCode !== "couple_love_deep" && session.productCode !== "parent_child_deep")) return null;
+
+  const [participantRows, documentRows] = await Promise.all([
+    db
+      .select({ participant: relationshipParticipants.participant, status: relationshipParticipants.status })
+      .from(relationshipParticipants)
+      .where(eq(relationshipParticipants.relationshipSessionId, session.relationshipSessionId)),
+    db
+      .select({
+        status: privateDocuments.status,
+        errorCode: privateDocuments.errorCode,
+        outboxStatus: emailOutbox.status,
+        attemptCount: emailOutbox.attemptCount,
+        lastErrorCode: emailOutbox.lastErrorCode,
+      })
+      .from(privateDocuments)
+      .leftJoin(emailOutbox, and(eq(emailOutbox.privateDocumentId, privateDocuments.id), eq(emailOutbox.purpose, "analysis_result_pdf")))
+      .where(eq(privateDocuments.analysisRunId, session.analysisRunId))
+      .orderBy(desc(privateDocuments.createdAt))
+      .limit(1),
+  ]);
+  const document = documentRows[0];
+  return {
+    relationshipSessionId: session.relationshipSessionId,
+    orderId: session.orderId ?? orderId,
+    analysisRunId: session.analysisRunId,
+    productCode: session.productCode,
+    status: session.status as SessionStatus,
+    reportErrorCode: session.reportErrorCode,
+    participants: participantRows.map((row) => ({
+      participant: row.participant as RelationshipParticipantSlot,
+      status: row.status as "not_started" | "in_progress" | "submitted",
+    })),
+    privateDocument: document ? { status: document.status, errorCode: document.errorCode } : null,
+    outbox: document?.outboxStatus ? {
+      status: document.outboxStatus,
+      attemptCount: document.attemptCount ?? 0,
+      lastErrorCode: document.lastErrorCode,
+    } : null,
+  };
+}
+
+/**
+ * This is intentionally limited to the explicitly enabled Toss test runtime
+ * and an order already marked isTest. It reuses submitted ciphertext and the
+ * existing document/outbox uniqueness rules; it cannot create a new order,
+ * entitlement, participant submission, or duplicate purchaser email.
+ */
+export async function retryAdminTestRelationshipReport(input: {
+  orderId: number;
+  adminUserId: number | null;
+  auditActor: AdminAuditActor;
+}): Promise<AdminRelationshipReportRecoverySnapshot | null> {
+  if (!isExplicitTestPaymentRuntime()) throw new Error("TEST_RELATIONSHIP_RECOVERY_DISABLED");
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+
+  const claimed = await (db as any).transaction(async (tx: any) => {
+    const sessions = await tx
+      .select({ id: relationshipSessions.id, status: relationshipSessions.status })
+      .from(relationshipSessions)
+      .innerJoin(orders, eq(relationshipSessions.orderId, orders.id))
+      .where(and(eq(orders.id, input.orderId), eq(orders.isTest, true)))
+      .limit(1);
+    const session = sessions[0];
+    if (!session || session.status !== "failed") return null;
+    const participants = await tx
+      .select({ status: relationshipParticipants.status })
+      .from(relationshipParticipants)
+      .where(eq(relationshipParticipants.relationshipSessionId, session.id));
+    if (participants.length !== 2 || !participants.every((row: { status: string }) => row.status === "submitted")) return null;
+    const changed = await tx
+      .update(relationshipSessions)
+      .set({ status: "report_generating", reportErrorCode: null })
+      .where(and(eq(relationshipSessions.id, session.id), eq(relationshipSessions.status, "failed")));
+    if (Number(changed[0]?.affectedRows ?? 0) !== 1) return null;
+    await tx.insert(adminAuditLogs).values({
+      adminUserId: input.adminUserId,
+      action: "test_relationship_report_recovery_requested",
+      entityType: "relationship_session",
+      entityId: String(session.id),
+      beforeJson: JSON.stringify({ status: "failed", orderId: input.orderId, auditActor: input.auditActor.subject }),
+      afterJson: JSON.stringify({ status: "report_generating", reusedSubmittedAnswers: true, auditActor: input.auditActor.subject }),
+    });
+    return session.id as number;
+  });
+  if (!claimed) return getAdminTestRelationshipReportRecoverySnapshot(input.orderId);
+
+  try {
+    const report = await generateAndQueueRelationshipReport(claimed);
+    // An already generated document yields the existing outbox id; its lock
+    // prevents a second send even when the recovery is repeated accidentally.
+    if (report.outboxId) await deliverPrivatePdfOutboxItem(report.outboxId);
+  } catch {
+    // generateAndQueueRelationshipReport persists its precise failure code.
+  }
+  return getAdminTestRelationshipReportRecoverySnapshot(input.orderId);
 }
 
 /**

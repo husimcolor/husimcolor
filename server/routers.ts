@@ -75,9 +75,11 @@ import {
   deliverPreviewRelationshipReport,
   generateAndQueueRelationshipReport,
   createPreviewFailedRelationshipRecovery,
+  getAdminTestRelationshipReportRecoverySnapshot,
   reissuePreviewRelationshipResultAccess,
   getRelationshipInviteContext,
   getRelationshipResult,
+  retryAdminTestRelationshipReport,
   retryFailedRelationshipReport,
   saveRelationshipParticipantDraft,
   submitRelationshipParticipant,
@@ -471,6 +473,15 @@ export const appRouter = router({
       .mutation(({ ctx }) => {
         const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
         return applyProductionOpeningCampaignConfiguration({ ...auditActor, auditActor });
+      }),
+    testRelationshipReportRecovery: adminProcedure
+      .input(z.object({ orderId: z.number().int().positive() }))
+      .query(({ input }) => getAdminTestRelationshipReportRecoverySnapshot(input.orderId)),
+    retryTestRelationshipReport: adminProcedure
+      .input(z.object({ orderId: z.number().int().positive() }))
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return retryAdminTestRelationshipReport({ ...input, ...auditActor, auditActor });
       }),
     customerDetail: adminProcedure
       .input(z.object({ customerId: z.number().int().positive() }))

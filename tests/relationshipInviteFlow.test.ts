@@ -88,6 +88,20 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(service).toContain('eq(relationshipSessions.status, "failed")');
   });
 
+  it("관리자는 Toss 테스트 주문의 실패한 리포트만 원문 답변 재제출 없이 복구할 수 있다", () => {
+    const service = read("server/commerce/relationship-invite-service.ts");
+    const router = read("server/routers.ts");
+    expect(service).toContain("getAdminTestRelationshipReportRecoverySnapshot");
+    expect(service).toContain("retryAdminTestRelationshipReport");
+    expect(service).toContain('eq(orders.isTest, true)');
+    expect(service).toContain('session.status !== "failed"');
+    expect(service).toContain('reusedSubmittedAnswers: true');
+    expect(service).toContain('test_relationship_report_recovery_requested');
+    expect(service).toContain('await deliverPrivatePdfOutboxItem(report.outboxId)');
+    expect(router).toContain("testRelationshipReportRecovery: adminProcedure");
+    expect(router).toContain("retryTestRelationshipReport: adminProcedure");
+  });
+
   it("기존 토큰을 복원하지 않고 Preview 테스트 실패 세션에만 새 복구 토큰을 발급한다", () => {
     const service = read("server/commerce/relationship-invite-service.ts");
     const router = read("server/routers.ts");
@@ -197,6 +211,16 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(screen).toContain('if (current.participantStatus === "submitted"');
     expect(ownerStart).toContain('pathname: "/(tabs)/relationship-invite"');
     expect(ownerStart).toContain('initialGender: gender');
+  });
+
+  it("최종 제출 뒤 실패 화면에는 이전 기본 정보 저장 안내를 다시 표시하지 않는다", () => {
+    const screen = read("app/(tabs)/relationship-invite.tsx");
+    const submittedBranch = screen.slice(
+      screen.indexOf('if (current.participantStatus === "submitted")'),
+      screen.indexOf("if (!current.canEdit)"),
+    );
+    expect(submittedBranch).toContain("저장된 답변으로 리포트 다시 생성");
+    expect(submittedBranch).not.toContain("{message ? <Text style={styles.message}>{message}</Text> : null}");
   });
 
   it("유료 공개 gate와 무료 친구 관계 경로를 변경하지 않는다", () => {
