@@ -77,11 +77,13 @@ export function buildRomanticRelationshipRoles({
   personB,
   cardsA,
   cardsB,
+  relationType = "연인",
 }: {
   personA: PersonSignals;
   personB: PersonSignals;
   cardsA: Array<CardData | undefined>;
   cardsB: Array<CardData | undefined>;
+  relationType?: string;
 }): RomanticRelationshipRoles {
   const themeA = getRoleTheme(personA, cardsA);
   let themeB = getRoleTheme(personB, cardsB);
@@ -99,11 +101,15 @@ export function buildRomanticRelationshipRoles({
     "movement|space": `${roleA.title}과 ${roleB.title}이 만나면 가까워짐과 각자의 여유가 함께 존중될 수 있습니다. 다만 행동의 속도와 쉬는 시간이 엇갈리면 오해가 생길 수 있으니, 함께할 시간과 혼자 쉬는 시간을 미리 가볍게 맞춰보는 것이 좋습니다.`,
   };
 
+  const relationshipContext = relationType === "부부"
+    ? "생활과 역할을 함께 조율할 때"
+    : "연락과 각자의 시간을 함께 조율할 때";
+
   return {
     personA: roleA,
     personB: roleB,
     together: pairKey in togetherMap
-      ? togetherMap[pairKey]
-      : `${roleA.title}과 ${roleB.title}이 만나면 서로 다른 장점이 관계를 넓혀갈 수 있습니다. 한쪽의 방식만 정답으로 두기보다, 각자의 역할이 과해질 때는 잠시 바꿔 맡아보며 함께 균형을 찾는 것이 좋습니다.`,
+      ? `${relationshipContext}, ${togetherMap[pairKey]}`
+      : `${relationshipContext}, ${roleA.title}과 ${roleB.title}이 만나면 서로 다른 장점이 관계를 넓혀갈 수 있습니다. 한쪽의 방식만 정답으로 두기보다, 각자의 역할이 과해질 때는 잠시 바꿔 맡아보며 함께 균형을 찾는 것이 좋습니다.`,
   };
 }

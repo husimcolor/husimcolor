@@ -11,7 +11,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLOR_DATA, COLOR_ROLE_CONTENT } from '@/constants/colorData';
+import { COLOR_DATA } from '@/constants/colorData';
 import { CARD_DATA } from '@/constants/cardData';
 import {
   generatePersonAnalysis, generateCoupleAnalysis, getRelationArchetype, getLightArchetype, isParentRelationshipRole,
@@ -19,6 +19,11 @@ import {
 } from '@/constants/coupleData';
 import { buildRomanticRelationTraits } from '@/lib/couple-romantic-relation-traits';
 import { buildRomanticRelationshipRoles } from '@/lib/couple-romantic-relationship-roles';
+import {
+  buildRelationshipCardNarrative,
+  buildRelationshipPersonCopy,
+  reviseRomanticArchetype,
+} from '@/lib/relationship-copy-revision';
 import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
 import { buildCouplePdfDownloadPayload } from '@/lib/couple-pdf-download';
 import { buildParentChildPdfDownloadPayload } from '@/lib/parent-child-pdf-download';
@@ -100,10 +105,17 @@ function buildCoupleShareSnapshot(
         cardsB,
         expressionDescription: archetypeResult.expressionSpeed.description,
         recoveryDescription: archetypeResult.recoveryStyle.description,
+        relationType: sessionData.relationType,
       })
     : [];
   const romanticRelationshipRoles = isRomanticRel
-    ? buildRomanticRelationshipRoles({ personA: personAAnalysis, personB: personBAnalysis, cardsA, cardsB })
+    ? buildRomanticRelationshipRoles({
+        personA: personAAnalysis,
+        personB: personBAnalysis,
+        cardsA,
+        cardsB,
+        relationType: sessionData.relationType,
+      })
     : null;
 
   const immutableSessionData: CoupleSessionData = {
@@ -317,7 +329,14 @@ export default function CoupleResultScreen() {
       }) as any[];
       const shapeA3 = data.personA.cards[2] ? CARD_DATA.find((c: any) => c.id === data.personA.cards[2])?.shape : undefined;
       const shapeB3 = data.personB.cards[2] ? CARD_DATA.find((c: any) => c.id === data.personB.cards[2])?.shape : undefined;
-      const archRes = getRelationArchetype(famsA, famsB, shapeA3, shapeB3, data.personA.colors, data.personB.colors, data.personA.cards, data.personB.cards);
+      const baseArchRes = getRelationArchetype(famsA, famsB, shapeA3, shapeB3, data.personA.colors, data.personB.colors, data.personA.cards, data.personB.cards);
+      const definedColorsA = data.personA.colors.map((id: string) => COLOR_DATA.find((color) => color.id === id)).filter((color): color is NonNullable<typeof color> => Boolean(color));
+      const definedColorsB = data.personB.colors.map((id: string) => COLOR_DATA.find((color) => color.id === id)).filter((color): color is NonNullable<typeof color> => Boolean(color));
+      const definedCardsA = data.personA.cards.map((id: string) => CARD_DATA.find((card) => card.id === id)).filter((card): card is NonNullable<typeof card> => Boolean(card));
+      const definedCardsB = data.personB.cards.map((id: string) => CARD_DATA.find((card) => card.id === id)).filter((card): card is NonNullable<typeof card> => Boolean(card));
+      const archRes = data.relationType === '부부' || data.relationType === '연인'
+        ? reviseRomanticArchetype(baseArchRes, { relationType: data.relationType, colorsA: definedColorsA, colorsB: definedColorsB, cardsA: definedCardsA, cardsB: definedCardsB })
+        : baseArchRes;
       const lightRes = getLightArchetype(data.relationType, famsA, famsB);
       setPersonAAnalysis(aAnalysis);
       setPersonBAnalysis(bAnalysis);
@@ -363,7 +382,7 @@ export default function CoupleResultScreen() {
       const famsB = ['neutral', 'warm_soft', 'warm_active'] as any[];
       const shapeA3 = CARD_DATA.find((card: any) => card.id === data.personA.cards[2])?.shape;
       const shapeB3 = CARD_DATA.find((card: any) => card.id === data.personB.cards[2])?.shape;
-      const archRes = getRelationArchetype(
+      const baseArchRes = getRelationArchetype(
         famsA,
         famsB,
         shapeA3,
@@ -373,6 +392,13 @@ export default function CoupleResultScreen() {
         data.personA.cards,
         data.personB.cards,
       );
+      const definedColorsA = data.personA.colors.map((id: string) => COLOR_DATA.find((color) => color.id === id)).filter((color): color is NonNullable<typeof color> => Boolean(color));
+      const definedColorsB = data.personB.colors.map((id: string) => COLOR_DATA.find((color) => color.id === id)).filter((color): color is NonNullable<typeof color> => Boolean(color));
+      const definedCardsA = data.personA.cards.map((id: string) => CARD_DATA.find((card) => card.id === id)).filter((card): card is NonNullable<typeof card> => Boolean(card));
+      const definedCardsB = data.personB.cards.map((id: string) => CARD_DATA.find((card) => card.id === id)).filter((card): card is NonNullable<typeof card> => Boolean(card));
+      const archRes = data.relationType === '부부' || data.relationType === '연인'
+        ? reviseRomanticArchetype(baseArchRes, { relationType: data.relationType, colorsA: definedColorsA, colorsB: definedColorsB, cardsA: definedCardsA, cardsB: definedCardsB })
+        : baseArchRes;
       const lightRes = getLightArchetype(data.relationType, famsA, famsB);
 
       setSessionData(data);
@@ -549,6 +575,7 @@ export default function CoupleResultScreen() {
           archetypeResult.expressionSpeed.personB,
         ),
         recoveryDescription: archetypeResult.recoveryStyle.description,
+        relationType,
       })
     : [];
   const calculatedRomanticRelationshipRoles = isRomanticRel
@@ -557,6 +584,7 @@ export default function CoupleResultScreen() {
         personB: personBAnalysis,
         cardsA,
         cardsB,
+        relationType,
       })
     : null;
   const definedColorsA = colorsA.filter((color): color is NonNullable<typeof color> => Boolean(color));
@@ -692,25 +720,18 @@ export default function CoupleResultScreen() {
     }
   };
 
-  const getCouplePdfColorRows = (selectedColors: typeof colorsA) => selectedColors
-    .filter((color): color is NonNullable<typeof color> => Boolean(color))
-    .slice(0, 3)
-    .map((color, index) => {
-    const content = COLOR_ROLE_CONTENT[color.id];
-    const role = index === 0 ? '주기질' : index === 1 ? '보조기질' : '회복 방향';
-    const interpretation = index === 0
-      ? content?.primaryTrait
-      : index === 1
-        ? content?.secondaryTrait
-        : content?.recoveryDirection;
-    return {
-      role,
+  const getCouplePdfColorRows = (selectedColors: typeof colorsA, faith: typeof personA.info.faith) => {
+    const definedColors = selectedColors.filter((color): color is NonNullable<typeof color> => Boolean(color));
+    const copy = buildRelationshipPersonCopy(definedColors, faith);
+    const interpretations = [copy.psychologyFlow, copy.currentFlow, copy.recoveryDirection];
+    return definedColors.slice(0, 3).map((color, index) => ({
+      role: index === 0 ? '주기질' : index === 1 ? '보조기질' : '회복 방향',
       name: color.korName,
       hex: color.hex,
       keywords: color.keywords.slice(0, 3).join(' · '),
-      interpretation: interpretation ?? color.recovery,
-    };
-    });
+      interpretation: interpretations[index] ?? color.recovery,
+    }));
+  };
 
   const getCouplePdfCardRows = (selectedCards: typeof cardsA) => selectedCards
     .filter((card): card is NonNullable<typeof card> => Boolean(card))
@@ -722,7 +743,7 @@ export default function CoupleResultScreen() {
     colorHex: card.colorHex,
     shape: card.shape,
     title: card.energyTitle,
-    narrative: index === 0 ? card.psychologyFlow : index === 1 ? card.personalityFlow : card.recoveryDirection,
+    narrative: buildRelationshipCardNarrative(card, index === 0 ? 'inner' : index === 1 ? 'current' : 'recovery'),
     }));
 
   const submitCouplePdfDownload = (payload: ReturnType<typeof buildCouplePdfDownloadPayload>, requestId: string) => {
@@ -798,7 +819,7 @@ export default function CoupleResultScreen() {
         },
         personA: {
           label: personLabels.personA,
-          colors: getCouplePdfColorRows(colorsA),
+          colors: getCouplePdfColorRows(colorsA, personA.info.faith),
           cards: getCouplePdfCardRows(cardsA),
           integratedAnalysis: personAIntegratedAnalysis,
           relationshipStyle: personAAnalysis.relationshipStyle,
@@ -808,7 +829,7 @@ export default function CoupleResultScreen() {
         },
         personB: {
           label: personLabels.personB,
-          colors: getCouplePdfColorRows(colorsB),
+          colors: getCouplePdfColorRows(colorsB, personB.info.faith),
           cards: getCouplePdfCardRows(cardsB),
           integratedAnalysis: personBIntegratedAnalysis,
           relationshipStyle: personBAnalysis.relationshipStyle,
@@ -818,7 +839,7 @@ export default function CoupleResultScreen() {
         },
         relationship: {
           personLabels,
-          attractionAnalysis: coupleAnalysis.profileContrast || archetypeResult.profileContrastOverride?.attractionContrast || archetypeResult.tensionDescription,
+          attractionAnalysis: archetypeResult.profileContrastOverride?.attractionContrast || coupleAnalysis.profileContrast || archetypeResult.tensionDescription,
           roles: {
             personATitle: romanticRelationshipRoles.personA.title,
             personADescription: romanticRelationshipRoles.personA.description,
@@ -931,7 +952,7 @@ export default function CoupleResultScreen() {
         relationType,
         personA: {
           label: roleA ? personLabels.personA : `첫 번째 사람 - ${parentChildLabels.parent}`,
-          colors: getCouplePdfColorRows(colorsA),
+          colors: getCouplePdfColorRows(colorsA, personA.info.faith),
           cards: getCouplePdfCardRows(cardsA),
           integratedAnalysis: buildCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA),
           relationshipStyle: personAAnalysis.relationshipStyle,
@@ -941,7 +962,7 @@ export default function CoupleResultScreen() {
         },
         personB: {
           label: roleB ? personLabels.personB : `두 번째 사람 - ${parentChildLabels.child}`,
-          colors: getCouplePdfColorRows(colorsB),
+          colors: getCouplePdfColorRows(colorsB, personB.info.faith),
           cards: getCouplePdfCardRows(cardsB),
           integratedAnalysis: buildCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB),
           relationshipStyle: personBAnalysis.relationshipStyle,
@@ -1583,7 +1604,7 @@ export default function CoupleResultScreen() {
 
           {/* 두 사람 프로파일 대비 요약 — 끌림 이유 + 반복 패턴 + 해법 (archetype 오버라이드 우선) */}
           <SectionCard accentColor={accentCouple} label={getRelSectionLabel()} title={getRelSectionTitle()} colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.profileContrast || archetypeResult?.profileContrastOverride?.attractionContrast}</Text>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{archetypeResult?.profileContrastOverride?.attractionContrast || coupleAnalysis.profileContrast}</Text>
           </SectionCard>
 
           {isRomanticRel && romanticRelationshipRoles && (

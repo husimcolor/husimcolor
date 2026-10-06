@@ -17,6 +17,7 @@ type RomanticRelationTraitInput = {
   cardsB: Array<CardData | undefined>;
   expressionDescription: string;
   recoveryDescription: string;
+  relationType?: string;
 };
 
 type InteractionTheme = "balance" | "movement" | "depth" | "warmth" | "space";
@@ -117,6 +118,7 @@ export function buildRomanticRelationTraits({
   cardsB,
   expressionDescription,
   recoveryDescription,
+  relationType = "연인",
 }: RomanticRelationTraitInput): RomanticRelationTrait[] {
   const pairKey = getPairKey(
     getInteractionTheme(personA, cardsA),
@@ -125,7 +127,17 @@ export function buildRomanticRelationTraits({
 
   return [
     { title: "감정 교류", description: buildEmotionExchange(pairKey) },
-    { title: "표현 리듬", description: buildExpressionRhythm(pairKey, expressionDescription) },
-    { title: "갈등 회복", description: buildConflictRecovery(pairKey, recoveryDescription) },
+    {
+      title: "표현 리듬",
+      description: `${buildExpressionRhythm(pairKey, expressionDescription)} ${relationType === "부부"
+        ? "생활의 의제와 마음의 의제를 나누어 말하면 역할과 감정을 함께 돌볼 수 있습니다."
+        : "연락의 기대와 각자의 시간을 미리 맞추면 기다림이 덜 불안해질 수 있습니다."}`,
+    },
+    {
+      title: "갈등 회복",
+      description: `${buildConflictRecovery(pairKey, recoveryDescription)} ${relationType === "부부"
+        ? "갈등 뒤에도 다시 이야기할 시간을 생활의 약속처럼 남겨 보세요."
+        : "다음 연락이나 만남의 시점을 정해 두면 각자의 시간도 존중하기 쉽습니다."}`,
+    },
   ];
 }

@@ -5,6 +5,7 @@
 
 import { COLOR_DATA, ColorData } from './colorData';
 import { CARD_DATA, ShapeType } from './cardData';
+import { buildRelationshipPersonCopy } from '../lib/relationship-copy-revision';
 
 // ── 관계 유형 ────────────────────────────────────────────────────
 export type RelationType =
@@ -339,16 +340,18 @@ export function generatePersonAnalysis(
 
   // 코칭 메시지
   const coachingMessage = buildPersonCoachingMessage(card1, card3, session.info.faith);
+  // 관계검사는 컬러를 성격 진단처럼 단정하지 않고, 선택 시점의 마음과
+  // 관계에서 바라는 방식을 비춰 보는 문장으로 통일한다.
+  const revisedCopy = buildRelationshipPersonCopy([card1, card2, card3], session.info.faith);
 
   return {
-    // 컬러 조합 기반 에너지 프로파일로 차별화된 해석 생성
-    psychologyFlow: energyProfile.psychologyFlowText,
-    currentFlow: energyProfile.currentFlowText,
-    recoveryDirection: card3.reading3,
-    relationshipStyle: energyProfile.relationshipStyleText,
-    emotionExpression,
-    complementColor: complement,
-    coachingMessage,
+    psychologyFlow: revisedCopy.psychologyFlow,
+    currentFlow: revisedCopy.currentFlow,
+    recoveryDirection: revisedCopy.recoveryDirection,
+    relationshipStyle: revisedCopy.relationshipStyle,
+    emotionExpression: revisedCopy.emotionExpression,
+    complementColor: { ...complement, meaning: revisedCopy.complementMeaning },
+    coachingMessage: revisedCopy.coachingMessage,
   };
 }
 
@@ -413,7 +416,11 @@ function pickComplementColor(
     ['nature', 'warm_soft', 'cool_clear'].includes(getFamily(c.id))
   );
   const pool = preferred.length > 0 ? preferred : candidates;
-  const picked = pool[Math.floor(Math.random() * pool.length)] ?? COLOR_DATA[5];
+  // 동일한 선택에는 항상 같은 보완 컬러를 제안해 화면·공유 결과·PDF의 문구가 흔들리지 않게 한다.
+  const deterministicIndex = selectedIds.reduce((sum, id, index) => {
+    return sum + Array.from(id).reduce((charSum, char) => charSum + char.charCodeAt(0), 0) * (index + 1);
+  }, 0) % Math.max(pool.length, 1);
+  const picked = pool[deterministicIndex] ?? COLOR_DATA[5];
 
   const meaningMap: Record<string, string> = {
     warm_active: '활력과 표현을 깨우는 컬러',
