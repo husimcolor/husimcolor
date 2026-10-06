@@ -13,8 +13,8 @@ import {
   relationshipParticipants,
   relationshipSessions,
 } from "../../drizzle/schema";
-import { CARD_DATA, type CardData } from "../../constants/cardData";
-import { COLOR_DATA, type ColorData } from "../../constants/colorData";
+import { CARD_DATA } from "../../constants/cardData";
+import { COLOR_DATA, COLOR_ROLE_CONTENT } from "../../constants/colorData";
 import {
   generateCoupleAnalysis,
   generatePersonAnalysis,
@@ -35,11 +35,6 @@ import { getParentChildLabels } from "../../lib/parent-child-coaching";
 import { buildParentChildPdfDownloadPayload } from "../../lib/parent-child-pdf-download";
 import { buildRomanticRelationTraits } from "../../lib/couple-romantic-relation-traits";
 import { buildRomanticRelationshipRoles } from "../../lib/couple-romantic-relationship-roles";
-import {
-  buildRelationshipCardNarrative,
-  buildRelationshipPersonCopy,
-  reviseRomanticArchetype,
-} from "../../lib/relationship-copy-revision";
 import { parseCoupleShareSnapshot, type CoupleShareSnapshot } from "../../shared/couple-share";
 import type { CommerceProductCode } from "../../shared/commerce";
 import { getDb } from "../db";
@@ -157,7 +152,8 @@ function calculateArchetype(sessionData: CoupleSessionData) {
   const familiesB = sessionData.personB.colors.map((id) => familyMap[id] ?? "neutral") as any[];
   const shapeA3 = sessionData.personA.cards[2] ? CARD_DATA.find((card) => card.id === sessionData.personA.cards[2])?.shape : undefined;
   const shapeB3 = sessionData.personB.cards[2] ? CARD_DATA.find((card) => card.id === sessionData.personB.cards[2])?.shape : undefined;
-  const baseArchetype = getRelationArchetype(
+  return {
+    archetypeResult: getRelationArchetype(
       familiesA,
       familiesB,
       shapeA3,
@@ -166,23 +162,7 @@ function calculateArchetype(sessionData: CoupleSessionData) {
       sessionData.personB.colors,
       sessionData.personA.cards,
       sessionData.personB.cards,
-    );
-  const isRomantic = sessionData.relationType === "부부" || sessionData.relationType === "연인";
-  const colorsA = sessionData.personA.colors.map((id) => COLOR_DATA.find((color) => color.id === id)).filter((color): color is ColorData => Boolean(color));
-  const colorsB = sessionData.personB.colors.map((id) => COLOR_DATA.find((color) => color.id === id)).filter((color): color is ColorData => Boolean(color));
-  const cardsA = sessionData.personA.cards.map((id) => CARD_DATA.find((card) => card.id === id)).filter((card): card is CardData => Boolean(card));
-  const cardsB = sessionData.personB.cards.map((id) => CARD_DATA.find((card) => card.id === id)).filter((card): card is CardData => Boolean(card));
-
-  return {
-    archetypeResult: isRomantic
-      ? reviseRomanticArchetype(baseArchetype, {
-          relationType: sessionData.relationType as "부부" | "연인",
-          colorsA,
-          colorsB,
-          cardsA,
-          cardsB,
-        })
-      : baseArchetype,
+    ),
     lightArchetypeResult: getLightArchetype(sessionData.relationType, familiesA, familiesB),
   };
 }
@@ -193,10 +173,10 @@ function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapsho
   const personBAnalysis = generatePersonAnalysis(sessionData.personB, "B");
   const coupleAnalysis = generateCoupleAnalysis(sessionData, personAAnalysis, personBAnalysis);
   const { archetypeResult, lightArchetypeResult } = calculateArchetype(sessionData);
-  const colorsA = sessionData.personA.colors.map((id) => COLOR_DATA.find((color) => color.id === id)).filter((color): color is ColorData => Boolean(color));
-  const colorsB = sessionData.personB.colors.map((id) => COLOR_DATA.find((color) => color.id === id)).filter((color): color is ColorData => Boolean(color));
-  const cardsA = sessionData.personA.cards.map((id) => CARD_DATA.find((card) => card.id === id)).filter((card): card is CardData => Boolean(card));
-  const cardsB = sessionData.personB.cards.map((id) => CARD_DATA.find((card) => card.id === id)).filter((card): card is CardData => Boolean(card));
+  const colorsA = sessionData.personA.colors.map((id) => COLOR_DATA.find((color) => color.id === id)).filter(Boolean);
+  const colorsB = sessionData.personB.colors.map((id) => COLOR_DATA.find((color) => color.id === id)).filter(Boolean);
+  const cardsA = sessionData.personA.cards.map((id) => CARD_DATA.find((card) => card.id === id)).filter(Boolean);
+  const cardsB = sessionData.personB.cards.map((id) => CARD_DATA.find((card) => card.id === id)).filter(Boolean);
   const definedColorsA = colorsA.filter((color): color is NonNullable<typeof color> => Boolean(color));
   const definedColorsB = colorsB.filter((color): color is NonNullable<typeof color> => Boolean(color));
   const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
@@ -210,17 +190,10 @@ function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapsho
         cardsB: definedCardsB,
         expressionDescription: archetypeResult.expressionSpeed.description,
         recoveryDescription: archetypeResult.recoveryStyle.description,
-        relationType: sessionData.relationType,
       })
     : [];
   const romanticRelationshipRoles = isRomantic
-    ? buildRomanticRelationshipRoles({
-        personA: personAAnalysis,
-        personB: personBAnalysis,
-        cardsA: definedCardsA,
-        cardsB: definedCardsB,
-        relationType: sessionData.relationType,
-      })
+    ? buildRomanticRelationshipRoles({ personA: personAAnalysis, personB: personBAnalysis, cardsA: definedCardsA, cardsB: definedCardsB })
     : null;
 
   return {
@@ -243,22 +216,20 @@ function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapsho
   };
 }
 
-function getPdfColorRows(selectedColors: string[], faith: PersonSession["info"]["faith"]) {
-  const colors = selectedColors
+function getPdfColorRows(selectedColors: string[]) {
+  return selectedColors
     .map((id) => COLOR_DATA.find((color) => color.id === id))
-    .filter((color): color is NonNullable<typeof color> => Boolean(color));
-  const copy = buildRelationshipPersonCopy(colors, faith);
-  const interpretations = [copy.psychologyFlow, copy.currentFlow, copy.recoveryDirection];
-  return colors
+    .filter((color): color is NonNullable<typeof color> => Boolean(color))
     .slice(0, 3)
     .map((color, index) => {
+      const content = COLOR_ROLE_CONTENT[color.id];
       const role = index === 0 ? "주기질" : index === 1 ? "보조기질" : "회복 방향";
       return {
         role,
         name: color.korName,
         hex: color.hex,
         keywords: color.keywords.slice(0, 3).join(" · "),
-        interpretation: interpretations[index] ?? color.recovery,
+        interpretation: index === 0 ? content?.primaryTrait : index === 1 ? content?.secondaryTrait : content?.recoveryDirection ?? color.recovery,
       };
     });
 }
@@ -275,7 +246,7 @@ function getPdfCardRows(selectedCards: string[]) {
       colorHex: card.colorHex,
       shape: card.shape,
       title: card.energyTitle,
-      narrative: buildRelationshipCardNarrative(card, index === 0 ? "inner" : index === 1 ? "current" : "recovery"),
+      narrative: index === 0 ? card.psychologyFlow : index === 1 ? card.personalityFlow : card.recoveryDirection,
     }));
 }
 
@@ -304,7 +275,7 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
       },
       personA: {
         label: personLabels.personA,
-        colors: getPdfColorRows(personA.colors, personA.info.faith),
+        colors: getPdfColorRows(personA.colors),
         cards: getPdfCardRows(personA.cards),
         integratedAnalysis: snapshot.personAIntegratedAnalysis,
         relationshipStyle: personAAnalysis.relationshipStyle,
@@ -314,7 +285,7 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
       },
       personB: {
         label: personLabels.personB,
-        colors: getPdfColorRows(personB.colors, personB.info.faith),
+        colors: getPdfColorRows(personB.colors),
         cards: getPdfCardRows(personB.cards),
         integratedAnalysis: snapshot.personBIntegratedAnalysis,
         relationshipStyle: personBAnalysis.relationshipStyle,
@@ -324,7 +295,7 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
       },
       relationship: {
         personLabels,
-        attractionAnalysis: archetypeResult.profileContrastOverride?.attractionContrast || coupleAnalysis.profileContrast || archetypeResult.tensionDescription,
+        attractionAnalysis: coupleAnalysis.profileContrast || archetypeResult.profileContrastOverride?.attractionContrast || archetypeResult.tensionDescription,
         roles: {
           personATitle: roles.personA.title,
           personADescription: roles.personA.description,
@@ -384,7 +355,7 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
     relationType,
       personA: {
         label: personA.info.relationshipRole ?? labels.parent,
-      colors: getPdfColorRows(personA.colors, personA.info.faith),
+      colors: getPdfColorRows(personA.colors),
       cards: getPdfCardRows(personA.cards),
       integratedAnalysis: snapshot.personAIntegratedAnalysis,
       relationshipStyle: personAAnalysis.relationshipStyle,
@@ -394,7 +365,7 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
     },
       personB: {
         label: personB.info.relationshipRole ?? labels.child,
-      colors: getPdfColorRows(personB.colors, personB.info.faith),
+      colors: getPdfColorRows(personB.colors),
       cards: getPdfCardRows(personB.cards),
       integratedAnalysis: snapshot.personBIntegratedAnalysis,
       relationshipStyle: personBAnalysis.relationshipStyle,
