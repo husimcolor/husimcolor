@@ -134,7 +134,7 @@ export const CARD_DATA: CardData[] = [
       { name: '블루', meaning: '감정을 정화하고 고요함을 되찾는 흐름' },
       { name: '화이트', meaning: '새로운 시작과 정화의 기운' },
     ],
-    recoveryDirection: '억눌린 감정을 안전하게 꺼내는 것이 지금 가장 필요한 회복입니다.\n· 일기나 편지 형식으로 감정을 글로 써보세요. 보내지 않아도 됩니다.\n· 신뢰하는 사람에게 "요즘 힘들어"라고 솔직하게 말해보세요.\n· 격렬한 운동이나 춤처럼 몸을 통해 감정을 방출하는 시간을 가져보세요.',
+    recoveryDirection: '억눌린 감정을 안전하게 꺼내는 것이 지금 가장 필요한 회복입니다.\n· 일기나 편지 형식으로 감정을 글로 써보세요. 보내지 않아도 됩니다.\n· 신뢰하는 사람에게 "요즘 힘들어"라고 솔직하게 말해보세요.\n· 몸 상태에 맞는 운동이나 춤으로 감정을 풀어보세요.',
     coachingMessage: '쏟아낸 것들이 많아 지쳐있을 수 있습니다.\n지금은 채우는 시간이 필요합니다.',
     closingLine: '꺼진 것이 아닙니다. 잠시 숨을 고르는 중입니다.',
     wellness: {
@@ -1695,4 +1695,3 @@ export function getCardByColorAndShape(color: CardColorType, shape: ShapeType): 
 export function getTotalCardCount(): number {
   return CARD_DATA.length;
 }
-

@@ -1,4 +1,6 @@
-import type { CardData } from "@/constants/cardData";
+import type { CardData } from "../constants/cardData";
+import type { ColorData } from "../constants/colorData";
+import { buildRomanticColorLead } from "./romantic-color-profile";
 
 export type RomanticRelationTrait = {
   title: "감정 교류" | "표현 리듬" | "갈등 회복";
@@ -13,6 +15,9 @@ type PersonSignals = {
 type RomanticRelationTraitInput = {
   personA: PersonSignals;
   personB: PersonSignals;
+  /** 1·2·3순위 컬러의 순서를 보존해 관계 특성의 근거를 보강한다. */
+  colorsA?: Array<Pick<ColorData, "id" | "korName">>;
+  colorsB?: Array<Pick<ColorData, "id" | "korName">>;
   cardsA: Array<CardData | undefined>;
   cardsB: Array<CardData | undefined>;
   expressionDescription: string;
@@ -113,6 +118,8 @@ function buildConflictRecovery(pairKey: string, recoveryDescription: string): st
 export function buildRomanticRelationTraits({
   personA,
   personB,
+  colorsA,
+  colorsB,
   cardsA,
   cardsB,
   expressionDescription,
@@ -123,9 +130,25 @@ export function buildRomanticRelationTraits({
     getInteractionTheme(personB, cardsB),
   );
 
+  const colorLead = (context: RomanticRelationTrait["title"]) => {
+    // 같은 1순위 컬러를 모든 항목에 반복하지 않는다.
+    // 감정 교류는 주기질(1순위), 표현 리듬은 보조기질(2순위), 갈등 회복은 회복방향(3순위)을 근거로 한다.
+    const colorIndex = context === "감정 교류" ? 0 : context === "표현 리듬" ? 1 : 2;
+    return buildRomanticColorLead(
+      colorsA?.[colorIndex]?.korName,
+      colorsA?.[colorIndex]?.id,
+      colorsB?.[colorIndex]?.korName,
+      colorsB?.[colorIndex]?.id,
+    context,
+    );
+  };
+  const withColorLead = (context: RomanticRelationTrait["title"], body: string) => colorLead(context)
+    ? `${colorLead(context)} ${body}`
+    : body;
+
   return [
-    { title: "감정 교류", description: buildEmotionExchange(pairKey) },
-    { title: "표현 리듬", description: buildExpressionRhythm(pairKey, expressionDescription) },
-    { title: "갈등 회복", description: buildConflictRecovery(pairKey, recoveryDescription) },
+    { title: "감정 교류", description: withColorLead("감정 교류", buildEmotionExchange(pairKey)) },
+    { title: "표현 리듬", description: withColorLead("표현 리듬", buildExpressionRhythm(pairKey, expressionDescription)) },
+    { title: "갈등 회복", description: withColorLead("갈등 회복", buildConflictRecovery(pairKey, recoveryDescription)) },
   ];
 }

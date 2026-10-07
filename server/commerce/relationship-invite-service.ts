@@ -187,6 +187,8 @@ function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapsho
     ? buildRomanticRelationTraits({
         personA: personAAnalysis,
         personB: personBAnalysis,
+        colorsA: definedColorsA,
+        colorsB: definedColorsB,
         cardsA: definedCardsA,
         cardsB: definedCardsB,
         expressionDescription: archetypeResult.expressionSpeed.description,
@@ -194,7 +196,14 @@ function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapsho
       })
     : [];
   const romanticRelationshipRoles = isRomantic
-    ? buildRomanticRelationshipRoles({ personA: personAAnalysis, personB: personBAnalysis, cardsA: definedCardsA, cardsB: definedCardsB })
+    ? buildRomanticRelationshipRoles({
+        personA: personAAnalysis,
+        personB: personBAnalysis,
+        colorsA: definedColorsA,
+        colorsB: definedColorsB,
+        cardsA: definedCardsA,
+        cardsB: definedCardsB,
+      })
     : null;
 
   return {

@@ -2749,7 +2749,7 @@ function buildProfileContrast(
     ),
     // 동료 특화 조합 — 협업 스타일 차이 중심
     'warm_active-cool_clear': isColleague
-      ? `${nameA}의 성향을 가진 사람은 빠르게 움직이고 직접 표현하는 방식으로 일합니다. ${nameB}의 성향을 가진 사람은 명확하게 정리하고 신중하게 에쓰는 방식으로 일합니다.\n한 사람은 빠른 실행을 원하고, 다른 사람은 충분한 검토 후 진행하고 싶어 합니다. 이 속도 차이가 협업에서 마찰의 원인이 되기도 합니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람이 먼저 실행하고 싶을 때, 다른 사람은 아직 검토 중입니다. "지금 어디까지 정리된 거야?"`
+      ? `${nameA}의 성향을 가진 사람은 빠르게 움직이고 직접 표현하는 방식으로 일합니다. ${nameB}의 성향을 가진 사람은 명확하게 정리하고 신중하게 애쓰는 방식으로 일합니다.\n한 사람은 빠른 실행을 원하고, 다른 사람은 충분한 검토 후 진행하고 싶어 합니다. 이 속도 차이가 협업에서 마찰의 원인이 되기도 합니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람이 먼저 실행하고 싶을 때, 다른 사람은 아직 검토 중입니다. "지금 어디까지 정리된 거야?"`
       : isFriend
         ? `${nameA}의 성향을 가진 사람은 직접적으로 소통하고 빠르게 움직입니다. ${nameB}의 성향을 가진 사람은 명확하게 정리하고 신중하게 표현합니다.\n한 사람은 빠르게 소통하고 싶고, 다른 사람은 충분히 생각한 후 말하는 편입니다. 이 리듬 차이를 이해하면 우정이 더 편안해집니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람이 바로 말하고 싶을 때, 다른 사람은 아직 정리 중입니다. "지금 말할 수 있어?"`
         : buildContrastEntry(
@@ -2770,9 +2770,9 @@ function buildProfileContrast(
         ),
     // 친구 특화 조합 — 우정 유지 패턴 중심
     'warm_soft-cool_deep': isColleague
-      ? `${nameA}의 성향을 가진 사람은 배려 진하고 감정적으로 연결하는 방식으로 일합니다. ${nameB}의 성향을 가진 사람은 깊이 생각하고 내면에서 천천히 연결되는 방식으로 일합니다.\n한 사람은 관계 중심으로 일하고, 다른 사람은 업무 중심으로 일합니다. 이 차이가 협업 스타일의 간극으로 나타날 수 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람이 소통을 원할 때, 다른 사람은 아직 정리 중입니다. "지금 말할 수 있어?"`
+      ? `${nameA}의 성향을 가진 사람은 배려 깊고 감정적으로 연결하는 방식으로 일합니다. ${nameB}의 성향을 가진 사람은 깊이 생각하고 내면에서 천천히 연결되는 방식으로 일합니다.\n한 사람은 관계 중심으로 일하고, 다른 사람은 업무 중심으로 일합니다. 이 차이가 협업 스타일의 간극으로 나타날 수 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람이 소통을 원할 때, 다른 사람은 아직 정리 중입니다. "지금 말할 수 있어?"`
       : isFriend
-        ? `${nameA}의 성향을 가진 사람은 배려 진하고 감정적으로 연결하는 사람입니다. ${nameB}의 성향을 가진 사람은 말보다 마음으로 더 많이 느끼는 사람입니다.\n한 사람은 자주 연락하고 소통하고 싶고, 다른 사람은 스스로 연락하기까지 시간이 필요합니다. 이 리듬 차이가 서로에게 서운하게 느껴지는 순간이 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람이 먼저 연락하는 일이 많아집니다. "나 연락하는 거 부담 안 돼?"`
+        ? `${nameA}의 성향을 가진 사람은 배려 깊고 감정적으로 연결하는 사람입니다. ${nameB}의 성향을 가진 사람은 말보다 마음으로 더 많이 느끼는 사람입니다.\n한 사람은 자주 연락하고 소통하고 싶고, 다른 사람은 스스로 연락하기까지 시간이 필요합니다. 이 리듬 차이가 서로에게 서운하게 느껴지는 순간이 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람이 먼저 연락하는 일이 많아집니다. "나 연락하는 거 부담 안 돼?"`
         : buildContrastEntry(
             '배려', '내면 성찰',
             '한 사람의 따뜻한 배려가 다른 사람에게 안심감을 주고, 한 사람의 깊은 내면이 다른 사람에게 깊이감을 줍니다.',
@@ -2781,9 +2781,9 @@ function buildProfileContrast(
             '"나 연락하는 거 부담 안 돼?"'
           ),
     'cool_deep-warm_soft': isColleague
-      ? `${nameA}의 성향을 가진 사람은 깊이 생각하고 내면에서 천천히 연결되는 방식으로 일합니다. ${nameB}의 성향을 가진 사람은 배려 진하고 감정적으로 연결하는 방식으로 일합니다.\n한 사람은 업무 중심으로, 다른 사람은 관계 중심으로 일합니다. 이 차이가 협업 스타일의 간극으로 나타날 수 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람의 침묵이 다른 사람에게 무관심으로 읽히는 순간이 있습니다. "나 여기 있어"`
+      ? `${nameA}의 성향을 가진 사람은 깊이 생각하고 내면에서 천천히 연결되는 방식으로 일합니다. ${nameB}의 성향을 가진 사람은 배려 깊고 감정적으로 연결하는 방식으로 일합니다.\n한 사람은 업무 중심으로, 다른 사람은 관계 중심으로 일합니다. 이 차이가 협업 스타일의 간극으로 나타날 수 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람의 침묵이 다른 사람에게 무관심으로 읽히는 순간이 있습니다. "나 여기 있어"`
       : isFriend
-        ? `${nameA}의 성향을 가진 사람은 말보다 마음으로 더 많이 느끼는 사람입니다. ${nameB}의 성향을 가진 사람은 배려 진하고 감정적으로 연결하는 사람입니다.\n한 사람은 스스로 연락하기까지 시간이 필요하고, 다른 사람은 자주 연락하고 소통하고 싶어 합니다. 이 리듬 차이가 서로에게 서운하게 느껴지는 순간이 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람의 침묵이 다른 사람에게 거리두기로 읽히는 순간이 있습니다. "나 여기 있어"`
+        ? `${nameA}의 성향을 가진 사람은 말보다 마음으로 더 많이 느끼는 사람입니다. ${nameB}의 성향을 가진 사람은 배려 깊고 감정적으로 연결하는 사람입니다.\n한 사람은 스스로 연락하기까지 시간이 필요하고, 다른 사람은 자주 연락하고 소통하고 싶어 합니다. 이 리듬 차이가 서로에게 서운하게 느껴지는 순간이 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람의 침묵이 다른 사람에게 거리두기로 읽히는 순간이 있습니다. "나 여기 있어"`
         : buildContrastEntry(
             '내면 성찰', '배려',
             '한 사람의 깊은 내면이 다른 사람에게 깊이감을 주고, 한 사람의 따뜻한 배려가 다른 사람에게 안심감을 줍니다.',
@@ -2793,7 +2793,7 @@ function buildProfileContrast(
           ),
     // 동료 특화 조합 — 안정 vs 명료
     'warm_grounded-cool_clear': isColleague
-      ? `${nameA}의 성향을 가진 사람은 일상적인 신뢰를 쌓고 묵묵히 에쓰는 방식으로 일합니다. ${nameB}의 성향을 가진 사람은 명확한 기준과 시스템으로 일합니다.\n한 사람은 유연하게 적응하고, 다른 사람은 명확한 구조를 선호합니다. 이 차이가 협업 스타일의 간극으로 나타날 수 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람이 유연하게 적응할 때, 다른 사람은 명확한 기준을 원합니다. "지금 어디까지 정리된 거야?"`
+      ? `${nameA}의 성향을 가진 사람은 일상적인 신뢰를 쌓고 묵묵히 애쓰는 방식으로 일합니다. ${nameB}의 성향을 가진 사람은 명확한 기준과 시스템으로 일합니다.\n한 사람은 유연하게 적응하고, 다른 사람은 명확한 구조를 선호합니다. 이 차이가 협업 스타일의 간극으로 나타날 수 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람이 유연하게 적응할 때, 다른 사람은 명확한 기준을 원합니다. "지금 어디까지 정리된 거야?"`
       : buildContrastEntry(
           '안정', '명료함',
           '한 사람의 안정적인 존재감이 다른 사람에게 신뢰감을 주고, 한 사람의 명료한 판단이 다른 사람에게 방향감을 줍니다.',
@@ -2802,7 +2802,7 @@ function buildProfileContrast(
           '"지금 어디까지 정리된 거야?"'
         ),
     'cool_clear-warm_grounded': isColleague
-      ? `${nameA}의 성향을 가진 사람은 명확한 기준과 시스템으로 일합니다. ${nameB}의 성향을 가진 사람은 일상적인 신뢰를 쌓고 묵묵히 에쓰는 방식으로 일합니다.\n한 사람은 명확한 구조를 선호하고, 다른 사람은 유연하게 적응합니다. 이 차이가 협업 스타일의 간극으로 나타날 수 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람이 명확한 기준을 원할 때, 다른 사람은 유연하게 적응합니다. "지금 어디까지 확인된 거야?"`
+      ? `${nameA}의 성향을 가진 사람은 명확한 기준과 시스템으로 일합니다. ${nameB}의 성향을 가진 사람은 일상적인 신뢰를 쌓고 묵묵히 애쓰는 방식으로 일합니다.\n한 사람은 명확한 구조를 선호하고, 다른 사람은 유연하게 적응합니다. 이 차이가 협업 스타일의 간극으로 나타날 수 있습니다.\n반복되는 패턴은 이렇게 나타날 수 있습니다. 한 사람이 명확한 기준을 원할 때, 다른 사람은 유연하게 적응합니다. "지금 어디까지 확인된 거야?"`
       : buildContrastEntry(
           '명료함', '안정',
           '한 사람의 명료한 판단이 다른 사람에게 방향감을 주고, 한 사람의 안정적인 존재감이 다른 사람에게 신뢰감을 줍니다.',
@@ -4192,7 +4192,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
         '산책하면서 조용히 이야기하기',
         '서로에게 짧은 쪽지 남기기',
         '감정이 올라올 때 함께 쉴 수 있는 공간 만들기',
-        '파도가 지나간 후 브런치 함께 먹기',
+        '마음이 가라앉은 뒤 함께 식사하기',
       ],
       energyNote: '감정의 파도가 지나간 후 다시 연결되는 순간이 이 관계를 살립니다. 함께 없어도 연결되는 느낌이 드는 시간이 두 사람을 회복시킵니다.',
       faithRoutine: '잠자기 전 손잡고 기도하기 — 감정의 파도가 있어도 같은 마음으로 기도할 때 연결됩니다.',
@@ -6941,6 +6941,20 @@ export function getRelationArchetype(
       ['퇴근 후 짧게 오늘 이야기하기', '하루를 마무리하며 짧게 오늘 이야기하기'],
       ['집안일 역할 나누기', '다음 만남의 약속과 준비를 나누기'],
       ['함께 밥 한 끼 차려보세요', '다음 만남에 함께 식사하며 서로의 하루를 나눠보세요'],
+      ['먼저 밥을 차려주기', '힘든 날 먼저 안부를 묻고 마음을 살피기'],
+      ['함께 밥을 먹는 것', '만날 때 함께 식사하며 안부를 나누는 것'],
+      ['함께 밥을 먹고', '만날 때 함께 식사하고'],
+      ['함께 밥을 먹는', '만날 때 함께 식사하는'],
+      ['함께 살고', '함께 보내는 시간이 쌓이고'],
+      ['함께 살아가는', '함께 관계를 이어가는'],
+      ['함께 현실을 살아가는', '서로의 현실을 이해하며 관계를 이어가는'],
+      ['집 정리 좀 해줘', '다음 만남 준비를 함께 맞추자'],
+      ['옆에 조용히 있어주기', '통화나 만남에서 조용히 마음을 들어주기'],
+      ['말 없이 옆에 있어주는', '서두르지 않고 마음을 기다려주는'],
+      ['조용히 옆에 있기', '짧게 안부를 남기고 기다리기'],
+      ['갈등 후 안아주는', '갈등 후 다시 마음을 확인하는'],
+      ['포옹하기', '다시 연결되는 마음을 표현하기'],
+      ['함께 머무는 동안', '만나거나 연락을 나누는 동안'],
       ['생활을 함께 나누는', '함께 보내는 시간을 나누는'],
       ['공동생활', '함께 보내는 시간'],
       ['공동 생활', '함께 보내는 시간'],
@@ -7068,6 +7082,36 @@ export function getRelationArchetype(
     const adaptText = (value: string) => isLoverRelationship ? replaceLoverHouseholdContext(value) : value;
     finalBaseData = {
       ...finalBaseData,
+      // 화면과 PDF가 함께 사용하는 관계·회복·마무리 문장도 같은 연인 비동거 맥락으로 유지한다.
+      misunderstandingPattern: adaptText(finalBaseData.misunderstandingPattern),
+      connectionStyle: adaptText(finalBaseData.connectionStyle),
+      conversationRoutine: adaptText(finalBaseData.conversationRoutine),
+      recoveryRoutine: adaptText(finalBaseData.recoveryRoutine),
+      relationStrength: adaptText(finalBaseData.relationStrength),
+      closingMessage: adaptText(finalBaseData.closingMessage),
+      affectionRoutine: adaptText(finalBaseData.affectionRoutine),
+      emotionRoutine: adaptText(finalBaseData.emotionRoutine),
+      emotionRecoveryStyle: adaptText(finalBaseData.emotionRecoveryStyle),
+      recommendedActivity: adaptText(finalBaseData.recommendedActivity),
+      neededWords: adaptText(finalBaseData.neededWords),
+      dangerPattern: adaptText(finalBaseData.dangerPattern),
+      loveConnectionStyle: finalBaseData.loveConnectionStyle
+        ? adaptText(finalBaseData.loveConnectionStyle)
+        : undefined,
+      conflictReactionPattern: finalBaseData.conflictReactionPattern
+        ? adaptText(finalBaseData.conflictReactionPattern)
+        : undefined,
+      realEmotions: finalBaseData.realEmotions
+        ? {
+          ...finalBaseData.realEmotions,
+          feelings: finalBaseData.realEmotions.feelings.map(adaptText),
+          recoveryBridge: adaptText(finalBaseData.realEmotions.recoveryBridge),
+        }
+        : undefined,
+      intimacyConnection: {
+        ...finalBaseData.intimacyConnection,
+        loverNote: adaptText(finalBaseData.intimacyConnection.loverNote),
+      },
       unifiedSections: {
         ...unified,
         coreEnergy: { ...unified.coreEnergy, description: adaptText(unified.coreEnergy.description) },

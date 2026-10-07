@@ -1,4 +1,6 @@
 import type { CardData } from "../constants/cardData";
+import type { ColorData } from "../constants/colorData";
+import { getRomanticColorProfile } from "./romantic-color-profile";
 
 export type RomanticRelationshipRole = {
   title: string;
@@ -21,40 +23,66 @@ type RoleTheme = "balance" | "movement" | "depth" | "warmth" | "space";
 const ROLE_COPY: Record<RoleTheme, RomanticRelationshipRole> = {
   balance: {
     title: "관계의 균형을 잡는 역할",
-    description: "일상의 기준과 약속을 살피며, 관계가 흔들릴 때 다시 중심을 찾게 하는 역할을 맡기 쉽습니다.",
+    description: "일상의 기준과 약속을 살피며, 관계가 흔들릴 때 다시 중심을 찾는 쪽입니다.",
   },
   movement: {
     title: "관계를 움직이게 하는 역할",
-    description: "답답한 흐름에 말과 행동을 더해, 관계가 멈추지 않고 앞으로 나아가게 하는 역할을 맡기 쉽습니다.",
+    description: "답답한 흐름에는 말과 행동을 더해, 관계를 앞으로 나아가게 합니다.",
   },
   depth: {
     title: "마음을 깊게 읽는 역할",
-    description: "겉으로 드러난 말보다 마음의 결을 살피며, 관계가 놓치기 쉬운 의미를 붙잡는 역할을 맡기 쉽습니다.",
+    description: "겉으로 드러난 말보다 마음의 결을 살피며, 관계가 놓치기 쉬운 의미를 붙잡습니다.",
   },
   warmth: {
     title: "관계에 온기를 더하는 역할",
-    description: "서로의 기분을 살피고 다정한 연결을 만들어, 함께 있을 때의 편안함을 키우는 역할을 맡기 쉽습니다.",
+    description: "서로의 기분을 살피고 다정한 연결을 만들어, 함께 있을 때의 편안함을 키웁니다.",
   },
   space: {
     title: "관계에 숨을 만드는 역할",
-    description: "각자의 생각과 리듬을 존중하며, 부담 없이 다시 이야기할 수 있는 여유를 만드는 역할을 맡기 쉽습니다.",
+    description: "각자의 생각과 리듬을 존중하며, 부담 없이 다시 이야기할 수 있는 여유를 만듭니다.",
   },
 };
 
-function getRoleTheme(person: PersonSignals, cards: Array<CardData | undefined>): RoleTheme {
-  const source = [
-    person.relationshipStyle,
-    person.emotionExpression,
-    cards[0]?.psychologyFlow,
-    cards[1]?.personalityFlow,
-    cards[2]?.recoveryDirection,
-  ].filter(Boolean).join(" ");
+const COLOR_THEME: Record<string, RoleTheme> = {
+  red: "movement", orange: "movement", yellow: "balance", green: "balance", blue: "balance",
+  indigo: "depth", violet: "depth", pink: "warmth", magenta: "depth", coral: "warmth",
+  gold: "movement", brown: "balance", beige: "warmth", white: "balance", black: "depth",
+  silver: "balance", olive: "balance", mint: "space", skyblue: "space", lavender: "depth",
+  peach: "warmth", terracotta: "warmth", sage: "warmth", teal: "space", cream: "space",
+};
 
-  if (/(활발|직접|빠르|표현하고 싶은|추진|성장|움직)/.test(source)) return "movement";
-  if (/(내면|깊|정리|침묵|성찰|신중)/.test(source)) return "depth";
-  if (/(배려|온기|공감|돌보|다정|연결)/.test(source)) return "warmth";
-  if (/(공간|자유|가벼|리듬|여유)/.test(source)) return "space";
-  return "balance";
+function getRoleTheme(
+  person: PersonSignals,
+  cards: Array<CardData | undefined>,
+  colors: Array<Pick<ColorData, "id">> | undefined,
+): RoleTheme {
+  const scores: Record<RoleTheme, number> = { balance: 0, movement: 0, depth: 0, warmth: 0, space: 0 };
+  const patterns: Array<[RoleTheme, RegExp]> = [
+    ["movement", /(활발|직접|빠르|표현하고 싶은|추진|성장|움직)/g],
+    ["depth", /(내면|깊|정리|침묵|성찰|신중)/g],
+    ["warmth", /(배려|온기|공감|돌보|다정|따뜻|연결)/g],
+    ["space", /(공간|자유|가벼|리듬|여유)/g],
+    ["balance", /(안정|신뢰|기준|꾸준|균형|약속)/g],
+  ];
+  const scoreText = (text: string | undefined, weight: number) => {
+    if (!text) return;
+    patterns.forEach(([theme, pattern]) => { scores[theme] += (text.match(pattern)?.length ?? 0) * weight; });
+  };
+
+  // 1·2·3순위 컬러의 역할을 유지하되, 1순위가 단독으로 모든 해석을 덮지 않도록 차등 반영한다.
+  [12, 6, 3].forEach((weight, index) => {
+    const theme = colors?.[index] ? COLOR_THEME[colors[index]!.id] : undefined;
+    if (theme) scores[theme] += weight;
+  });
+  scoreText(person.relationshipStyle, 2);
+  scoreText(person.emotionExpression, 2);
+  // 카드 1·2·3번은 현재 정서·표현·회복의 결을 보태지만, 한 카드의 단어가 컬러 기질 전체를 뒤집지 않게 보조로 반영한다.
+  scoreText(cards[0]?.psychologyFlow, 0.5);
+  scoreText(cards[1]?.personalityFlow, 0.5);
+  scoreText(cards[2]?.recoveryDirection, 0.5);
+
+  const priority: RoleTheme[] = ["balance", "warmth", "depth", "space", "movement"];
+  return priority.reduce((best, theme) => scores[theme] > scores[best] ? theme : best, "balance");
 }
 
 function alternateTheme(theme: RoleTheme): RoleTheme {
@@ -75,20 +103,35 @@ function alternateTheme(theme: RoleTheme): RoleTheme {
 export function buildRomanticRelationshipRoles({
   personA,
   personB,
+  colorsA,
+  colorsB,
   cardsA,
   cardsB,
 }: {
   personA: PersonSignals;
   personB: PersonSignals;
+  /** 선택 순서를 보존한 컬러 근거. 없으면 기존 역할 문구를 그대로 사용한다. */
+  colorsA?: Array<Pick<ColorData, "id" | "korName">>;
+  colorsB?: Array<Pick<ColorData, "id" | "korName">>;
   cardsA: Array<CardData | undefined>;
   cardsB: Array<CardData | undefined>;
 }): RomanticRelationshipRoles {
-  const themeA = getRoleTheme(personA, cardsA);
-  let themeB = getRoleTheme(personB, cardsB);
+  const themeA = getRoleTheme(personA, cardsA, colorsA);
+  let themeB = getRoleTheme(personB, cardsB, colorsB);
   if (themeA === themeB) themeB = alternateTheme(themeB);
 
-  const roleA = ROLE_COPY[themeA];
-  const roleB = ROLE_COPY[themeB];
+  const colorA = colorsA?.[0];
+  const colorB = colorsB?.[0];
+  const profileA = getRomanticColorProfile(colorA?.id);
+  const profileB = getRomanticColorProfile(colorB?.id);
+  const baseRoleA = ROLE_COPY[themeA];
+  const baseRoleB = ROLE_COPY[themeB];
+  const roleA: RomanticRelationshipRole = profileA && colorA
+    ? { ...baseRoleA, description: `${colorA.korName}의 ${profileA.relationshipStrength}이 두드러집니다. ${baseRoleA.description} 다만 ${profileA.overloadCaution}` }
+    : baseRoleA;
+  const roleB: RomanticRelationshipRole = profileB && colorB
+    ? { ...baseRoleB, description: `${colorB.korName}의 ${profileB.relationshipStrength}이 두드러집니다. ${baseRoleB.description} 다만 ${profileB.overloadCaution}` }
+    : baseRoleB;
   const pairKey = [themeA, themeB].sort().join("|");
   const togetherMap: Record<string, string> = {
     "balance|movement": `${roleA.title}과 ${roleB.title}이 만나면 관계에는 안정과 변화가 함께 들어옵니다. 한쪽이 모든 기준을 붙잡거나 다른 한쪽이 속도를 앞세우면 답답함이 커질 수 있으니, 중요한 일은 기준을 먼저 맞추고 그 안에서 새 시도를 더해보는 것이 좋습니다.`,

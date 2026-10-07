@@ -100,14 +100,23 @@ function buildCoupleShareSnapshot(
     ? buildRomanticRelationTraits({
         personA: personAAnalysis,
         personB: personBAnalysis,
-        cardsA,
-        cardsB,
+        colorsA: definedColorsA,
+        colorsB: definedColorsB,
+        cardsA: definedCardsA,
+        cardsB: definedCardsB,
         expressionDescription: archetypeResult.expressionSpeed.description,
         recoveryDescription: archetypeResult.recoveryStyle.description,
       })
     : [];
   const romanticRelationshipRoles = isRomanticRel
-    ? buildRomanticRelationshipRoles({ personA: personAAnalysis, personB: personBAnalysis, cardsA, cardsB })
+    ? buildRomanticRelationshipRoles({
+        personA: personAAnalysis,
+        personB: personBAnalysis,
+        colorsA: definedColorsA,
+        colorsB: definedColorsB,
+        cardsA: definedCardsA,
+        cardsB: definedCardsB,
+      })
     : null;
 
   const immutableSessionData: CoupleSessionData = {
@@ -612,13 +621,19 @@ export default function CoupleResultScreen() {
   const colorsB = personB.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean);
   const cardsA = personA.cards.map(id => CARD_DATA.find(c => c.id === id)).filter(Boolean);
   const cardsB = personB.cards.map(id => CARD_DATA.find(c => c.id === id)).filter(Boolean);
+  const definedColorsA = colorsA.filter((color): color is NonNullable<typeof color> => Boolean(color));
+  const definedColorsB = colorsB.filter((color): color is NonNullable<typeof color> => Boolean(color));
+  const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
+  const definedCardsB = cardsB.filter((card): card is NonNullable<typeof card> => Boolean(card));
   const cardLabels = ['무의식', '현재', '미래'];
   const calculatedRomanticRelationTraits = isRomanticRel
     ? buildRomanticRelationTraits({
         personA: personAAnalysis,
         personB: personBAnalysis,
-        cardsA,
-        cardsB,
+        colorsA: definedColorsA,
+        colorsB: definedColorsB,
+        cardsA: definedCardsA,
+        cardsB: definedCardsB,
         expressionDescription: getExprDescription(
           archetypeResult.expressionSpeed.personA,
           archetypeResult.expressionSpeed.personB,
@@ -630,14 +645,12 @@ export default function CoupleResultScreen() {
     ? buildRomanticRelationshipRoles({
         personA: personAAnalysis,
         personB: personBAnalysis,
-        cardsA,
-        cardsB,
+        colorsA: definedColorsA,
+        colorsB: definedColorsB,
+        cardsA: definedCardsA,
+        cardsB: definedCardsB,
       })
     : null;
-  const definedColorsA = colorsA.filter((color): color is NonNullable<typeof color> => Boolean(color));
-  const definedColorsB = colorsB.filter((color): color is NonNullable<typeof color> => Boolean(color));
-  const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
-  const definedCardsB = cardsB.filter((card): card is NonNullable<typeof card> => Boolean(card));
   const calculatedPersonAIntegratedAnalysis = buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA);
   const calculatedPersonBIntegratedAnalysis = buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB);
   // 공유 링크에서는 생성 당시 저장한 서술 결과를 우선해 이후 로컬 세션·새 검사와 분리한다.

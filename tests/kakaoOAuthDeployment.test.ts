@@ -38,7 +38,7 @@ describe("Kakao OAuth prebuilt deployment contract", () => {
 
   it("uses the same prebuilt artifact for Preview pull requests without Production deployment", () => {
     expect(workflow).toContain("pull_request:");
-    expect(workflow).toContain('if [ "${{ github.event_name }}" = "push" ]; then');
+    expect(workflow).toContain('if [ "${{ github.ref }}" = "refs/heads/main" ]; then');
     expect(workflow).toContain("vercel deploy --prebuilt --prod");
     expect(workflow).toContain("vercel deploy --prebuilt --token");
   });
