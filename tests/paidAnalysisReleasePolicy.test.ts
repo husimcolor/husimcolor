@@ -33,12 +33,15 @@ describe("유료 분석 공개 상태 정책", () => {
     expect(() => assertPublicPaidAnalysisCheckout("couple_love_deep", environment)).toThrow("PAID_ANALYSIS_PREPARING_FOR_LAUNCH");
   });
 
-  it("최종 결제 QA 후 설정 하나로 유료 분석 공개를 열 수 있다", () => {
+  it("공개 gate와 최종 실결제 QA 승인값이 모두 있어야 유료 분석을 연다", () => {
     const environment: NodeJS.ProcessEnv = {
       NODE_ENV: "production",
       VERCEL_ENV: "production",
       COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED: "true",
     };
+
+    expect(isPublicPaidAnalysisEnabled(environment)).toBe(false);
+    environment.COMMERCE_REAL_PAYMENT_QA_APPROVED = "true";
     expect(isPublicPaidAnalysisEnabled(environment)).toBe(true);
     expect(() => assertPublicPaidAnalysisCheckout("parent_child_deep", environment)).not.toThrow();
   });
