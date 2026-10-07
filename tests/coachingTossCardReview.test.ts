@@ -32,7 +32,7 @@ describe("coaching Toss card-review presentation flow", () => {
     });
   });
 
-  it("uses a fresh review order number without the order service or a Toss secret key", () => {
+  it("uses a fresh Preview review order number and keeps Production review locked", () => {
     const first = getTossCardReviewConfig("personal_coaching", previewEnvironment);
     const second = getTossCardReviewConfig("personal_coaching", previewEnvironment);
 
@@ -43,7 +43,7 @@ describe("coaching Toss card-review presentation flow", () => {
       VERCEL_ENV: "production",
       COMMERCE_TOSS_CARD_REVIEW_ENABLED: "true",
       TOSS_TEST_CLIENT_KEY: "test_ck_production_review",
-    })).toBe(true);
+    })).toBe(false);
   });
 
   it("rejects a non-review product before producing presentation data", () => {

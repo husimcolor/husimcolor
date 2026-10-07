@@ -28,16 +28,13 @@ function hasTestClientKey(environment: NodeJS.ProcessEnv): boolean {
 
 /**
  * Toss card-review is intentionally separate from checkout and approval.
- * Preview uses the existing test runtime. Production needs an additional,
- * explicit flag and only the public Toss test client key; it never needs the
- * secret key and never calls an approval endpoint.
+ * Preview uses the existing test runtime. Production never exposes this
+ * review-only flow, even if a stale review flag or public test key remains in
+ * the deployment environment.
  */
 export function isTossCardReviewEnabled(environment: NodeJS.ProcessEnv = process.env): boolean {
   const previewEnabled = environment.VERCEL_ENV === "preview" && environment.COMMERCE_TEST_MODE === "true";
-  const productionReviewEnabled = environment.VERCEL_ENV === "production"
-    && environment.COMMERCE_TOSS_CARD_REVIEW_ENABLED === "true";
-
-  return hasTestClientKey(environment) && (previewEnabled || productionReviewEnabled);
+  return hasTestClientKey(environment) && previewEnabled;
 }
 
 function requireReviewClientKey(environment: NodeJS.ProcessEnv): string {

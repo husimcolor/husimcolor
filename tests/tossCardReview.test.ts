@@ -26,24 +26,19 @@ describe("Toss card-review presentation flow", () => {
     });
   });
 
-  it("requires an explicit Production review flag and never needs a Toss secret key", () => {
-    const disabled: NodeJS.ProcessEnv = {
+  it("keeps Production card review closed even when stale review flags remain", () => {
+    const productionEnvironment: NodeJS.ProcessEnv = {
       NODE_ENV: "production",
       VERCEL_ENV: "production",
       TOSS_TEST_CLIENT_KEY: "test_ck_production_review",
-    };
-    const enabled: NodeJS.ProcessEnv = {
-      ...disabled,
+      COMMERCE_TEST_MODE: "true",
+      COMMERCE_PRODUCTION_TEST_MODE: "true",
       COMMERCE_TOSS_CARD_REVIEW_ENABLED: "true",
+      COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED: "true",
     };
 
-    expect(isTossCardReviewEnabled(disabled)).toBe(false);
-    expect(isTossCardReviewEnabled(enabled)).toBe(true);
-    expect(getTossCardReviewConfig("couple_love_deep", enabled)).toMatchObject({
-      productCode: "couple_love_deep",
-      amountKrw: 59_000,
-      tossClientKey: "test_ck_production_review",
-    });
+    expect(isTossCardReviewEnabled(productionEnvironment)).toBe(false);
+    expect(() => getTossCardReviewConfig("couple_love_deep", productionEnvironment)).toThrow("TOSS_CARD_REVIEW_DISABLED");
   });
 
   it("returns a fresh non-persistent review order number and preserves fixed catalog prices", () => {

@@ -35,6 +35,11 @@ describe("TestPaymentService", () => {
 
     vi.stubEnv("VERCEL_ENV", "production");
     expect(isTestPaymentEnabled()).toBe(false);
+
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("COMMERCE_PRODUCTION_TEST_MODE", "true");
+    vi.stubEnv("COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED", "true");
+    expect(isTestPaymentEnabled()).toBe(false);
     vi.unstubAllEnvs();
   });
 

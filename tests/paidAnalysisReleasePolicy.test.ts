@@ -20,8 +20,25 @@ describe("유료 분석 공개 상태 정책", () => {
     expect(isPublicPaidAnalysisEnabled({ NODE_ENV: "production", VERCEL_ENV: "preview" })).toBe(false);
   });
 
+  it("Vercel 함수가 NODE_ENV 또는 VERCEL_ENV를 누락해도 운영 공개 상태를 열지 않는다", () => {
+    const environment: NodeJS.ProcessEnv = {
+      VERCEL: "1",
+      NODE_ENV: "development",
+      COMMERCE_TEST_MODE: "true",
+      COMMERCE_PRODUCTION_TEST_MODE: "true",
+      COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED: "true",
+    };
+
+    expect(isPublicPaidAnalysisEnabled(environment)).toBe(false);
+    expect(() => assertPublicPaidAnalysisCheckout("couple_love_deep", environment)).toThrow("PAID_ANALYSIS_PREPARING_FOR_LAUNCH");
+  });
+
   it("최종 결제 QA 후 설정 하나로 유료 분석 공개를 열 수 있다", () => {
-    const environment: NodeJS.ProcessEnv = { NODE_ENV: "production", COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED: "true" };
+    const environment: NodeJS.ProcessEnv = {
+      NODE_ENV: "production",
+      VERCEL_ENV: "production",
+      COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED: "true",
+    };
     expect(isPublicPaidAnalysisEnabled(environment)).toBe(true);
     expect(() => assertPublicPaidAnalysisCheckout("parent_child_deep", environment)).not.toThrow();
   });
