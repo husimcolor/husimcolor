@@ -30,6 +30,10 @@ import {
   PARENT_CHILD_PRIORITY_PILOT_QUERY,
   PARENT_CHILD_PRIORITY_PILOT_SESSION,
 } from '@/lib/parent-child-priority-pilot';
+import {
+  COUPLE_LOVER_CONTEXT_REVIEW_QUERY,
+  getCoupleLoverContextReviewSession,
+} from '@/lib/couple-lover-context-review';
 import { getCoupleShareSessionSignature, type CoupleShareSnapshot } from '@/shared/couple-share';
 
 // ─── SectionCard ─────────────────────────────────────────────────────────────
@@ -136,13 +140,25 @@ function buildCoupleShareSnapshot(
 // ─── 메인 화면 ───────────────────────────────────────────────────────────────
 export default function CoupleResultScreen() {
   const router = useRouter();
-  const routeParams = useLocalSearchParams<{ shareId?: string | string[]; resultToken?: string | string[]; relationshipToken?: string | string[]; qa?: string | string[] }>();
+  const routeParams = useLocalSearchParams<{
+    shareId?: string | string[];
+    resultToken?: string | string[];
+    relationshipToken?: string | string[];
+    qa?: string | string[];
+    sample?: string | string[];
+  }>();
   const requestedShareId = typeof routeParams.shareId === 'string' ? routeParams.shareId : undefined;
   const requestedResultToken = typeof routeParams.resultToken === 'string' ? routeParams.resultToken : undefined;
   const requestedRelationshipToken = typeof routeParams.relationshipToken === 'string' ? routeParams.relationshipToken : undefined;
   const requestedQa = typeof routeParams.qa === 'string' ? routeParams.qa : undefined;
+  const requestedReviewSample = typeof routeParams.sample === 'string' ? routeParams.sample : undefined;
   const isPriorityPilot = process.env.NODE_ENV !== 'production'
     && requestedQa === PARENT_CHILD_PRIORITY_PILOT_QUERY;
+  const coupleLoverContextReviewSession = getCoupleLoverContextReviewSession(requestedReviewSample);
+  // 개발 서버의 고정 리뷰 입력만 허용한다. Production 정적 번들에서는 false이므로 URL만으로 접근할 수 없다.
+  const isCoupleLoverContextReview = process.env.NODE_ENV !== 'production'
+    && requestedQa === COUPLE_LOVER_CONTEXT_REVIEW_QUERY
+    && Boolean(coupleLoverContextReviewSession);
   // 관계 결과의 크림·브라운 카드 팔레트는 인앱 WebView의 시스템 다크 모드와 무관하게 고정한다.
   // 카카오·Instagram WebView가 dark scheme을 반환해도 밝은 내부 카드에 밝은 본문이 상속되지 않는다.
   const colors = useColors('light');
@@ -210,12 +226,16 @@ export default function CoupleResultScreen() {
 
   useEffect(() => {
     if (requestedShareId || requestedResultToken || requestedRelationshipToken) return;
+    if (isCoupleLoverContextReview && coupleLoverContextReviewSession) {
+      loadCoupleLoverContextReviewSession();
+      return;
+    }
     if (isPriorityPilot) {
       loadPriorityPilotSession();
       return;
     }
     loadLocalSession();
-  }, [requestedShareId, requestedResultToken, isPriorityPilot]);
+  }, [requestedShareId, requestedResultToken, isCoupleLoverContextReview, isPriorityPilot, requestedReviewSample]);
 
   useEffect(() => {
     if (!requestedShareId || sharedResultQuery.isLoading) return;
@@ -317,7 +337,7 @@ export default function CoupleResultScreen() {
       }) as any[];
       const shapeA3 = data.personA.cards[2] ? CARD_DATA.find((c: any) => c.id === data.personA.cards[2])?.shape : undefined;
       const shapeB3 = data.personB.cards[2] ? CARD_DATA.find((c: any) => c.id === data.personB.cards[2])?.shape : undefined;
-      const archRes = getRelationArchetype(famsA, famsB, shapeA3, shapeB3, data.personA.colors, data.personB.colors, data.personA.cards, data.personB.cards);
+      const archRes = getRelationArchetype(famsA, famsB, shapeA3, shapeB3, data.personA.colors, data.personB.colors, data.personA.cards, data.personB.cards, data.relationType);
       const lightRes = getLightArchetype(data.relationType, famsA, famsB);
       setPersonAAnalysis(aAnalysis);
       setPersonBAnalysis(bAnalysis);
@@ -372,6 +392,7 @@ export default function CoupleResultScreen() {
         data.personB.colors,
         data.personA.cards,
         data.personB.cards,
+        data.relationType,
       );
       const lightRes = getLightArchetype(data.relationType, famsA, famsB);
 
@@ -384,6 +405,60 @@ export default function CoupleResultScreen() {
       setLoading(false);
     } catch {
       setError('로컬 시범 분석을 준비하지 못했습니다.');
+      setLoading(false);
+    }
+  }
+
+  function loadCoupleLoverContextReviewSession() {
+    try {
+      // 개발 검토용: 같은 컬러·카드 조합을 관계 유형만 바꾸어 계산한다.
+      // AsyncStorage, 방문 기록, 공유 스냅샷, 결제·주문·초대 링크에는 접근하지 않는다.
+      if (!coupleLoverContextReviewSession) throw new Error('review sample is unavailable');
+      setLoading(true);
+      setError(null);
+      setSharedSnapshot(null);
+      setActiveShareId(null);
+      coupleShareRequestRef.current = null;
+
+      const data = coupleLoverContextReviewSession;
+      const aAnalysis = generatePersonAnalysis(data.personA, 'A');
+      const bAnalysis = generatePersonAnalysis(data.personB, 'B');
+      const cAnalysis = generateCoupleAnalysis(data, aAnalysis, bAnalysis);
+      const ENERGY_FAM: Record<string, string> = {
+        red:'warm_active',orange:'warm_active',coral:'warm_active',magenta:'warm_active',
+        pink:'warm_soft',peach:'warm_soft',beige:'warm_soft',cream:'warm_soft',
+        gold:'warm_grounded',brown:'warm_grounded',terracotta:'warm_grounded',
+        blue:'cool_clear',skyblue:'cool_clear',teal:'cool_clear',mint:'cool_clear',
+        indigo:'cool_deep',violet:'cool_deep',black:'cool_deep',silver:'cool_deep',navy:'cool_deep',
+        green:'nature',olive:'nature',sage:'nature',lavender:'nature',
+        white:'neutral',yellow:'neutral',
+      };
+      const famsA = data.personA.colors.map((id) => ENERGY_FAM[id] ?? 'neutral') as any[];
+      const famsB = data.personB.colors.map((id) => ENERGY_FAM[id] ?? 'neutral') as any[];
+      const shapeA3 = data.personA.cards[2] ? CARD_DATA.find((card) => card.id === data.personA.cards[2])?.shape : undefined;
+      const shapeB3 = data.personB.cards[2] ? CARD_DATA.find((card) => card.id === data.personB.cards[2])?.shape : undefined;
+      const archRes = getRelationArchetype(
+        famsA,
+        famsB,
+        shapeA3,
+        shapeB3,
+        data.personA.colors,
+        data.personB.colors,
+        data.personA.cards,
+        data.personB.cards,
+        data.relationType,
+      );
+      const lightRes = getLightArchetype(data.relationType, famsA, famsB);
+
+      setSessionData(data);
+      setPersonAAnalysis(aAnalysis);
+      setPersonBAnalysis(bAnalysis);
+      setCoupleAnalysis(cAnalysis);
+      setArchetypeResult(archRes);
+      setLightArchetypeResult(lightRes);
+      setLoading(false);
+    } catch {
+      setError('개발 검토용 결과를 준비하지 못했습니다.');
       setLoading(false);
     }
   }
@@ -1072,6 +1147,23 @@ export default function CoupleResultScreen() {
             </View>
           </View>
 
+          {isCoupleLoverContextReview && (
+            <View style={{
+              marginHorizontal: 20,
+              marginBottom: 12,
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              borderRadius: 12,
+              backgroundColor: '#F7F0E8',
+              borderWidth: 1,
+              borderColor: '#D9B78A',
+            }}>
+              <Text style={{ color: '#6B5344', fontSize: 12.5, lineHeight: 19 }}>
+                개발 검토 예시입니다. 같은 컬러·심리카드 조합으로 부부와 연인의 생활 장면만 비교하며, 저장·공유·PDF 생성·후기 작성은 실행되지 않습니다.
+              </Text>
+            </View>
+          )}
+
           {/* ═══════════════════════════════════════════════════════
               상단 요약 카드 — 컬러 행 + 심리카드 행
           ═══════════════════════════════════════════════════════ */}
@@ -1468,7 +1560,7 @@ export default function CoupleResultScreen() {
           </View>
           </ViewShot>
           {/* 공유 버튼 */}
-          <View style={shareCardStyles.row}>
+          {!isCoupleLoverContextReview && <View style={shareCardStyles.row}>
             <TouchableOpacity
               activeOpacity={0.8}
               style={[shareCardStyles.btn, { backgroundColor: accentCouple + '20', borderColor: accentCouple + '60' }]}
@@ -1510,7 +1602,7 @@ export default function CoupleResultScreen() {
             >
               <Text style={[shareCardStyles.btnText, { color: '#3A1D1D' }]}>💬 카카오 공유</Text>
             </TouchableOpacity>
-          </View>
+          </View>}
 
           {/* ═══════════════════════════════════════════════════════
               부부·연인 전용 관계 특성 + 표현 속도·회복 방식
@@ -2018,7 +2110,7 @@ export default function CoupleResultScreen() {
             </Text>
           </View>
 
-          {isRomanticRel && (
+          {isRomanticRel && !isCoupleLoverContextReview && (
             <View style={styles.couplePdfSection}>
               <TouchableOpacity
                 activeOpacity={0.82}
@@ -2075,6 +2167,7 @@ export default function CoupleResultScreen() {
         </View>
 
         {/* 하단 버튼 */}
+        {!isCoupleLoverContextReview && <>
         <Pressable
           style={[styles.restartBtn, { backgroundColor: accentCouple }]}
           onPress={() => router.push('/(tabs)/couple-start' as any)}
@@ -2110,6 +2203,7 @@ export default function CoupleResultScreen() {
         >
           <Text style={[styles.shareBtnText, { color: accentCouple }]}>결과 공유하기</Text>
         </Pressable>
+        </>}
 
         <Pressable
           style={[styles.homeBtn, { borderColor: colors.border }]}

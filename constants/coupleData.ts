@@ -212,7 +212,7 @@ function getPersonEnergyProfile(families: EnergyFamily[], primaryFamily?: Energy
 
   // 심리 흐름 (무의식/내면 흐름) — 조합 기반 차별화 + 감정 흐름 전환 표현 강화
   const psychologyFlowMap: Record<PersonProfile, string> = {
-    expressive: '지금 마음속에는 감정이 생기면 바로 꺼내고 싶은 충동이 있습니다. 표현하지 못하면 답답해지는 유형입니다. 이 결이 관계 안에서 속도차이를 만들고, 심지어 상대가 준비되지 않았을 때 상처가 될 수 있습니다. 앞으로는 표현하기 전에 잠깐 멈춰 묻는 연습이 관계를 한단계 더 따뜻하게 만들어줍니다.',
+    expressive: '지금 마음속에는 감정이 생기면 바로 꺼내고 싶은 충동이 있습니다. 표현하지 못하면 답답해지는 유형입니다. 이 결이 관계 안에서 속도차이를 만들고, 심지어 상대가 준비되지 않았을 때 상처가 될 수 있습니다. 앞으로는 표현하기 전에 잠깐 멈춰 묻는 연습이 관계를 한 단계 더 따뜻하게 만들어줍니다.',
     warm_connector: '지금 마음속에는 누군가를 돌보고 싶은 마음이 조용히 흐르고 있습니다. 그 마음이 너무 크면 자신의 감정은 뒤로 미루게 될 수 있습니다. 이 결이 관계 안에서 소진으로 이어질 수 있습니다. 앞으로는 자신에게도 그 따뜻함을 돌려주는 시간이 필요합니다.',
     stable_seeker: '지금 마음속에는 흔들리지 않는 관계를 원하는 마음이 있습니다. 변화보다 익숙한 안정감에서 편안함을 찾는 편입니다. 이 결이 관계 안에서 소통을 늘리는 데 시간이 필요하게 만들고, 상대에게 다가오는 데 시간이 걸릴 수 있습니다. 앞으로는 작은 인정 한 마디가 이 결을 편안하게 열어줍니다.',
     free_spirit: '지금 마음속에는 함께 있어도 자신만의 공간이 필요한 마음이 있습니다. 논리적으로 정리되지 않은 것에 불편함을 느끼는 편입니다. 이 결이 관계 안에서 감정 연결보다 실질적 소통을 앞세우게 만들고, 상대에게 차갑게 느껴지는 순간이 생길 수 있습니다. 앞으로는 먼저 공감하고 정리하는 순서를 연습하면 관계의 온도가 높아집니다.',
@@ -3934,7 +3934,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     typeEmoji: '🏠',
     coreSummary: '생활 루틴이 이 관계의 언어입니다.',
     tensionDescription: '이 관계는 드라마틱하지 않습니다. 주말 아침 함께 커피를 마시고, 장을 함께 보고, 저녁에 같이 요리합니다. 큰 갈등도, 극적인 화해도 없습니다. 그래서 때로는 "우리 너무 무난한 거 아니야?"라는 생각이 스칩니다. 하지만 매일 함께 밥을 먹는 것, 잠들기 전 "내일 뭐 시간 어때?" 라고 묻는 것, 그 작은 것들이 쌓여 이 관계가 됩니다.',
-    misunderstandingPattern: '"오늘 뒤 스케줄 어때?" "이번 주 마트 가야 하는데." "다음 달 고정지출 얼마야?" 이런 대화만 남으면 "우리 관계에 감정이 없는 거 아니야?"라는 의문이 듭니다. 하지만 일상을 함께 관리하는 것 자체가 이미 깊은 신뢰입니다. 당연해진 것들 안에 사랑이 있습니다.',
+    misunderstandingPattern: '"오늘 저녁 스케줄 어때?" "이번 주 마트 가야 하는데." "다음 달 고정지출 얼마야?" 이런 대화만 남으면 "우리 관계에 감정이 없는 거 아니야?"라는 의문이 듭니다. 하지만 일상을 함께 관리하는 것 자체가 이미 깊은 신뢰입니다. 당연해진 것들 안에 사랑이 있습니다.',
     connectionStyle: '이 관계의 연결은 생활 속에 있습니다. 함께 먹는 아침밥, 퇴근 후 "오늘 어땠어?"라는 말, 주말 아침 느긋하게 보내는 시간. 생활 루틴을 함께 만들어가는 것이 이 관계의 가장 깊은 연결입니다. 루틴이 신뢰이고, 신뢰가 연결입니다.',
     recoveryRoutine: '특별한 것이 필요 없습니다. 익숙한 카페, 자주 가던 산책길, 좋아하는 음식. 평소 하던 것을 함께 하세요. 생활 리듬으로 돌아오는 것이 이 관계의 회복입니다.',
     neededWords: '"오늘도 함께해서 좋았어."',
@@ -4056,11 +4056,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
         '주말 아침 커피 함께 마시기',
         '같이 장보기 가기',
         '함께 청소 / 정리하기',
-        '저녁에 쉽은 음악 틀어놓고 쉽기',
+        '저녁에 잔잔한 음악 틀어놓고 쉬기',
         '잠자기 전 오늘 좋았던 순간 이야기하기',
       ],
       energyNote: '함께하는 일상이 이 관계의 언어입니다. 특별한 이벤트가 아니라 평범한 하루를 함께 보내는 것이 두 사람을 안정시킵니다.',
-      faithRoutine: '함께 식사 전 감사기도 하기 — 일상의 작은 것에 감사하는 습관이 이 관계를 따뜻게 유지합니다.',
+      faithRoutine: '함께 식사 전 감사기도 하기 — 일상의 작은 것에 감사하는 습관이 이 관계를 따뜻하게 유지합니다.',
     },
   },
   감정순환형: {
@@ -4260,7 +4260,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
         unifiedSections: {
           coreEnergy: {
             headline: '각자의 공간이 관계를 지키는 관계',
-            description: '혼자만의 시간이 충분할 때 더 좋은 파트너가 됩니다. 붙어있는 시간보다 각자의 공간을 존중하는 것이 이 관계의 핵심입니다. 거리감이 문제가 아니라 방식입니다.',
+            description: '혼자만의 시간이 충분할 때 더 좋은 파트너가 됩니다. 붙어 있는 시간보다 각자의 공간을 존중하는 것이 이 관계의 핵심입니다. 거리감이 문제가 아니라 방식입니다.',
             keywords: ['공간', '독립', '존중', '거리', '배려'],
           },
           lifePattern: {
@@ -5142,7 +5142,8 @@ export function getRelationArchetype(
   colorIdsA?: string[],
   colorIdsB?: string[],
   cardIdsA?: string[],  // 무의식·현재·미래 카드 ID 배열 (cardIdsA[0] = 무의식 카드)
-  cardIdsB?: string[]  // 무의식·현재·미래 카드 ID 배열 (cardIdsB[0] = 무의식 카드)
+  cardIdsB?: string[], // 무의식·현재·미래 카드 ID 배열 (cardIdsB[0] = 무의식 카드)
+  relationType?: RelationType,
 ): ArchetypeResult {
   // ── 레이어형 가중치 구조 ──
   // Layer 1: 컬러 조합 (주축 — archetype의 70~80%)
@@ -6916,12 +6917,257 @@ export function getRelationArchetype(
     };
   }
 
+  const isRomanticRelation = relationType === '부부' || relationType === '연인';
+  const isLoverRelationship = relationType === '연인';
+
+  // 연인은 비동거를 기본으로 읽는다. 컬러·도형으로 계산한 A/B 성향은 유지하고,
+  // 그 성향이 드러나는 장면만 공동생활 또는 만남·연락의 맥락으로 구분한다.
+  const replaceLoverHouseholdContext = (value: string): string => {
+    const replacements: Array<[string, string]> = [
+      ['같이 살면 이런 순간이 반복될 수 있습니다', '만남과 연락 속에서 이런 리듬이 반복될 수 있습니다'],
+      ['함께 먹는 아침밥', '만나서 함께하는 식사'],
+      ['퇴근 후 "오늘 어땠어?"', '하루를 마무리하며 "오늘 어땠어?"라고 묻는 말'],
+      ['주말 아침 느긋하게 보내는 시간', '주말 데이트를 천천히 보내는 시간'],
+      ['함께 밥을 차리고', '만날 때 함께 식사하고'],
+      ['드라이브, 산책, 함께 요리하기처럼 몸을 움직이면서 대화하는', '드라이브나 산책, 함께 식사할 곳을 고르며 대화하는'],
+      ['같이 요리하기', '만날 때 함께 식사할 곳을 정하기'],
+      ['함께 요리하기', '만날 때 함께 식사할 곳을 정하기'],
+      ['집 정리를 같이 하는', '다음 만남을 함께 준비하는'],
+      ['같은 공간에서 각자 쉬고', '각자의 공간과 시간을 존중하고'],
+      ['작은 루틴을 함께 만들어가는', '작은 데이트와 연락의 루틴을 함께 만들어가는'],
+      ['"우리 집에 오면 편안해"', '"너와 함께 있으면 편안해"'],
+      ['함께 밥 차리기', '만날 때 함께 식사하기'],
+      ['주말 아침 루틴 만들기', '주말 데이트 루틴 만들기'],
+      ['퇴근 후 짧게 오늘 이야기하기', '하루를 마무리하며 짧게 오늘 이야기하기'],
+      ['집안일 역할 나누기', '다음 만남의 약속과 준비를 나누기'],
+      ['함께 밥 한 끼 차려보세요', '다음 만남에 함께 식사하며 서로의 하루를 나눠보세요'],
+      ['생활을 함께 나누는', '함께 보내는 시간을 나누는'],
+      ['공동생활', '함께 보내는 시간'],
+      ['공동 생활', '함께 보내는 시간'],
+      ['가사 분담', '만남 준비와 약속 분담'],
+      ['가사', '만남 준비'],
+      ['집안일', '만남 준비와 약속'],
+      ['청소 기준', '공간 정리 기준'],
+      ['청소', '공간 정리'],
+      ['집에서', '각자의 공간에서'],
+      ['생활비', '데이트 비용과 함께 쓰는 비용'],
+      ['자기 전에 말하기', '헤어지기 전 말하기'],
+      ['함께 없어도 연결되는', '떨어져 있어도 연결되는'],
+    ];
+    return replacements.reduce((text, [from, to]) => text.replaceAll(from, to), value);
+  };
+
+  const adaptLoverSpaceText = (value: string): string => replaceLoverHouseholdContext(value)
+    .replaceAll('빠른 정리를 선호하지만', '약속과 준비를 빠르게 맞추는 편이지만')
+    .replaceAll('정리 의욕', '만남 준비 의욕')
+    .replaceAll('일단 치우고 보자', '미리 준비하고 약속을 정하자')
+    .replaceAll('나중에 같이 하자', '조금 쉬고 다음 만남 준비를 맞추자')
+    .replaceAll('"왜 나만 치워?"', '"왜 나만 준비해?"')
+    .replaceAll('공간 정리가 갈등 신호', '만남 준비 부담이 갈등 신호')
+    .replaceAll('치워?', '준비해?')
+    .replaceAll('치워', '준비해');
+
+  const adaptLoverRoutine = (routine: string): string => {
+    const routineMap: Record<string, string> = {
+      '같이 요리하기 / 식사 준비하기': '함께 식사할 곳을 정하고 데이트 계획하기',
+      '주말 아침 커피 함께 마시기': '주말에 카페에서 커피 마시기',
+      '같이 장보기 가기': '데이트 비용과 함께 필요한 것을 고르는 기준 나누기',
+      '함께 청소 / 정리하기': '다음 만남 준비와 각자의 공간을 존중하는 방법 정하기',
+      '저녁에 잔잔한 음악 틀어놓고 쉬기': '같은 음악을 듣고 하루의 감정을 나누기',
+      '잠자기 전 오늘 좋았던 순간 이야기하기': '하루를 마무리하며 오늘 좋았던 순간을 메시지로 나누기',
+      '잠자기 전 "오늘 어땠어?" 한마디': '하루에 한 번 "오늘 어땠어?"라고 안부 묻기',
+      '잠자기 전 서로의 눈을 바라보며 감사 제목 이야기하기': '만나거나 통화하며 서로 고마웠던 순간 이야기하기',
+      '잠자기 전 서로의 눈을 바라보며 감사 이야기하기': '만나거나 통화하며 서로 고마웠던 순간 이야기하기',
+      '자기만의 공간에서 쉰 후 함께 밥 먹기': '각자의 시간을 보낸 뒤 다음 만남이나 식사 약속 정하기',
+      '잠자기 전 "오늘 고마웠어" 한마디': '하루를 마무리하며 "오늘 고마웠어"라고 전하기',
+      '같이 먹고 쉬는 일상': '함께 식사하고 안부를 나누는 시간',
+      '같이 장보기 / 식사 준비하기': '데이트 비용과 식사 약속을 함께 계획하기',
+      '잠자기 전 내일 계획 짧게 이야기하기': '다음 만남과 연락 계획을 짧게 나누기',
+      '감정이 올라올 때 함께 쉴 수 있는 공간 만들기': '감정이 올라올 때 서로 쉬어갈 시간을 알려주기',
+    };
+    return routineMap[routine] ?? replaceLoverHouseholdContext(routine);
+  };
+
+  const adaptLoverFaithRoutine = (routine: string): string => routine
+    .replaceAll('잠자기 전 손잡고 기도하기', '각자의 하루를 마무리하며 기도 제목 나누기')
+    .replaceAll('함께 식사 전 감사기도 하기', '만날 때 식사 전 감사기도 나누기')
+    .replaceAll('손잡고 기도하기', '함께 기도 제목 나누기');
+
+  const adaptMarriageConnectionText = (value: string): string => value
+    .replaceAll(
+      '함께 없어도 연결되는 느낌이 드는 시간',
+      '함께 머무는 동안에도 서로의 마음을 확인하는 시간',
+    );
+
+  const relationAwareLifePattern = (() => {
+    if (!isRomanticRelation || !lifestyleSections) return finalBaseData.unifiedSections?.lifePattern;
+
+    type LifePatternItem = NonNullable<ArchetypeResult['unifiedSections']>['lifePattern']['items'][number];
+    const items: LifePatternItem[] = [];
+    const toItem = (
+      icon: string,
+      label: string,
+      section: { personA: string; personB: string; tension?: string; tip?: string },
+      loverContext: string,
+    ): LifePatternItem => {
+      const isLoverSpaceItem = isLoverRelationship && label === '만남 준비·각자의 공간';
+      return {
+        icon,
+        label,
+        personA: isLoverSpaceItem ? adaptLoverSpaceText(section.personA) : section.personA,
+        personB: isLoverSpaceItem ? adaptLoverSpaceText(section.personB) : section.personB,
+        tension: isLoverRelationship
+          ? `${loverContext} ${(isLoverSpaceItem ? adaptLoverSpaceText : replaceLoverHouseholdContext)(section.tension ?? section.tip ?? '')}`.trim()
+          : section.tension ?? section.tip ?? '',
+      };
+    };
+
+    if (lifestyleSections.finance) {
+      items.push(toItem(
+        '💰',
+        relationType === '부부' ? '생활비·공동 지출' : '데이트 비용·함께 쓰는 비용',
+        lifestyleSections.finance,
+        '데이트 비용과 함께 쓰는 비용의 기준을 맞추는 과정에서 이 차이가 드러날 수 있습니다.',
+      ));
+    }
+    if (lifestyleSections.cleaning) {
+      items.push(toItem(
+        '🏠',
+        relationType === '부부' ? '집안일·공동 공간' : '만남 준비·각자의 공간',
+        lifestyleSections.cleaning,
+        '각자의 공간을 존중하고 만남을 준비하는 방식에서 이 차이가 드러날 수 있습니다.',
+      ));
+    }
+    if (lifestyleSections.rest) {
+      items.push(toItem(
+        '🕊️',
+        relationType === '부부' ? '퇴근 후·주말 회복 리듬' : '연락 빈도·각자의 시간',
+        lifestyleSections.rest,
+        '연락과 만남의 리듬을 맞출 때 이 회복 방식의 차이가 드러날 수 있습니다.',
+      ));
+    }
+    if (lifestyleSections.affection) {
+      items.push(toItem(
+        '💌',
+        relationType === '부부' ? '퇴근 후 대화·애정 표현' : '답장 기대·만남 약속',
+        lifestyleSections.affection,
+        '답장에 기대하는 리듬과 다음 만남을 약속하는 방식에서 이 차이가 드러날 수 있습니다.',
+      ));
+    }
+
+    return {
+      headline: relationType === '부부'
+        ? '공동생활에서 이런 리듬이 반복될 수 있습니다'
+        : '만남과 연락 속에서 이런 리듬이 반복될 수 있습니다',
+      items,
+    };
+  })();
+
+  if (relationAwareLifePattern && finalBaseData.unifiedSections) {
+    const unified = finalBaseData.unifiedSections;
+    const adaptText = (value: string) => isLoverRelationship ? replaceLoverHouseholdContext(value) : value;
+    finalBaseData = {
+      ...finalBaseData,
+      unifiedSections: {
+        ...unified,
+        coreEnergy: { ...unified.coreEnergy, description: adaptText(unified.coreEnergy.description) },
+        lifePattern: relationAwareLifePattern,
+        conflictFlow: {
+          ...unified.conflictFlow,
+          trigger: adaptText(unified.conflictFlow.trigger),
+          reaction: adaptText(unified.conflictFlow.reaction),
+          danger: adaptText(unified.conflictFlow.danger),
+          forbiddenWords: unified.conflictFlow.forbiddenWords.map(adaptText),
+        },
+        connectionFlow: {
+          ...unified.connectionFlow,
+          description: adaptText(unified.connectionFlow.description),
+          actions: unified.connectionFlow.actions.map(adaptText),
+          skinshipNote: adaptText(unified.connectionFlow.skinshipNote),
+        },
+        growthPoint: {
+          ...unified.growthPoint,
+          strength: adaptText(unified.growthPoint.strength),
+          blindSpot: adaptText(unified.growthPoint.blindSpot),
+          growthDirection: adaptText(unified.growthPoint.growthDirection),
+          tip: adaptText(unified.growthPoint.tip),
+        },
+      },
+      togetherRoutine: {
+        ...finalBaseData.togetherRoutine,
+        routines: isLoverRelationship
+          ? finalBaseData.togetherRoutine.routines.map(adaptLoverRoutine)
+          : finalBaseData.togetherRoutine.routines,
+        energyNote: isLoverRelationship
+          ? adaptText(finalBaseData.togetherRoutine.energyNote)
+          : relationType === '부부'
+            ? adaptMarriageConnectionText(finalBaseData.togetherRoutine.energyNote)
+            : finalBaseData.togetherRoutine.energyNote,
+        faithRoutine: finalBaseData.togetherRoutine.faithRoutine
+          ? (isLoverRelationship
+            ? adaptLoverFaithRoutine(finalBaseData.togetherRoutine.faithRoutine)
+            : finalBaseData.togetherRoutine.faithRoutine)
+          : undefined,
+      },
+    };
+  }
+
+  const relationshipAwareProfileContrast = isLoverRelationship && finalProfileContrast
+    ? {
+      ...finalProfileContrast,
+      attractionContrast: finalProfileContrast.attractionContrast
+        ? replaceLoverHouseholdContext(finalProfileContrast.attractionContrast)
+        : undefined,
+      relationFlow: finalProfileContrast.relationFlow
+        ? replaceLoverHouseholdContext(finalProfileContrast.relationFlow)
+        : undefined,
+      expressionDifference: finalProfileContrast.expressionDifference
+        ? replaceLoverHouseholdContext(finalProfileContrast.expressionDifference)
+        : undefined,
+      conflictPattern: finalProfileContrast.conflictPattern
+        ? replaceLoverHouseholdContext(finalProfileContrast.conflictPattern)
+        : undefined,
+      connectionStyle: finalProfileContrast.connectionStyle
+        ? replaceLoverHouseholdContext(finalProfileContrast.connectionStyle)
+        : undefined,
+    }
+    : finalProfileContrast;
+
+  const relationshipAwareLifestyleSections = isLoverRelationship && lifestyleSections
+    ? {
+      ...lifestyleSections,
+      finance: lifestyleSections.finance ? {
+        ...lifestyleSections.finance,
+        title: '데이트 비용·함께 쓰는 비용',
+        description: '데이트 비용과 함께 쓰는 비용의 기준에서 서로 다른 성향이 드러날 수 있습니다.',
+      } : undefined,
+      cleaning: lifestyleSections.cleaning ? {
+        ...lifestyleSections.cleaning,
+        title: '만남 준비·각자의 공간',
+        description: '각자의 공간을 존중하고 만남을 준비하는 방식에서 서로 다른 성향이 드러날 수 있습니다.',
+        personA: adaptLoverSpaceText(lifestyleSections.cleaning.personA),
+        personB: adaptLoverSpaceText(lifestyleSections.cleaning.personB),
+        tension: adaptLoverSpaceText(lifestyleSections.cleaning.tension),
+      } : undefined,
+      rest: lifestyleSections.rest ? {
+        ...lifestyleSections.rest,
+        title: '연락 빈도·각자의 시간',
+        description: '연락과 만남의 리듬을 맞출 때 서로 다른 회복 방식이 드러날 수 있습니다.',
+      } : undefined,
+      affection: lifestyleSections.affection ? {
+        ...lifestyleSections.affection,
+        title: '답장 기대·만남 약속',
+        description: '답장에 기대하는 리듬과 다음 만남을 약속하는 방식에서 애정 표현의 차이가 드러날 수 있습니다.',
+      } : undefined,
+    }
+    : lifestyleSections;
+
   return {
     archetype: finalArchetype,
     ...finalBaseData,
-    profileContrastOverride: finalProfileContrast,
+    profileContrastOverride: relationshipAwareProfileContrast,
     expressionSpeed: dynamicExpressionSpeed,
-    lifestyleSections,
+    lifestyleSections: relationshipAwareLifestyleSections,
   };
 }
 
@@ -6965,15 +7211,15 @@ function buildDefaultLifestyleSections(
   const ARCHETYPE_LIFESTYLE_OVERRIDE: Partial<Record<RelationArchetype, ArchetypeOverride>> = {
     성장자극형: {
       rest: {
-        nature: '"나가서 뮨가 새로운 걸 해야 충전돼." 활동 전환형입니다.',
+        nature: '"나가서 뭔가 새로운 걸 해야 충전돼." 활동 전환형입니다.',
         neutral: '"아무것도 안 하고 완전히 비워야 다시 달릴 수 있어." 완전 리셋형입니다.',
         warm_soft: '"함께 새로운 걸 경험하면 충전돼." 공유 활동형입니다.',
         cool_deep: '"혼자 깊이 생각하며 정리해야 충전돼." 내면 정리형입니다.',
       },
       conflict: {
-        nature: '"일단 같이 움직이자. 걸으면서 엘기해." 활동 해소형입니다.',
+        nature: '"일단 같이 움직이자. 걸으면서 얘기해." 활동 해소형입니다.',
         neutral: '"각자 정리하고 다시 만나자. 그게 더 빨라." 공간 회복형입니다.',
-        warm_soft: '"지금 바로 엘기하자. 미루면 더 힘들어." 즉각 해결형입니다.',
+        warm_soft: '"지금 바로 얘기하자. 미루면 더 힘들어." 즉각 해결형입니다.',
       },
       shapeRhythmOverride: undefined,
       restDescription: '두 사람이 쉬는 방식이 다릅니다. 한 사람은 활동으로 에너지를 전환하고, 다른 사람은 자신만의 방식으로 충전합니다.',
@@ -6986,7 +7232,7 @@ function buildDefaultLifestyleSections(
         warm_soft: '"가까이 있다가도 숨 쉼 공간이 필요해." 거리 조절형입니다.',
       },
       conflict: {
-        nature: '"잠긄 거리를 두고 각자 숨 좀 쉼자." 공간 회복형입니다.',
+        nature: '"잠깐 거리를 두고 각자 숨 좀 쉬자." 공간 회복형입니다.',
         warm_active: '"지금 바로 해결하고 싶어. 미루면 더 멀어져." 즉각 해결형입니다.',
       },
       restDescription: '두 사람이 쉬는 방식이 다릅니다. 가까워졌다 멀어지는 패턴이 휴식 방식에도 나타날 수 있습니다.',
@@ -6999,7 +7245,7 @@ function buildDefaultLifestyleSections(
       },
       conflict: {
         nature: '"천천히 정리될 때까지 기다리자." 속도 존중형입니다.',
-        warm_active: '"빨리 풀자. 시간 끌면 더 싶어져." 빠른 해결형입니다.',
+        warm_active: '"빨리 풀자. 시간을 끌면 더 힘들어져." 빠른 해결형입니다.',
       },
       restDescription: '두 사람의 휴식 속도가 다릅니다. 한 사람은 빨리 충전하고, 다른 사람은 시간이 필요합니다.',
       conflictDescription: '갈등 후 두 사람의 해결 속도가 다릅니다. 한 사람은 빨리 풀고 싶고, 다른 사람은 시간이 필요합니다.',
@@ -7337,7 +7583,7 @@ function buildDefaultLifestyleSections(
       personB: financePersonMap[fB] + shapeFinanceNote(fB, shapeB) + getCurrentCardSupplement(currentCardColorB, 'finance'),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 소비 성향이 있어, 서로의 패턴이 강화되는 순간을 주의하세요. 함께 기준을 정하는 것이 도움이 됩니다.'
-        : '소비 기준이 달라 "왜 이걸 샰어?"가 반복될 수 있습니다. 함께 기준을 정하는 것이 도움이 됩니다.',
+        : '소비 기준이 달라 "왜 이걸 샀어?"가 반복될 수 있습니다. 함께 기준을 정하는 것이 도움이 됩니다.',
     },
     rest: {
       title: '휴식·회복 방식',

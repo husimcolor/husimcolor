@@ -162,6 +162,7 @@ function calculateArchetype(sessionData: CoupleSessionData) {
       sessionData.personB.colors,
       sessionData.personA.cards,
       sessionData.personB.cards,
+      sessionData.relationType,
     ),
     lightArchetypeResult: getLightArchetype(sessionData.relationType, familiesA, familiesB),
   };
