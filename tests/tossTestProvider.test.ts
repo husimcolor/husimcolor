@@ -30,7 +30,7 @@ describe("Toss test payment adapter", () => {
     expect(() => getTossTestClientConfig()).toThrow("TOSS_TEST_PAYMENT_DISABLED");
   });
 
-  it("명시적 테스트 모드의 Vercel Preview에서만 Toss 테스트 키를 허용한다", () => {
+  it("명시적 테스트 모드의 Vercel Preview와 이중 gate Production에서만 Toss 테스트 키를 허용한다", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("VERCEL_ENV", "preview");
     vi.stubEnv("COMMERCE_TEST_MODE", "true");
@@ -42,9 +42,11 @@ describe("Toss test payment adapter", () => {
     vi.stubEnv("VERCEL_ENV", "production");
     expect(isTossTestPaymentEnabled()).toBe(false);
 
-    vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("COMMERCE_PRODUCTION_TEST_MODE", "true");
     vi.stubEnv("COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED", "true");
+    expect(isTossTestPaymentEnabled()).toBe(true);
+
+    vi.stubEnv("COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED", "false");
     expect(isTossTestPaymentEnabled()).toBe(false);
   });
 
