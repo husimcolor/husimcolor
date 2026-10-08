@@ -120,9 +120,10 @@ describe("부부·연인 전용 PDF 리포트", () => {
     expect(workflowSource).toContain('for function in "trpc/[...trpc]" private-pdf-download couple-pdf-report parent-child-pdf-report; do');
   });
 
-  it("두 번째 사람과 관계 통합 분석은 새 페이지에서 시작하고 컬러바·핵심 소제목 위계를 유지한다", () => {
+  it("관계 통합 분석을 개인 해석보다 먼저 배치하고 각 사람의 개인 해석은 새 페이지에서 시작한다", () => {
     const serverSource = readFileSync(resolve(process.cwd(), "server/couple-pdf-report.ts"), "utf8");
 
+    expect(serverSource).toContain("writeRelationship(document, payload);\n  writePerson(document, payload.personA, \"#A86773\", true);");
     expect(serverSource).toContain("writePerson(document, payload.personB, \"#5677A5\", true)");
     expect(serverSource).toContain("addPage(document);\n  writeSectionTitle(document, \"두 사람의 관계 통합 분석\"");
     expect(serverSource).toContain("SECTION_BAR_GAP");
@@ -138,10 +139,21 @@ describe("부부·연인 전용 PDF 리포트", () => {
     expect(serverSource).toContain("SUBTITLE_SIZE = 19.2");
     expect(serverSource).toContain("SUBTITLE_LABEL_SIZE = 17.4");
     expect(serverSource).toContain('fillColor("#2F2019")');
-    expect(serverSource).toContain("CARD_TITLE_BLOCK_HEIGHT = 60");
-    expect(serverSource).toContain("CARD_LABEL_BLOCK_HEIGHT = 40");
+    expect(serverSource).toContain("CARD_TITLE_BLOCK_HEIGHT = 38");
+    expect(serverSource).toContain("CARD_LAYOUT_SAFETY = 6");
+    expect(serverSource).toContain("contentHeight > 180");
+    expect(serverSource).toContain("function splitCardParagraph");
+    expect(serverSource).toContain("CARD_LABEL_BLOCK_HEIGHT = 26");
     expect(serverSource).toContain("function writeBulletList");
-    expect(serverSource).toContain('{ label: "이번 주 함께 해볼 것", bullets: relation.togetherRoutine.routines }');
-    expect(serverSource).not.toContain('{ label: "이번 주 함께 해볼 것", text: relation.togetherRoutine.routines.join("\\n") }');
+    expect(serverSource).toContain('relation.togetherRoutine.routines.map((routine, index) => ({');
+    expect(serverSource).toContain('label: index === 0 ? "이번 주 함께 해볼 것" : undefined');
+    expect(serverSource).not.toContain('text: relation.togetherRoutine.routines.join("\\n")');
+    expect(serverSource).toContain("감정 교류 · 표현 리듬 · 갈등 회복");
+    expect(serverSource).toContain('label: "마무리 코칭 메시지", text: relation.closingMessage');
+    expect(serverSource).toContain('writeSectionTitle(document, "관계 핵심", "#5F8069", 180)');
+    expect(serverSource).toContain('writeSectionTitle(document, "싸움 패턴", "#B16A75", 220)');
+    expect(serverSource).toContain('], "#FFF3F3", { continueFromCurrentPage: true });');
+    expect(serverSource).toContain('writeSectionTitle(document, "연결 방식", "#B87B91", 210)');
+    expect(serverSource).toContain("관계 해석은 한 항목마다 새 쪽을 만들지 않는다");
   });
 });

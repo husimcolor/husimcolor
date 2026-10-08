@@ -106,6 +106,7 @@ function buildCoupleShareSnapshot(
         cardsB: definedCardsB,
         expressionDescription: archetypeResult.expressionSpeed.description,
         recoveryDescription: archetypeResult.recoveryStyle.description,
+        relationType: sessionData.relationType,
       })
     : [];
   const romanticRelationshipRoles = isRomanticRel
@@ -626,6 +627,12 @@ export default function CoupleResultScreen() {
   const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
   const definedCardsB = cardsB.filter((card): card is NonNullable<typeof card> => Boolean(card));
   const cardLabels = ['무의식', '현재', '미래'];
+  const roleA = personA.info.relationshipRole;
+  const roleB = personB.info.relationshipRole;
+  const romanticPersonLabels = {
+    personA: roleA ?? '첫 번째 사람',
+    personB: roleB ?? '두 번째 사람',
+  };
   const calculatedRomanticRelationTraits = isRomanticRel
     ? buildRomanticRelationTraits({
         personA: personAAnalysis,
@@ -639,6 +646,8 @@ export default function CoupleResultScreen() {
           archetypeResult.expressionSpeed.personB,
         ),
         recoveryDescription: archetypeResult.recoveryStyle.description,
+        relationType,
+        personLabels: romanticPersonLabels,
       })
     : [];
   const calculatedRomanticRelationshipRoles = isRomanticRel
@@ -666,8 +675,6 @@ export default function CoupleResultScreen() {
   const personBIntegratedAnalysis = isRomanticRel && sharedSnapshot
     ? sharedSnapshot.personBIntegratedAnalysis
     : calculatedPersonBIntegratedAnalysis;
-  const roleA = personA.info.relationshipRole;
-  const roleB = personB.info.relationshipRole;
   const isPersonAParent = roleA ? isParentRelationshipRole(roleA) : true;
   const parentPerson = isPersonAParent ? personA : personB;
   const childPerson = isPersonAParent ? personB : personA;
@@ -914,6 +921,7 @@ export default function CoupleResultScreen() {
             personBDescription: romanticRelationshipRoles.personB.description,
             together: romanticRelationshipRoles.together,
           },
+          traits: romanticRelationTraits,
           core: unified.coreEnergy,
           lifePattern: unified.lifePattern,
           conflict: unified.conflictFlow,

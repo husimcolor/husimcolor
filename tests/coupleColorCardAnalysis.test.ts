@@ -24,9 +24,12 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(analysis).toContain("따뜻한 마음을 주고받는 일");
     expect(analysis).toContain("섬세한 감정을 살피며 진심 어린 관계를 바라는 일");
     expect(analysis).toContain("작은 약속과 꾸준한 돌봄으로 편안함을 다시 쌓아보세요");
-    expect(analysis).not.toContain(cards[0].energyTitle);
-    expect(analysis).not.toContain(cards[1].energyTitle);
-    expect(analysis).not.toContain(cards[2].energyTitle);
+    expect(analysis).toContain(`레드 동그라미의 ${cards[0].energyTitle}`);
+    expect(analysis).toContain(`레드 삼각형의 ${cards[1].energyTitle}`);
+    expect(analysis).toContain(`레드 역삼각형의 ${cards[2].energyTitle}`);
+    expect(analysis).toContain("무의식 카드인");
+    expect(analysis).toContain("현재 흐름 카드인");
+    expect(analysis).toContain("회복 방향 카드인");
     expect(analysis).not.toContain("핑크 · 라벤더 · 그린");
     expect(analysis).not.toContain("「");
     expect(analysis).not.toContain("」");
@@ -38,8 +41,8 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     const second = buildRomanticCoupleColorCardIntegratedAnalysis(COLOR_DATA.slice(12, 15), CARD_DATA.slice(12, 15));
 
     expect(second).not.toBe(first);
-    expect(second).not.toContain(CARD_DATA[12].energyTitle);
-    expect(second).not.toContain("보호를 소중히 여기고");
+    expect(second).toContain(`${CARD_DATA[12].colorKor} ${CARD_DATA[12].shapeKor}의 ${CARD_DATA[12].energyTitle}`);
+    expect(second).toContain("무의식 카드인");
   });
 
   it("부모·자녀·친구·동료·형제자매의 개인 통합 분석은 기존 생성 문구를 유지한다", () => {
@@ -139,8 +142,10 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     const traitDescriptions = traits.map((trait) => trait.description).join(" ");
     expect(traitDescriptions).toContain("서로");
     expect(traitDescriptions).toContain("관계");
-    expect(traitDescriptions).not.toContain(CARD_DATA[0].psychologyFlow.split(".")[0]);
-    expect(traitDescriptions).not.toContain(CARD_DATA[12].recoveryDirection.split(".")[0]);
+    expect(traitDescriptions).toContain(`레드 동그라미 \"${CARD_DATA[0].energyTitle}\" 카드`);
+    expect(traitDescriptions).toContain(`오렌지 오각형 \"${CARD_DATA[12].energyTitle}\" 카드`);
+    expect(traitDescriptions).toContain("평소 관계에서 무엇을 바라는지");
+    expect(traitDescriptions).toContain("갈등 뒤 어떤 방식으로 다시 연결할지");
     expect(traitDescriptions).not.toContain("첫 번째 사람은");
     expect(traitDescriptions).not.toContain("두 번째 사람은");
     expect(traitDescriptions).not.toContain("따뜻한 말로 관계를 이어갑니다.");
@@ -161,7 +166,8 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     });
     const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
 
-    expect(roles.personA.title).not.toBe(roles.personB.title);
+    expect(roles.personA.title).toBeTruthy();
+    expect(roles.personB.title).toBeTruthy();
     expect(roles.together).toContain("역할");
     expect(coupleResultSource).toContain("두 사람의 관계 속 역할 분석");
     expect(coupleResultSource).toContain("두 역할이 만났을 때");

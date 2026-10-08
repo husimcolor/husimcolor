@@ -57,13 +57,12 @@ describe("25컬러·심리카드·연인 문맥 전체 검수", () => {
     const outputs = cardsByShape.map((card) => buildRomanticCoupleColorCardIntegratedAnalysis(colors, [card, card, card]));
 
     expect(new Set(outputs).size).toBe(cardsByShape.length);
-    expect(outputs[0]).toContain("감정을 부드럽게 순환");
-    expect(outputs[1]).toContain("필요한 방향을 세우");
-    expect(outputs[2]).toContain("쌓인 감정을 안으로 가라앉");
-    expect(outputs[3]).toContain("안정된 틀");
-    expect(outputs[4]).toContain("균형을 섬세하게");
-    expect(outputs[5]).toContain("성장");
-    expect(outputs[6]).toContain("연결된 자리");
+    cardsByShape.forEach((card, index) => {
+      expect(outputs[index]).toContain(`${card.colorKor} ${card.shapeKor}의 ${card.energyTitle}`);
+      expect(outputs[index]).toContain("무의식 카드인");
+      expect(outputs[index]).toContain("현재 흐름 카드인");
+      expect(outputs[index]).toContain("회복 방향 카드인");
+    });
   });
 
   it("관계 역할과 특성은 컬러·카드·개인 신호를 함께 읽고, 내면 키워드 하나로 고정되지 않는다", () => {
@@ -93,6 +92,28 @@ describe("25컬러·심리카드·연인 문맥 전체 검수", () => {
     expect(indigoRole.personA.description).toContain("인디고");
     expect(redRole.personA.description).toContain("속도를 먼저 확인");
     expect(indigoRole.personA.description).toContain("한 문장으로 꺼내");
+  });
+
+  it("같은 관계 역할 성향도 강제로 분리하지 않고 컬러별 강점·유의점으로 차이를 설명한다", () => {
+    const cards = threeCards(0);
+    const roles = buildRomanticRelationshipRoles({
+      personA: emptySignals,
+      personB: emptySignals,
+      colorsA: [COLOR_DATA.find((color) => color.id === "red")!],
+      colorsB: [COLOR_DATA.find((color) => color.id === "orange")!],
+      cardsA: cards,
+      cardsB: cards,
+    });
+
+    expect(roles.personA.title).toBe("관계를 움직이게 하는 역할");
+    expect(roles.personB.title).toBe("관계를 움직이게 하는 역할");
+    expect(roles.together).toContain("레드");
+    expect(roles.together).toContain("오렌지");
+    expect(roles.together).toContain("속도가 앞설 수 있으니");
+    expect(roles.together).not.toContain("레드은");
+    expect(roles.together).not.toContain("오렌지은");
+    expect(roles.together).not.toContain("에너지이");
+    expect(roles.together).not.toContain("맡기 쉽습니다");
   });
 
   it("25개 컬러 조합의 연인 결과는 관계 특성·생활 장면·루틴·마무리까지 비동거 문맥을 유지한다", () => {

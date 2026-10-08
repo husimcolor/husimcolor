@@ -193,6 +193,11 @@ function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapsho
         cardsB: definedCardsB,
         expressionDescription: archetypeResult.expressionSpeed.description,
         recoveryDescription: archetypeResult.recoveryStyle.description,
+        relationType: sessionData.relationType,
+        personLabels: {
+          personA: sessionData.personA.info.relationshipRole ?? "첫 번째 사람",
+          personB: sessionData.personB.info.relationshipRole ?? "두 번째 사람",
+        },
       })
     : [];
   const romanticRelationshipRoles = isRomantic
@@ -313,6 +318,7 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
           personBDescription: roles.personB.description,
           together: roles.together,
         },
+        traits: snapshot.romanticRelationTraits,
         core: unified.coreEnergy,
         lifePattern: unified.lifePattern,
         conflict: unified.conflictFlow,

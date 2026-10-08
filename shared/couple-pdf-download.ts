@@ -50,6 +50,8 @@ export type CouplePdfDownloadPayload = {
       personBDescription: string;
       together: string;
     };
+    /** 화면과 PDF에 동일하게 표시하는 감정 교류·표현 리듬·갈등 회복 해석. */
+    traits?: Array<{ title: "감정 교류" | "표현 리듬" | "갈등 회복"; description: string }>;
     core: {
       headline: string;
       keywords: string[];

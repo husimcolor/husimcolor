@@ -2,7 +2,10 @@ import type { CardData } from "../constants/cardData";
 import type { ColorData } from "../constants/colorData";
 
 type ColorInput = Pick<ColorData, "id" | "korName" | "keywords" | "recovery" | "relStyle">;
-type CardInput = Pick<CardData, "colorKor" | "shapeKor" | "shape" | "energyTitle">;
+type CardInput = Pick<
+  CardData,
+  "colorKor" | "shapeKor" | "shape" | "energyTitle" | "psychologyFlow" | "personalityFlow" | "recoveryDirection"
+>;
 
 const FALLBACK_COLOR: ColorInput = {
   id: "unknown",
@@ -16,6 +19,9 @@ const FALLBACK_CARD: CardInput = {
   shapeKor: "도형",
   shape: "circle",
   energyTitle: "마음의 방향",
+  psychologyFlow: "마음속 흐름을 차분히 살피고 싶은 마음이 있습니다.",
+  personalityFlow: "현재의 마음을 자신에게 맞는 속도로 정리하고 있습니다.",
+  recoveryDirection: "지금의 마음을 편안히 돌보는 것이 회복에 도움이 됩니다.",
 };
 
 function objectParticle(value: string) {
@@ -63,50 +69,19 @@ function colorLanguage(color: ColorInput) {
   };
 }
 
-function shapeStructure(shape: CardInput["shape"], context: "inner" | "outer" | "direction") {
-  const meanings: Record<NonNullable<CardInput["shape"]>, [string, string, string]> = {
-    circle: ["감정을 부드럽게 순환시키고 싶은", "관계의 온도를 살피는", "편안한 연결을 다시 만드는"],
-    triangle: ["스스로를 지키며 필요한 방향을 세우고 싶은", "기준을 세워 움직이는", "우선순위를 분명히 하는"],
-    inverted_triangle: ["쌓인 감정을 안으로 가라앉혀 정리하고 싶은", "감정의 깊이를 살피는", "무리하지 않는 속도로 마음을 비워가는"],
-    square: ["현실의 기준과 안정된 틀을 만들고 싶은", "일상과 약속을 차분히 정돈하는", "지속할 수 있는 리듬을 세우는"],
-    diamond: ["상대와의 균형을 섬세하게 맞추고 싶은", "상황에 맞춰 관계의 거리를 조율하는", "서로의 결을 존중하는"],
-    pentagon: ["나만의 방향을 넓히며 성장하고 싶은", "여러 가능성을 연결해 자기답게 확장하는", "지금의 경험을 다음 성장으로 이어가는"],
-    hexagon: ["사람들과 연결된 자리에서 힘을 얻고 싶은", "서로를 잇고 함께하는 방식을 찾는", "도움을 주고받는 관계 안에서 회복하는"],
-  };
-  return meanings[shape ?? "circle"][context === "inner" ? 0 : context === "outer" ? 1 : 2];
+function completeSentence(value: string) {
+  const sentence = value.trim().replace(/[.!?]+$/, "");
+  return sentence ? `${sentence}.` : "";
 }
 
-function cardMeaning(card: CardInput, context: "inner" | "outer" | "direction") {
-  const title = card.energyTitle;
-  const matching = title.includes("소통") || title.includes("연결") || title.includes("관계") || title.includes("함께")
-    ? ["사람들과 마음을 나누며 관계를 이어가고 싶은", "사람들과 대화를 나누며 관계를 이어가는", "믿을 사람과 마음을 나누며 관계를 이어가며"]
-    : title.includes("유연") ? ["변화 속에서도 자신다운 방향을 지켜가고 싶은", "상황에 맞게 생각과 관계를 유연하게 풀어가는", "변화 속에서도 자신에게 맞는 속도를 찾아가며"]
-    : title.includes("보호") ? ["자신의 내면을 안전하게 지키고 싶은", "자신의 마음과 기준을 지키는", "자신의 마음을 안전하게 지키는 방법을 찾으며"]
-    : title.includes("정화") ? ["복잡해진 마음을 차분히 비워내고 싶은", "마음을 차분히 정리하며", "복잡해진 마음을 가볍게 비워내며"]
-    : title.includes("성장") ? ["배우며 한 걸음씩 앞으로 나아가고 싶은", "배우고 시도하며 앞으로 나아가는", "작은 배움과 시도로 한 걸음씩 나아가며"]
-    : title.includes("균형") ? ["한쪽으로 치우치지 않고 자신의 리듬을 지키고 싶은", "상황에 맞게 속도와 마음을 조율하는", "자신의 리듬을 잃지 않도록 속도를 조절하며"]
-    : title.includes("안정") ? ["흔들리지 않는 일상과 관계의 기반을 만들고 싶은", "차분한 기준으로 일상과 관계를 지켜가는", "일상과 관계 안에서 편안한 기반을 다시 만들며"]
-    : title.includes("신뢰") ? ["믿고 의지할 수 있는 관계를 차분히 쌓고 싶은", "약속을 지키며 신뢰를 쌓아가는", "믿을 수 있는 관계 안에서 마음을 천천히 나누며"]
-    : title.includes("표현") ? ["속마음을 적절한 말과 행동으로 전하고 싶은", "마음을 말과 행동으로 비교적 솔직하게 전하는", "마음속 말을 자신에게 맞는 속도로 꺼내며"]
-    : title.includes("자유") ? ["자신의 방식과 속도를 지키며 가볍게 움직이고 싶은", "자신에게 맞는 속도로 새로운 가능성을 살피는", "자신의 리듬을 지키며 가볍게 한 걸음을 내딛으며"]
-    : title.includes("변화") ? ["익숙함을 벗어나 새로운 흐름을 만들어보고 싶은", "새로운 방법을 시도하며 흐름을 바꾸는", "익숙한 방식에서 벗어나 작은 변화를 시도하며"]
-    : title.includes("내면") || title.includes("성찰") ? ["마음속 생각과 감정을 천천히 들여다보고 싶은", "자신의 생각과 감정을 조용히 살피는", "혼자만의 시간에 마음속 생각을 차분히 들여다보며"]
-    : title.includes("통찰") ? ["겉으로 드러난 모습보다 마음의 이유를 이해하고 싶은", "상황의 겉모습보다 그 안의 이유를 살피는", "마음속 이유를 차분히 이해하며"]
-    : title.includes("애정") || title.includes("사랑") || title.includes("포용") || title.includes("따뜻") ? ["진심이 오가는 따뜻한 관계를 바라는", "따뜻한 말과 행동으로 주변을 품어주는", "진심이 오가는 관계 안에서 마음을 나누며"]
-    : title.includes("책임") ? ["맡은 일과 관계를 성실하게 지켜가고 싶은", "맡은 일을 책임 있게 해내며 관계를 지키는", "부담을 혼자 안기보다 역할과 마음을 나누며"]
-    : title.includes("용기") ? ["조심스러워도 필요한 한 걸음을 내딛고 싶은", "필요한 순간에는 자신의 뜻을 말하고 움직이는", "작더라도 필요한 한 걸음을 내딛는"]
-    : ["지금의 마음을 더 편안하게 돌보고 싶은", "자신에게 맞는 방식으로 주변과 관계를 풀어가는", "지금의 마음을 편안하게 돌보는"];
-
-  return {
-    title: matching[context === "inner" ? 0 : context === "outer" ? 1 : 2],
-    structure: shapeStructure(card.shape, context),
-  };
-}
-
-function directionProcess(value: string) {
-  if (value.endsWith("며")) return `${value.slice(0, -1)}는`;
-  if (value.endsWith("는")) return value;
-  return `${value}는`;
+function cardFlowSummary(value: string) {
+  return value
+    .trim()
+    .split(/(?<=[.!?])\s+/)[0]
+    ?.replace(/^현재 당신은\s*/, "")
+    .replace(/^지금 당신은\s*/, "")
+    .replace(/^당신은\s*/, "")
+    .replace(/[.!?]+$/, "") ?? "";
 }
 
 function expressionHabit(value: string) {
@@ -123,11 +98,14 @@ function relationshipHabit(value: string) {
   return `${relationship} 관계 방식을`;
 }
 
+function cardLabel(card: CardInput) {
+  return `${card.colorKor} ${card.shapeKor}의 ${card.energyTitle}`;
+}
+
 /**
  * 커플 세션 개인 결과용 통합 분석.
- * 기존 1단계 컬러 원본과 2단계 카드의 최종 선택값을 함께 살펴,
- * 개별 해석에 반복되지 않는 세 가지 통찰로 연결한다.
- * 카드별 상세 해석·코칭 메시지·회복 루틴은 이 함수에서 변경하지 않는다.
+ * 기존 1·2·3순위 컬러와 카드 1·2·3의 원문 흐름을 함께 읽되,
+ * 카드 상세 해석을 그대로 반복하지 않고, 카드 제목이 가리키는 내면·현재·회복의 위치를 컬러 흐름과 연결한다.
  */
 export function buildRomanticCoupleColorCardIntegratedAnalysis(
   inputColors: readonly ColorInput[],
@@ -142,14 +120,11 @@ export function buildRomanticCoupleColorCardIntegratedAnalysis(
   const secondaryLanguage = colorLanguage(secondary);
   const recoveryLanguage = colorLanguage(recovery);
 
-  const unconsciousMeaning = cardMeaning(unconscious, "inner");
-  const currentMeaning = cardMeaning(current, "outer");
-  const futureMeaning = cardMeaning(future, "direction");
-  const coreNeedParagraph = `당신은 ${primaryLanguage.core}과 ${secondaryLanguage.core}을 함께 소중히 여기는 편입니다. 마음 깊은 곳에는 ${unconsciousMeaning.title} 마음이 있습니다. ${unconsciousMeaning.structure} 마음도 함께합니다. 그래서 관계에서는 ${relationshipHabit(relationshipNeed)} 중요하게 여길 수 있습니다.`;
+  const coreNeedParagraph = `당신은 ${primaryLanguage.core}과 ${secondaryLanguage.core}을 함께 소중히 여기는 편입니다. 무의식 카드인 ${cardLabel(unconscious)}에는 "${cardFlowSummary(unconscious.psychologyFlow)}"라는 마음의 바탕이 담겨 있습니다. 그래서 관계에서는 ${relationshipHabit(relationshipNeed)} 중요하게 여길 수 있습니다.`;
 
-  const innerOuterParagraph = `겉으로는 ${currentMeaning.title} 모습이 먼저 드러날 수 있습니다. ${currentMeaning.structure} 태도도 함께 나타날 수 있습니다. ${expressionHabit(expressionNeed)} 익숙한 편이라, 정작 내면의 바람은 충분히 말하기 전까지 조용히 남아 있을 수 있습니다.`;
+  const innerOuterParagraph = `현재 흐름 카드인 ${cardLabel(current)}에는 "${cardFlowSummary(current.personalityFlow)}"라는 상태가 담겨 있습니다. 이 흐름이 ${secondaryLanguage.core}과 만날 때, ${expressionHabit(expressionNeed)} 익숙해져 정작 내면의 바람은 충분히 말하기 전까지 조용히 남아 있을 수 있습니다.`;
 
-  const directionParagraph = `지금은 ${directionProcess(futureMeaning.title)} 흐름이 나타날 수 있습니다. ${futureMeaning.structure} 방향으로 내 마음도 함께 돌보는 데 도움이 될 수 있습니다. 그 과정에서 ${recoveryLanguage.recovery}. 이런 작은 말과 행동이 관계의 긴장을 낮추고, 자기 마음을 더 편안히 돌보는 시작이 될 수 있습니다.`;
+  const directionParagraph = `회복 방향 카드인 ${cardLabel(future)}에는 "${cardFlowSummary(future.recoveryDirection)}"라는 회복의 실마리가 담겨 있습니다. ${completeSentence(recoveryLanguage.recovery)} ${recoveryLanguage.core}을 일상에서 다시 살피는 일이 자기 마음을 편안히 돌보는 데 도움이 될 수 있습니다.`;
 
   return [coreNeedParagraph, innerOuterParagraph, directionParagraph].join("\n\n");
 }

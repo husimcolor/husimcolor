@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { CARD_DATA, CARD_SHAPES } from "../constants/cardData";
 import { COLOR_DATA } from "../constants/colorData";
-import { generatePersonAnalysis, getRelationArchetype, type PersonSession } from "../constants/coupleData";
+import { generateCoupleAnalysis, generatePersonAnalysis, getRelationArchetype, type PersonSession } from "../constants/coupleData";
 import { buildRomanticCoupleColorCardIntegratedAnalysis } from "../lib/couple-color-card-analysis";
+import { buildRomanticRelationTraits } from "../lib/couple-romantic-relation-traits";
 import { buildRomanticRelationshipRoles } from "../lib/couple-romantic-relationship-roles";
 
 const FAMILY_BY_COLOR: Record<string, string> = {
@@ -28,6 +29,11 @@ function sessionFor(colors: readonly (typeof COLOR_DATA)[number][]): PersonSessi
   };
 }
 
+function hasFinalConsonant(value: string) {
+  const last = value.charCodeAt(value.length - 1);
+  return last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+}
+
 describe("부부·연인 결과 4단계 문구 검수", () => {
   it("1단계: 25개 컬러의 세 컬러 개인 해석이 모두 생성되고 요청 문구를 사용한다", () => {
     COLOR_DATA.forEach((_, index) => {
@@ -37,6 +43,20 @@ describe("부부·연인 결과 4단계 문구 검수", () => {
       expect(analysis.recoveryDirection.trim()).not.toBe("");
       expect(analysis.relationshipStyle.trim()).not.toBe("");
       expect(analysis.coachingMessage.trim()).not.toBe("");
+    });
+  });
+
+  it("1단계: 보완 컬러명 뒤의 은·는 조사를 실제 컬러명에 맞춰 연결한다", () => {
+    COLOR_DATA.forEach((_, index) => {
+      const analysis = generatePersonAnalysis(sessionFor(cycle(COLOR_DATA, index)), "A");
+      const name = analysis.complementColor.korName;
+      const expectedParticle = hasFinalConsonant(name) ? "은" : "는";
+      const wrongParticle = expectedParticle === "은" ? "는" : "은";
+
+      expect(analysis.complementColor.meaning, `${name} topic particle`)
+        .toContain(`${name}${expectedParticle}`);
+      expect(analysis.complementColor.meaning, `${name} avoids wrong topic particle`)
+        .not.toContain(`${name}${wrongParticle}`);
     });
   });
 
@@ -79,6 +99,22 @@ describe("부부·연인 결과 4단계 문구 검수", () => {
       expect(result.split("\n\n")).toHaveLength(3);
       expect(result).not.toContain("이해받고 신뢰할 수 있는 연결을 바라며");
       expect(result).not.toContain("선택한 카드");
+      cards.forEach((card) => {
+        expect(result).toContain(`${card.colorKor} ${card.shapeKor}의 ${card.energyTitle}`);
+      });
+    });
+  });
+
+  it("3단계: 63장 카드의 무의식·현재·회복 위치와 제목이 컬러 흐름에 연결된다", () => {
+    const colors = cycle(COLOR_DATA, 0);
+    CARD_DATA.forEach((card) => {
+      const result = buildRomanticCoupleColorCardIntegratedAnalysis(colors, [card, card, card]);
+      expect(result).toContain(`${card.colorKor} ${card.shapeKor}의 ${card.energyTitle}`);
+      expect(result).toContain("무의식 카드인");
+      expect(result).toContain("현재 흐름 카드인");
+      expect(result).toContain("회복 방향 카드인");
+      expect(result).not.toContain(`${card.energyTitle}은`);
+      expect(result).not.toContain(`${card.energyTitle}는`);
     });
   });
 
@@ -96,9 +132,10 @@ describe("부부·연인 결과 4단계 문구 검수", () => {
         cardsA,
         cardsB,
       });
-      const roleText = `${roles.personA.description} ${roles.personB.description}`;
+      const roleText = `${roles.personA.description} ${roles.personB.description} ${roles.together}`;
       expect(roleText).not.toContain("이 역할에 더해집니다");
       expect(roleText).not.toContain("역할을 맡기 쉽습니다");
+      expect(roleText).not.toContain("맡기 쉽습니다");
 
       const relation = getRelationArchetype(
         colorsA.map((color) => FAMILY_BY_COLOR[color.id]!) as any[],
@@ -127,5 +164,79 @@ describe("부부·연인 결과 4단계 문구 검수", () => {
       "연인",
     );
     expect(JSON.stringify(waveRelation)).toContain("마음이 가라앉은 뒤 함께 식사하기");
+  });
+
+  it("4단계: 25컬러 fallback 관계 특성은 컬러명과 관계 강점의 조사를 자연스럽게 연결한다", () => {
+    COLOR_DATA.forEach((_, index) => {
+      const colorsA = cycle(COLOR_DATA, index);
+      const colorsB = cycle(COLOR_DATA, index + 7);
+      const traits = buildRomanticRelationTraits({
+        personA: { relationshipStyle: "", emotionExpression: "" },
+        personB: { relationshipStyle: "", emotionExpression: "" },
+        colorsA,
+        colorsB,
+        cardsA: [],
+        cardsB: [],
+        expressionDescription: "",
+        recoveryDescription: "",
+        relationType: "연인",
+      });
+      const text = traits.map((trait) => trait.description).join(" ");
+      [...colorsA, ...colorsB].forEach((color) => {
+        const wrongParticle = hasFinalConsonant(color.korName) ? "는" : "은";
+        expect(text, `${color.korName} particle`).not.toContain(`${color.korName}${wrongParticle}`);
+      });
+      expect(text).not.toContain("에너지이");
+      expect(text).not.toContain("집안일");
+      expect(text).toContain("연락과 만남");
+      expect(text).toContain("카드에는");
+      expect(text).toContain("카드들은");
+      expect(text).not.toContain("카드는 \"");
+    });
+  });
+
+  it("4단계: 두 사람이 같은 컬러 흐름을 가질 때는 역할을 강제 분리하거나 같은 문장을 반복하지 않는다", () => {
+    COLOR_DATA.forEach((_, index) => {
+      const colors = cycle(COLOR_DATA, index);
+      const traits = buildRomanticRelationTraits({
+        personA: { relationshipStyle: "", emotionExpression: "" },
+        personB: { relationshipStyle: "", emotionExpression: "" },
+        colorsA: colors,
+        colorsB: colors,
+        cardsA: [],
+        cardsB: [],
+        expressionDescription: "",
+        recoveryDescription: "",
+        relationType: "연인",
+      });
+      expect(traits[0]?.description).toContain(`두 사람 모두 ${colors[0]?.korName}의`);
+      expect(traits[1]?.description).toContain(`두 사람 모두 ${colors[1]?.korName}의`);
+      expect(traits[2]?.description).toContain(`두 사람 모두 ${colors[2]?.korName}의`);
+      expect(traits[0]?.description).not.toContain("마음을 드러내고, ");
+      expect(traits[1]?.description).not.toContain("방식으로, ");
+    });
+  });
+
+  it("4단계: 관계 통합 설명은 결제·제출 순서 대신 입력한 실제 역할을 사용한다", () => {
+    const personA: PersonSession = {
+      info: { gender: "여성", faith: "무교", relationshipRole: "아내" },
+      colors: ["red", "blue", "green"],
+      cards: ["red_circle", "red_triangle", "red_inverted_triangle"],
+    };
+    const personB: PersonSession = {
+      info: { gender: "남성", faith: "무교", relationshipRole: "남편" },
+      colors: ["pink", "indigo", "yellow"],
+      cards: ["orange_square", "orange_diamond", "orange_pentagon"],
+    };
+    const analysis = generateCoupleAnalysis(
+      { relationType: "부부", personA, personB },
+      generatePersonAnalysis(personA, "A"),
+      generatePersonAnalysis(personB, "B"),
+    );
+
+    expect(analysis.profileContrast).toContain("아내는");
+    expect(analysis.profileContrast).toContain("남편은");
+    expect(analysis.profileContrast).not.toContain("첫 번째 사람");
+    expect(analysis.profileContrast).not.toContain("두 번째 사람");
   });
 });

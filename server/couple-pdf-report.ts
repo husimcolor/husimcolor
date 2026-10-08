@@ -14,13 +14,17 @@ const FONT_PATH = existsSync(BUNDLED_FONT_PATH)
 const BODY_SIZE = 15.5;
 const LABEL_SIZE = 12.6;
 const BODY_LINE_GAP = 5.8;
-const SECTION_BAR_GAP = 10;
+const SECTION_BAR_GAP = 7;
 const SUBTITLE_SIZE = 19.2;
 const SUBTITLE_LABEL_SIZE = 17.4;
 const SUBTITLE_LINE_GAP = 3.1;
-const CARD_TITLE_BLOCK_HEIGHT = 60;
-const CARD_LABEL_BLOCK_HEIGHT = 40;
-const CARD_PARAGRAPH_GAP = 24;
+const CARD_TITLE_BLOCK_HEIGHT = 38;
+const CARD_LABEL_BLOCK_HEIGHT = 26;
+const CARD_PARAGRAPH_GAP = 2;
+// PDFKit의 실제 줄바꿈·한글 stroke 렌더링 여유를 반영해, 카드 배경만 남기고
+// 본문이 다음 페이지로 넘치는 상황을 막는다.
+const CARD_LAYOUT_SAFETY = 6;
+const MAX_CARD_TEXT_HEIGHT = 285;
 
 type PdfWriter = InstanceType<typeof PDFDocument>;
 type CardParagraph = {
@@ -32,7 +36,11 @@ type CardParagraph = {
 function correctPdfText(value: string) {
   return value
     .replaceAll("붙어있는 시간보다", "붙어 있는 시간보다")
-    .replaceAll("짧은 포옹이나 손 잡기가", "짧은 포옹이나 손잡기가");
+    .replaceAll("짧은 포옹이나 손 잡기가", "짧은 포옹이나 손잡기가")
+    .replaceAll("‘", '"')
+    .replaceAll("’", '"')
+    .replaceAll("“", '"')
+    .replaceAll("”", '"');
 }
 
 function clean(value: string) {
@@ -82,7 +90,7 @@ function writeSubtitle(document: PdfWriter, text: string, x: number, y: number, 
 }
 
 function bulletListHeight(document: PdfWriter, bullets: string[], width: number) {
-  return bullets.reduce((sum, bullet) => sum + Math.max(20, heightOf(document, bullet, width)) + 7, 0);
+  return bullets.reduce((sum, bullet) => sum + Math.max(20, heightOf(document, bullet, width)) + 2, 0);
 }
 
 function writeBulletList(document: PdfWriter, bullets: string[], textX: number, bulletX: number, width: number) {
@@ -90,14 +98,17 @@ function writeBulletList(document: PdfWriter, bullets: string[], textX: number, 
     const top = document.y;
     document.fillColor("#8A6B4D").fontSize(BODY_SIZE).text("•", bulletX, top, { width: 14, lineGap: BODY_LINE_GAP });
     document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(bullet), textX, top, { width, lineGap: BODY_LINE_GAP });
-    document.moveDown(0.38);
+    document.moveDown(0.15);
   });
 }
 
-function writeSectionTitle(document: PdfWriter, title: string, tone = "#5C7F68", minFollowingHeight = 108) {
+function writeSectionTitle(document: PdfWriter, title: string, tone = "#5C7F68", minFollowingHeight = 120) {
   const needsGap = document.y > PAGE_TOP + 2;
-  const requiredHeight = (needsGap ? SECTION_BAR_GAP : 0) + 39 + minFollowingHeight;
-  if (document.y + requiredHeight > PAGE_BOTTOM) addPage(document);
+  const followingHeight = Math.max(minFollowingHeight, 100);
+  const requiredHeight = (needsGap ? SECTION_BAR_GAP : 0) + 39 + followingHeight;
+  // 페이지 맨 위에서는 즉시 제목을 시작하되, 이미 본문이 있는 페이지에서는
+  // 다음 카드가 함께 시작할 여유가 없으면 제목도 다음 페이지로 옮긴다.
+  if (needsGap && document.y + requiredHeight > PAGE_BOTTOM) addPage(document);
   else if (needsGap) document.y += SECTION_BAR_GAP;
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, 30, 7).fill().restore();
@@ -105,61 +116,133 @@ function writeSectionTitle(document: PdfWriter, title: string, tone = "#5C7F68",
   document.y = top + 39;
 }
 
-function writeCard(document: PdfWriter, title: string, paragraphs: CardParagraph[], tone = "#FCF8F1") {
+/** 긴 관계 특성 본문은 문장 단위로 나눠, 배경 없이 다음 쪽에 꼬리 문장만 남지 않도록 한다. */
+function splitCardParagraph(document: PdfWriter, paragraph: CardParagraph): CardParagraph[] {
+  if (paragraph.bullets?.length) return [paragraph];
+  if (!paragraph.text || heightOf(document, paragraph.text, CONTENT_WIDTH - 30) <= MAX_CARD_TEXT_HEIGHT) {
+    return [paragraph];
+  }
+
+  const sentences = clean(paragraph.text).split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (sentences.length < 2) return [paragraph];
+
+  const chunks: CardParagraph[] = [];
+  let current = "";
+  sentences.forEach((sentence) => {
+    const candidate = current ? `${current} ${sentence}` : sentence;
+    if (current && heightOf(document, candidate, CONTENT_WIDTH - 30) > MAX_CARD_TEXT_HEIGHT) {
+      chunks.push({ label: chunks.length === 0 ? paragraph.label : undefined, text: current });
+      current = sentence;
+    } else {
+      current = candidate;
+    }
+  });
+  if (current) chunks.push({ label: chunks.length === 0 ? paragraph.label : undefined, text: current });
+  return chunks.length ? chunks : [paragraph];
+}
+
+function writeCard(
+  document: PdfWriter,
+  title: string,
+  paragraphs: CardParagraph[],
+  tone = "#FCF8F1",
+  options?: { continueFromCurrentPage?: boolean },
+) {
   const innerWidth = CONTENT_WIDTH - 30;
-  const contentHeight = paragraphs.reduce((sum, paragraph) => {
-    const labelHeight = paragraph.label ? CARD_LABEL_BLOCK_HEIGHT : 0;
+  const paragraphHeight = (paragraph: CardParagraph) => {
+    // 레이블의 실제 줄 높이를 반영해 제목만 페이지 끝에 남지 않게 한다.
+    const labelHeight = paragraph.label
+      ? subtitleHeight(document, paragraph.label, innerWidth, SUBTITLE_LABEL_SIZE) + 8
+      : 0;
     const textHeight = paragraph.text ? heightOf(document, paragraph.text, innerWidth) : 0;
     const listHeight = paragraph.bullets ? bulletListHeight(document, paragraph.bullets, innerWidth - 22) : 0;
     const textToListGap = paragraph.text && paragraph.bullets?.length ? 5 : 0;
-    return sum + labelHeight + textHeight + textToListGap + listHeight + CARD_PARAGRAPH_GAP;
-  }, CARD_TITLE_BLOCK_HEIGHT);
-  ensureSpace(document, contentHeight + 19);
-  const top = document.y;
-  document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 19, 9).fill().restore();
-  writeSubtitle(document, title, PAGE_LEFT + 15, top + 12, innerWidth, SUBTITLE_SIZE);
-  document.y = top + CARD_TITLE_BLOCK_HEIGHT;
-  paragraphs.forEach((paragraph) => {
-    if (paragraph.label) {
-      const labelTop = document.y;
-      writeSubtitle(document, paragraph.label, PAGE_LEFT + 15, labelTop, innerWidth, SUBTITLE_LABEL_SIZE);
-      document.y = labelTop + subtitleHeight(document, paragraph.label, innerWidth, SUBTITLE_LABEL_SIZE) + 12;
+    const contentHeight = textHeight + textToListGap + listHeight;
+    // 긴 문단은 PDFKit의 실제 줄바꿈 오차를 넉넉히 반영하고, 짧은 카드에는
+    // 과도한 여백을 만들지 않는다.
+    const overflowSafety = contentHeight > 180
+      ? CARD_LAYOUT_SAFETY * 6
+      : contentHeight > 90
+        ? CARD_LAYOUT_SAFETY * 2
+        : CARD_LAYOUT_SAFETY;
+    return labelHeight + contentHeight + CARD_PARAGRAPH_GAP + overflowSafety;
+  };
+  const drawCard = (cardTitle: string, cardParagraphs: CardParagraph[], showTitle = true) => {
+    const titleHeight = showTitle ? CARD_TITLE_BLOCK_HEIGHT : 8;
+    const contentHeight = cardParagraphs.reduce((sum, paragraph) => sum + paragraphHeight(paragraph), titleHeight);
+    const top = document.y;
+    document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 19, 9).fill().restore();
+    if (showTitle) writeSubtitle(document, cardTitle, PAGE_LEFT + 15, top + 12, innerWidth, SUBTITLE_SIZE);
+    document.y = top + titleHeight;
+    cardParagraphs.forEach((paragraph) => {
+      if (paragraph.label) {
+        const labelTop = document.y;
+        writeSubtitle(document, paragraph.label, PAGE_LEFT + 15, labelTop, innerWidth, SUBTITLE_LABEL_SIZE);
+        document.y = labelTop + subtitleHeight(document, paragraph.label, innerWidth, SUBTITLE_LABEL_SIZE) + 8;
+      }
+      if (paragraph.text) {
+        document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(paragraph.text), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
+      }
+      if (paragraph.bullets?.length) {
+        if (paragraph.text) document.moveDown(0.28);
+        writeBulletList(document, paragraph.bullets, PAGE_LEFT + 32, PAGE_LEFT + 15, innerWidth - 22);
+      }
+      document.moveDown(0.1);
+    });
+    document.y = top + contentHeight + 19;
+    document.moveDown(0.2);
+  };
+
+  const normalizedParagraphs = paragraphs.flatMap((paragraph) => splitCardParagraph(document, paragraph));
+  const totalHeight = normalizedParagraphs.reduce((sum, paragraph) => sum + paragraphHeight(paragraph), CARD_TITLE_BLOCK_HEIGHT);
+  const usablePageHeight = PAGE_BOTTOM - PAGE_TOP - 20;
+  if (totalHeight + 19 <= usablePageHeight && !options?.continueFromCurrentPage) {
+    ensureSpace(document, totalHeight + 19);
+    drawCard(title, normalizedParagraphs);
+    return;
+  }
+
+  // 생활 패턴처럼 한 카드 안에 여러 생활 장면이 담겨 한 페이지를 넘는 경우에는,
+  // 제목과 첫 문단을 함께 두고 문단 단위로 자연스럽게 이어 준다.
+  let remaining = [...normalizedParagraphs];
+  let isFirstSegment = true;
+  while (remaining.length > 0) {
+    const isShortLabeledContinuation = !isFirstSegment
+      && remaining.length === 1
+      && Boolean(remaining[0]?.label)
+      && paragraphHeight(remaining[0]) < 180;
+    const titleHeight = isShortLabeledContinuation ? 8 : CARD_TITLE_BLOCK_HEIGHT;
+    const minimumStartHeight = titleHeight + Math.min(paragraphHeight(remaining[0]!), 210) + 19;
+    ensureSpace(document, minimumStartHeight);
+    const available = PAGE_BOTTOM - document.y - 19 - titleHeight;
+    const segment: CardParagraph[] = [];
+    let used = 0;
+    while (remaining.length > 0) {
+      const candidate = remaining[0]!;
+      const candidateHeight = paragraphHeight(candidate);
+      const isClosingMessage = candidate.label === "마무리 코칭 메시지" && remaining.length === 1;
+      // 회복 루틴의 마지막 짧은 코칭은 실제 렌더링 여백 안에 함께 두어,
+      // 마무리 문단만 단독 페이지로 떨어지지 않게 한다.
+      const canUseClosingAllowance = isClosingMessage && used + candidateHeight <= available + 110;
+      if (segment.length > 0 && used + candidateHeight > available && !canUseClosingAllowance) break;
+      segment.push(candidate);
+      remaining = remaining.slice(1);
+      used += candidateHeight;
+      if (used >= available) break;
     }
-    if (paragraph.text) {
-      document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(paragraph.text), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
+    // 단일 문단이 한 페이지를 넘는 비정상 입력에서도 제목만 남기지 않는다.
+    if (segment.length === 0) {
+      addPage(document);
+      segment.push(remaining[0]!);
+      remaining = remaining.slice(1);
     }
-    if (paragraph.bullets?.length) {
-      if (paragraph.text) document.moveDown(0.28);
-      writeBulletList(document, paragraph.bullets, PAGE_LEFT + 32, PAGE_LEFT + 15, innerWidth - 22);
-    }
-    document.moveDown(1.02);
-  });
-  document.y = top + contentHeight + 19;
-  document.moveDown(0.7);
+    drawCard(isFirstSegment ? title : `${title} · 계속`, segment, !isShortLabeledContinuation);
+    isFirstSegment = false;
+  }
 }
 
 function writeCardWithActions(document: PdfWriter, title: string, summary: string, actions: string[], tone = "#FCF8F1") {
-  const innerWidth = CONTENT_WIDTH - 30;
-  const actionWidth = innerWidth - 22;
-  const contentHeight = CARD_TITLE_BLOCK_HEIGHT
-    + heightOf(document, summary, innerWidth)
-    + 8
-    + actions.reduce((sum, action) => sum + Math.max(20, heightOf(document, action, actionWidth)) + 6, 0);
-  ensureSpace(document, contentHeight + 19);
-  const top = document.y;
-  document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 19, 9).fill().restore();
-  writeSubtitle(document, title, PAGE_LEFT + 15, top + 12, innerWidth, SUBTITLE_SIZE);
-  document.y = top + CARD_TITLE_BLOCK_HEIGHT;
-  document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(summary), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
-  document.moveDown(0.36);
-  actions.forEach((action) => {
-    const actionTop = document.y;
-    document.fillColor("#8A6B4D").fontSize(BODY_SIZE).text("•", PAGE_LEFT + 15, actionTop, { width: 14, lineGap: BODY_LINE_GAP });
-    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(action), PAGE_LEFT + 32, actionTop, { width: actionWidth, lineGap: BODY_LINE_GAP });
-    document.moveDown(0.34);
-  });
-  document.y = top + contentHeight + 19;
-  document.moveDown(0.7);
+  writeCard(document, title, [{ text: summary, bullets: actions }], tone);
 }
 
 function drawShape(document: PdfWriter, shape: CouplePdfShape, centerX: number, centerY: number, radius: number, fill: string, stroke: string) {
@@ -186,28 +269,38 @@ function drawShape(document: PdfWriter, shape: CouplePdfShape, centerX: number, 
 }
 
 function writeColorCards(document: PdfWriter, colors: CouplePdfDownloadPayload["personA"]["colors"]) {
+  const totalHeight = colors.reduce((sum, color) => (
+    sum + Math.max(70, heightOf(document, color.interpretation, CONTENT_WIDTH - 92) + 40) + 8
+  ), 0);
+  // 각자의 세 컬러는 시작 페이지에 함께 둔다. 긴 입력만 카드 단위로 자연스럽게 나뉜다.
+  if (totalHeight <= PAGE_BOTTOM - PAGE_TOP && document.y + totalHeight > PAGE_BOTTOM) addPage(document);
   colors.forEach((color) => {
-    const height = Math.max(76, heightOf(document, color.interpretation, CONTENT_WIDTH - 92) + 43);
+    const height = Math.max(70, heightOf(document, color.interpretation, CONTENT_WIDTH - 92) + 40);
     ensureSpace(document, height + 8);
     const top = document.y;
     document.save().fillColor("#FFFDF9").roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, height, 9).fill().restore();
     document.save().fillColor(color.hex).strokeColor("#CBBEAC").lineWidth(1).circle(PAGE_LEFT + 31, top + 31, 17).fillAndStroke().restore();
     document.fillColor("#4A3A2A").fontSize(12.5).text(clean(`${color.role} · ${color.name}`), PAGE_LEFT + 61, top + 12, { width: CONTENT_WIDTH - 76 });
     document.fillColor("#75695D").fontSize(11.5).text(clean(color.keywords), PAGE_LEFT + 61, top + 31, { width: CONTENT_WIDTH - 76 });
-    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(color.interpretation), PAGE_LEFT + 15, top + 53, { width: CONTENT_WIDTH - 30, lineGap: BODY_LINE_GAP });
+    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(color.interpretation), PAGE_LEFT + 15, top + 50, { width: CONTENT_WIDTH - 30, lineGap: BODY_LINE_GAP });
     document.y = top + height + 8;
   });
 }
 
 function writeCards(document: PdfWriter, cards: CouplePdfDownloadPayload["personA"]["cards"]) {
   cards.forEach((card) => {
-    ensureSpace(document, 32);
-    const top = document.y;
-    document.save().fillColor(card.colorHex).roundedRect(PAGE_LEFT, top, 36, 36, 7).fill().restore();
-    drawShape(document, card.shape, PAGE_LEFT + 18, top + 18, 9, "#FFFDF9", "#FFFDF9");
-    document.fillColor("#4A3A2A").fontSize(13.5).text(clean(`${card.position} · ${card.colorName} ${card.shapeName}`), PAGE_LEFT + 47, top + 10, { width: CONTENT_WIDTH - 47 });
-    document.y = top + 43;
     const narrative = splitCouplePdfCardNarrative(card.position, card.narrative);
+    const innerWidth = CONTENT_WIDTH - 30;
+    const narrativeHeight = narrative.actions.length > 0
+      ? CARD_TITLE_BLOCK_HEIGHT + heightOf(document, narrative.summary, innerWidth) + 8 + bulletListHeight(document, narrative.actions, innerWidth - 22) + 19
+      : CARD_TITLE_BLOCK_HEIGHT + heightOf(document, narrative.summary, innerWidth) + CARD_PARAGRAPH_GAP + 19;
+    const minimumNarrativeHeight = Math.min(narrativeHeight, PAGE_BOTTOM - PAGE_TOP - 20);
+    ensureSpace(document, 35 + minimumNarrativeHeight + 4);
+    const top = document.y;
+    document.save().fillColor(card.colorHex).roundedRect(PAGE_LEFT, top, 30, 30, 7).fill().restore();
+    drawShape(document, card.shape, PAGE_LEFT + 15, top + 15, 8, "#FFFDF9", "#FFFDF9");
+    document.fillColor("#4A3A2A").fontSize(13.2).text(clean(`${card.position} · ${card.colorName} ${card.shapeName}`), PAGE_LEFT + 41, top + 7, { width: CONTENT_WIDTH - 41 });
+    document.y = top + 33;
     if (narrative.actions.length > 0) {
       writeCardWithActions(document, card.title, narrative.summary, narrative.actions, "#FCF8F1");
     } else {
@@ -218,10 +311,11 @@ function writeCards(document: PdfWriter, cards: CouplePdfDownloadPayload["person
 
 function writePerson(document: PdfWriter, person: CouplePdfDownloadPayload["personA"], tone: string, startsOnNewPage = false) {
   if (startsOnNewPage) addPage(document);
-  writeSectionTitle(document, `${person.label}의 컬러·심리카드 결과`, tone, 120);
-  writeCard(document, "선택한 3컬러", [{ text: "선택한 컬러는 현재의 마음과 관계 안에서 중요하게 느끼는 방향을 함께 보여줍니다." }], "#F7F4EE");
+  writeSectionTitle(document, `${person.label}의 개인 해석`, tone, 210);
   writeColorCards(document, person.colors);
-  writeSectionTitle(document, `${person.label}의 심리카드 해석`, tone, 155);
+  // 개인 컬러 3개와 심리카드 3장을 섞지 않는다. 심리카드는 항상 새 페이지에서 시작한다.
+  addPage(document);
+  writeSectionTitle(document, `${person.label}의 심리카드 3장`, tone, 210);
   writeCards(document, person.cards);
   writeCard(document, "컬러 × 심리카드 통합 분석", person.integratedAnalysis.split(/\n\n+/).filter(Boolean).map((text) => ({ text })), "#F2F7F3");
   writeCard(document, "관계 성향과 회복 방향", [
@@ -244,45 +338,62 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
     { label: `${personB} · ${relation.roles.personBTitle}`, text: relation.roles.personBDescription },
     { label: "두 역할이 만났을 때", text: relation.roles.together },
   ], "#F6F1FA");
-  writeSectionTitle(document, "관계 핵심", "#5F8069", 120);
+  if (relation.traits?.length) {
+    writeSectionTitle(document, "감정 교류 · 표현 리듬 · 갈등 회복", "#A86773", 460);
+    relation.traits.forEach((trait) => {
+      writeCard(document, "두 사람의 상호작용 흐름", [{
+        label: trait.title,
+        text: trait.description,
+      }], "#FFF4F7");
+    });
+  }
+  // 관계 해석은 한 항목마다 새 쪽을 만들지 않는다. 제목과 첫 본문을 함께 둘 수 있는
+  // 최소 높이만 확보해 앞 카드의 남는 공간을 자연스럽게 활용한다.
+  writeSectionTitle(document, "관계 핵심", "#5F8069", 180);
   writeCard(document, relation.core.headline, [
     { label: "핵심 키워드", text: relation.core.keywords.join(" · ") },
     { text: relation.core.description },
   ], "#EFF7F0");
-  writeSectionTitle(document, "생활 속 관계 패턴", "#8B7259", 120);
-  writeCard(document, relation.lifePattern.headline, relation.lifePattern.items.flatMap((item) => [
-    { label: item.label, text: `${personA}: ${item.personA}\n${personB}: ${item.personB}` },
-    { label: "둘이 만났을 때 · 조율 포인트", text: item.tension },
-  ]), "#FBF6EF");
-  writeSectionTitle(document, "싸움 패턴", "#B16A75", 150);
+  writeSectionTitle(document, "생활 속 관계 패턴", "#8B7259", 260);
+  writeCard(document, relation.lifePattern.headline, relation.lifePattern.items.map((item) => ({
+    label: item.label,
+    text: `${personA}: ${item.personA}\n${personB}: ${item.personB}\n\n조율 포인트: ${item.tension}`,
+  })), "#FBF6EF");
+  // 갈등 카드는 제목과 첫 설명을 함께 두고, 남은 문단만 자연스럽게 이어 준다.
+  writeSectionTitle(document, "싸움 패턴", "#B16A75", 220);
   writeCard(document, "이 관계의 갈등 흐름", [
     { label: "싸움이 시작되는 순간", text: relation.conflict.trigger },
     { label: "갈등 직후 반응", text: relation.conflict.reaction },
     { label: "반복 위험 패턴", text: relation.conflict.danger },
     { label: "싸울 때 조심할 말", text: relation.conflict.forbiddenWords.join("\n") },
-  ], "#FFF3F3");
-  writeSectionTitle(document, "연결 방식", "#B87B91", 130);
+  ], "#FFF3F3", { continueFromCurrentPage: true });
+  writeSectionTitle(document, "연결 방식", "#B87B91", 210);
   writeCard(document, relation.connection.headline, [
     { text: relation.connection.description },
     { label: "함께 해볼 연결", text: relation.connection.actions.join("\n") },
     { label: "스킨십 · 친밀감", text: relation.connection.intimacyNote },
   ], "#FFF4F7");
-  writeSectionTitle(document, "관계 성장 포인트", "#4F8B70", 140);
+  writeSectionTitle(document, "관계 성장 포인트", "#4F8B70", 210);
   writeCard(document, "이 관계가 오래가는 이유와 성장 방향", [
     { label: "이 관계의 강점", text: relation.growth.strength },
     { label: "조금 더 의식하면", text: relation.growth.blindSpot },
     { label: "함께 성장해야 할 방향", text: relation.growth.direction },
     { label: "오늘 해볼 수 있는 것", text: relation.growth.tip },
   ], "#F0F8F2");
-  writeSectionTitle(document, "추천 컬러와 함께하는 회복 루틴", "#94723D", 130);
-  writeCard(document, "두 사람에게 권하는 컬러", relation.recommendedColors.map((color) => ({ label: color.name, text: color.reason })), "#FCF8EF");
-  writeCard(document, "함께하면 좋은 회복 루틴", [
-    { label: "이번 주 함께 해볼 것", bullets: relation.togetherRoutine.routines },
+  // 앞선 성장 포인트의 남는 공간을 활용해 회복 루틴이 불필요하게 한 페이지 늦게 시작하지 않도록 한다.
+  // 실제 카드 본문은 writeCard가 단락 단위로 안전하게 다음 페이지로 넘긴다.
+  writeSectionTitle(document, "추천 컬러와 함께하는 회복 루틴", "#94723D", 250);
+  writeCard(document, "함께 회복하는 이번 주의 흐름", [
+    ...relation.recommendedColors.map((color) => ({ label: `추천 컬러 · ${color.name}`, text: color.reason })),
+    ...relation.togetherRoutine.routines.map((routine, index) => ({
+      label: index === 0 ? "이번 주 함께 해볼 것" : undefined,
+      bullets: [routine],
+    })),
     { label: "함께하면 살아나는 에너지", text: relation.togetherRoutine.energyNote },
     ...(relation.togetherRoutine.faithRoutine ? [{ label: "함께 나누는 루틴", text: relation.togetherRoutine.faithRoutine }] : []),
+    { label: "건강한 관계를 위한 기본 원칙", text: relation.basicPrinciples },
+    { label: "마무리 코칭 메시지", text: relation.closingMessage },
   ], "#F0F6F1");
-  writeCard(document, "건강한 관계를 위한 기본 원칙", [{ text: relation.basicPrinciples }], "#EEF4F0");
-  writeCard(document, "마무리 코칭 메시지", [{ text: relation.closingMessage }], "#F4F0EA");
 }
 
 export function validateCouplePdfPayload(value: unknown): CouplePdfDownloadPayload {
@@ -324,10 +435,9 @@ export async function createCouplePdfBuffer(payload: CouplePdfDownloadPayload): 
   document.fillColor("#75695D").fontSize(13).text(clean(payload.couple.tensionDescription), PAGE_LEFT, 408, { width: CONTENT_WIDTH, lineGap: 5 });
   document.fillColor("#75695D").fontSize(11).text(`리포트 생성일 · ${payload.generatedAt}`, PAGE_LEFT, 740, { width: CONTENT_WIDTH });
 
-  addPage(document);
-  writePerson(document, payload.personA, "#A86773");
-  writePerson(document, payload.personB, "#5677A5", true);
   writeRelationship(document, payload);
+  writePerson(document, payload.personA, "#A86773", true);
+  writePerson(document, payload.personB, "#5677A5", true);
   document.end();
   return finished;
 }

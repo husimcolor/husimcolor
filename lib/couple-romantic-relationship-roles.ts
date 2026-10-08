@@ -76,7 +76,7 @@ function getRoleTheme(
   });
   scoreText(person.relationshipStyle, 2);
   scoreText(person.emotionExpression, 2);
-  // 카드 1·2·3번은 현재 정서·표현·회복의 결을 보태지만, 한 카드의 단어가 컬러 기질 전체를 뒤집지 않게 보조로 반영한다.
+  // 카드 1·2·3번은 무의식·현재·회복의 결을 보태지만, 한 카드의 일반적인 단어가 컬러 기질 전체를 뒤집지 않게 보조로 반영한다.
   scoreText(cards[0]?.psychologyFlow, 0.5);
   scoreText(cards[1]?.personalityFlow, 0.5);
   scoreText(cards[2]?.recoveryDirection, 0.5);
@@ -85,15 +85,42 @@ function getRoleTheme(
   return priority.reduce((best, theme) => scores[theme] > scores[best] ? theme : best, "balance");
 }
 
-function alternateTheme(theme: RoleTheme): RoleTheme {
-  const map: Record<RoleTheme, RoleTheme> = {
-    balance: "warmth",
-    movement: "balance",
-    depth: "space",
-    warmth: "depth",
-    space: "balance",
+function hasFinalConsonant(value: string) {
+  const last = value.charCodeAt(value.length - 1);
+  return last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+}
+
+function topicParticle(value: string) {
+  return hasFinalConsonant(value) ? "은" : "는";
+}
+
+function subjectParticle(value: string) {
+  return hasFinalConsonant(value) ? "이" : "가";
+}
+
+function objectParticle(value: string) {
+  return hasFinalConsonant(value) ? "을" : "를";
+}
+
+function sameThemeTogether(
+  theme: RoleTheme,
+  role: RomanticRelationshipRole,
+  colorA?: Pick<ColorData, "id" | "korName">,
+  colorB?: Pick<ColorData, "id" | "korName">,
+) {
+  const profileA = getRomanticColorProfile(colorA?.id);
+  const profileB = getRomanticColorProfile(colorB?.id);
+  const colorDifference = colorA && colorB && profileA && profileB
+    ? `${colorA.korName}${topicParticle(colorA.korName)} ${profileA.relationshipStrength}${objectParticle(profileA.relationshipStrength)} 바탕으로, ${colorB.korName}${topicParticle(colorB.korName)} ${profileB.relationshipStrength}${objectParticle(profileB.relationshipStrength)} 바탕으로 같은 역할 안에서도 서로 다른 힘을 보탭니다.`
+    : "같은 역할 안에서도 각자가 관계에 보태는 방식은 다를 수 있습니다.";
+  const caution: Record<RoleTheme, string> = {
+    balance: "둘 다 기준과 안정을 살피는 만큼, 무엇을 먼저 정할지와 각자의 부담을 말로 나누는 것이 좋습니다.",
+    movement: "둘 다 관계를 움직이고 싶어 할수록 속도가 앞설 수 있으니, 함께 움직이기 전 서로의 준비를 확인해 보세요.",
+    depth: "둘 다 충분히 생각한 뒤 말하려는 흐름이 길어지지 않도록, 정리 중이라는 짧은 신호를 남겨두는 것이 좋습니다.",
+    warmth: "둘 다 상대를 먼저 살피느라 자신의 필요를 짐작에 맡기지 않도록, 받고 싶은 반응을 한 문장으로 알려주는 것이 좋습니다.",
+    space: "둘 다 각자의 리듬을 존중하는 만큼, 쉬는 시간의 끝과 다시 연결할 때를 가볍게 약속해 두는 것이 좋습니다.",
   };
-  return map[theme];
+  return `두 사람 모두 ${role.title.replace(/ 역할$/, "")} 쪽으로 자연스럽게 힘이 실립니다. ${colorDifference} ${caution[theme]}`;
 }
 
 /**
@@ -117,8 +144,7 @@ export function buildRomanticRelationshipRoles({
   cardsB: Array<CardData | undefined>;
 }): RomanticRelationshipRoles {
   const themeA = getRoleTheme(personA, cardsA, colorsA);
-  let themeB = getRoleTheme(personB, cardsB, colorsB);
-  if (themeA === themeB) themeB = alternateTheme(themeB);
+  const themeB = getRoleTheme(personB, cardsB, colorsB);
 
   const colorA = colorsA?.[0];
   const colorB = colorsB?.[0];
@@ -127,10 +153,10 @@ export function buildRomanticRelationshipRoles({
   const baseRoleA = ROLE_COPY[themeA];
   const baseRoleB = ROLE_COPY[themeB];
   const roleA: RomanticRelationshipRole = profileA && colorA
-    ? { ...baseRoleA, description: `${colorA.korName}의 ${profileA.relationshipStrength}이 두드러집니다. ${baseRoleA.description} 다만 ${profileA.overloadCaution}` }
+    ? { ...baseRoleA, description: `${colorA.korName}의 ${profileA.relationshipStrength}${subjectParticle(profileA.relationshipStrength)} 두드러집니다. ${baseRoleA.description} 다만 ${profileA.overloadCaution}` }
     : baseRoleA;
   const roleB: RomanticRelationshipRole = profileB && colorB
-    ? { ...baseRoleB, description: `${colorB.korName}의 ${profileB.relationshipStrength}이 두드러집니다. ${baseRoleB.description} 다만 ${profileB.overloadCaution}` }
+    ? { ...baseRoleB, description: `${colorB.korName}의 ${profileB.relationshipStrength}${subjectParticle(profileB.relationshipStrength)} 두드러집니다. ${baseRoleB.description} 다만 ${profileB.overloadCaution}` }
     : baseRoleB;
   const pairKey = [themeA, themeB].sort().join("|");
   const togetherMap: Record<string, string> = {
@@ -145,8 +171,11 @@ export function buildRomanticRelationshipRoles({
   return {
     personA: roleA,
     personB: roleB,
-    together: pairKey in togetherMap
-      ? togetherMap[pairKey]
-      : `${roleA.title}과 ${roleB.title}이 만나면 서로 다른 장점이 관계를 넓혀갈 수 있습니다. 한쪽의 방식만 정답으로 두기보다, 각자의 역할이 과해질 때는 잠시 바꿔 맡아보며 함께 균형을 찾는 것이 좋습니다.`,
+    // 동일한 성향을 억지로 다른 역할로 바꾸지 않는다. 컬러별 강점·유의점에서 두 사람의 차이를 읽는다.
+    together: themeA === themeB
+      ? sameThemeTogether(themeA, baseRoleA, colorA, colorB)
+      : pairKey in togetherMap
+        ? togetherMap[pairKey]
+        : `${roleA.title}과 ${roleB.title}이 만나면 서로 다른 장점이 관계를 넓혀갈 수 있습니다. 한쪽의 방식만 정답으로 두기보다, 각자의 역할이 과해질 때는 잠시 바꿔 맡아보며 함께 균형을 찾는 것이 좋습니다.`,
   };
 }

@@ -401,35 +401,43 @@ function pickComplementColor(
   selectedIds: string[],
   recoveryColorId: string
 ): { id: string; korName: string; hex: string; meaning: string } {
-  const recoveryFamily = getFamily(recoveryColorId);
-  // 회복 방향과 다른 계열에서 보완 컬러 선택
-  const candidates = COLOR_DATA.filter(c =>
-    !selectedIds.includes(c.id) &&
-    getFamily(c.id) !== recoveryFamily &&
-    c.id !== 'red' // 레드는 기본 제외
-  );
-  // 회복·안정 계열 우선
-  const preferred = candidates.filter(c =>
-    ['nature', 'warm_soft', 'cool_clear'].includes(getFamily(c.id))
-  );
-  const pool = preferred.length > 0 ? preferred : candidates;
-  const picked = pool[Math.floor(Math.random() * pool.length)] ?? COLOR_DATA[5];
-
-  const meaningMap: Record<string, string> = {
-    warm_active: '활력과 표현을 깨우는 컬러',
-    warm_soft: '따뜻한 관계와 온기를 채우는 컬러',
-    warm_grounded: '안정과 현실감을 더해주는 컬러',
-    cool_clear: '명료함과 신뢰를 회복하는 컬러',
-    cool_deep: '내면의 깊이와 성찰을 돕는 컬러',
-    nature: '자연스러운 회복과 균형을 돕는 컬러',
-    neutral: '감정을 추스르고 새롭게 시작하는 컬러',
+  const selectedColors = selectedIds
+    .map((id) => COLOR_DATA.find((color) => color.id === id))
+    .filter((color): color is ColorData => Boolean(color));
+  const recoveryColor = COLOR_DATA.find((color) => color.id === recoveryColorId) ?? selectedColors[2] ?? COLOR_DATA[5];
+  const byKoreanName = (name: string) => COLOR_DATA.find((color) => color.korName === name);
+  const isAvailable = (color: ColorData | undefined): color is ColorData => Boolean(color && !selectedIds.includes(color.id));
+  const objectParticle = (value: string) => {
+    const last = value.trim().charCodeAt(value.trim().length - 1);
+    return last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0 ? "을" : "를";
+  };
+  const topicParticle = (value: string) => {
+    const last = value.trim().charCodeAt(value.trim().length - 1);
+    return last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0 ? "은" : "는";
   };
 
+  // 3순위(회복 방향) 컬러 원문의 보완 후보를 최우선으로 사용한다.
+  // 그 후보가 이미 선택된 경우에만 1·2순위 컬러 원문의 후보를 차례로 보탠다.
+  const directCandidates = recoveryColor.complementColors.map(byKoreanName).filter(isAvailable);
+  const supportingCandidates = selectedColors
+    .slice(0, 2)
+    .flatMap((color) => color.complementColors.map(byKoreanName))
+    .filter(isAvailable);
+  const deduplicated = [...directCandidates, ...supportingCandidates]
+    .filter((color, index, colors) => colors.findIndex((item) => item.id === color.id) === index);
+  const fallbackCandidates = COLOR_DATA.filter((color) => !selectedIds.includes(color.id) && color.id !== 'red');
+  const pool = deduplicated.length > 0 ? deduplicated : fallbackCandidates;
+  // 동일 입력은 관계 유형·A/B 순서·생성 시점과 무관하게 같은 후보에서 같은 컬러를 고른다.
+  const stableSeed = [...selectedIds, recoveryColorId]
+    .join("|")
+    .split("")
+    .reduce((sum, character) => ((sum * 31) + character.charCodeAt(0)) >>> 0, 7);
+  const picked = pool[stableSeed % Math.max(pool.length, 1)] ?? COLOR_DATA[5];
   return {
     id: picked.id,
     korName: picked.korName,
     hex: picked.hex,
-    meaning: meaningMap[getFamily(picked.id)],
+    meaning: `${picked.korName}${topicParticle(picked.korName)} ${recoveryColor.korName}의 ${recoveryColor.recovery}에 ${picked.recovery}${objectParticle(picked.recovery)} 더해, 회복을 일상에서 이어가도록 돕는 컬러입니다.`,
   };
 }
 
@@ -556,6 +564,10 @@ export function generateCoupleAnalysis(
   analysisB: PersonAnalysis
 ): CoupleAnalysis {
   const { relationType, personA, personB } = data;
+  const personLabels = {
+    personA: personA.info.relationshipRole ?? "첫 번째 사람",
+    personB: personB.info.relationshipRole ?? "두 번째 사람",
+  };
 
   const colorsA = personA.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean) as ColorData[];
   const colorsB = personB.colors.map(id => COLOR_DATA.find(c => c.id === id)).filter(Boolean) as ColorData[];
@@ -599,7 +611,18 @@ export function generateCoupleAnalysis(
   const closingMessage = buildClosingMessage(dominantA, dominantB, relationType, personA.info.faith, personB.info.faith);
 
   // 두 사람 프로파일 대비 요약
-  const profileContrast = buildProfileContrast(dominantA, dominantB, analysisA, analysisB, colorsA, colorsB, relationType, shapeCtxA, shapeCtxB);
+  const profileContrast = buildProfileContrast(
+    dominantA,
+    dominantB,
+    analysisA,
+    analysisB,
+    colorsA,
+    colorsB,
+    relationType,
+    shapeCtxA,
+    shapeCtxB,
+    personLabels,
+  );
 
   return {
     relationFlow,
@@ -2607,16 +2630,24 @@ function buildProfileContrast(
   colorsA: ColorData[], colorsB: ColorData[],
   rel: RelationType,
   shapeCtxA?: ReturnType<typeof buildShapeContext>,
-  shapeCtxB?: ReturnType<typeof buildShapeContext>
+  shapeCtxB?: ReturnType<typeof buildShapeContext>,
+  personLabels?: { personA: string; personB: string },
 ): string {
-  // 컬러 에너지 + 도형 반응 구조 통합 표현
-  // 컬러 = 감정 에너지 방향, 도형 = 갈등 직후 반응 구조
+  const personAName = personLabels?.personA ?? "첫 번째 사람";
+  const personBName = personLabels?.personB ?? "두 번째 사람";
+  const withTopicParticle = (name: string) => {
+    const last = name.charCodeAt(name.length - 1);
+    const hasFinalConsonant = last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+    return `${name}${hasFinalConsonant ? "은" : "는"}`;
+  };
+  // 컬러 에너지 + 회복 카드 도형 반응 구조 통합 표현
+  // 컬러 = 평소 감정 에너지 방향, 3번 회복 카드의 도형 = 갈등 뒤 회복 반응
   const shapeProfileNote = (shapeCtxA && shapeCtxB)
     ? shapeCtxA.modifier === shapeCtxB.modifier
-      ? `\n\n도형이 말해주는 표현 구조: 두 사람 모두 ${shapeCtxA.modifier} 방식으로 관계를 이어갑니다. 같은 반응 구조를 가진 두 사람은 서로의 침묵과 거리 조절을 더 잘 이해할 수 있습니다. 컬러는 감정 에너지의 방향을, 도형은 갈등 직후 반응 구조를 말해줍니다.`
-      : `\n\n도형이 말해주는 표현 구조: 첫 번째 사람은 ${shapeCtxA.modifier} 방식으로 관계를 이어갑니다. 두 번째 사람은 ${shapeCtxB.modifier} 방식으로 연결됩니다. 컬러는 감정 에너지의 방향을, 도형은 갈등 직후 반응 구조를 말해줍니다.`
+      ? `\n\n회복 방향 카드의 도형이 말해주는 갈등 뒤 반응: 두 사람 모두 ${shapeCtxA.modifier} 방식으로 마음을 다듬을 수 있습니다. 같은 반응 구조를 가진 두 사람은 침묵과 거리 조절이 필요한 순간을 더 잘 알아차릴 수 있습니다. 평소 관계 성향은 컬러 흐름으로, 지금의 대화와 연락 리듬은 2번 현재 카드로, 갈등 뒤 회복 방식은 3번 회복 카드로 살펴봅니다.`
+      : `\n\n회복 방향 카드의 도형이 말해주는 갈등 뒤 반응: ${withTopicParticle(personAName)} ${shapeCtxA.modifier} 방식으로 마음을 다듬을 수 있습니다. ${withTopicParticle(personBName)} ${shapeCtxB.modifier} 방식으로 다시 연결할 수 있습니다. 평소 관계 성향은 컬러 흐름으로, 지금의 대화와 연락 리듬은 2번 현재 카드로, 갈등 뒤 회복 방식은 3번 회복 카드로 살펴봅니다.`
     : shapeCtxA
-      ? `\n\n도형이 말해주는 표현 구조: ${shapeCtxA.modifier} 방식으로 관계를 이어가는 특성이 있습니다.`
+      ? `\n\n회복 방향 카드의 도형은 갈등 뒤 ${shapeCtxA.modifier} 방식으로 마음을 다듬는 흐름을 보여줍니다.`
       : '';
   const relLabel = rel === '연인' || rel === '부부' ? '두 분' : '두 사람';
   const nameA = colorsA[0]?.korName ?? 'A';
@@ -4067,11 +4098,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     accentColor: '#9B5EA8',
     typeName: '감정순환형 관계',
     typeEmoji: '🌊',
-    coreSummary: '감정이 빠르게 변하고, 회복도 빠릅니다.',
-    tensionDescription: '이 관계에는 감정의 파도가 있습니다. 어제는 따뜻했는데 오늘은 차갑습니다. 어제는 가까웠는데 오늘은 멀게 느껴집니다. 한 사람이 "왜 갑자기 이래?"라고 물으면, 다른 사람은 "나도 몰라"라고 합니다. 변심이 아닙니다. 파도가 온 겁니다. 파도는 지나갑니다. 잔잔해진 후 다시 연결됩니다.',
-    misunderstandingPattern: '어제 따뜻하게 대했는데 오늘 갑자기 차갑습니다. "내가 뭘 잘못했어?"라는 말이 나옵니다. 변심이 아닙니다. 파도가 온 겁니다. "왜 갑자기 가까워지려 해?" — 밀어내는 게 아닙니다. 파도가 지나간 겁니다. 이 관계에서 감정의 변화는 변심이 아니라 순환입니다.',
-    connectionStyle: '감정의 파도를 함께 건넙니다. 올라갈 때 함께 올라가고, 내려올 때 함께 내려옵니다. "지금 네 감정이 어디에 있어?"라고 묻는 것. 파도가 지나고 나면 다시 연결됩니다. 그 반복이 이 관계를 깊게 만듭니다.',
-    recoveryRoutine: '감정이 가라앉을 때까지 기다리기. 파도가 지나가면 반드시 잔잔해집니다. 파도 중에 억지로 해결하려 하지 말고, 파도가 지나간 후 연결하기.',
+    coreSummary: '감정의 온도가 빠르게 오르내릴 수 있어, 서로의 속도를 확인하는 시간이 중요한 관계입니다.',
+    tensionDescription: '이 관계에는 감정의 파도가 있습니다. 어제는 따뜻했는데 오늘은 거리가 느껴질 수 있습니다. 이 변화를 곧바로 관계의 결론으로 단정하기보다, 감정이 가라앉은 뒤 다시 이야기할 시간을 남겨두는 편이 좋습니다.',
+    misunderstandingPattern: '어제 따뜻하게 대했는데 오늘 거리가 느껴지면 "내가 뭘 잘못했어?"라는 말이 나올 수 있습니다. 한쪽이 가까워지려 할 때 다른 쪽이 잠시 물러나는 일도 있습니다. 밀어내거나 마음이 달라졌다고 단정하기보다, 지금 감정이 정리되는 중인지 짧게 확인해보는 것이 좋습니다.',
+    connectionStyle: '감정이 올라오는 순간과 가라앉은 뒤의 대화를 구분해두는 것이 이 관계의 연결 방식입니다. "지금 네 감정이 어디에 있어?"라고 묻고, 정리된 뒤 다시 이어가는 경험이 관계를 깊게 만듭니다.',
+    recoveryRoutine: '감정이 가라앉을 시간을 가진 뒤 다시 연결하기. 감정이 격한 순간에는 해결을 서두르기보다, 언제 다시 이야기할지 짧게 약속해두는 것이 도움이 됩니다.',
     neededWords: '"파도가 왔구나. 기다릴게. 지나가면 다시 만나자."',
     recommendedActivity: '감정이 잔잔할 때 함께 좋아하는 것 하기. 카페에서 조용히 앉아 있기, 함께 음악 듣기, 드라이브하기.',
     emotionRecoveryStyle: '파도가 지나갈 때까지 기다리는 것. 감정이 격할 때 해결하려 하지 말고, 잔잔해진 후 "그때 어떤 마음이었어?"라고 묻는 것이 이 관계의 회복 방식입니다.',
@@ -4079,7 +4110,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     connectionRoutine: '감정이 잔잔할 때 "지금 이 순간이 좋아"라고 말하는 것. 파도 사이의 잔잔한 순간을 함께 느끼는 것이 이 관계의 정서 연결입니다.',
     affectionRoutine: '감정이 잔잔할 때 먼저 가까이 다가가기. 파도가 지나간 후 조용히 손잡기, 어깨 기대기, 함께 음악 듣기. "지금 이 순간이 좋아"라고 말하는 것. 파도 사이의 잔잔한 순간을 소중히 하는 것이 이 관계의 애정 표현입니다.',
     emotionRoutine: '감정의 파도를 인정하기. "지금 파도가 왔어"라고 말하는 것만으로도 이 관계의 감정 회복이 시작됩니다.',
-    closingMessage: '감정이 오르내리는 것은 이 관계의 약점이 아닙니다. 파도가 있다는 것은 살아있다는 뜻입니다. 파도가 지나간 자리에 남는 것이 이 관계의 진짜 연결입니다. 두 사람은 파도를 함께 타는 법을 배우고 있습니다.',
+    closingMessage: '감정이 오르내리는 순간에도 서로의 마음을 다시 확인할 수 있습니다. 파도가 지나간 뒤 남는 대화와 연결이 이 관계를 더 단단하게 만듭니다.',
     temperatureGraph: { emotionGap: 60, expressionIntensity: 75, recoverySpeed: 65 },
     expressionSpeed: { personA: '감정 파도', personB: '감정 파도', description: '두 사람 모두 감정의 기복이 있습니다. 서로의 파도가 겹칠 때 갈등이 생기고, 엇갈릴 때 연결이 됩니다.' },
     recoveryStyle: { icon: 'talk' as const, label: '공감 대화 회복형', description: '감정이 잔잔해진 후 "그때 어떤 마음이었어?"라고 묻는 대화가 이 관계의 회복입니다.' },
@@ -4099,8 +4130,8 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
       ],
       recoveryBridge: '이 감정들은 이 관계가 깊다는 뜻입니다. 파도는 지나갑니다. 파도 사이의 잔잔한 순간이 이 관계의 진짜 연결입니다.',
     },
-        conflictReactionPattern: '어제 따뜻하게 대했는데 오늘 갑자기 차갑습니다. ’내가 뭘 잘못했어?’라는 말이 나옵니다. 변심이 아닙니다. 파도가 온 겁니다. 갈등 직후 한 사람은 ’왜 갑자기 가까워지려 해?’라고 느끼고, 다른 사람은 ’왜 갑자기 밀어내?’라고 느낍니다. 이 관계에서 갈등 직후 가장 필요한 것은 ’지금 파도 중이야. 조금 있으면 괜찮아질 거야’라는 말입니다.',
-        loveConnectionStyle: '이 관계에서 사랑은 감정의 파도를 함께 타는 것입니다. 가까워졌다 멀어졌다 하는 것이 변심이 아니라 이 관계의 리듬입니다. 사랑을 느끼는 순간은 파도가 지나간 후 다시 돌아왔을 때 상대가 여전히 거기 있을 때입니다. 감정이 복잡할 때 말 없이 옆에 있어주는 것이 이 관계에서 가장 깊은 연결입니다.',
+        conflictReactionPattern: '어제 따뜻하게 대했는데 오늘 거리가 느껴지면 "내가 뭘 잘못했어?"라는 말이 나올 수 있습니다. 갈등 직후 한 사람은 가까워지고 싶고, 다른 사람은 잠시 물러나고 싶을 수 있습니다. 이때 "지금 감정이 올라와 있어. 조금 뒤에 다시 이야기하자"라는 신호가 오해를 줄입니다.',
+        loveConnectionStyle: '이 관계에서 사랑은 감정의 온도가 달라지는 순간에도 다시 연결할 길을 남겨두는 것입니다. 가까워졌다 잠시 거리가 느껴질 때에도, 감정이 정리된 뒤 상대의 마음을 다시 듣는 경험이 깊은 연결을 만듭니다.',
         growthCoaching: {
           strengths: {
             keywords: ['깊은 공감', '감정 연결', '정서적 유대', '회복력'],
@@ -4125,7 +4156,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
         unifiedSections: {
           coreEnergy: {
             headline: '감정 파도를 함께 타는 관계',
-            description: '가까워졌다 멀어졌다 하는 것이 변심이 아니라 이 관계의 리듬입니다. 파도가 지나간 후 다시 돌아왔을 때 상대가 여전히 거기 있는 것 — 그것이 이 관계의 가장 깊은 연결입니다.',
+            description: '가까워졌다 잠시 거리가 느껴지는 순간에도, 감정이 정리된 뒤 다시 대화할 수 있는지가 이 관계의 핵심입니다. 파도가 지나간 뒤 상대의 마음을 다시 듣는 경험이 깊은 연결을 만듭니다.',
             keywords: ['감정 파도', '순환', '리듬', '공감', '회복'],
           },
           lifePattern: {
@@ -4163,15 +4194,15 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
           },
           conflictFlow: {
             trigger: '어제 따뜻하게 대했는데 오늘 갑자기 차갑습니다. "내가 뭘 잘못했어?"라는 말이 나오는 순간',
-            reaction: '파도 중인 사람은 "왜 갑자기 가까워지려 해?"라고 느끼고, 다른 사람은 "왜 갑자기 밀어내?"라고 느낍니다. 변심이 아니라 파도입니다.',
-            danger: '파도를 "변심"으로 오해하면 관계가 흔들립니다. "또 이러네"라는 말이 반복되면 파도 중인 사람은 더 깊이 들어갑니다.',
+            reaction: '감정이 크게 올라온 사람은 "왜 갑자기 가까워지려 해?"라고 느끼고, 다른 사람은 "왜 갑자기 밀어내?"라고 느낄 수 있습니다. 마음이 달라졌다고 단정하기보다 감정을 가라앉힐 시간이 필요한지 먼저 확인해보는 편이 좋습니다.',
+            danger: '감정 변화 자체를 "변심"으로 단정하면 관계가 흔들릴 수 있습니다. "또 이러네"라는 말이 반복되면 감정을 정리하는 사람은 더 깊이 물러날 수 있습니다.',
             forbiddenWords: ['"또 이러네"', '"왜 갑자기 차가워져?"', '"감정 기복이 너무 심해"', '"예측이 안 돼"'],
           },
           connectionFlow: {
             headline: '이 관계가 가까워지는 순간',
-            description: '파도가 지나간 후 다시 돌아왔을 때 상대가 여전히 거기 있을 때. 감정이 복잡할 때 말 없이 옆에 있어주는 것이 이 관계에서 가장 깊은 연결입니다.',
-            actions: ['"지금 파도 중이야, 조금 있으면 괜찮아질 거야" 말하기', '파도 중일 때 조용히 옆에 있기', '파도 후 "괜찮아?" 짧게 묻기', '감정 상태 미리 알려주기', '파도가 지나면 함께 가벼운 것 하기'],
-            skinshipNote: '이 관계에서 스킨십은 파도 후 "다시 연결"의 표현입니다. 파도가 지나간 후 먼저 손을 내미는 것이 이 관계를 회복시킵니다.',
+            description: '갈등 뒤 마음이 정리됐을 때, 상대가 여전히 대화를 기다려주는 순간에 가까움을 느낄 수 있습니다. 감정이 복잡할 때 서두르지 않고 옆을 지켜주는 태도가 깊은 연결이 됩니다.',
+            actions: ['"지금 마음이 복잡해. 조금 뒤에 다시 이야기하자" 말하기', '감정이 높을 때는 잠시 조용히 곁에 있기', '정리된 뒤 "괜찮아?" 짧게 묻기', '감정 상태를 미리 알려주기', '마음이 가라앉은 뒤 함께 가벼운 활동 하기'],
+            skinshipNote: '이 관계에서 스킨십은 갈등 뒤 "다시 연결"을 전하는 표현입니다. 마음이 정리된 뒤 먼저 손을 내미는 것이 회복을 돕습니다.',
           },
           growthPoint: {
             strength: '감정 깊이가 크고 공감 능력이 뛰어납니다. 파도가 지나면 더 깊이 연결되는 힘이 있습니다.',
@@ -4194,7 +4225,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
         '감정이 올라올 때 함께 쉴 수 있는 공간 만들기',
         '마음이 가라앉은 뒤 함께 식사하기',
       ],
-      energyNote: '감정의 파도가 지나간 후 다시 연결되는 순간이 이 관계를 살립니다. 함께 없어도 연결되는 느낌이 드는 시간이 두 사람을 회복시킵니다.',
+      energyNote: '감정이 가라앉은 뒤 다시 연결되는 순간이 이 관계를 살립니다. 함께 없어도 연결되는 느낌을 확인하는 시간이 두 사람의 회복을 돕습니다.',
       faithRoutine: '잠자기 전 손잡고 기도하기 — 감정의 파도가 있어도 같은 마음으로 기도할 때 연결됩니다.',
     },
   },
@@ -5124,14 +5155,29 @@ const SUPPLEMENT_CONFLICT: Record<string, string> = {
 
 // 섹션별 현재 카드 보충 문장 생성 함수 (파일 레벨 - getRelationArchetype 및 buildDefaultLifestyleSections 공유)
 type LifestyleSectionType = 'cleaning' | 'finance' | 'rest' | 'conflict';
-function getCurrentCardSupplement(cardColor?: string | null, section: LifestyleSectionType = 'finance'): string {
-  if (!cardColor) return '';
+function getCurrentCardSupplement(cardId?: string, section: LifestyleSectionType = 'finance'): string {
+  const currentCard = cardId ? CARD_DATA.find((card) => card.id === cardId) : undefined;
+  const cardColorMap: Record<string, string> = { purple: 'violet', gray: 'neutral', grey: 'neutral' };
+  const cardColor = currentCard
+    ? (cardColorMap[currentCard.color] ?? currentCard.color)
+    : null;
+  if (!cardColor || !currentCard) return '';
   const map = section === 'cleaning' ? SUPPLEMENT_CLEANING
     : section === 'finance' ? SUPPLEMENT_FINANCE
     : section === 'rest' ? SUPPLEMENT_REST
     : SUPPLEMENT_CONFLICT;
   const text = map[cardColor] ?? '';
-  return text ? ' ' + text : '';
+  const detail = text.replace(/^다만 지금은\s+[^\s]+\s+카드 영향으로\s*/, '');
+  const currentMeaning = currentCard.personalityFlow
+    .split(/(?<=[.!?])\s+/)[0]
+    ?.trim()
+    .replace(/^현재 당신은\s*/, '')
+    .replace(/^지금 당신은\s*/, '')
+    .replace(/^지금\s*/, '')
+    .replace(/^당신은\s*/, '');
+  return detail && currentMeaning
+    ? ` 현재 흐름의 ${currentCard.colorKor} ${currentCard.shapeKor} 카드 "${currentCard.energyTitle}"에는 "${currentMeaning}"라는 상태가 담겨 있습니다. 이때 ${detail}`
+    : '';
 }
 
 export function getRelationArchetype(
@@ -5177,13 +5223,10 @@ export function getRelationArchetype(
   const unconsciousCardColorB = normalizeCardColor(
     cardIdsB?.[0] ? (CARD_DATA.find(c => c.id === cardIdsB![0])?.color ?? null) : null
   );
-  // 현재 카드 콜러 ID 추출 (cards[1] = 현재 상태 카드, 가운데 카드)
-  const currentCardColorA = normalizeCardColor(
-    cardIdsA?.[1] ? (CARD_DATA.find(c => c.id === cardIdsA![1])?.color ?? null) : null
-  );
-  const currentCardColorB = normalizeCardColor(
-    cardIdsB?.[1] ? (CARD_DATA.find(c => c.id === cardIdsB![1])?.color ?? null) : null
-  );
+  // 현재 카드 ID (cards[1] = 현재 상태 카드, 가운데 카드). 생활 문장에는 컬러뿐 아니라
+  // 실제 도형과 카드 제목까지 함께 남겨 근거가 선택값과 어긋나지 않게 한다.
+  const currentCardIdA = cardIdsA?.[1];
+  const currentCardIdB = cardIdsB?.[1];
 
   // 섹션별 가중치 적용 점수 계산
   function calcSectionScore(
@@ -5450,7 +5493,7 @@ export function getRelationArchetype(
         description: '한 사람은 빠른 결정과 즉각적인 소비를 선호하고, 다른 사람은 감정적 안정감을 위해 소비합니다.',
         personA: '"지금 필요하면 바로 사자." 계획보다 현재 필요에 반응하는 소비 방식입니다.',
         personB: '"이게 있으면 기분이 좋아질 것 같아." 감정 회복을 위한 소비가 많습니다.',
-        tension: '두 사람 모두 즉흥 소비 성향이 있어, 정작 "비상금이 없다"는 현실에 함께 놀라는 순간이 생깁니다.',
+        tension: '두 사람 모두 즉흥 소비 성향이 있어, 각자의 지출 기준을 맞추지 않으면 부담을 느끼는 순간이 생깁니다.',
       },
       cleaning: {
         title: '청소·정리 스타일',
@@ -6556,50 +6599,32 @@ export function getRelationArchetype(
   if (!lifestyleSections) {
     const fA0 = familiesA[0] ?? 'neutral';
     const fB0 = familiesB[0] ?? 'neutral';
-    lifestyleSections = buildDefaultLifestyleSections(fA0, fB0, shapeA, shapeB, finalArchetype, currentCardColorA, currentCardColorB);
+    lifestyleSections = buildDefaultLifestyleSections(fA0, fB0, shapeA, shapeB, finalArchetype, currentCardIdA, currentCardIdB);
   } else {
     // LIFESTYLE_MAP / FULL_LIFESTYLE_MAP 사전 정의 섹션에도 현재 카드 보충 문장 추가
     // 컬러 = 기질(사전 정의 텍스트), 심리카드 = 현재 상태(보충 문장) 원칙 적용
-    const normalizeCardColorLocal = (color: string | null): string | null => {
-      if (!color) return null;
-      const MAP: Record<string, string> = { purple: 'violet', gray: 'neutral', grey: 'neutral' };
-      return MAP[color] ?? color;
-    };
-    const getSuppForSection = (cardColor?: string | null, section: 'cleaning' | 'finance' | 'rest' | 'conflict' = 'finance'): string => {
-      if (!cardColor) return '';
-      const normalized = normalizeCardColorLocal(cardColor);
-      if (!normalized) return '';
-      // 섹션별로 다른 보충 문장 맵 사용
-      // 생활패턴=일상 변화, 재정=소비 성향, 휴식=회복 방식, 갈등=감정 대응
-      const map = section === 'cleaning' ? SUPPLEMENT_CLEANING
-        : section === 'finance' ? SUPPLEMENT_FINANCE
-        : section === 'rest' ? SUPPLEMENT_REST
-        : SUPPLEMENT_CONFLICT;
-      const text = map[normalized] ?? '';
-      return text ? ' ' + text : '';
-    };
     // cleaning/finance/rest/conflict 섹션 personA/B에 현재 카드 보충 문장 추가 (섹션별 분리)
     lifestyleSections = {
       ...lifestyleSections,
       cleaning: lifestyleSections.cleaning ? {
         ...lifestyleSections.cleaning,
-        personA: (lifestyleSections.cleaning.personA ?? '') + getSuppForSection(currentCardColorA, 'cleaning'),
-        personB: (lifestyleSections.cleaning.personB ?? '') + getSuppForSection(currentCardColorB, 'cleaning'),
+        personA: (lifestyleSections.cleaning.personA ?? '') + getCurrentCardSupplement(currentCardIdA, 'cleaning'),
+        personB: (lifestyleSections.cleaning.personB ?? '') + getCurrentCardSupplement(currentCardIdB, 'cleaning'),
       } : lifestyleSections.cleaning,
       finance: lifestyleSections.finance ? {
         ...lifestyleSections.finance,
-        personA: (lifestyleSections.finance.personA ?? '') + getSuppForSection(currentCardColorA, 'finance'),
-        personB: (lifestyleSections.finance.personB ?? '') + getSuppForSection(currentCardColorB, 'finance'),
+        personA: (lifestyleSections.finance.personA ?? '') + getCurrentCardSupplement(currentCardIdA, 'finance'),
+        personB: (lifestyleSections.finance.personB ?? '') + getCurrentCardSupplement(currentCardIdB, 'finance'),
       } : lifestyleSections.finance,
       rest: lifestyleSections.rest ? {
         ...lifestyleSections.rest,
-        personA: (lifestyleSections.rest.personA ?? '') + getSuppForSection(currentCardColorA, 'rest'),
-        personB: (lifestyleSections.rest.personB ?? '') + getSuppForSection(currentCardColorB, 'rest'),
+        personA: (lifestyleSections.rest.personA ?? '') + getCurrentCardSupplement(currentCardIdA, 'rest'),
+        personB: (lifestyleSections.rest.personB ?? '') + getCurrentCardSupplement(currentCardIdB, 'rest'),
       } : lifestyleSections.rest,
       conflict: lifestyleSections.conflict ? {
         ...lifestyleSections.conflict,
-        personA: (lifestyleSections.conflict.personA ?? '') + getSuppForSection(currentCardColorA, 'conflict'),
-        personB: (lifestyleSections.conflict.personB ?? '') + getSuppForSection(currentCardColorB, 'conflict'),
+        personA: (lifestyleSections.conflict.personA ?? '') + getCurrentCardSupplement(currentCardIdA, 'conflict'),
+        personB: (lifestyleSections.conflict.personB ?? '') + getCurrentCardSupplement(currentCardIdB, 'conflict'),
       } : lifestyleSections.conflict,
     };
   }
@@ -6981,6 +7006,12 @@ export function getRelationArchetype(
     .replaceAll('치워?', '준비해?')
     .replaceAll('치워', '준비해');
 
+  const adaptLoverFinanceText = (value: string): string => value
+    .replaceAll(
+      '정작 "비상금이 없다"는 현실에 함께 놀라는 순간이 생깁니다.',
+      '각자의 예산과 비용 기준을 미리 맞추지 않으면, 다음 데이트 비용에서 서로 부담을 느끼는 순간이 생길 수 있습니다.',
+    );
+
   const adaptLoverRoutine = (routine: string): string => {
     const routineMap: Record<string, string> = {
       '같이 요리하기 / 식사 준비하기': '함께 식사할 곳을 정하고 데이트 계획하기',
@@ -7011,6 +7042,10 @@ export function getRelationArchetype(
     .replaceAll(
       '함께 없어도 연결되는 느낌이 드는 시간',
       '함께 머무는 동안에도 서로의 마음을 확인하는 시간',
+    )
+    .replaceAll(
+      '함께 없어도 연결되는 느낌을 확인하는 시간',
+      '함께 머무는 동안에도 서로의 마음을 확인하는 시간',
     );
 
   const relationAwareLifePattern = (() => {
@@ -7031,7 +7066,9 @@ export function getRelationArchetype(
         personA: isLoverSpaceItem ? adaptLoverSpaceText(section.personA) : section.personA,
         personB: isLoverSpaceItem ? adaptLoverSpaceText(section.personB) : section.personB,
         tension: isLoverRelationship
-          ? `${loverContext} ${(isLoverSpaceItem ? adaptLoverSpaceText : replaceLoverHouseholdContext)(section.tension ?? section.tip ?? '')}`.trim()
+          ? `${loverContext} ${(label === '데이트 비용·함께 쓰는 비용'
+            ? adaptLoverFinanceText
+            : isLoverSpaceItem ? adaptLoverSpaceText : replaceLoverHouseholdContext)(section.tension ?? section.tip ?? '')}`.trim()
           : section.tension ?? section.tip ?? '',
       };
     };
@@ -7057,7 +7094,7 @@ export function getRelationArchetype(
         '🕊️',
         relationType === '부부' ? '퇴근 후·주말 회복 리듬' : '연락 빈도·각자의 시간',
         lifestyleSections.rest,
-        '연락과 만남의 리듬을 맞출 때 이 회복 방식의 차이가 드러날 수 있습니다.',
+        '메시지 답장 속도나 통화·만남 간격을 맞출 때 이 회복 방식의 차이가 드러날 수 있습니다.',
       ));
     }
     if (lifestyleSections.affection) {
@@ -7065,7 +7102,7 @@ export function getRelationArchetype(
         '💌',
         relationType === '부부' ? '퇴근 후 대화·애정 표현' : '답장 기대·만남 약속',
         lifestyleSections.affection,
-        '답장에 기대하는 리듬과 다음 만남을 약속하는 방식에서 이 차이가 드러날 수 있습니다.',
+        '답장이 늦은 날 마음을 확인하는 방식과 다음 만남을 약속하는 순간에 이 차이가 드러날 수 있습니다.',
       ));
     }
 
@@ -7196,12 +7233,12 @@ export function getRelationArchetype(
       rest: lifestyleSections.rest ? {
         ...lifestyleSections.rest,
         title: '연락 빈도·각자의 시간',
-        description: '연락과 만남의 리듬을 맞출 때 서로 다른 회복 방식이 드러날 수 있습니다.',
+        description: '메시지 답장 속도와 통화·만남 간격을 맞출 때 서로 다른 회복 방식이 드러날 수 있습니다.',
       } : undefined,
       affection: lifestyleSections.affection ? {
         ...lifestyleSections.affection,
         title: '답장 기대·만남 약속',
-        description: '답장에 기대하는 리듬과 다음 만남을 약속하는 방식에서 애정 표현의 차이가 드러날 수 있습니다.',
+        description: '답장이 늦은 날 마음을 확인하는 방식과 다음 만남을 약속하는 순간에 애정 표현의 차이가 드러날 수 있습니다.',
       } : undefined,
     }
     : lifestyleSections;
@@ -7222,8 +7259,8 @@ function buildDefaultLifestyleSections(
   shapeA?: string,
   shapeB?: string,
   archetype?: RelationArchetype,
-  currentCardColorA?: string | null,
-  currentCardColorB?: string | null
+  currentCardIdA?: string,
+  currentCardIdB?: string
 ): NonNullable<ArchetypeResult['lifestyleSections']> {
   // 도형별 생활 특성 키워드
   const getShapeLifestyleNote = (shape?: string): string => {
@@ -7612,8 +7649,8 @@ function buildDefaultLifestyleSections(
       description: isSameFamily
         ? '두 사람의 일상 흐름이 비슷합니다. 같은 성향이 만나면 서로의 생활 패턴이 강화되는 순간이 생길 수 있습니다.'
         : '두 사람의 일상 흐름과 생활 방식이 다릅니다.',
-      personA: cleaningPersonMap[fA] + getCurrentCardSupplement(currentCardColorA, 'cleaning'),
-      personB: cleaningPersonMap[fB] + getCurrentCardSupplement(currentCardColorB, 'cleaning'),
+      personA: cleaningPersonMap[fA] + getCurrentCardSupplement(currentCardIdA, 'cleaning'),
+      personB: cleaningPersonMap[fB] + getCurrentCardSupplement(currentCardIdB, 'cleaning'),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 생활 패턴이 있어, 서로의 흐름이 강화되는 순간을 주의하세요. 가끔 다른 방식으로 일상을 채워보는 것이 도움이 됩니다.'
         : '생활 리듬이 달라 "왜 이렇게 해?"가 반복될 수 있습니다. 서로의 방식을 인정하고 함께 맞춰가는 것이 중요합니다.',
@@ -7623,8 +7660,8 @@ function buildDefaultLifestyleSections(
       description: isSameFamily
         ? '두 사람의 소비 방식이 비슷합니다. 같은 성향이 만나면 서로의 소비 패턴이 강화되는 순간이 생길 수 있습니다.'
         : '두 사람의 소비 기준과 재정 관리 방식이 다릅니다.',
-      personA: financePersonMap[fA] + shapeFinanceNote(fA, shapeA) + getCurrentCardSupplement(currentCardColorA, 'finance'),
-      personB: financePersonMap[fB] + shapeFinanceNote(fB, shapeB) + getCurrentCardSupplement(currentCardColorB, 'finance'),
+      personA: financePersonMap[fA] + shapeFinanceNote(fA, shapeA) + getCurrentCardSupplement(currentCardIdA, 'finance'),
+      personB: financePersonMap[fB] + shapeFinanceNote(fB, shapeB) + getCurrentCardSupplement(currentCardIdB, 'finance'),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 소비 성향이 있어, 서로의 패턴이 강화되는 순간을 주의하세요. 함께 기준을 정하는 것이 도움이 됩니다.'
         : '소비 기준이 달라 "왜 이걸 샀어?"가 반복될 수 있습니다. 함께 기준을 정하는 것이 도움이 됩니다.',
@@ -7632,8 +7669,8 @@ function buildDefaultLifestyleSections(
     rest: {
       title: '휴식·회복 방식',
       description: restDesc,
-      personA: effectiveRestMap[fA] + shapeRestNote(fA, shapeA) + getCurrentCardSupplement(currentCardColorA, 'rest'),
-      personB: effectiveRestMap[fB] + shapeRestNote(fB, shapeB) + getCurrentCardSupplement(currentCardColorB, 'rest'),
+      personA: effectiveRestMap[fA] + shapeRestNote(fA, shapeA) + getCurrentCardSupplement(currentCardIdA, 'rest'),
+      personB: effectiveRestMap[fB] + shapeRestNote(fB, shapeB) + getCurrentCardSupplement(currentCardIdB, 'rest'),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 휴식 패턴이 있어 서로의 성향이 강화되는 순간을 주의하세요. 가끔 다른 방식으로 함께 충전하는 시간을 만들어보세요.'
         : '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
@@ -7641,8 +7678,8 @@ function buildDefaultLifestyleSections(
     conflict: {
       title: '갈등 직후 반응',
       description: conflictDesc,
-      personA: effectiveConflictMap[fA] + shapeConflictNote(fA, shapeA) + getCurrentCardSupplement(currentCardColorA, 'conflict'),
-      personB: effectiveConflictMap[fB] + shapeConflictNote(fB, shapeB) + getCurrentCardSupplement(currentCardColorB, 'conflict'),
+      personA: effectiveConflictMap[fA] + shapeConflictNote(fA, shapeA) + getCurrentCardSupplement(currentCardIdA, 'conflict'),
+      personB: effectiveConflictMap[fB] + shapeConflictNote(fB, shapeB) + getCurrentCardSupplement(currentCardIdB, 'conflict'),
       tip: isSameFamily
         ? '두 사람의 갈등 반응 방식이 비슷하기 때문에 서로의 패턴이 강화될 수 있습니다. 한 사람이 먼저 다른 방식으로 다가가는 것이 중요합니다.'
         : '서로의 갈등 반응 방식이 다름을 인정하는 것이 첫 번째 단계입니다.',

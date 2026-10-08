@@ -34,7 +34,7 @@ describe("부부·연인 생활 장면 문맥", () => {
       "퇴근 후·주말 회복 리듬",
       "퇴근 후 대화·애정 표현",
     ]);
-    expect(lifePattern?.items[0]?.personA).toContain("레드 카드 영향");
+    expect(lifePattern?.items[0]?.personA).toContain("현재 흐름의 레드 삼각형 카드");
     expect(lifePattern?.items[1]?.tension).toContain("청소");
     expect(result.togetherRoutine?.energyNote).toContain("함께 머무는 동안에도 서로의 마음을 확인하는 시간");
     expect(result.togetherRoutine?.energyNote).not.toContain("함께 없어도 연결되는");
@@ -60,7 +60,7 @@ describe("부부·연인 생활 장면 문맥", () => {
       "연락 빈도·각자의 시간",
       "답장 기대·만남 약속",
     ]);
-    expect(lifePattern?.items[0]?.personA).toContain("레드 카드 영향");
+    expect(lifePattern?.items[0]?.personA).toContain("현재 흐름의 레드 삼각형 카드");
     expect(lifePattern?.items[1]?.personA).toContain("약속과 준비");
     expect(lifePattern?.items[1]?.tension).toContain("만남 준비 부담");
     expect(resultText).not.toContain("같이 살면");
