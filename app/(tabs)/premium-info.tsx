@@ -93,8 +93,9 @@ export default function PremiumInfoScreen() {
 
     try {
       const grant = await getCommerceStartGrant('personal_deep');
-      if (commerceTestMode.data?.tossTestEnabled && !grant) {
-        router.replace('/(tabs)/commerce-checkout?product=personal_deep&testLifecycle=toss-test-lifecycle' as any);
+      const tossPaymentEnabled = commerceTestMode.data?.tossLiveEnabled || commerceTestMode.data?.tossTestEnabled;
+      if (tossPaymentEnabled && !grant) {
+        router.replace(`/(tabs)/commerce-checkout?product=personal_deep${commerceTestMode.data?.tossLiveEnabled ? '' : '&testLifecycle=toss-test-lifecycle'}` as any);
         return;
       }
         if (grant) {

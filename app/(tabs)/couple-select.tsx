@@ -100,14 +100,15 @@ export default function CoupleSelectScreen() {
         : ['아빠-아들', '아빠-딸', '엄마-아들', '엄마-딸', '부모-자녀'].includes(session.relationType)
           ? 'parent_child_deep'
           : null;
-      if (commerceTestMode.data?.tossTestEnabled && productCode && !await hasCommerceAnalysisStarted(productCode)) {
+      const tossPaymentEnabled = commerceTestMode.data?.tossLiveEnabled || commerceTestMode.data?.tossTestEnabled;
+      if (tossPaymentEnabled && productCode && !await hasCommerceAnalysisStarted(productCode)) {
         router.replace('/couple-start' as any);
         return;
       }
       setSessionData(session);
     };
     loadSession().catch(() => router.replace('/couple-start' as any));
-  }, [person, isInviteParticipant, commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled]);
+  }, [person, isInviteParticipant, commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled, commerceTestMode.data?.tossLiveEnabled]);
 
   const handleColorToggle = (color: ColorData) => {
     setSelectedColors(prev => {

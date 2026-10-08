@@ -103,8 +103,9 @@ export default function CoupleInfoScreen() {
     try {
       if (paidProductCode) {
         const grant = await getCommerceStartGrant(paidProductCode);
-        if (commerceTestMode.data?.tossTestEnabled && !grant) {
-          router.replace(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(relationType)}&testLifecycle=toss-test-lifecycle` as any);
+        const tossPaymentEnabled = commerceTestMode.data?.tossLiveEnabled || commerceTestMode.data?.tossTestEnabled;
+        if (tossPaymentEnabled && !grant) {
+          router.replace(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(relationType)}${commerceTestMode.data?.tossLiveEnabled ? '' : '&testLifecycle=toss-test-lifecycle'}` as any);
           return;
         }
         if (grant) {

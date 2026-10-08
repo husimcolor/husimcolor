@@ -22,7 +22,7 @@ describe("Toss test failure redirect lifecycle", () => {
 
   it("exposes a bounded public Preview callback contract without accepting a client amount", () => {
     const routerSource = readFileSync("server/routers.ts", "utf8");
-    const endpoint = routerSource.slice(routerSource.indexOf("completeTossTestFailure:"), routerSource.indexOf("cardReview:"));
+    const endpoint = routerSource.slice(routerSource.indexOf("completeTossTestFailure:"), routerSource.indexOf("completeTossLive:"));
 
     expect(endpoint).toContain("orderNumber: z.string().min(8).max(64)");
     expect(endpoint).toContain("errorCode: z.string().min(1).max(120)");

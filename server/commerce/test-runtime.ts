@@ -12,6 +12,9 @@ export function isExplicitTestPaymentRuntime(environment = process.env): boolean
   const explicitlyAuthorizedProductionTest = environment.VERCEL_ENV === "production"
     && environment.NODE_ENV === "production"
     && environment.COMMERCE_PRODUCTION_TEST_MODE === "true"
-    && environment.COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED === "true";
+    && environment.COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED === "true"
+    // Production live gate가 열리면 공개 test-key checkout은 즉시 비활성화한다.
+    // 테스트 주문은 기존 isTest=true 원장으로 남지만 신규 운영 결제와 섞이지 않는다.
+    && environment.COMMERCE_LIVE_PAYMENT_ENABLED !== "true";
   return previewOrLocalTest || explicitlyAuthorizedProductionTest;
 }

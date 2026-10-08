@@ -7,14 +7,18 @@ import * as db from "./db";
 import { parseCoupleShareSnapshot } from "../shared/couple-share";
 import { getCommerceEmailProtectionStatus } from "./commerce/crypto";
 import {
+  completeTossLivePayment,
+  completeTossLivePaymentFailure,
   completeTestPayment,
   completeTossTestPayment,
   completeTossTestPaymentFailure,
+  createTossLiveCheckout,
   createTestCheckout,
   createTossTestCheckout,
   isTestPaymentEnabled,
 } from "./commerce/order-service";
 import { isTossTestPaymentEnabled } from "./commerce/toss-test-provider";
+import { isTossLivePaymentEnabled } from "./commerce/toss-live-provider";
 import { getTossCardReviewConfig, isTossCardReviewEnabled } from "./commerce/toss-card-review";
 import { isPublicPaidAnalysisEnabled } from "./commerce/release-policy";
 import { previewCoupon } from "./commerce/coupon-service";
@@ -48,6 +52,7 @@ import {
   revokeAdminTargetedCoupon,
 } from "./commerce/admin-targeted-coupon-service";
 import { applyProductionOpeningCampaignConfiguration } from "./commerce/production-opening-campaign-config-service";
+import { applyProductionLivePaymentProviderMigration } from "./commerce/production-live-payment-migration-service";
 import { getSupportTicketSchemaAudit } from "./commerce/support-ticket-schema-audit";
 import {
   deleteAdminReview,
@@ -280,6 +285,21 @@ export const appRouter = router({
           userId: ctx.user?.id,
           authenticatedEmail: ctx.user?.email,
         })),
+      createTossLive: publicProcedure
+        .input(
+          z.object({
+            productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
+            email: z.string().email().max(320),
+            idempotencyKey: z.string().min(16).max(128),
+            couponCode: z.string().min(1).max(64).optional(),
+            channel: z.enum(["app", "web"]).optional().default("app"),
+          }),
+        )
+        .mutation(({ input, ctx }) => createTossLiveCheckout({
+          ...input,
+          userId: ctx.user?.id,
+          authenticatedEmail: ctx.user?.email,
+        })),
       completeTest: publicProcedure
         .input(
           z.object({
@@ -308,6 +328,20 @@ export const appRouter = router({
           }),
         )
         .mutation(({ input }) => completeTossTestPaymentFailure(input)),
+      completeTossLive: publicProcedure
+        .input(z.object({
+          orderNumber: z.string().min(8).max(64),
+          paymentKey: z.string().min(8).max(200),
+          amountKrw: z.number().int().min(0).max(1_000_000),
+        }))
+        .mutation(({ input }) => completeTossLivePayment(input)),
+      completeTossLiveFailure: publicProcedure
+        .input(z.object({
+          orderNumber: z.string().min(8).max(64),
+          errorCode: z.string().min(1).max(120),
+          errorMessage: z.string().max(500).optional(),
+        }))
+        .mutation(({ input }) => completeTossLivePaymentFailure(input)),
       cardReview: publicProcedure
         .input(z.object({
           productCode: z.enum([
@@ -331,6 +365,7 @@ export const appRouter = router({
       testMode: publicProcedure.query(() => ({
         localSimulatorEnabled: isTestPaymentEnabled(),
         tossTestEnabled: isTossTestPaymentEnabled(),
+        tossLiveEnabled: isTossLivePaymentEnabled(),
         tossCardReviewEnabled: isTossCardReviewEnabled(),
         paidAnalysisPublicEnabled: isPublicPaidAnalysisEnabled(),
       })),
@@ -473,6 +508,11 @@ export const appRouter = router({
       .mutation(({ ctx }) => {
         const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
         return applyProductionOpeningCampaignConfiguration({ ...auditActor, auditActor });
+      }),
+    applyProductionLivePaymentProvider: adminProcedure
+      .mutation(({ ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return applyProductionLivePaymentProviderMigration({ ...auditActor, auditActor });
       }),
     testRelationshipReportRecovery: adminProcedure
       .input(z.object({ orderId: z.number().int().positive() }))

@@ -93,10 +93,11 @@ export default function CommerceCheckoutScreen() {
     review?: string | string[];
     reviewResult?: string | string[];
     testLifecycle?: string | string[];
+    paymentMode?: string | string[];
   }>();
   const productCode = getSingleParam(params.product);
   const relationType = getSingleParam(params.relationType);
-  const channel = getSingleParam(params.channel) === "web" ? "web" : "app";
+  const channel: "app" | "web" = getSingleParam(params.channel) === "web" ? "web" : "app";
   const paymentKey = getSingleParam(params.paymentKey);
   const orderNumber = getSingleParam(params.orderId);
   const amount = Number(getSingleParam(params.amount));
@@ -107,6 +108,7 @@ export default function CommerceCheckoutScreen() {
   // changing the normal card-review path. The runtime/server guards still
   // reject this outside the explicitly configured Preview test environment.
   const requestedPreviewLifecycle = getSingleParam(params.testLifecycle) === "toss-test-lifecycle";
+  const callbackPaymentMode = getSingleParam(params.paymentMode) === "live" ? "live" : "test";
   const reviewResult = getSingleParam(params.reviewResult);
   const product = productCode ? getCommerceProduct(productCode) : undefined;
   const [email, setEmail] = useState("");
@@ -114,11 +116,17 @@ export default function CommerceCheckoutScreen() {
   const [message, setMessage] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const processedReturn = useRef(false);
-  const createCheckout = trpc.commerce.checkout.createTossTest.useMutation();
-  const completeCheckout = trpc.commerce.checkout.completeTossTest.useMutation();
-  const completeFailedCheckout = trpc.commerce.checkout.completeTossTestFailure.useMutation();
+  const createTossTestCheckout = trpc.commerce.checkout.createTossTest.useMutation();
+  const createTossLiveCheckout = trpc.commerce.checkout.createTossLive.useMutation();
+  const completeTossTestCheckout = trpc.commerce.checkout.completeTossTest.useMutation();
+  const completeTossLiveCheckout = trpc.commerce.checkout.completeTossLive.useMutation();
+  const completeTossTestFailure = trpc.commerce.checkout.completeTossTestFailure.useMutation();
+  const completeTossLiveFailure = trpc.commerce.checkout.completeTossLiveFailure.useMutation();
   const testMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = testMode.data?.paidAnalysisPublicEnabled ?? false;
+  const tossLiveEnabled = testMode.data?.tossLiveEnabled === true;
+  const tossTestEnabled = testMode.data?.tossTestEnabled === true;
+  const tossPaymentEnabled = tossLiveEnabled || tossTestEnabled;
   // 심사용 review-only는 공개 유료 분석 gate가 닫힌 상태에서만 기본 경로다.
   // 공개 테스트 운영 중에는 일반 product URL도 persistent Toss test lifecycle으로
   // 들어가며, 심사용 화면은 명시적 review 파라미터로만 유지한다.
@@ -159,20 +167,22 @@ export default function CommerceCheckoutScreen() {
     if (cardReviewMode || !paymentKey || !orderNumber || !Number.isInteger(amount) || amount < 0 || processedReturn.current || !isPaidAnalysisCode(productCode)) return;
     processedReturn.current = true;
     setProcessing(true);
+    const completeCheckout = callbackPaymentMode === "live" ? completeTossLiveCheckout : completeTossTestCheckout;
     completeCheckout
       .mutateAsync({ paymentKey, orderNumber, amountKrw: amount })
       .then(async (result) => {
         if (!result.startGrant) throw new Error("PAYMENT_GRANT_NOT_ISSUED");
         await moveToAnalysis(result.startGrant);
       })
-      .catch(() => setMessage("테스트 결제 승인 확인에 실패했습니다. 동일 결제를 다시 요청하지 말고 관리자에게 주문번호를 알려 주세요."))
+      .catch(() => setMessage("결제 승인 확인에 실패했습니다. 동일 결제를 다시 요청하지 말고 관리자에게 주문번호를 알려 주세요."))
       .finally(() => setProcessing(false));
-  }, [cardReviewMode, paymentKey, orderNumber, amount, productCode]);
+  }, [cardReviewMode, callbackPaymentMode, paymentKey, orderNumber, amount, productCode]);
 
   useEffect(() => {
     if (cardReviewMode || paymentKey || !failureCode || !orderNumber || processedReturn.current || !isPaidAnalysisCode(productCode)) return;
     processedReturn.current = true;
     setProcessing(true);
+    const completeFailedCheckout = callbackPaymentMode === "live" ? completeTossLiveFailure : completeTossTestFailure;
     completeFailedCheckout
       .mutateAsync({ orderNumber, errorCode: failureCode, errorMessage: failureMessage })
       .then((result) => {
@@ -182,7 +192,7 @@ export default function CommerceCheckoutScreen() {
       })
       .catch(() => setMessage("결제 결과를 확인하지 못했습니다. 동일 결제를 다시 요청하지 말고 관리자에게 주문번호를 알려 주세요."))
       .finally(() => setProcessing(false));
-  }, [cardReviewMode, paymentKey, failureCode, failureMessage, orderNumber, productCode]);
+  }, [cardReviewMode, callbackPaymentMode, paymentKey, failureCode, failureMessage, orderNumber, productCode]);
 
   const requestPayment = async () => {
     if (!isPaidAnalysisCode(productCode) || !product) return;
@@ -191,19 +201,23 @@ export default function CommerceCheckoutScreen() {
       return;
     }
     if (Platform.OS !== "web") {
-      setMessage("토스 테스트 결제창은 현재 웹 환경에서만 연결되어 있습니다.");
+      setMessage("토스 결제창은 현재 웹 환경에서만 연결되어 있습니다.");
       return;
     }
     setProcessing(true);
     setMessage(null);
     try {
-      const checkout = await createCheckout.mutateAsync({
+      const paymentMode = tossLiveEnabled ? "live" : "test";
+      const checkoutInput = {
         productCode,
         email: email.trim(),
         idempotencyKey: getIdempotencyKey(),
         couponCode: couponCode.trim() || undefined,
         channel,
-      });
+      };
+      const checkout = paymentMode === "live"
+        ? await createTossLiveCheckout.mutateAsync(checkoutInput)
+        : await createTossTestCheckout.mutateAsync(checkoutInput);
       if (checkout.status === "paid") {
         if (!checkout.startGrant) throw new Error("COUPON_GRANT_NOT_ISSUED");
         await moveToAnalysis(checkout.startGrant);
@@ -215,9 +229,10 @@ export default function CommerceCheckoutScreen() {
       const origin = window.location.origin;
       const baseParams = new URLSearchParams({
         product: productCode,
+        paymentMode,
         ...(relationType ? { relationType } : {}),
         ...(channel === "web" ? { channel } : {}),
-        ...(requestedPreviewLifecycle ? { testLifecycle: "toss-test-lifecycle" } : {}),
+        ...(paymentMode === "test" && requestedPreviewLifecycle ? { testLifecycle: "toss-test-lifecycle" } : {}),
       }).toString();
       await payment.requestPayment({
         method: "CARD",
@@ -231,7 +246,7 @@ export default function CommerceCheckoutScreen() {
         windowTarget: "self",
       });
     } catch (error) {
-      setMessage(error instanceof Error && error.message.includes("COUPON") ? "쿠폰을 적용할 수 없습니다. 코드와 조건을 확인해 주세요." : "테스트 결제 준비에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+      setMessage(error instanceof Error && error.message.includes("COUPON") ? "쿠폰을 적용할 수 없습니다. 코드와 조건을 확인해 주세요." : "결제를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setProcessing(false);
     }
@@ -330,10 +345,12 @@ export default function CommerceCheckoutScreen() {
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.eyebrow}>휴심컬러 테스트 결제</Text>
+        <Text style={styles.eyebrow}>{tossLiveEnabled ? "휴심컬러 안전 결제" : "휴심컬러 테스트 결제"}</Text>
         <Text style={styles.title}>{product.name}</Text>
         <Text style={styles.price}>{product.amountKrw?.toLocaleString()}원</Text>
-        <Text style={styles.notice}>현재 테스트 운영 중입니다. Toss 테스트키로만 동작하며 실제 청구는 발생하지 않습니다.</Text>
+        <Text style={styles.notice}>{tossLiveEnabled
+          ? "토스페이먼츠 라이브 결제입니다. 결제 승인 시 실제 청구가 발생하며, 승인된 주문에만 검사 이용권이 발급됩니다."
+          : "현재 테스트 운영 중입니다. Toss 테스트키로만 동작하며 실제 청구는 발생하지 않습니다."}</Text>
         <View style={styles.servicePeriodCard}>
           <Text style={styles.servicePeriodTitle}>서비스 제공기간</Text>
           <Text style={styles.servicePeriodText}>{ANALYSIS_SERVICE_PERIOD}</Text>
@@ -359,8 +376,8 @@ export default function CommerceCheckoutScreen() {
         </View>}
         {couponQuote.isError && couponCode.trim() ? <Text style={styles.couponError}>쿠폰을 적용할 수 없습니다. 코드와 조건을 확인해 주세요.</Text> : null}
         {message ? <Text style={styles.error}>{message}</Text> : null}
-        <Pressable disabled={processing || testMode.isLoading || !testMode.data?.tossTestEnabled} onPress={requestPayment} style={({ pressed }) => [styles.button, (processing || !testMode.data?.tossTestEnabled) && styles.buttonDisabled, pressed && !processing && { opacity: 0.86 }]}>
-          {processing ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>{testMode.data?.tossTestEnabled ? "토스 테스트 결제 진행" : "테스트 결제 준비 중"}</Text>}
+        <Pressable disabled={processing || testMode.isLoading || !tossPaymentEnabled} onPress={requestPayment} style={({ pressed }) => [styles.button, (processing || !tossPaymentEnabled) && styles.buttonDisabled, pressed && !processing && { opacity: 0.86 }]}>
+          {processing ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>{tossLiveEnabled ? "토스페이먼츠 결제하기" : tossTestEnabled ? "토스 테스트 결제 진행" : "결제 준비 중"}</Text>}
         </Pressable>
         <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>이전으로 돌아가기</Text></Pressable>
       </ScrollView>

@@ -20,12 +20,13 @@ describe("Toss card-review checkout screen", () => {
     expect(checkoutScreen).toContain("TOSS PAYMENTS CARD REVIEW");
   });
 
-  it("keeps non-persistent review mode by default but allows an explicit Preview lifecycle test route", () => {
+  it("keeps non-persistent review mode by default but allows the explicit test lifecycle route", () => {
     expect(checkoutScreen).toContain('const requestedPreviewLifecycle = getSingleParam(params.testLifecycle) === "toss-test-lifecycle"');
     expect(checkoutScreen).toContain("testMode.data?.tossCardReviewEnabled &&");
     expect(checkoutScreen).toContain("!paidAnalysisPublicEnabled &&");
     expect(checkoutScreen).toContain("!requestedPreviewLifecycle");
-    expect(checkoutScreen).toContain('...(requestedPreviewLifecycle ? { testLifecycle: "toss-test-lifecycle" } : {}),');
+    expect(checkoutScreen).toContain('...(paymentMode === "test" && requestedPreviewLifecycle ? { testLifecycle: "toss-test-lifecycle" } : {}),');
+    expect(checkoutScreen).toContain('const callbackPaymentMode = getSingleParam(params.paymentMode) === "live" ? "live" : "test"');
     expect(checkoutScreen).not.toContain("tossCardReviewEnabled && !paidAnalysisPublicEnabled");
   });
 

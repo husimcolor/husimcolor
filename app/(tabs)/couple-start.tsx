@@ -55,6 +55,8 @@ export default function CoupleStartScreen() {
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
   const tossCardReviewEnabled = commerceTestMode.data?.tossCardReviewEnabled ?? false;
+  const tossLiveEnabled = commerceTestMode.data?.tossLiveEnabled === true;
+  const tossPaymentEnabled = tossLiveEnabled || commerceTestMode.data?.tossTestEnabled === true;
   const openingCampaignActive = isOpeningCampaignActive();
   useEffect(() => {
     const track = async () => {
@@ -85,18 +87,16 @@ export default function CoupleStartScreen() {
   const handleStart = () => {
     if (!effectiveRelationType) return;
     if (paidProductCode && !paidAnalysisPublicEnabled && !tossCardReviewEnabled) return;
-    // Preview supports real test-key lifecycle QA alongside card review.
-    // Make that path explicit so the ordinary product CTA does not fall back
-    // to the non-persistent review-only payment page.
-    if (paidProductCode && paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled) {
-      router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}&testLifecycle=toss-test-lifecycle` as any);
+    // 공개 runtime이 열려 있으면 심사용 review-only보다 persistent 결제 lifecycle을 우선한다.
+    if (paidProductCode && paidAnalysisPublicEnabled && tossPaymentEnabled) {
+      router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}${tossLiveEnabled ? '' : '&testLifecycle=toss-test-lifecycle'}` as any);
       return;
     }
     if (paidProductCode && tossCardReviewEnabled) {
       router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}&review=toss-card-review` as any);
       return;
     }
-    if (paidProductCode && commerceTestMode.data?.tossTestEnabled) {
+    if (paidProductCode && tossPaymentEnabled) {
       router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}` as any);
       return;
     }
@@ -197,7 +197,7 @@ export default function CoupleStartScreen() {
             {openingCampaignActive && <View style={styles.openingCampaign}>
               <Text style={styles.openingCampaignTitle}>유료 심화분석 오픈 기념 20% 할인</Text>
               <Text style={styles.openingCampaignText}>10월 30일까지 · 회원가입 없이 이용 가능 · 오프라인 코칭 제외</Text>
-              {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled ? <Text style={styles.openingCampaignText}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text> : null}
+              {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled && !tossLiveEnabled ? <Text style={styles.openingCampaignText}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text> : null}
             </View>}
             <View style={styles.productList}>
               {VISIBLE_RELATION_PRODUCTS.map((product) => (

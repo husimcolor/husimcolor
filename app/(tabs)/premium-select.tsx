@@ -397,16 +397,17 @@ export default function PremiumSelectScreen() {
   useEffect(() => {
     const checkAccess = async () => {
       if (commerceTestMode.isLoading) return;
-      if (commerceTestMode.data?.tossTestEnabled) {
+      const tossPaymentEnabled = commerceTestMode.data?.tossLiveEnabled || commerceTestMode.data?.tossTestEnabled;
+      if (tossPaymentEnabled) {
         if (!await hasCommerceAnalysisStarted("personal_deep")) {
-          router.replace("/commerce-checkout?product=personal_deep&testLifecycle=toss-test-lifecycle" as any);
+          router.replace(`/commerce-checkout?product=personal_deep${commerceTestMode.data?.tossLiveEnabled ? "" : "&testLifecycle=toss-test-lifecycle"}` as any);
         }
         return;
       }
       if (!await isPremiumActive()) router.replace("/payment" as any);
     };
     checkAccess();
-  }, [commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled]);
+  }, [commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled, commerceTestMode.data?.tossLiveEnabled]);
 
   // CSS 주입 (웹 전용, 최초 1회)
   useEffect(() => {

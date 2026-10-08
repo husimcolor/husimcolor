@@ -25,6 +25,11 @@ import {
   getTossTestClientConfig,
   isTossTestPaymentEnabled,
 } from "./toss-test-provider";
+import {
+  confirmTossLivePayment,
+  getTossLiveClientConfig,
+  isTossLivePaymentEnabled,
+} from "./toss-live-provider";
 import { isExplicitTestPaymentRuntime } from "./test-runtime";
 import {
   consumeCouponReservation,
@@ -175,9 +180,8 @@ export function isTestPaymentEnabled(): boolean {
 }
 
 /**
- * 실결제 provider가 아닌 테스트 전용 주문 서비스입니다.
- * 화면의 금액을 신뢰하지 않고 DB의 활성 가격 행을 스냅샷하며, entitlement는
- * 테스트 승인 성공을 서버에서 처리한 경우에만 생성합니다.
+ * 테스트·라이브 Toss provider가 공통으로 쓰는 주문 서비스다. 화면의 금액을
+ * 신뢰하지 않고 DB의 활성 가격 행을 스냅샷하며, entitlement는 서버 승인 성공 뒤에만 생성한다.
  */
 async function createCheckoutForProvider(input: {
   productCode: CommerceProductCode;
@@ -188,13 +192,16 @@ async function createCheckoutForProvider(input: {
   channel?: "app" | "web";
   userId?: number;
   authenticatedEmail?: string | null;
-}, provider: "test" | "toss_pg"): Promise<CheckoutResponse> {
+}, provider: "test" | "toss_pg" | "toss_live"): Promise<CheckoutResponse> {
   assertPublicPaidAnalysisCheckout(input.productCode);
   if (provider === "test" && !isTestPaymentEnabled()) {
     throw new Error("TEST_PAYMENT_DISABLED_IN_PRODUCTION");
   }
   if (provider === "toss_pg" && !isTossTestPaymentEnabled()) {
     throw new Error("TOSS_TEST_PAYMENT_DISABLED");
+  }
+  if (provider === "toss_live" && !isTossLivePaymentEnabled()) {
+    throw new Error("TOSS_LIVE_PAYMENT_DISABLED");
   }
   if (!input.idempotencyKey || input.idempotencyKey.length < 16) {
     throw new Error("INVALID_CHECKOUT_IDEMPOTENCY_KEY");
@@ -205,6 +212,7 @@ async function createCheckoutForProvider(input: {
   const email = assertCheckoutEmail(input.email);
   const emailHash = hashCommerceEmail(email);
   const channel = input.channel === "web" ? "web" : "app";
+  /** Toss 라이브 결제만 운영 매출 원장으로 기록한다. */
   const isTestOrder = provider === "test" || provider === "toss_pg";
   const bookingRequest = normalizeCoachingBookingRequest(input.bookingRequest);
   const now = new Date();
@@ -446,12 +454,27 @@ export async function createTossTestCheckout(input: {
   return { ...checkout, tossClientKey: getTossTestClientConfig().clientKey };
 }
 
+/** 라이브 주문은 테스트 provider와 별도 원장 값(toss_live)으로 생성한다. */
+export async function createTossLiveCheckout(input: {
+  productCode: CommerceProductCode;
+  email: string;
+  idempotencyKey: string;
+  couponCode?: string;
+  bookingRequest?: CoachingBookingRequest;
+  channel?: "app" | "web";
+  userId?: number;
+  authenticatedEmail?: string | null;
+}): Promise<CheckoutResponse & { tossClientKey: string }> {
+  const checkout = await createCheckoutForProvider(input, "toss_live");
+  return { ...checkout, tossClientKey: getTossLiveClientConfig().clientKey };
+}
+
 async function completePaymentForProvider(input: {
   orderNumber: string;
   providerPaymentId: string;
   outcome: CommercePaymentOutcome;
   amountKrw?: number;
-  provider: "test" | "toss_pg";
+  provider: "test" | "toss_pg" | "toss_live";
   rawPayloadEncrypted?: string;
 }): Promise<PaymentResponse> {
   if (input.provider === "test" && !isTestPaymentEnabled()) {
@@ -459,6 +482,9 @@ async function completePaymentForProvider(input: {
   }
   if (input.provider === "toss_pg" && !isTossTestPaymentEnabled()) {
     throw new Error("TOSS_TEST_PAYMENT_DISABLED");
+  }
+  if (input.provider === "toss_live" && !isTossLivePaymentEnabled()) {
+    throw new Error("TOSS_LIVE_PAYMENT_DISABLED");
   }
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -487,7 +513,7 @@ async function completePaymentForProvider(input: {
       .where(and(eq(paymentTransactions.provider, input.provider), eq(orders.orderNumber, input.orderNumber)))
       .limit(1);
     const record = rows[0];
-    if (!record) throw new Error("TEST_ORDER_NOT_FOUND");
+    if (!record) throw new Error("TOSS_ORDER_NOT_FOUND");
     // Toss does not include the amount in every failUrl redirect. Keep the
     // strict amount comparison for an approval, while still allowing a
     // terminal failure/cancellation to release an otherwise reserved coupon.
@@ -533,9 +559,9 @@ async function completePaymentForProvider(input: {
         .set({ status: "expired" })
         .where(eq(orders.id, record.orderId));
       await releaseCouponReservation(tx, record.orderId);
-      throw new Error("TEST_ORDER_EXPIRED");
+      throw new Error("TOSS_ORDER_EXPIRED");
     }
-    if (record.transactionStatus !== "ready") throw new Error("TEST_PAYMENT_PROCESSING");
+    if (record.transactionStatus !== "ready") throw new Error("TOSS_PAYMENT_PROCESSING");
 
     // 동일 결제 승인 콜백이 동시에 도착해도 ready 상태의 한 행만 선점할 수 있다.
     const claimed = await tx
@@ -543,7 +569,7 @@ async function completePaymentForProvider(input: {
       .set({ status: "processing" })
       .where(and(eq(paymentTransactions.id, record.transactionId), eq(paymentTransactions.status, "ready")));
     if (Number(claimed[0]?.affectedRows ?? 0) !== 1) {
-      throw new Error("TEST_PAYMENT_PROCESSING");
+      throw new Error("TOSS_PAYMENT_PROCESSING");
     }
 
     const now = new Date();
@@ -648,7 +674,7 @@ export async function completeTestPayment(input: {
  * In that case, do not send the same paymentKey to Toss a second time: read the
  * locally final transaction first and return the original entitlement instead.
  */
-async function getKnownTossTestSuccess(input: {
+async function getKnownTossSuccess(provider: "toss_pg" | "toss_live", input: {
   orderNumber: string;
   paymentKey: string;
   amountKrw: number;
@@ -668,14 +694,14 @@ async function getKnownTossTestSuccess(input: {
     .from(paymentTransactions)
     .innerJoin(orders, eq(paymentTransactions.orderId, orders.id))
     .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
-    .where(and(eq(paymentTransactions.provider, "toss_pg"), eq(orders.orderNumber, input.orderNumber)))
+    .where(and(eq(paymentTransactions.provider, provider), eq(orders.orderNumber, input.orderNumber)))
     .limit(1);
   const record = rows[0];
   if (!record) return null;
   if (record.finalAmountKrw !== input.amountKrw) throw new Error("ORDER_AMOUNT_MISMATCH");
 
   if (record.transactionStatus === "approved") {
-    if (record.savedPaymentId !== input.paymentKey) throw new Error("TEST_PAYMENT_ID_CONFLICT");
+    if (record.savedPaymentId !== input.paymentKey) throw new Error("TOSS_PAYMENT_ID_CONFLICT");
     const entitlementRows = await (db as any)
       .select({ id: entitlements.id })
       .from(entitlements)
@@ -691,7 +717,7 @@ async function getKnownTossTestSuccess(input: {
     };
   }
   if (record.transactionStatus === "failed" || record.transactionStatus === "cancelled") {
-    throw new Error("TEST_ORDER_ALREADY_TERMINAL");
+    throw new Error("TOSS_ORDER_ALREADY_TERMINAL");
   }
   return null;
 }
@@ -703,7 +729,7 @@ export async function completeTossTestPayment(input: {
   amountKrw: number;
 }): Promise<PaymentResponse> {
   if (!isTossTestPaymentEnabled()) throw new Error("TOSS_TEST_PAYMENT_DISABLED");
-  const known = await getKnownTossTestSuccess(input);
+  const known = await getKnownTossSuccess("toss_pg", input);
   if (known) return known;
   const approved = await confirmTossTestPayment({
     paymentKey: input.paymentKey,
@@ -716,6 +742,33 @@ export async function completeTossTestPayment(input: {
     outcome: "success",
     amountKrw: approved.amountKrw,
     provider: "toss_pg",
+    rawPayloadEncrypted: encryptCommerceValue(approved.rawPayload),
+  });
+}
+
+/**
+ * 라이브 결제도 DB 주문 스냅샷과 Toss 승인 응답을 모두 대조한다. provider가
+ * toss_live이므로 테스트 결제 주문·이용권·매출 집계와 섞이지 않는다.
+ */
+export async function completeTossLivePayment(input: {
+  orderNumber: string;
+  paymentKey: string;
+  amountKrw: number;
+}): Promise<PaymentResponse> {
+  if (!isTossLivePaymentEnabled()) throw new Error("TOSS_LIVE_PAYMENT_DISABLED");
+  const known = await getKnownTossSuccess("toss_live", input);
+  if (known) return known;
+  const approved = await confirmTossLivePayment({
+    paymentKey: input.paymentKey,
+    orderNumber: input.orderNumber,
+    amountKrw: input.amountKrw,
+  });
+  return completePaymentForProvider({
+    orderNumber: approved.orderNumber,
+    providerPaymentId: approved.paymentKey,
+    outcome: "success",
+    amountKrw: approved.amountKrw,
+    provider: "toss_live",
     rawPayloadEncrypted: encryptCommerceValue(approved.rawPayload),
   });
 }
@@ -737,6 +790,27 @@ export async function completeTossTestPaymentFailure(input: {
     providerPaymentId,
     outcome,
     provider: "toss_pg",
+    rawPayloadEncrypted: encryptCommerceValue(JSON.stringify({
+      redirect: "failUrl",
+      errorCode: input.errorCode,
+      errorMessage: input.errorMessage ?? null,
+    })),
+  });
+}
+
+/** 승인되지 않은 라이브 failUrl은 주문을 terminal 처리하고 쿠폰 예약만 해제한다. */
+export async function completeTossLivePaymentFailure(input: {
+  orderNumber: string;
+  errorCode: string;
+  errorMessage?: string;
+}): Promise<PaymentResponse> {
+  const outcome = getTossTestTerminalOutcome(input.errorCode);
+  const providerPaymentId = `toss-live-${outcome}-${input.orderNumber}`.slice(0, 160);
+  return completePaymentForProvider({
+    orderNumber: input.orderNumber,
+    providerPaymentId,
+    outcome,
+    provider: "toss_live",
     rawPayloadEncrypted: encryptCommerceValue(JSON.stringify({
       redirect: "failUrl",
       errorCode: input.errorCode,

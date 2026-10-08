@@ -66,6 +66,8 @@ export default function HomeScreen() {
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
   const tossCardReviewEnabled = commerceTestMode.data?.tossCardReviewEnabled ?? false;
+  const tossLiveEnabled = commerceTestMode.data?.tossLiveEnabled === true;
+  const tossPaymentEnabled = tossLiveEnabled || commerceTestMode.data?.tossTestEnabled === true;
   const openingCampaignActive = isOpeningCampaignActive();
   useEffect(() => {
     const trackVisit = async () => {
@@ -133,19 +135,17 @@ export default function HomeScreen() {
 
   const handlePersonalDeepEntry = () => {
     if (!paidAnalysisPublicEnabled && !tossCardReviewEnabled) return;
-    // The isolated Preview runtime deliberately enables both the historical
-    // card-review page and the persistent Toss lifecycle. Prefer the latter
-    // only when Preview has explicitly opened paid-analysis QA; Production
-    // remains on its review-only route because this flag stays false there.
-    if (paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled) {
-      router.push('/(tabs)/commerce-checkout?product=personal_deep&testLifecycle=toss-test-lifecycle' as any);
+    // 공개 결제 runtime이 열려 있으면 심사용 review-only보다 persistent 결제
+    // lifecycle을 우선한다. 라이브와 테스트 주문은 서버 provider에서 분리된다.
+    if (paidAnalysisPublicEnabled && tossPaymentEnabled) {
+      router.push(`/(tabs)/commerce-checkout?product=personal_deep${tossLiveEnabled ? '' : '&testLifecycle=toss-test-lifecycle'}` as any);
       return;
     }
     if (tossCardReviewEnabled) {
       router.push('/(tabs)/commerce-checkout?product=personal_deep&review=toss-card-review' as any);
       return;
     }
-    if (commerceTestMode.data?.tossTestEnabled) {
+    if (tossPaymentEnabled) {
       router.push('/(tabs)/commerce-checkout?product=personal_deep' as any);
       return;
     }
@@ -249,7 +249,7 @@ export default function HomeScreen() {
             <Text style={[styles.serviceCta, !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCta]}>
               {paidAnalysisPublicEnabled ? '나를 깊이 알아보기 →' : tossCardReviewEnabled ? '심사용 Toss 테스트 결제 열기 →' : '정식 오픈 준비중'}
             </Text>
-            {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled ? (
+            {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled && !tossLiveEnabled ? (
               <Text style={styles.openingCampaignNote}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text>
             ) : null}
           </Pressable>

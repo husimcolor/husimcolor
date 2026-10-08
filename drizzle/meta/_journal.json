@@ -134,6 +134,13 @@
       "when": 1790754342383,
       "tag": "0018_targeted_customer_coupons",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1791468000000,
+      "tag": "0019_toss_live_payment_provider",
+      "breakpoints": true
     }
   ]
 }

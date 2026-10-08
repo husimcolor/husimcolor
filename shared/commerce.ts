@@ -81,7 +81,8 @@ export const PAID_ANALYSIS_PRODUCT_CODES = [
   "parent_child_deep",
 ] as const satisfies readonly CommerceProductCode[];
 
-export type CommercePaymentProvider = "test" | "toss_pg" | "google_play";
+/** toss_pg는 테스트키, toss_live는 운영 라이브키 승인 원장이다. */
+export type CommercePaymentProvider = "test" | "toss_pg" | "toss_live" | "google_play";
 export type CommercePaymentOutcome = "success" | "failed" | "cancelled";
 
 export function getCommerceProduct(code: string): CommerceProduct | undefined {

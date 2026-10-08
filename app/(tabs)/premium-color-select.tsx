@@ -69,9 +69,10 @@ export default function PremiumColorSelectScreen() {
   useEffect(() => {
     const checkAccess = async () => {
       if (commerceTestMode.isLoading) return;
-      if (commerceTestMode.data?.tossTestEnabled) {
+      const tossPaymentEnabled = commerceTestMode.data?.tossLiveEnabled || commerceTestMode.data?.tossTestEnabled;
+      if (tossPaymentEnabled) {
         const started = await hasCommerceAnalysisStarted("personal_deep");
-        if (!started) router.replace("/commerce-checkout?product=personal_deep&testLifecycle=toss-test-lifecycle" as any);
+        if (!started) router.replace(`/commerce-checkout?product=personal_deep${commerceTestMode.data?.tossLiveEnabled ? "" : "&testLifecycle=toss-test-lifecycle"}` as any);
         return;
       }
       const active = await isPremiumActive();
@@ -80,7 +81,7 @@ export default function PremiumColorSelectScreen() {
       }
     };
     checkAccess();
-  }, [commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled]);
+  }, [commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled, commerceTestMode.data?.tossLiveEnabled]);
 
   const handleColorToggle = (color: ColorData) => {
     setSelectedColors(prev => {

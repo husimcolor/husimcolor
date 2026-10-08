@@ -46,6 +46,11 @@ describe("Toss test payment adapter", () => {
     vi.stubEnv("COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED", "true");
     expect(isTossTestPaymentEnabled()).toBe(true);
 
+    // 라이브 gate가 열린 Production에서는 공개 test-key 주문을 새로 만들 수 없다.
+    vi.stubEnv("COMMERCE_LIVE_PAYMENT_ENABLED", "true");
+    expect(isTossTestPaymentEnabled()).toBe(false);
+    vi.stubEnv("COMMERCE_LIVE_PAYMENT_ENABLED", "false");
+
     vi.stubEnv("COMMERCE_PUBLIC_PAID_ANALYSIS_ENABLED", "false");
     expect(isTossTestPaymentEnabled()).toBe(false);
   });

@@ -311,7 +311,8 @@ export const paymentTransactions = mysqlTable(
   {
     id: int("id").autoincrement().primaryKey(),
     orderId: int("orderId").notNull(),
-    provider: mysqlEnum("provider", ["test", "toss_pg", "google_play", "coupon"]).notNull(),
+    /** Toss test and live approvals use separate provider values for safe revenue/reporting separation. */
+    provider: mysqlEnum("provider", ["test", "toss_pg", "toss_live", "google_play", "coupon"]).notNull(),
     providerPaymentId: varchar("providerPaymentId", { length: 160 }),
     providerOrderId: varchar("providerOrderId", { length: 64 }),
     status: mysqlEnum("status", [

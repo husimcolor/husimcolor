@@ -6,7 +6,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const read = (relativePath: string) => readFileSync(path.join(projectRoot, relativePath), 'utf8');
 
 describe('entitlement-based analysis entry', () => {
-  it('routes paid personal and paid relationship selections through the test checkout while preserving free friend entry', () => {
+  it('routes paid personal and paid relationship selections through the active payment checkout while preserving free friend entry', () => {
     const home = read('app/(tabs)/index.tsx');
     const coupleStart = read('app/(tabs)/couple-start.tsx');
     expect(home).toContain('commerce-checkout?product=personal_deep');
@@ -21,12 +21,14 @@ describe('entitlement-based analysis entry', () => {
     const coupleInfo = read('app/(tabs)/couple-info.tsx');
     expect(premiumInfo).toContain("consumeForAnalysisStart");
     expect(premiumInfo).toContain("removeCommerceStartGrant('personal_deep')");
-    expect(premiumInfo).toContain("tossTestEnabled && !grant");
+    expect(premiumInfo).toContain("const tossPaymentEnabled = commerceTestMode.data?.tossLiveEnabled || commerceTestMode.data?.tossTestEnabled");
+    expect(premiumInfo).toContain("tossPaymentEnabled && !grant");
     expect(premiumInfo).toContain("markCommerceAnalysisStarted('personal_deep')");
     expect(premiumInfo).toContain("commerce-checkout?product=personal_deep");
     expect(coupleInfo).toContain("getPaidProductCode");
     expect(coupleInfo).toContain("consumeForAnalysisStart");
-    expect(coupleInfo).toContain("tossTestEnabled && !grant");
+    expect(coupleInfo).toContain("const tossPaymentEnabled = commerceTestMode.data?.tossLiveEnabled || commerceTestMode.data?.tossTestEnabled");
+    expect(coupleInfo).toContain("tossPaymentEnabled && !grant");
     expect(coupleInfo).toContain("markCommerceAnalysisStarted(paidProductCode)");
     expect(coupleInfo).toContain("return null;");
     expect(read('app/(tabs)/couple-select.tsx')).toContain('hasCommerceAnalysisStarted(productCode)');
