@@ -1,7 +1,7 @@
 import path from "node:path";
 import { existsSync } from "node:fs";
+import PDFDocument from "pdfkit";
 import type { CouplePdfDownloadPayload, CouplePdfShape } from "../shared/couple-pdf-download";
-import { PDFDocument } from "./pdfkit-runtime";
 
 const PAGE_LEFT = 43;
 const PAGE_TOP = 43;
@@ -332,7 +332,10 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
   const personB = relation.personLabels?.personB ?? "두 번째 사람";
   addPage(document);
   writeSectionTitle(document, "두 사람의 관계 통합 분석", "#80649B", 120);
-  writeCard(document, "왜 끌리는데 왜 힘든지", [{ text: relation.attractionAnalysis }], "#F6F1FA");
+  writeCard(document, "왜 끌리는데 왜 힘든지", relation.attractionAnalysis
+    .split(/\n\n+/)
+    .filter(Boolean)
+    .map((text) => ({ text })), "#F6F1FA");
   writeCard(document, "두 사람의 관계 속 역할 분석", [
     { label: `${personA} · ${relation.roles.personATitle}`, text: relation.roles.personADescription },
     { label: `${personB} · ${relation.roles.personBTitle}`, text: relation.roles.personBDescription },
@@ -340,11 +343,11 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
   ], "#F6F1FA");
   if (relation.traits?.length) {
     writeSectionTitle(document, "감정 교류 · 표현 리듬 · 갈등 회복", "#A86773", 460);
-    relation.traits.forEach((trait) => {
+    relation.traits.forEach((trait, index) => {
       writeCard(document, "두 사람의 상호작용 흐름", [{
         label: trait.title,
         text: trait.description,
-      }], "#FFF4F7");
+      }], "#FFF4F7", index === 0 ? { continueFromCurrentPage: true } : undefined);
     });
   }
   // 관계 해석은 한 항목마다 새 쪽을 만들지 않는다. 제목과 첫 본문을 함께 둘 수 있는
@@ -353,12 +356,13 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
   writeCard(document, relation.core.headline, [
     { label: "핵심 키워드", text: relation.core.keywords.join(" · ") },
     { text: relation.core.description },
-  ], "#EFF7F0");
+  ], "#EFF7F0", { continueFromCurrentPage: true });
   writeSectionTitle(document, "생활 속 관계 패턴", "#8B7259", 260);
-  writeCard(document, relation.lifePattern.headline, relation.lifePattern.items.map((item) => ({
-    label: item.label,
-    text: `${personA}: ${item.personA}\n${personB}: ${item.personB}\n\n조율 포인트: ${item.tension}`,
-  })), "#FBF6EF");
+  writeCard(document, relation.lifePattern.headline, relation.lifePattern.items.flatMap((item) => [
+    { label: `${item.label} · ${personA}`, text: item.personA },
+    { label: personB, text: item.personB },
+    { label: "조율 포인트", text: item.tension },
+  ]), "#FBF6EF", { continueFromCurrentPage: true });
   // 갈등 카드는 제목과 첫 설명을 함께 두고, 남은 문단만 자연스럽게 이어 준다.
   writeSectionTitle(document, "싸움 패턴", "#B16A75", 220);
   writeCard(document, "이 관계의 갈등 흐름", [
@@ -372,14 +376,15 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
     { text: relation.connection.description },
     { label: "함께 해볼 연결", text: relation.connection.actions.join("\n") },
     { label: "스킨십 · 친밀감", text: relation.connection.intimacyNote },
-  ], "#FFF4F7");
-  writeSectionTitle(document, "관계 성장 포인트", "#4F8B70", 210);
+  ], "#FFF4F7", { continueFromCurrentPage: true });
+  // 성장 포인트도 제목만 남기지 않고 첫 해석과 같은 페이지에서 시작한다.
+  writeSectionTitle(document, "관계 성장 포인트", "#4F8B70", 220);
   writeCard(document, "이 관계가 오래가는 이유와 성장 방향", [
     { label: "이 관계의 강점", text: relation.growth.strength },
     { label: "조금 더 의식하면", text: relation.growth.blindSpot },
     { label: "함께 성장해야 할 방향", text: relation.growth.direction },
     { label: "오늘 해볼 수 있는 것", text: relation.growth.tip },
-  ], "#F0F8F2");
+  ], "#F0F8F2", { continueFromCurrentPage: true });
   // 앞선 성장 포인트의 남는 공간을 활용해 회복 루틴이 불필요하게 한 페이지 늦게 시작하지 않도록 한다.
   // 실제 카드 본문은 writeCard가 단락 단위로 안전하게 다음 페이지로 넘긴다.
   writeSectionTitle(document, "추천 컬러와 함께하는 회복 루틴", "#94723D", 250);
@@ -393,7 +398,7 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
     ...(relation.togetherRoutine.faithRoutine ? [{ label: "함께 나누는 루틴", text: relation.togetherRoutine.faithRoutine }] : []),
     { label: "건강한 관계를 위한 기본 원칙", text: relation.basicPrinciples },
     { label: "마무리 코칭 메시지", text: relation.closingMessage },
-  ], "#F0F6F1");
+  ], "#F0F6F1", { continueFromCurrentPage: true });
 }
 
 export function validateCouplePdfPayload(value: unknown): CouplePdfDownloadPayload {

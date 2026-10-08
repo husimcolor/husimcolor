@@ -23,6 +23,15 @@ import {
 } from '@/constants/coupleData';
 import { trpc } from '@/lib/trpc';
 
+function isLightHex(hex: string) {
+  const normalized = hex.replace('#', '');
+  if (normalized.length !== 6) return false;
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  return (red * 0.299 + green * 0.587 + blue * 0.114) >= 175;
+}
+
 function splitReadableParagraphs(text?: string): string[] {
   return (text ?? "")
     .trim()
@@ -218,9 +227,9 @@ export default function CoupleColorResultScreen() {
               <View style={[styles.card, { borderColor: accentBorder, backgroundColor: accentBg }]}>
                 <Text style={[styles.cardLabel, { color: accentColor }]}>🎨 보완 컬러</Text>
                 <View style={[styles.complementRow, { backgroundColor: '#FBF7F2', borderColor: analysis.complementColor.hex + '60' }]}>
-                  <View style={[styles.complementDot, { backgroundColor: analysis.complementColor.hex, shadowColor: analysis.complementColor.hex }]} />
+                  <View style={[styles.complementDot, { backgroundColor: analysis.complementColor.hex, shadowColor: analysis.complementColor.hex }, isLightHex(analysis.complementColor.hex) && styles.lightComplementDot]} />
                   <View style={styles.complementText}>
-                    <Text style={[styles.complementName, { color: analysis.complementColor.hex }]}>{analysis.complementColor.korName}</Text>
+                    <Text style={[styles.complementName, { color: isLightHex(analysis.complementColor.hex) ? '#4A3728' : analysis.complementColor.hex }]}>{analysis.complementColor.korName}</Text>
                     <ReadableParagraphs text={analysis.complementColor.meaning} textStyle={styles.complementMeaning} />
                   </View>
                 </View>
@@ -245,7 +254,7 @@ export default function CoupleColorResultScreen() {
               <View style={[styles.previewBanner, { backgroundColor: accentColor + '0F', borderColor: accentColor + '33' }]}>
                 <Text style={[styles.previewBannerTitle, { color: accentColor }]}>🃏 2단계에서 더 깊이 읽어드립니다</Text>
                 <Text style={styles.previewBannerText}>
-                  심리카드 3장이 무의식 · 현재 · 미래 에너지를 연결하여{"\n"}코칭 메시지와 회복 루틴을 안내해 드립니다.                </Text>
+                  심리카드 3장이 무의식 · 현재 · 회복 방향을 연결하여{"\n"}코칭 메시지와 회복 루틴을 안내해 드립니다.                </Text>
               </View>
             </>
           )}
@@ -256,7 +265,7 @@ export default function CoupleColorResultScreen() {
             <Text style={styles.nextHintText}>
               이 컬러 흐름을 바탕으로, 63장의 심리카드 중에서{'\n'}
               마음이 이끄는 카드 3장을 선택합니다.{'\n'}
-              카드는 무의식·현재·미래 에너지를 읽어드립니다.
+              카드는 무의식·현재·회복 방향을 읽어드립니다.
             </Text>
           </View>
 
@@ -315,6 +324,7 @@ const styles = StyleSheet.create({
   complementDot: {
     width: 34, height: 34, borderRadius: 17, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.28, shadowRadius: 4, elevation: 3,
   },
+  lightComplementDot: { borderWidth: 1.5, borderColor: '#9A7B4F' },
   complementText: { flex: 1, gap: 6 },
   complementName: { fontSize: 16, fontWeight: '800' },
   complementMeaning: { fontSize: 18, lineHeight: 32, color: '#4A3728' },

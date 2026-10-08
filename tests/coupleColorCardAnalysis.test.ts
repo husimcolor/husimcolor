@@ -21,8 +21,8 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     const paragraphs = analysis.split("\n\n");
 
     expect(paragraphs).toHaveLength(3);
-    expect(analysis).toContain("따뜻한 마음을 주고받는 일");
-    expect(analysis).toContain("섬세한 감정을 살피며 진심 어린 관계를 바라는 일");
+    expect(analysis).toContain("따뜻한 마음을 주고받는 편이며");
+    expect(analysis).toContain("섬세한 감정을 살피며 진심 어린 관계를 바라는 마음");
     expect(analysis).toContain("작은 약속과 꾸준한 돌봄으로 편안함을 다시 쌓아보세요");
     expect(analysis).toContain(`레드 동그라미의 ${cards[0].energyTitle}`);
     expect(analysis).toContain(`레드 삼각형의 ${cards[1].energyTitle}`);
@@ -142,10 +142,11 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     const traitDescriptions = traits.map((trait) => trait.description).join(" ");
     expect(traitDescriptions).toContain("서로");
     expect(traitDescriptions).toContain("관계");
-    expect(traitDescriptions).toContain(`레드 동그라미 \"${CARD_DATA[0].energyTitle}\" 카드`);
-    expect(traitDescriptions).toContain(`오렌지 오각형 \"${CARD_DATA[12].energyTitle}\" 카드`);
-    expect(traitDescriptions).toContain("평소 관계에서 무엇을 바라는지");
-    expect(traitDescriptions).toContain("갈등 뒤 어떤 방식으로 다시 연결할지");
+    expect(traitDescriptions).toContain("무의식 카드에서");
+    expect(traitDescriptions).toContain("현재 흐름 카드에서");
+    expect(traitDescriptions).toContain("회복 방향 카드에서");
+    expect(traitDescriptions).not.toContain(CARD_DATA[0].psychologyFlow);
+    expect(traitDescriptions).not.toContain(CARD_DATA[12].recoveryDirection);
     expect(traitDescriptions).not.toContain("첫 번째 사람은");
     expect(traitDescriptions).not.toContain("두 번째 사람은");
     expect(traitDescriptions).not.toContain("따뜻한 말로 관계를 이어갑니다.");

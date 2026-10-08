@@ -23,12 +23,20 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 48 - 32) / 5;
 const CARD_HEIGHT = CARD_WIDTH * 1.5;
 
-const POSITION_LABELS = ['무의식 · 내면 에너지', '현재 현실 에너지', '미래 · 회복 · 희망 에너지'];
+const POSITION_LABELS = ['무의식 · 내면 에너지', '현재 현실 에너지', '회복 방향 · 다음 방향 에너지'];
 const POSITION_COLORS = ['#3D6B3D', '#B5A0C8', '#C4956A'];
 
 const CARD_BACK_COLOR = '#D8CEBC';
 const CARD_BACK_BORDER = '#B8A898';
 const CARD_BACK_SYMBOL_COLOR = 'rgba(120, 105, 88, 0.60)';
+
+function isLightCard(card: Pick<CardData, 'colorHex'>) {
+  const hex = card.colorHex.replace('#', '');
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  return (red * 0.299 + green * 0.587 + blue * 0.114) >= 175;
+}
 
 function shuffleArray<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -163,6 +171,7 @@ function WebCard({ card, isFlipped, isSelected, onPress, entryDelay, isShuffle }
           overflow: 'hidden',
           backgroundColor: showFront ? card.colorHex : CARD_BACK_COLOR,
           ...borderStyle,
+          ...(showFront && !isSelected && isLightCard(card) ? { borderColor: '#9A7B4F' } : {}),
           boxShadow: isSelected
             ? '0 0 0 2.5px #C8A96E, 0 0 12px rgba(200,169,110,0.40)'
             : '0 2px 6px rgba(0,0,0,0.18)',
@@ -176,12 +185,12 @@ function WebCard({ card, isFlipped, isSelected, onPress, entryDelay, isShuffle }
           }}>
             <span style={{
               fontSize: 22,
-              color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.92)',
+              color: isLightCard(card) ? '#4A3728' : 'rgba(255,255,255,0.92)',
               lineHeight: 1.2,
             }}>{card.shapeSymbol}</span>
             <span style={{
               fontSize: 8,
-              color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.95)',
+              color: isLightCard(card) ? '#4A3728' : 'rgba(255,255,255,0.95)',
               fontWeight: '700', letterSpacing: 0.2,
             }}>{card.colorKor}</span>
           </div>
@@ -288,6 +297,7 @@ function NativeCard({
                 position: 'absolute',
                 backfaceVisibility: 'hidden',
                 backgroundColor: card.colorHex,
+                ...(isLightCard(card) ? { borderWidth: 1.5, borderColor: '#9A7B4F' } : {}),
                 transform: [{ rotateY: frontRotate }],
                 ...(isSelected ? {
                   borderWidth: 2.5,
@@ -302,10 +312,10 @@ function NativeCard({
             ]}
           >
             <Text style={[styles.shapeSymbol, {
-              color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.92)',
+              color: isLightCard(card) ? '#4A3728' : 'rgba(255,255,255,0.92)',
             }]}>{card.shapeSymbol}</Text>
             <Text style={[styles.cardFrontColorName, {
-              color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.95)',
+              color: isLightCard(card) ? '#4A3728' : 'rgba(255,255,255,0.95)',
             }]}>{card.colorKor}</Text>
           </Animated.View>
         </View>

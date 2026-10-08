@@ -4,7 +4,7 @@ import type { ColorData } from "../constants/colorData";
 type ColorInput = Pick<ColorData, "id" | "korName" | "keywords" | "recovery" | "relStyle">;
 type CardInput = Pick<
   CardData,
-  "colorKor" | "shapeKor" | "shape" | "energyTitle" | "psychologyFlow" | "personalityFlow" | "recoveryDirection"
+  "id" | "colorKor" | "shapeKor" | "shape" | "energyTitle" | "psychologyFlow" | "personalityFlow" | "recoveryDirection"
 >;
 
 const FALLBACK_COLOR: ColorInput = {
@@ -15,6 +15,7 @@ const FALLBACK_COLOR: ColorInput = {
 };
 
 const FALLBACK_CARD: CardInput = {
+  id: "unknown",
   colorKor: "선택한 카드",
   shapeKor: "도형",
   shape: "circle",
@@ -69,19 +70,87 @@ function colorLanguage(color: ColorInput) {
   };
 }
 
+function corePhrase(value: string) {
+  return value
+    .replace(/하는 일을$/, "하는 마음")
+    .replace(/하는 일의$/, "하는 마음")
+    .replace(/일을$/, "마음")
+    .replace(/일의$/, "마음")
+    .replace(/일$/, "마음");
+}
+
+function coreAction(value: string) {
+  return value.trim().replace(/\s*일$/, "");
+}
+
+function topicParticle(value: string) {
+  const last = value.charCodeAt(value.length - 1);
+  const hasFinalConsonant = last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+  return hasFinalConsonant ? "은" : "는";
+}
+
+function subjectParticle(value: string) {
+  const last = value.charCodeAt(value.length - 1);
+  const hasFinalConsonant = last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+  return hasFinalConsonant ? "이" : "가";
+}
+
 function completeSentence(value: string) {
   const sentence = value.trim().replace(/[.!?]+$/, "");
   return sentence ? `${sentence}.` : "";
 }
 
-function cardFlowSummary(value: string) {
-  return value
-    .trim()
-    .split(/(?<=[.!?])\s+/)[0]
-    ?.replace(/^현재 당신은\s*/, "")
-    .replace(/^지금 당신은\s*/, "")
-    .replace(/^당신은\s*/, "")
-    .replace(/[.!?]+$/, "") ?? "";
+const CARD_STAGE_SUMMARIES: Partial<Record<CardInput["id"], {
+  unconscious: string;
+  current: string;
+  recovery: string;
+}>> = {
+  white_pentagon: {
+    unconscious: "여러 새 시작을 하나의 방향으로 묶고 싶은 마음",
+    current: "흩어진 시작을 연결해 변화의 방향을 정리하는 일",
+    recovery: "새롭게 시작할 일들의 연결점을 찾아 하나의 방향으로 묶는 일",
+  },
+  yellow_circle: {
+    unconscious: "현실을 명료하게 이해하고 균형 있게 바라보려는 마음",
+    current: "상황을 정리해 균형 잡힌 판단을 하려는 흐름",
+    recovery: "이성적 판단과 감정 사이의 균형을 다시 살피는 일",
+  },
+  purple_triangle: {
+    unconscious: "삶의 의미와 내면의 성숙을 중요하게 여기는 마음",
+    current: "삶의 방향이 자신의 가치와 맞닿아 있는지 성찰하는 흐름",
+    recovery: "짧은 성찰과 실천으로 삶의 의미를 일상과 잇는 일",
+  },
+  purple_circle: {
+    unconscious: "깊은 공감과 직관을 신뢰하며 삶의 의미를 살피는 마음",
+    current: "직관적인 감각을 현실의 선택과 연결해보려는 흐름",
+    recovery: "직관을 기록하고 작은 행동으로 현실과 연결하는 일",
+  },
+  red_inverted_triangle: {
+    unconscious: "오랫동안 담아온 감정을 안전하게 표현하고 싶은 마음",
+    current: "쌓인 감정을 안전하게 꺼내며 내면을 재정렬하려는 흐름",
+    recovery: "감정을 글이나 대화, 몸에 맞는 움직임으로 안전하게 풀어내는 일",
+  },
+  white_hexagon: {
+    unconscious: "불필요한 것을 덜고 진심 어린 관계를 바라는 마음",
+    current: "주변 관계를 정리해 더 편안하고 진실한 연결을 만들려는 흐름",
+    recovery: "불필요한 긴장을 덜고 진실한 연결에 필요한 기준만 가볍게 정돈하는 일",
+  },
+};
+
+function cardStageSummary(card: CardInput, stage: "unconscious" | "current" | "recovery") {
+  const specific = CARD_STAGE_SUMMARIES[card.id]?.[stage];
+  if (specific) return specific;
+  if (stage === "unconscious") return `${card.energyTitle}${objectParticle(card.energyTitle)} 내면에서 중요하게 여기는 마음`;
+  if (stage === "current") return `${card.energyTitle}${objectParticle(card.energyTitle)} 바탕으로 현재 상황을 살피는 흐름`;
+  return `${card.energyTitle}${objectParticle(card.energyTitle)} 작은 실천으로 이어가는 일`;
+}
+
+function cardRecoveryPractice(card: CardInput, fallback: string) {
+  const practices: Partial<Record<CardInput["id"], string>> = {
+    purple_triangle: "그날 중요했던 한 가지를 글이나 대화로 남기고, 부담 없는 실천 하나로 이어가 보세요.",
+    white_hexagon: "덜어낼 기대와 지킬 약속을 나누어, 편안한 연결에 필요한 기준을 가볍게 정해보세요.",
+  };
+  return practices[card.id] ?? completeSentence(fallback);
 }
 
 function expressionHabit(value: string) {
@@ -120,11 +189,11 @@ export function buildRomanticCoupleColorCardIntegratedAnalysis(
   const secondaryLanguage = colorLanguage(secondary);
   const recoveryLanguage = colorLanguage(recovery);
 
-  const coreNeedParagraph = `당신은 ${primaryLanguage.core}과 ${secondaryLanguage.core}을 함께 소중히 여기는 편입니다. 무의식 카드인 ${cardLabel(unconscious)}에는 "${cardFlowSummary(unconscious.psychologyFlow)}"라는 마음의 바탕이 담겨 있습니다. 그래서 관계에서는 ${relationshipHabit(relationshipNeed)} 중요하게 여길 수 있습니다.`;
+  const coreNeedParagraph = `${coreAction(primaryLanguage.core)} 편이며, ${coreAction(secondaryLanguage.core)} 마음도 관계 안에 담는 편입니다. 1번 무의식 카드인 ${cardLabel(unconscious)}${subjectParticle(cardLabel(unconscious))} ${cardStageSummary(unconscious, "unconscious")}을 내면의 바탕으로 보여 줍니다. 그래서 ${relationshipHabit(relationshipNeed)} 소중히 여길 수 있습니다.`;
 
-  const innerOuterParagraph = `현재 흐름 카드인 ${cardLabel(current)}에는 "${cardFlowSummary(current.personalityFlow)}"라는 상태가 담겨 있습니다. 이 흐름이 ${secondaryLanguage.core}과 만날 때, ${expressionHabit(expressionNeed)} 익숙해져 정작 내면의 바람은 충분히 말하기 전까지 조용히 남아 있을 수 있습니다.`;
+  const innerOuterParagraph = `2번 현재 흐름 카드인 ${cardLabel(current)}에서는 ${cardStageSummary(current, "current")}이 드러납니다. 평소 ${expressionHabit(expressionNeed)} 이 흐름이 더해질 때에는 결론을 서두르기보다, 생각을 정리할 시간과 마음을 말할 순간을 구분해보는 것이 도움이 됩니다.`;
 
-  const directionParagraph = `회복 방향 카드인 ${cardLabel(future)}에는 "${cardFlowSummary(future.recoveryDirection)}"라는 회복의 실마리가 담겨 있습니다. ${completeSentence(recoveryLanguage.recovery)} ${recoveryLanguage.core}을 일상에서 다시 살피는 일이 자기 마음을 편안히 돌보는 데 도움이 될 수 있습니다.`;
+  const directionParagraph = `3번 회복 방향 카드인 ${cardLabel(future)}${subjectParticle(cardLabel(future))} ${cardStageSummary(future, "recovery")}을 안내합니다. 회복 컬러인 ${recovery.korName}${topicParticle(recovery.korName)} 이 실천을 자신의 일상에서 무리 없이 이어가도록 돕습니다. ${cardRecoveryPractice(future, recoveryLanguage.recovery)}`;
 
   return [coreNeedParagraph, innerOuterParagraph, directionParagraph].join("\n\n");
 }

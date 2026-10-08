@@ -4,7 +4,7 @@
  */
 
 import { COLOR_DATA, ColorData } from './colorData';
-import { CARD_DATA, ShapeType } from './cardData';
+import { CARD_DATA, ShapeType, type CardData } from './cardData';
 
 // ── 관계 유형 ────────────────────────────────────────────────────
 export type RelationType =
@@ -511,14 +511,12 @@ function buildPersonCoachingMessage(
   const faithNote =
     faith === '기독교'
       ? ' 기도와 말씀 안에서 그 흐름을 찾아가실 수 있습니다.'
-      : faith === '무교'
-      ? ' 조용한 산책이나 혼자만의 시간이 그 흐름을 도와줄 것입니다.'
       : '';
 
   const intro = buildCard1Intro(card1);
   const recoveryKeyword = RECOVERY_KEYWORD[card3.id] ?? `한 걸음씩 자신에게 돌아오는`;
 
-  return `${intro} ${recoveryKeyword} 시간이 지금 가장 필요합니다.${faithNote}`;
+  return `${intro} ${recoveryKeyword} 시간을 한 번 만들어보세요.${faithNote}`;
 }
 
 // ── 통합 관계 해석 ────────────────────────────────────────────────
@@ -835,7 +833,7 @@ function buildRelationFlow(
     // 레드·블루·블랙 조합 — 신뢰 욕구 + 기준 + 정리/질서
     'red-blue': `감정을 바로 표현하고 즉각 반응을 원하는 사람과 신중하게 생각한 후 말하는 사람이 만났습니다. 한 사람의 빠른 감정 표현이 다른 사람에게 충동적으로 느껴지고, 다른 사람의 침묵이 한 사람에게 무관심으로 읽힙니다. "지금 바로 말해줘"와 "나는 정리 중이야"가 반복되는 패턴입니다. 신뢰와 기준을 중요하게 여기는 사람과 즉각적인 연결을 원하는 사람이 서로의 속도를 인정하는 것이 핵심입니다.`,
     'red-black': `두 사람 모두 강한 에너지를 가지고 있습니다. 한 사람은 감정을 바로 표현하고 즉각 반응을 원하며, 다른 사람은 자기 기준과 방식을 고수하며 간섭을 불편해합니다. 주도권 충돌과 생활 기준 차이가 반복적인 긴장 포인트가 됩니다. "왜 이렇게 고집이 세?"와 "왜 이렇게 강요해?"가 교차합니다.`,
-    'blue-black': `신중하고 신뢰를 중요하게 여기는 사람과 경계와 자기 방식을 고수하는 사람이 만났습니다. 두 사람 모두 감정을 쉽게 드러내지 않아 서로의 마음을 읽기 어렵습니다. 집안 정리 기준이나 생활 루틴에 대한 기대가 다를 때 조용히 긴장이 쌓입니다. 먼저 한 마디 건네는 것이 두 사람 사이를 연결하는 가장 빠른 방법입니다.`,
+    'blue-black': `신중하고 신뢰를 중요하게 여기는 사람과 경계와 자기 방식을 고수하는 사람이 만났습니다. 두 사람 모두 감정을 쉽게 드러내지 않아 서로의 마음을 읽기 어렵습니다. 집안 정리 기준이나 생활 루틴에 대한 기대가 다를 때 조용히 긴장이 쌓입니다. 먼저 한 마디 건네는 것이 두 사람 사이를 다시 연결하는 데 도움이 될 수 있습니다.`,
     // 핑크·인디고·옐로우 조합 — 따뜻한 연결 + 인정 욕구 + 현실 안정 + 책임감
     'pink-indigo': `따뜻한 연결과 표현을 원하는 사람과 깊이 생각하며 신중하게 반응하는 사람이 만났습니다. 한 사람은 지금 당장 따뜻한 반응을 원하고, 다른 사람은 충분히 생각한 후에야 말합니다. "왜 반응이 없어?"와 "나는 생각 중이야"가 반복될 수 있습니다. 인정 욕구와 신중함이 균형을 이룰 때 두 사람의 관계는 가장 안정적입니다.`,
     'indigo-yellow': `깊이 생각하며 신중하게 반응하는 사람과 현실적이고 걱정이 많은 사람이 만났습니다. 두 사람 모두 현실 안정을 중요하게 여기지만, 한 사람은 내면 정리 후 표현하고 다른 사람은 현실 계획과 책임감으로 관계를 이어갑니다. 감정 표현이 줄어드는 패턴이 생길 수 있어, 가끔 마음을 나누는 시간이 필요합니다.`,
@@ -1225,7 +1223,7 @@ function buildIntimacyStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationTyp
     return `두 사람 모두 ${styleA} 방식으로 연결감을 느낍니다. 같은 언어로 연결되기 때문에 서로의 필요를 먼저 알아채는 편입니다. 다만 같은 방식이 오래 반복되면 새로운 연결 시도가 줄어들 수 있으니, 가끔 다른 방식으로 다가가는 것도 관계에 활기를 줍니다.`;
   }
 
-  return connectionSceneMap[key] ?? connectionSceneMap[reverseKey] ?? `한 사람은 ${styleA} 방식으로 연결감을 느끼고, 다른 사람은 ${styleB} 방식으로 연결감을 느낍니다. 상대방이 어떤 방식으로 마음이 열리는지 알고 그 방식으로 먼저 다가가는 것이, 두 사람 사이의 거리를 좁히는 가장 빠른 길입니다.`;
+  return connectionSceneMap[key] ?? connectionSceneMap[reverseKey] ?? `한 사람은 ${styleA} 방식으로 연결감을 느끼고, 다른 사람은 ${styleB} 방식으로 연결감을 느낍니다. 상대방이 어떤 방식에서 마음이 열리는지 확인한 뒤 그 방식으로 다가가면, 두 사람 사이의 거리를 좁히는 데 도움이 될 수 있습니다.`;
 }
 
 function getIntimacyStyleShort(family: EnergyFamily, isCouple: boolean = false): string {
@@ -1482,7 +1480,7 @@ function buildConnectionStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationT
       : `한 사람은 즉각적인 표현으로, 다른 사람은 자기 방식과 경계로 연결됩니다.\n서로의 방식을 인정하는 것이 관계를 더 편안하게 만들어줍니다.`,
     'blue-black': isCouple
       ? `두 사람 모두 감정을 쉽게 드러내지 않아 서로의 마음을 읽기 어렵습니다. 한 사람은 신뢰와 신중함으로, 다른 사람은 경계와 자신만의 방식으로 관계를 이어갑니다.\n집안 정리 기준이나 생활 루틴에 대한 기대가 다를 때 조용히 긴장이 쌓입니다. 먼저 한 마디 건네는 것이 두 사람 사이를 가장 빠르게 연결하는 방법입니다.`
-      : `두 사람 모두 표현이 적지만, 각자의 방식으로 관계를 소중히 여기고 있습니다.\n먼저 한 마디 건네는 것이 두 사람 사이를 연결하는 가장 빠른 방법입니다.`,
+      : `두 사람 모두 표현이 적지만, 각자의 방식으로 관계를 소중히 여기고 있습니다.\n먼저 한 마디 건네는 것이 두 사람 사이를 다시 연결하는 데 도움이 될 수 있습니다.`,
     // 핑크·인디고·옐로우 조합 — 인정 욕구 + 현실 안정 + 책임감 연결
     'pink-indigo': isCouple
       ? `한 사람은 따뜻한 말과 표현으로 연결감을 확인하고 싶어 합니다. 다른 사람은 충분히 생각한 후에야 말하며 신중하게 관계를 이어갑니다.\n인정 욕구와 신중함이 균형을 이룰 때 두 사람의 관계는 가장 안정적입니다. "지금 생각 중이야"라고 먼저 말해주는 것이 한 사람의 서운함을 줄여줍니다.`
@@ -1498,7 +1496,7 @@ function buildConnectionStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationT
       : `한 사람은 활기찬 표현으로, 다른 사람은 신중함으로 연결됩니다.\n서로의 속도를 이해하는 것이 관계를 더 편안하게 만들어줍니다.`,
     'lavender-indigo': isCouple
       ? `두 사람 모두 감정을 안으로 담아두는 편입니다. 한 사람은 섬세하게 분위기를 읽고, 다른 사람은 깊이 생각한 후 말합니다.\n서로 표현이 부족해 거리감이 쌓일 수 있지만, 각자의 방식으로 관계를 소중히 여기고 있습니다. 가끔 먼저 한 마디 건네는 것이 두 사람 사이를 따뜻하게 유지해줍니다.`
-      : `두 사람 모두 표현이 적지만, 각자의 방식으로 관계를 소중히 여기고 있습니다.\n먼저 한 마디 건네는 것이 두 사람 사이를 연결하는 가장 빠른 방법입니다.`,
+      : `두 사람 모두 표현이 적지만, 각자의 방식으로 관계를 소중히 여기고 있습니다.\n먼저 한 마디 건네는 것이 두 사람 사이를 다시 연결하는 데 도움이 될 수 있습니다.`,
   };
   const colorIdA_conn = colorsA?.[0]?.id ?? '';
   const colorIdB_conn = colorsB?.[0]?.id ?? '';
@@ -1512,7 +1510,7 @@ function buildConnectionStyle(fA: EnergyFamily, fB: EnergyFamily, rel: RelationT
     return `두 사람 모두 ${styleA} 방식으로 연결감을 느낍니다.\n같은 언어로 연결되기 때문에 서로의 필요를 먼저 알아채는 편입니다.\n다만 같은 방식이 익숙해지면 표현이 줄어들 수 있으니, 가끔 새로운 방식으로 마음을 전해보는 것도 좋습니다.`;
   }
 
-  return map[key] ?? map[reverseKey] ?? `한 사람은 ${styleA} 방식으로 연결감을 느끼고, 다른 사람은 ${styleB} 방식으로 연결감을 느낍니다.\n한 사람은 ${affStyleA} 마음을 전하고, 다른 사람은 ${affStyleB} 표현합니다.\n상대방이 마음이 열리는 방식을 먼저 알고 그 방식으로 다가가는 것이, 두 사람 사이의 거리를 좁히는 가장 빠른 길입니다.`;
+  return map[key] ?? map[reverseKey] ?? `한 사람은 ${styleA} 방식으로 연결감을 느끼고, 다른 사람은 ${styleB} 방식으로 연결감을 느낍니다.\n한 사람은 ${affStyleA} 마음을 전하고, 다른 사람은 ${affStyleB} 표현합니다.\n상대방이 마음이 열리는 방식을 확인한 뒤 그 방식으로 다가가면, 두 사람 사이의 거리를 좁히는 데 도움이 될 수 있습니다.`;
 }
 
 function buildNeededExpression(
@@ -2711,7 +2709,7 @@ function buildProfileContrast(
           ? '한 사람은 바로 말하고 싶고, 다른 사람은 천천히 정리하는 편입니다. 이 리듬 차이를 이해하면 우정이 더 편안해집니다.'
           : '한 사람은 빠르게 표현하고, 다른 사람은 천천히 정리합니다. 이 속도 차이를 이해하면 관계가 훨씬 자연스러워집니다.',
       '한 사람이 바로 말하고 싶을 때, 다른 사람은 아직 정리 중입니다.',
-      '"지금 말할 수 있어?"라고 먼저 묻는 것이 이 패턴을 넘는 가장 빠른 방법입니다.'
+      '"지금 말할 수 있어?"라고 먼저 묻는 것이 이 패턴을 조율하는 데 도움이 될 수 있습니다.'
     ),
     'cool_deep-warm_active': buildContrastEntry(
       '내면 정리', '표현',
@@ -2749,7 +2747,7 @@ function buildProfileContrast(
         ? '한 사람은 빠르게 움직이고 표현하고, 다른 사람은 자신의 리듬대로 처리합니다. 협업 속도 차이가 생길 수 있습니다.'
         : '한 사람은 빠르게 표현하고, 다른 사람은 자신의 리듬을 지킵니다. 속도 차이를 인정하면 관계가 편안해집니다.',
       '한 사람의 빠른 에너지가 다른 사람에게 부담으로 느껴지는 순간이 있습니다.',
-      '"네 페이스로 해"라고 먼저 말해주는 것이 이 패턴을 넘는 가장 빠른 방법입니다.'
+      '"네 페이스로 해"라고 먼저 말해주는 것이 이 패턴을 조율하는 데 도움이 될 수 있습니다.'
     ),
     'nature-warm_active': buildContrastEntry(
       '자신의 리듬', '표현',
@@ -3089,7 +3087,7 @@ function buildDynamicProfileContrast(
   const hard = DYNAMIC_HARD_MAP[key] ?? DYNAMIC_HARD_MAP[revKey]
     ?? `서로의 에너지 방식이 다르게 읽히는 순간이 반복될 수 있습니다.`;
   const pattern = DYNAMIC_PATTERN_MAP[key] ?? DYNAMIC_PATTERN_MAP[revKey]
-    ?? `서로의 의도를 먼저 확인하는 것이 오해를 줄이는 가장 빠른 방법입니다.`;
+    ?? `서로의 의도를 먼저 확인하는 것이 오해를 줄이는 데 도움이 될 수 있습니다.`;
 
   // 1순위 컬러 + 2순위 컬러 기질 문장 조합
   const descA = name2A && trait2A
@@ -3942,9 +3940,9 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
           },
         },
         intimacyConnection: {
-      marriageNote: '긴장과 자극이 많은 관계에서 몸의 연결은 "우리는 여전히 한 팀"이라는 신호입니다. 갈등 후 먼저 안아주는 것이 이 관계에서 가장 강한 화해의 언어입니다.',
-      loverNote: '부딪힌 후 가장 먼저 해야 할 것은 가까이 앉는 것입니다. 말보다 먼저 거리를 좁히면 대화가 훨씬 쉬워집니다.',
-      actions: ['갈등 후 먼저 안아주기', '새로운 도전 후 함께 자축하기', '긴장이 풀린 순간 손잡기', '"우리 잘 했어" 말하며 토닥이기'],
+      marriageNote: '긴장과 자극이 많은 관계에서 몸의 연결은 "우리는 여전히 한 팀"이라는 신호가 될 수 있습니다. 서로 원하고 편안할 때 손을 잡거나 포옹하며 다시 대화를 시작해보세요.',
+      loverNote: '부딪힌 뒤 말이 어렵다면, 서로 편안한 거리에서 가까이 앉아 다시 이야기할 시간을 정해보세요. 짧은 안부나 손을 내미는 행동이 대화의 문을 열 수 있습니다.',
+      actions: ['서로 원할 때 짧게 안아주기', '새로운 도전 후 함께 자축하기', '긴장이 풀린 순간 손잡기', '"우리 잘 했어" 말하며 토닥이기'],
     },
     togetherRoutine: {
       routines: [
@@ -4212,9 +4210,9 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
           },
         },
         intimacyConnection: {
-      marriageNote: '부딪히고 나서 먼저 안아주는 것 — 그것이 이 관계에서 가장 용기 있는 행동입니다. 감정의 파도가 지나간 후 말 없이 손을 내미는 것이 "우리는 여전히 괜찮아"를 전합니다. 성장을 원하는 두 사람에게, 스킨십은 갈등 후 다시 연결되는 가장 빠른 언어입니다.',
-      loverNote: '부딪힌 후 말이 어렵다면 먼저 가까이 앉는 것부터 시작해보세요. 몸이 가까워지면 마음도 따라옵니다. 감정이 복잡할 때일수록 손 한 번 잡는 것이 긴 설명보다 더 많은 것을 전달합니다.',
-      actions: ['파도가 지나간 후 조용히 손잡기', '감정이 잔잔할 때 어깨 기대기', '"지금 이 순간이 좋아" 말하며 안아주기', '함께 음악 들으며 가까이 앉기'],
+      marriageNote: '감정이 가라앉은 뒤 서로 원하고 편안하다면, 손을 내밀거나 가까이 앉아 "우리는 다시 이야기할 수 있어"라는 신호를 나눌 수 있습니다. 스킨십은 갈등 뒤 다시 연결하는 여러 방법 중 하나입니다.',
+      loverNote: '부딪힌 뒤 말이 어렵다면, 각자 숨을 고른 뒤 서로 편안한 거리에서 가까이 앉아보세요. 짧은 안부나 손을 잡는 선택이 다시 이야기할 여유를 만들 수 있습니다.',
+      actions: ['마음이 가라앉은 뒤 서로 원할 때 손잡기', '감정이 잔잔할 때 어깨 기대기', '"지금 이 순간이 좋아" 말하며 안아주기', '함께 음악 들으며 가까이 앉기'],
     },
     togetherRoutine: {
       routines: [
@@ -4472,7 +4470,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
             headline: '이 관계가 가까워지는 순간',
             description: '챙겨주는 사람이 "나도 오늘 힘들었어"라고 말할 때, 챙김 받는 사람이 "내가 챙겨줄게"라고 역할을 바꿀 때. 역할을 교환하는 순간 이 관계는 더 깊어집니다.',
             actions: ['역할 교환하기 (오늘은 내가 챙길게)', '"오늘 힘들었어" 솔직하게 말하기', '챙겨준 것에 감사 표현하기', '함께 쉬는 시간 만들기', '"당신도 쉬어야 해" 말해주기'],
-            skinshipNote: '이 관계에서 스킨십은 "나도 여기 있어"의 표현입니다. 챙기는 사람이 기댈 수 있도록 먼저 안아주는 것이 이 관계를 균형 있게 만듭니다.',
+            skinshipNote: '스킨십은 서로 원하고 편안할 때 선택할 수 있는 연결 방식입니다. 챙기는 사람이 기댈 수 있도록 손을 잡거나 포옹을 제안할 수 있습니다.',
           },
           growthPoint: {
             strength: '챙기고 보호하는 힘이 이 관계의 안정감을 만듭니다. 서로의 역할이 명확할 때 이 관계는 강합니다.',
@@ -4482,7 +4480,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
           },
         },
         intimacyConnection: {
-      marriageNote: '항상 챙기는 사람도 가끔은 기대고 싶습니다. 보호받는 사람이 먼저 안아주는 것 — "나도 당신 곁에 있어"를 전하는 그 행동이 이 관계의 가장 깊은 연결입니다. 역할을 내려놓고 그냥 두 사람으로 있는 시간을 의식적으로 만드세요.',
+      marriageNote: '항상 챙기는 사람도 가끔은 기대고 싶을 수 있습니다. 서로 원하고 편안하다면 손을 잡거나 포옹으로 "나도 당신 곁에 있어"를 전할 수 있습니다. 역할을 내려놓고 두 사람으로 머무는 시간을 만들어보세요.',
       loverNote: '챙겨주는 사람에게 먼저 다가가 보세요. "오늘 수고했어"라고 말하며 안아주는 것, 그 작은 역할 전환이 이 관계를 더 따뜻하고 균형 있게 만듭니다. 보호받는 사람이 먼저 손잡는 순간, 두 사람의 연결이 더 깊어집니다.',
       actions: ['보호받는 사람이 먼저 안아주기', '보호하는 사람이 기댈 수 있도록 공간 만들기', '역할 바꿔서 손잡기', '"오늘은 내가 챙길게" 말하기'],
     },
@@ -4617,7 +4615,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
           },
         },
         intimacyConnection: {
-      marriageNote: '익숙함이 설렘을 덮지 않도록, 의식적으로 먼저 다가가세요. 먼저 안아주고, 먼저 손잡고, 먼저 눈을 맞추는 것 — 그 작은 행동들이 "우리는 여전히 연인이야"를 확인하는 시간입니다. 오늘 저녁, 특별한 이유 없이 먼저 포옹해보세요.',
+      marriageNote: '익숙함 속에서도 서로 원하고 편안할 때 먼저 다가가 보세요. 손을 잡거나 눈을 맞추고, 원한다면 포옹으로 마음을 전하는 시간은 두 사람의 연결을 확인하는 방식이 될 수 있습니다.',
       loverNote: '먼저 연락하고, 먼저 다가가고, 먼저 눈을 맞추세요. 설렘은 기다리는 것이 아니라 만드는 것입니다. 가까이 앉아 어깨를 기대거나, 걸을 때 자연스럽게 손잡는 것 — 그 작은 행동이 이 관계의 설렘을 살아있게 합니다.',
       actions: ['먼저 연락하기', '특별한 날 챙기기', '분위기 있는 곳 함께 가기', '"오늘 너랑 있어서 좋아" 말하기'],
     },
@@ -4752,9 +4750,9 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
           },
         },
         intimacyConnection: {
-      marriageNote: '감정이 폭발한 후 먼저 안아주는 것 — 그것이 이 관계에서 가장 강한 회복의 신호입니다. 말이 필요 없습니다. 그냥 가까이 있어주는 것, 손을 잡아주는 것만으로도 "나는 당신 편이야"가 전해집니다. 감정이 잔잔해진 순간을 놓치지 마세요.',
+      marriageNote: '감정이 가라앉은 뒤 서로 원하고 편안하다면, 가까이 앉거나 손을 잡고 "나는 당신 편이야"라고 전할 수 있습니다. 말이나 스킨십 중 두 사람이 편한 방식을 선택해보세요.',
       loverNote: '감정이 올라올 때 판단하지 말고 가까이 앉아보세요. "그 감정 이해해"라고 말하며 손을 잡는 것, 어깨를 기대게 해주는 것 — 감정을 함께 느끼는 그 순간이 이 관계에서 가장 깊은 연결입니다.',
-      actions: ['감정이 클 때 옆에 있어주기', '"그 감정 이해해" 말하며 손잡기', '감정 폭발 후 먼저 안아주기', '감정이 가라앉을 때 가까이 앉기'],
+      actions: ['감정이 가라앉은 뒤 다시 이야기할 시점 정하기', '"그 감정 이해해"라고 말하기', '서로 원하고 편안할 때 포옹하기', '감정이 가라앉을 때 가까이 앉기'],
     },
     togetherRoutine: {
       routines: [
@@ -4908,19 +4906,19 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     accentColor: '#C47E8A',
     typeName: '회복형 관계',
     typeEmoji: '🌱',
-    coreSummary: '멀어졌다 다시 연결됩니다.',
-    tensionDescription: '이 관계에는 갈등이 있을 수 있습니다. 싸우고 나면 지칩니다. 멀어진 것 같아 불안해집니다. 그런데 시간이 지나면 다시 서로가 생각납니다. 연락하고 싶어집니다. 결국 다시 연결됩니다. "또 이 패턴이야"라는 피로감이 쌓이기도 하지만, 상처보다 다시 연결되는 힘이 더 큰 관계입니다.',
+    coreSummary: '갈등 뒤 다시 연결을 시도할 수 있습니다.',
+    tensionDescription: '이 관계에는 갈등 뒤 서로 다른 속도로 마음을 정리하는 순간이 있을 수 있습니다. "또 이 패턴이야"라는 피로감이 쌓인다면, 다시 연결하기 전에 무엇이 힘들었는지 함께 살피는 대화가 필요합니다.',
     misunderstandingPattern: '갈등 후 한 사람은 빨리 화해하고 싶습니다. 다른 사람은 아직 정리가 안 됐습니다. "왜 아직도 그래?"와 "왜 이미 끝난 것처럼 행동해?"가 교차합니다. 갈등이 많은 것이 관계가 나쁜 것이 아닙니다. 싸우고 나서 어떻게 돌아오느냐가 이 관계의 핵심입니다.',
-    connectionStyle: '싸우고도 결국 다시 연락하게 되는 관계입니다. 갈등 후 안아주는 순간 긴장이 풀립니다. 그 안도감이 이 관계의 가장 깊은 연결입니다. 상처를 함께 아문 사람들만이 아는 감정입니다.',
-    recoveryRoutine: '갈등 직후 바로 화해하려 하지 마세요. 충분히 식힌 후 다시 만나세요. 그리고 "그때 힘들었지? 나도 미안했어"로 시작하세요. 빠른 화해보다 진심 어린 회복이 이 관계를 더 단단하게 만듭니다.',
+    connectionStyle: '갈등 뒤 다시 연락하거나 대화를 시도하고 싶은 마음이 생길 수 있습니다. 감정이 가라앉은 뒤 서로의 필요를 확인하고 편안한 방식으로 다시 이야기할 때, 연결을 회복하는 데 도움이 될 수 있습니다.',
+    recoveryRoutine: '갈등 직후 바로 결론을 내리기보다, 각자 마음을 가라앉힌 뒤 다시 이야기할 시점을 정해보세요. "그때 어떤 마음이었어?"로 시작해 서로의 필요를 확인하면 회복의 방향을 함께 찾는 데 도움이 될 수 있습니다.',
     neededWords: '"우리 또 해냈어. 이번에도 우리가 이겼어."',
-    recommendedActivity: '갈등 후 함께 즐거운 시간 만들기. 맛있는 것 먹기, 좋아하는 장소 방문, 함께 웃을 수 있는 것. 회복 후의 연결이 이 관계를 더 단단하게 만듭니다.',
+    recommendedActivity: '갈등 뒤 서로의 마음이 편안해졌을 때 함께 즐거운 시간을 만들어보기. 맛있는 것을 먹거나 좋아하는 장소를 방문하며, 다시 이야기할 여유를 만드는 방식입니다.',
     emotionRecoveryStyle: '갈등 후 빠른 화해보다 충분한 감정 처리 시간이 필요합니다. "나 아직 정리가 안 됐어, 조금만 기다려줘"라고 말하는 것이 이 관계의 가장 정직한 회복 방식입니다.',
     conversationRoutine: '갈등 후 다시 만날 때 "그때 어떤 마음이었어?"라고 먼저 묻기. 사건보다 감정을 먼저 나누는 대화가 진짜 회복을 만듭니다.',
-    connectionRoutine: '"우리 또 회복했어"라고 함께 인정하는 순간이 이 관계의 가장 깊은 정서 연결입니다. 갈등을 함께 넘어온 것 자체가 신뢰의 증거입니다.',
-    affectionRoutine: '갈등 후 회복했을 때 먼저 안아주기. "우리 또 해냈어"라고 말하며 포옹하기. 화해 후의 안도감을 함께 느끼는 것이 이 관계에서 가장 따뜻한 애정 표현입니다.',
+    connectionRoutine: '갈등 뒤 다시 이야기할 수 있게 되었을 때, "다시 말해줘서 고마워"처럼 서로의 시도를 확인해보세요. 그 과정에서 두 사람에게 맞는 연결 방식을 찾아갈 수 있습니다.',
+    affectionRoutine: '갈등 뒤 서로 마음이 풀렸을 때, 원하고 편안하다면 포옹하거나 "다시 이야기해줘서 고마워"라고 말해보세요. 친밀감은 두 사람이 편안한 방식으로 선택할 수 있습니다.',
     emotionRoutine: '갈등 후 빠른 화해보다 충분한 감정 처리 시간 갖기. "나 아직 정리가 안 됐어, 조금만 기다려줘"라고 말하는 것이 이 관계의 감정 회복 방식입니다.',
-    closingMessage: '갈등 후 안아주는 순간, 울컥하는 감정이 올라올 수 있습니다. 그 감정이 이 관계의 진심입니다. 싸우고도 결국 다시 연결되는 관계. 상처보다 회복이 더 큰 관계. 두 사람은 이미 그 방법을 알고 있습니다.',
+    closingMessage: '갈등 뒤 울컥하는 감정이 올라올 수 있습니다. 그 감정을 서두르지 않고 함께 살피며 서로의 필요를 존중해 대화할 때, 두 사람에게 맞는 회복의 방식을 찾아갈 수 있습니다.',
     temperatureGraph: { emotionGap: 55, expressionIntensity: 65, recoverySpeed: 85 },
     expressionSpeed: { personA: '갈등 후 정리', personB: '갈등 후 표현', description: '갈등이 생기면 한 사람은 혼자 정리하고, 다른 사람은 표현하면서 회복합니다. 회복 방식의 차이가 있지만, 두 사람 모두 회복을 원합니다.' },
     recoveryStyle: { icon: 'talk' as const, label: '진심 대화 회복형', description: '충분한 시간이 지난 후 진심 어린 대화로 회복됩니다. 빠른 화해보다 진짜 회복을 선택합니다.' },
@@ -4935,7 +4933,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
     },
     dangerPattern: '회복이 반복되면서 지치는 패턴.\n갈등이 옵니다. 회복됩니다. 또 갈등이 옵니다.\n"또 이 패턴이야." 그 피로감이 쌓입니다.\n빠른 화해를 반복하면서 근본 원인을 다루지 않으면 같은 갈등이 반복될 수 있습니다.\n"우리 왜 항상 이 문제로 싸우지?" — 회복의 깊이를 더해야 합니다.',
     forbiddenWords: ['"또 이 얘기야?"', '"이미 사과했잖아"', '"왜 아직도 그래?"', '"그냥 넘어가면 되잖아"'],
-    relationStrength: '싸우고도 결국 다시 연결되는 힘. 시간이 지나면 다시 서로가 생각나는 관계. 갈등 후 안아주는 순간 긴장이 풀리는 경험. 이 관계의 강점은 회복 그 자체입니다.',
+    relationStrength: '갈등 뒤에도 다시 대화를 시도할 수 있는 여지가 있다는 점입니다. 서로의 필요를 확인하고 원인을 함께 살필 때, 관계를 회복하는 힘으로 이어질 수 있습니다.',
     recommendedColors: [
       { id: 'coral', korName: '코랄', hex: '#E8826A', reason: '갈등 후 재연결과 따뜻한 회복을 도와주는 감정 치유 컬러입니다.' },
       { id: 'ivory', korName: '아이보리', hex: '#F5EDD6', reason: '화해와 새로운 시작을 부드럽게 감싸주는 순수한 컬러입니다.' },
@@ -4948,11 +4946,11 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
       connectionStyle: '갈등 후 안아주는 순간 긴장이 풀립니다. 그 안도감이 이 관계의 가장 깊은 연결입니다. 먼저 손을 내미는 것, 먼저 연락하는 것, 먼저 옆에 앉는 것. 그 작은 용기가 이 관계를 다시 연결합니다. "우리 또 해냈어"라고 함께 인정하는 순간이 이 관계의 가장 따뜻한 순간입니다.',
     },
         conflictReactionPattern: '갈등이 생기면 처음에는 거리가 생깁니다. 한 사람은 말이 없어지고, 다른 사람은 기다립니다. 시간이 지나면 한 사람이 먼저 연락합니다. ’밥 먹었어?’ 또는 ’오늘 어땠어?’라는 말로 시작됩니다. 갈등이 직접 해결되지 않아도 다시 연결됩니다. 이 관계에서 갈등 직후 가장 필요한 것은 먼저 손을 내미는 용기입니다. 누가 먼저든 상관없습니다.',
-        loveConnectionStyle: '이 관계에서 사랑은 회복입니다. 싸워도 결국 다시 연락하게 되는 것, 시간이 지나면 다시 서로가 생각나는 것. 사랑을 느끼는 순간은 갈등 후 상대가 먼저 손을 내밀 때입니다. 이 관계의 가장 강한 연결은 ’우리 또 해냈어’라는 말을 나눌 때 완성됩니다.',
+        loveConnectionStyle: '이 관계에서는 갈등 뒤 다시 대화를 시도하고 싶은 마음이 생길 수 있습니다. 사랑을 느끼는 순간은 서로의 필요를 확인한 뒤 다시 손을 내밀 때일 수 있습니다. 그 과정에서 두 사람에게 맞는 연결 방식을 찾아갈 수 있습니다.',
         growthCoaching: {
           strengths: {
             keywords: ['회복력', '재연결', '깊어지는 관계', '갈등 후 성장'],
-            description: '갈등 후 다시 연결되며 더 깊어지는 힘이 있습니다. 싸워도 결국 다시 찾게 되는 이 관계의 회복력이 가장 큰 강점입니다.',
+            description: '갈등 뒤에도 서로의 마음을 다시 살피고 대화를 시도할 수 있다는 점이 관계의 강점이 될 수 있습니다.',
           },
           loveStyle: {
             keywords: ['재연결', '회복', '깊은 유대', '갈등 후 가까워짐'],
@@ -4972,8 +4970,8 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
 
         unifiedSections: {
           coreEnergy: {
-            headline: '갈등 후 더 깊어지는 관계',
-            description: '싸워도 결국 다시 연락하게 되는 관계입니다. 갈등이 관계를 끊는 것이 아니라 더 깊게 만드는 힘이 있습니다. 회복하는 과정 자체가 이 관계의 언어입니다.',
+            headline: '갈등 뒤 다시 이해를 시도하는 관계',
+            description: '갈등 뒤 두 사람의 마음을 정리하는 속도가 다를 수 있습니다. 서로의 필요를 확인하고 편안한 때에 대화할 수 있다면, 관계를 다시 이해하는 계기가 될 수 있습니다.',
             keywords: ['회복', '재연결', '갈등 후 성장', '끈기', '깊이'],
           },
           lifePattern: {
@@ -5017,21 +5015,21 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
           },
           connectionFlow: {
             headline: '이 관계가 가까워지는 순간',
-            description: '갈등 후 다시 손을 내밀 때, "그래도 네가 있어서 다행이야"라는 말을 들을 때. 회복하는 과정 자체가 이 관계를 더 깊게 만듭니다.',
+            description: '갈등 뒤 다시 손을 내밀거나, "그래도 네가 있어서 다행이야"라고 마음을 전할 때입니다. 서로의 필요를 확인하며 대화할 수 있다면 연결을 회복하는 데 도움이 될 수 있습니다.',
             actions: ['먼저 손 내밀기', '"그래도 네가 있어서 다행이야" 말하기', '갈등 후 함께 밥 먹기', '회복 속도 차이 인정하기', '"나 아직 정리 중이야" 솔직하게 말하기'],
-            skinshipNote: '이 관계에서 스킨십은 "우리 괜찮아"의 확인입니다. 갈등 후 먼저 안아주는 것이 이 관계를 회복시키는 가장 빠른 방법입니다.',
+            skinshipNote: '스킨십은 서로 원하고 편안할 때 선택할 수 있는 연결 방식입니다. 갈등 뒤 손을 잡거나 포옹하며 다시 이야기해도 좋다는 신호를 나눌 수 있습니다.',
           },
           growthPoint: {
-            strength: '갈등 후 회복하는 힘이 이 관계의 가장 큰 강점입니다. 싸워도 결국 다시 연결되는 끈기가 있습니다.',
+            strength: '갈등 뒤에도 서로의 마음을 다시 살피려는 시도가 관계의 강점이 될 수 있습니다.',
             blindSpot: '회복에 집중하다 갈등의 원인을 해결하지 않으면 같은 경향이 나타날 수 있습니다. 회복과 함께 원인도 함께 이야기해야 합니다.',
             growthDirection: '회복하는 것만큼 "왜 이런 갈등이 반복되는지"를 함께 이야기하는 연습이 필요합니다. 회복 후 짧게 "다음에는 이렇게 해보자"를 나눠보세요.',
             tip: '갈등 후 회복됐을 때 "다음에는 이렇게 해보자" 한마디 — 이것이 이 관계를 성장시킵니다.',
           },
         },
         intimacyConnection: {
-      marriageNote: '회복하는 두 사람에게 화해의 포옹은 말보다 먼저 마음을 열어줍니다. 갈등이 지나간 후 먼저 손을 내미는 것, 그것이 이 관계에서 가장 용기 있는 행동입니다. "아직 화가 남아있어도, 나는 당신 곁에 있어"를 몸으로 전하는 그 순간이 회복의 시작입니다.',
-      loverNote: '회복하는 과정에서 말이 어렵다면 먼저 가까이 앉는 것부터 시작하세요. 어깨가 닿는 것만으로도 "우리 괜찮아"가 전해집니다. 거리가 좁혀지면 말도 자연스럽게 따라옵니다.',
-      actions: ['갈등 후 먼저 옆에 앉기', '말 없이 손을 내밀기', '화해 후 짧게 안아주기', '"우리 잘 했어" 말하며 토닥이기'],
+      marriageNote: '갈등이 지난 뒤 서로 편안하다면, 손을 내밀거나 가까이 앉아 "아직 화가 남아 있어도, 다시 이야기하고 싶어"라는 신호를 나눌 수 있습니다. 몸의 연결은 대화와 함께 선택할 수 있는 회복의 한 방식입니다.',
+      loverNote: '회복하는 과정에서 말이 어렵다면, 서로 원할 때 가까이 앉아 짧은 안부부터 나눠보세요. 어깨가 닿거나 손을 잡는 선택이 다시 이야기할 여유를 만들 수 있습니다.',
+      actions: ['갈등 뒤 서로 편안할 때 옆에 앉기', '말 없이 손을 내밀기', '화해 후 원할 때 짧게 안아주기', '"우리 잘 했어" 말하며 토닥이기'],
     },
     togetherRoutine: {
       routines: [
@@ -5153,31 +5151,91 @@ const SUPPLEMENT_CONFLICT: Record<string, string> = {
   sage:    '다만 지금은 세이지 카드 영향으로 차분하고 지혜롭게 갈등을 바라보는 마음이 강해지는 시기입니다. 서두르지 않고 천천히 대화하는 것이 이 시기에 가장 좋습니다.',
 };
 
-// 섹션별 현재 카드 보충 문장 생성 함수 (파일 레벨 - getRelationArchetype 및 buildDefaultLifestyleSections 공유)
+// 생활 장면에는 2번 카드의 현재 상태와 3번 카드의 회복 방향을 구분해 반영한다.
+// 카드 색상 계열만으로 소비·활동 욕구를 추정하지 않고, 실제 선택한 카드 원문을 짧게 연결한다.
 type LifestyleSectionType = 'cleaning' | 'finance' | 'rest' | 'conflict';
-function getCurrentCardSupplement(cardId?: string, section: LifestyleSectionType = 'finance'): string {
-  const currentCard = cardId ? CARD_DATA.find((card) => card.id === cardId) : undefined;
-  const cardColorMap: Record<string, string> = { purple: 'violet', gray: 'neutral', grey: 'neutral' };
-  const cardColor = currentCard
-    ? (cardColorMap[currentCard.color] ?? currentCard.color)
-    : null;
-  if (!cardColor || !currentCard) return '';
-  const map = section === 'cleaning' ? SUPPLEMENT_CLEANING
-    : section === 'finance' ? SUPPLEMENT_FINANCE
-    : section === 'rest' ? SUPPLEMENT_REST
-    : SUPPLEMENT_CONFLICT;
-  const text = map[cardColor] ?? '';
-  const detail = text.replace(/^다만 지금은\s+[^\s]+\s+카드 영향으로\s*/, '');
-  const currentMeaning = currentCard.personalityFlow
-    .split(/(?<=[.!?])\s+/)[0]
-    ?.trim()
-    .replace(/^현재 당신은\s*/, '')
-    .replace(/^지금 당신은\s*/, '')
-    .replace(/^지금\s*/, '')
-    .replace(/^당신은\s*/, '');
-  return detail && currentMeaning
-    ? ` 현재 흐름의 ${currentCard.colorKor} ${currentCard.shapeKor} 카드 "${currentCard.energyTitle}"에는 "${currentMeaning}"라는 상태가 담겨 있습니다. 이때 ${detail}`
-    : '';
+function lifestyleObjectParticle(value: string) {
+  const last = value.charCodeAt(value.length - 1);
+  const hasFinalConsonant = last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+  return hasFinalConsonant ? '을' : '를';
+}
+function lifestyleCardCue(card: CardData | undefined, stage: 'current' | 'recovery') {
+  if (!card) return '';
+  const cues: Partial<Record<string, { current: string; recovery: string }>> = {
+    yellow_circle: {
+      current: '상황을 정리해 균형 잡힌 판단을 하려는 흐름',
+      recovery: '생각과 감정 사이의 균형을 다시 살피는 방향',
+    },
+    red_inverted_triangle: {
+      current: '쌓인 감정을 안전하게 꺼내며 내면을 재정렬하려는 흐름',
+      recovery: '글이나 대화, 몸에 맞는 움직임으로 감정을 안전하게 풀어내는 방향',
+    },
+    purple_triangle: {
+      current: '삶의 방향과 의미를 조용히 성찰하려는 흐름',
+      recovery: '작은 성찰과 실천으로 삶의 의미를 일상과 잇는 방향',
+    },
+    white_hexagon: {
+      current: '관계를 정리해 더 편안하고 진실한 연결을 만들려는 흐름',
+      recovery: '불필요한 긴장을 덜고 진실한 연결의 기준을 가볍게 정돈하는 방향',
+    },
+  };
+  const specific = cues[card.id]?.[stage];
+  if (specific) return specific;
+  return stage === 'current'
+    ? `${card.energyTitle}${lifestyleObjectParticle(card.energyTitle)} 바탕으로 현재 상황을 살피려는 흐름`
+    : `${card.energyTitle}${lifestyleObjectParticle(card.energyTitle)} 작은 실천으로 이어가는 방향`;
+}
+function getCardFlowSupplement(
+  currentCardId?: string,
+  recoveryCardId?: string,
+  section: LifestyleSectionType = 'finance',
+): string {
+  const currentCard = currentCardId ? CARD_DATA.find((card) => card.id === currentCardId) : undefined;
+  const recoveryCard = recoveryCardId ? CARD_DATA.find((card) => card.id === recoveryCardId) : undefined;
+  const currentMeaning = lifestyleCardCue(currentCard, 'current');
+  const recoveryMeaning = lifestyleCardCue(recoveryCard, 'recovery');
+  if (!currentMeaning && !recoveryMeaning) return '';
+
+  // 2번은 재정·생활 판단의 현재 변화에, 3번은 회복 리듬에 한 번만 연결한다.
+  // 같은 카드 제목이나 원문을 여러 항목에 반복하지 않는다.
+  if (section === 'cleaning') return '';
+  if (section === 'finance') {
+    return currentMeaning
+      ? ` 현재에는 ${currentMeaning}이 더해질 수 있습니다. 지출은 필요한 기준과 마음의 바람을 나누어 살펴보세요.`
+      : '';
+  }
+  if (section === 'rest') {
+    return recoveryMeaning
+      ? ` 회복에는 ${recoveryMeaning}이 도움이 될 수 있습니다. 부담 없는 한 가지 실천으로 이어가 보세요.`
+      : '';
+  }
+  return '';
+}
+
+function cardFocusedLifestyleStatement(
+  section: 'cleaning' | 'finance' | 'rest',
+  currentCardId?: string,
+  recoveryCardId?: string,
+  fallback = '',
+) {
+  const actual: Partial<Record<string, Partial<Record<'cleaning' | 'finance' | 'rest', string>>>> = {
+    yellow_circle: {
+      cleaning: '필요한 일을 차분히 정리하고 기준을 맞출 때 편안함을 느낄 수 있습니다. 한 번에 바꾸기보다 이번 주에 함께 정할 한 가지를 먼저 골라보세요.',
+      finance: '필요와 예산을 비교해 균형 있게 판단하려는 편입니다. 지출 전에는 꼭 필요한 것과 함께 누리고 싶은 것을 나누어 적어보세요.',
+    },
+    red_inverted_triangle: {
+      cleaning: '생활 리듬에서 쌓인 불편을 안전하게 말로 꺼내며 다시 정리하고 싶어질 수 있습니다. 불만을 모으기보다 부담 없는 한 가지부터 요청해보세요.',
+      finance: '감정이 올라오는 시기에는 소비를 정하기 전 마음을 한 번 가라앉히고 싶어질 수 있습니다. 필요한 기준을 먼저 맞춘 뒤 선택해보세요.',
+    },
+    purple_triangle: {
+      rest: '조용히 마음을 돌아보고, 그날 중요했던 한 가지를 글이나 대화로 남길 때 회복의 방향이 또렷해질 수 있습니다. 둘 다 편안하다면 그 한 문장을 서로 나눠보세요.',
+    },
+    white_hexagon: {
+      rest: '불필요하게 긴장되는 약속이나 기대를 덜고, 편안한 연결에 필요한 기준만 가볍게 정리할 때 회복에 도움이 될 수 있습니다. 이번 주에 덜어낼 한 가지와 지킬 한 가지를 함께 정해보세요.',
+    },
+  };
+  const cardId = section === 'rest' ? recoveryCardId : currentCardId;
+  return actual[cardId ?? '']?.[section] ?? fallback;
 }
 
 export function getRelationArchetype(
@@ -5223,10 +5281,11 @@ export function getRelationArchetype(
   const unconsciousCardColorB = normalizeCardColor(
     cardIdsB?.[0] ? (CARD_DATA.find(c => c.id === cardIdsB![0])?.color ?? null) : null
   );
-  // 현재 카드 ID (cards[1] = 현재 상태 카드, 가운데 카드). 생활 문장에는 컬러뿐 아니라
-  // 실제 도형과 카드 제목까지 함께 남겨 근거가 선택값과 어긋나지 않게 한다.
+  // 2번은 현재 상태, 3번은 회복·다음 방향으로 분리해 생활 문장에 연결한다.
   const currentCardIdA = cardIdsA?.[1];
   const currentCardIdB = cardIdsB?.[1];
+  const recoveryCardIdA = cardIdsA?.[2];
+  const recoveryCardIdB = cardIdsB?.[2];
 
   // 섹션별 가중치 적용 점수 계산
   function calcSectionScore(
@@ -6599,32 +6658,33 @@ export function getRelationArchetype(
   if (!lifestyleSections) {
     const fA0 = familiesA[0] ?? 'neutral';
     const fB0 = familiesB[0] ?? 'neutral';
-    lifestyleSections = buildDefaultLifestyleSections(fA0, fB0, shapeA, shapeB, finalArchetype, currentCardIdA, currentCardIdB);
+    lifestyleSections = buildDefaultLifestyleSections(
+      fA0, fB0, shapeA, shapeB, finalArchetype,
+      currentCardIdA, currentCardIdB, recoveryCardIdA, recoveryCardIdB,
+    );
   } else {
-    // LIFESTYLE_MAP / FULL_LIFESTYLE_MAP 사전 정의 섹션에도 현재 카드 보충 문장 추가
-    // 컬러 = 기질(사전 정의 텍스트), 심리카드 = 현재 상태(보충 문장) 원칙 적용
-    // cleaning/finance/rest/conflict 섹션 personA/B에 현재 카드 보충 문장 추가 (섹션별 분리)
+    // 컬러는 평소 기질, 2번 카드는 현재 변화, 3번 카드는 회복 실천으로 짧게 구분한다.
     lifestyleSections = {
       ...lifestyleSections,
       cleaning: lifestyleSections.cleaning ? {
         ...lifestyleSections.cleaning,
-        personA: (lifestyleSections.cleaning.personA ?? '') + getCurrentCardSupplement(currentCardIdA, 'cleaning'),
-        personB: (lifestyleSections.cleaning.personB ?? '') + getCurrentCardSupplement(currentCardIdB, 'cleaning'),
+        personA: (lifestyleSections.cleaning.personA ?? '') + getCardFlowSupplement(currentCardIdA, recoveryCardIdA, 'cleaning'),
+        personB: (lifestyleSections.cleaning.personB ?? '') + getCardFlowSupplement(currentCardIdB, recoveryCardIdB, 'cleaning'),
       } : lifestyleSections.cleaning,
       finance: lifestyleSections.finance ? {
         ...lifestyleSections.finance,
-        personA: (lifestyleSections.finance.personA ?? '') + getCurrentCardSupplement(currentCardIdA, 'finance'),
-        personB: (lifestyleSections.finance.personB ?? '') + getCurrentCardSupplement(currentCardIdB, 'finance'),
+        personA: (lifestyleSections.finance.personA ?? '') + getCardFlowSupplement(currentCardIdA, recoveryCardIdA, 'finance'),
+        personB: (lifestyleSections.finance.personB ?? '') + getCardFlowSupplement(currentCardIdB, recoveryCardIdB, 'finance'),
       } : lifestyleSections.finance,
       rest: lifestyleSections.rest ? {
         ...lifestyleSections.rest,
-        personA: (lifestyleSections.rest.personA ?? '') + getCurrentCardSupplement(currentCardIdA, 'rest'),
-        personB: (lifestyleSections.rest.personB ?? '') + getCurrentCardSupplement(currentCardIdB, 'rest'),
+        personA: (lifestyleSections.rest.personA ?? '') + getCardFlowSupplement(currentCardIdA, recoveryCardIdA, 'rest'),
+        personB: (lifestyleSections.rest.personB ?? '') + getCardFlowSupplement(currentCardIdB, recoveryCardIdB, 'rest'),
       } : lifestyleSections.rest,
       conflict: lifestyleSections.conflict ? {
         ...lifestyleSections.conflict,
-        personA: (lifestyleSections.conflict.personA ?? '') + getCurrentCardSupplement(currentCardIdA, 'conflict'),
-        personB: (lifestyleSections.conflict.personB ?? '') + getCurrentCardSupplement(currentCardIdB, 'conflict'),
+        personA: (lifestyleSections.conflict.personA ?? '') + getCardFlowSupplement(currentCardIdA, recoveryCardIdA, 'conflict'),
+        personB: (lifestyleSections.conflict.personB ?? '') + getCardFlowSupplement(currentCardIdB, recoveryCardIdB, 'conflict'),
       } : lifestyleSections.conflict,
     };
   }
@@ -7260,7 +7320,9 @@ function buildDefaultLifestyleSections(
   shapeB?: string,
   archetype?: RelationArchetype,
   currentCardIdA?: string,
-  currentCardIdB?: string
+  currentCardIdB?: string,
+  recoveryCardIdA?: string,
+  recoveryCardIdB?: string,
 ): NonNullable<ArchetypeResult['lifestyleSections']> {
   // 도형별 생활 특성 키워드
   const getShapeLifestyleNote = (shape?: string): string => {
@@ -7649,8 +7711,8 @@ function buildDefaultLifestyleSections(
       description: isSameFamily
         ? '두 사람의 일상 흐름이 비슷합니다. 같은 성향이 만나면 서로의 생활 패턴이 강화되는 순간이 생길 수 있습니다.'
         : '두 사람의 일상 흐름과 생활 방식이 다릅니다.',
-      personA: cleaningPersonMap[fA] + getCurrentCardSupplement(currentCardIdA, 'cleaning'),
-      personB: cleaningPersonMap[fB] + getCurrentCardSupplement(currentCardIdB, 'cleaning'),
+      personA: cardFocusedLifestyleStatement('cleaning', currentCardIdA, recoveryCardIdA, cleaningPersonMap[fA]),
+      personB: cardFocusedLifestyleStatement('cleaning', currentCardIdB, recoveryCardIdB, cleaningPersonMap[fB]),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 생활 패턴이 있어, 서로의 흐름이 강화되는 순간을 주의하세요. 가끔 다른 방식으로 일상을 채워보는 것이 도움이 됩니다.'
         : '생활 리듬이 달라 "왜 이렇게 해?"가 반복될 수 있습니다. 서로의 방식을 인정하고 함께 맞춰가는 것이 중요합니다.',
@@ -7660,8 +7722,8 @@ function buildDefaultLifestyleSections(
       description: isSameFamily
         ? '두 사람의 소비 방식이 비슷합니다. 같은 성향이 만나면 서로의 소비 패턴이 강화되는 순간이 생길 수 있습니다.'
         : '두 사람의 소비 기준과 재정 관리 방식이 다릅니다.',
-      personA: financePersonMap[fA] + shapeFinanceNote(fA, shapeA) + getCurrentCardSupplement(currentCardIdA, 'finance'),
-      personB: financePersonMap[fB] + shapeFinanceNote(fB, shapeB) + getCurrentCardSupplement(currentCardIdB, 'finance'),
+      personA: cardFocusedLifestyleStatement('finance', currentCardIdA, recoveryCardIdA, financePersonMap[fA] + shapeFinanceNote(fA, shapeA) + getCardFlowSupplement(currentCardIdA, recoveryCardIdA, 'finance')),
+      personB: cardFocusedLifestyleStatement('finance', currentCardIdB, recoveryCardIdB, financePersonMap[fB] + shapeFinanceNote(fB, shapeB) + getCardFlowSupplement(currentCardIdB, recoveryCardIdB, 'finance')),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 소비 성향이 있어, 서로의 패턴이 강화되는 순간을 주의하세요. 함께 기준을 정하는 것이 도움이 됩니다.'
         : '소비 기준이 달라 "왜 이걸 샀어?"가 반복될 수 있습니다. 함께 기준을 정하는 것이 도움이 됩니다.',
@@ -7669,8 +7731,8 @@ function buildDefaultLifestyleSections(
     rest: {
       title: '휴식·회복 방식',
       description: restDesc,
-      personA: effectiveRestMap[fA] + shapeRestNote(fA, shapeA) + getCurrentCardSupplement(currentCardIdA, 'rest'),
-      personB: effectiveRestMap[fB] + shapeRestNote(fB, shapeB) + getCurrentCardSupplement(currentCardIdB, 'rest'),
+      personA: cardFocusedLifestyleStatement('rest', currentCardIdA, recoveryCardIdA, effectiveRestMap[fA] + shapeRestNote(fA, shapeA) + getCardFlowSupplement(currentCardIdA, recoveryCardIdA, 'rest')),
+      personB: cardFocusedLifestyleStatement('rest', currentCardIdB, recoveryCardIdB, effectiveRestMap[fB] + shapeRestNote(fB, shapeB) + getCardFlowSupplement(currentCardIdB, recoveryCardIdB, 'rest')),
       tension: isSameFamily
         ? '두 사람 모두 비슷한 휴식 패턴이 있어 서로의 성향이 강화되는 순간을 주의하세요. 가끔 다른 방식으로 함께 충전하는 시간을 만들어보세요.'
         : '쉬는 방식이 달라 "같이 있어도 따로 쉬는 느낌"이 생길 수 있습니다.',
@@ -7678,8 +7740,8 @@ function buildDefaultLifestyleSections(
     conflict: {
       title: '갈등 직후 반응',
       description: conflictDesc,
-      personA: effectiveConflictMap[fA] + shapeConflictNote(fA, shapeA) + getCurrentCardSupplement(currentCardIdA, 'conflict'),
-      personB: effectiveConflictMap[fB] + shapeConflictNote(fB, shapeB) + getCurrentCardSupplement(currentCardIdB, 'conflict'),
+      personA: effectiveConflictMap[fA] + shapeConflictNote(fA, shapeA) + getCardFlowSupplement(currentCardIdA, recoveryCardIdA, 'conflict'),
+      personB: effectiveConflictMap[fB] + shapeConflictNote(fB, shapeB) + getCardFlowSupplement(currentCardIdB, recoveryCardIdB, 'conflict'),
       tip: isSameFamily
         ? '두 사람의 갈등 반응 방식이 비슷하기 때문에 서로의 패턴이 강화될 수 있습니다. 한 사람이 먼저 다른 방식으로 다가가는 것이 중요합니다.'
         : '서로의 갈등 반응 방식이 다름을 인정하는 것이 첫 번째 단계입니다.',

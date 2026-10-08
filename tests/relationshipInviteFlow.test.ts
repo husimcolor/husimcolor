@@ -135,6 +135,17 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(result).toContain('trpc.relationshipInvites.result.useQuery');
   });
 
+  it("새 초대 완료 결과는 화면과 같은 카드 위치별 대비·3번 카드 회복 루틴을 스냅샷과 PDF payload에 보존한다", () => {
+    const service = read("server/commerce/relationship-invite-service.ts");
+
+    expect(service).toContain("buildRomanticCardFlowContrast");
+    expect(service).toContain("buildRomanticCardRecoveryRoutine");
+    expect(service).toContain("romanticCardFlowContrast,");
+    expect(service).toContain("romanticCardRecoveryRoutine,");
+    expect(service).toContain("attractionAnalysis: snapshot.romanticCardFlowContrast");
+    expect(service).toContain("snapshot.romanticCardRecoveryRoutine ?? archetypeResult.togetherRoutine");
+  });
+
   it("이메일 outbox 대기 중에도 생성된 통합해석과 PDF는 A/B가 확인하고, 제출 직후 발송을 시도한다", () => {
     const service = read("server/commerce/relationship-invite-service.ts");
     const deliveryService = service.slice(

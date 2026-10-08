@@ -4,7 +4,7 @@ import { CARD_DATA, CARD_SHAPES } from "../constants/cardData";
 import { COLOR_DATA } from "../constants/colorData";
 import { generateCoupleAnalysis, generatePersonAnalysis, getRelationArchetype, type PersonSession } from "../constants/coupleData";
 import { buildRomanticCoupleColorCardIntegratedAnalysis } from "../lib/couple-color-card-analysis";
-import { buildRomanticRelationTraits } from "../lib/couple-romantic-relation-traits";
+import { buildRomanticCardFlowContrast, buildRomanticCardRecoveryRoutine, buildRomanticRelationTraits } from "../lib/couple-romantic-relation-traits";
 import { buildRomanticRelationshipRoles } from "../lib/couple-romantic-relationship-roles";
 
 const FAMILY_BY_COLOR: Record<string, string> = {
@@ -189,8 +189,9 @@ describe("부부·연인 결과 4단계 문구 검수", () => {
       expect(text).not.toContain("에너지이");
       expect(text).not.toContain("집안일");
       expect(text).toContain("연락과 만남");
-      expect(text).toContain("카드에는");
-      expect(text).toContain("카드들은");
+      expect(text).toContain("무의식 카드에서");
+      expect(text).toContain("현재 흐름 카드에서");
+      expect(text).toContain("회복 방향 카드에서");
       expect(text).not.toContain("카드는 \"");
     });
   });
@@ -238,5 +239,63 @@ describe("부부·연인 결과 4단계 문구 검수", () => {
     expect(analysis.profileContrast).toContain("남편은");
     expect(analysis.profileContrast).not.toContain("첫 번째 사람");
     expect(analysis.profileContrast).not.toContain("두 번째 사람");
+  });
+
+  it("실제 부부 조합은 현재 카드와 회복 카드를 구분하고 생활 문장을 짧게 유지한다", () => {
+    const colorsA = ["magenta", "lavender", "teal"].map((id) => COLOR_DATA.find((color) => color.id === id)!);
+    const colorsB = ["green", "blue", "orange"].map((id) => COLOR_DATA.find((color) => color.id === id)!);
+    const cardsA = ["white_pentagon", "yellow_circle", "purple_triangle"].map((id) => CARD_DATA.find((card) => card.id === id)!);
+    const cardsB = ["purple_circle", "red_inverted_triangle", "white_hexagon"].map((id) => CARD_DATA.find((card) => card.id === id)!);
+
+    const personA = generatePersonAnalysis({ info: { gender: "남성", faith: "무교", relationshipRole: "남편" }, colors: colorsA.map((color) => color.id), cards: cardsA.map((card) => card.id) }, "A");
+    const personB = generatePersonAnalysis({ info: { gender: "여성", faith: "무교", relationshipRole: "아내" }, colors: colorsB.map((color) => color.id), cards: cardsB.map((card) => card.id) }, "B");
+    const integrated = buildRomanticCoupleColorCardIntegratedAnalysis(colorsA, cardsA);
+    const traits = buildRomanticRelationTraits({
+      personA,
+      personB,
+      colorsA,
+      colorsB,
+      cardsA,
+      cardsB,
+      expressionDescription: "",
+      recoveryDescription: "",
+      relationType: "부부",
+      personLabels: { personA: "남편", personB: "아내" },
+    });
+    const contrast = buildRomanticCardFlowContrast({ cardsA, cardsB, personLabels: { personA: "남편", personB: "아내" } });
+    const recoveryRoutine = buildRomanticCardRecoveryRoutine(cardsA, cardsB);
+    const relation = getRelationArchetype(
+      ["warm_active", "nature", "cool_clear"] as any[],
+      ["nature", "cool_clear", "warm_active"] as any[],
+      cardsA[2]?.shape,
+      cardsB[2]?.shape,
+      colorsA.map((color) => color.id),
+      colorsB.map((color) => color.id),
+      cardsA.map((card) => card.id),
+      cardsB.map((card) => card.id),
+      "부부",
+    );
+    const lifeText = JSON.stringify(relation.unifiedSections?.lifePattern);
+    const traitText = traits.map((trait) => trait.description).join(" ");
+
+    expect(integrated).toContain("상황을 정리해 균형 잡힌 판단을 하려는 흐름");
+    expect(integrated).toContain("짧은 성찰과 실천으로 삶의 의미를 일상과 잇는 일");
+    expect(traitText).toContain("남편은 상황을 정리해 균형을 찾으려는 흐름");
+    expect(traitText).toContain("아내는 쌓인 감정을 안전하게 꺼내며 내면을 정리하려는 흐름");
+    expect(traitText).toContain("아내는 불필요한 긴장을 덜고 진실한 연결의 기준을 가볍게 정돈하려는 흐름");
+    expect(contrast).toContain("무의식의 바탕에서 남편은 여러 새 시작을 하나의 방향으로 묶고 싶은 마음");
+    expect(contrast).toContain("현재 대화에서는 남편은 상황을 정리해 균형을 찾으려는 편이고");
+    expect(contrast).toContain("갈등이나 피로 뒤에는 남편은 삶의 의미를 작은 성찰과 실천에 연결하려는 쪽으로");
+    expect(recoveryRoutine?.routines).toEqual([
+      "그날 중요했던 한 가지를 각자 한 문장으로 적거나 말하기",
+      "이번 주에 덜어낼 기대 하나와 지킬 약속 하나 정하기",
+      "서로 마음이 편안할 때 10분만 다시 이야기하기",
+    ]);
+    expect(lifeText).toContain("필요와 예산을 비교해 균형 있게 판단하려는 편입니다.");
+    expect(lifeText).toContain("덜어낼 한 가지와 지킬 한 가지");
+    expect(lifeText).not.toContain("나가서 뭔가 하면");
+    expect(lifeText).not.toContain("자연 속에서 천천히 회복해");
+    expect(JSON.stringify(relation.unifiedSections)).not.toContain("싸워도 결국");
+    expect(JSON.stringify(relation.unifiedSections)).toContain("서로 원하고 편안할 때 선택할 수 있는 연결 방식");
   });
 });

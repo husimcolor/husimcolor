@@ -17,7 +17,11 @@ import {
   generatePersonAnalysis, generateCoupleAnalysis, getRelationArchetype, getLightArchetype, isParentRelationshipRole,
   type CoupleSessionData, type PersonAnalysis, type CoupleAnalysis, type ArchetypeResult, type LightArchetypeResult,
 } from '@/constants/coupleData';
-import { buildRomanticRelationTraits } from '@/lib/couple-romantic-relation-traits';
+import {
+  buildRomanticCardFlowContrast,
+  buildRomanticCardRecoveryRoutine,
+  buildRomanticRelationTraits,
+} from '@/lib/couple-romantic-relation-traits';
 import { buildRomanticRelationshipRoles } from '@/lib/couple-romantic-relationship-roles';
 import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
 import { buildCouplePdfDownloadPayload } from '@/lib/couple-pdf-download';
@@ -49,6 +53,19 @@ const sectionStyles = StyleSheet.create({
   parentChildTitle: { fontSize: 19, fontWeight: '800', lineHeight: 27, marginBottom: 7 },
   divider: { height: 1, marginVertical: 4 },
 });
+
+function isLightHex(hex: string) {
+  const normalized = hex.replace('#', '');
+  if (normalized.length !== 6) return false;
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  return (red * 0.299 + green * 0.587 + blue * 0.114) >= 175;
+}
+
+function readableSwatchTextColor(hex: string) {
+  return isLightHex(hex) ? '#4A3728' : hex;
+}
 
 function SectionCard({
   label, title, accentColor, colors, children, variant = 'default',
@@ -96,6 +113,10 @@ function buildCoupleShareSnapshot(
   const definedColorsB = colorsB.filter((color): color is NonNullable<typeof color> => Boolean(color));
   const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
   const definedCardsB = cardsB.filter((card): card is NonNullable<typeof card> => Boolean(card));
+  const personLabels = {
+    personA: sessionData.personA.info.relationshipRole ?? '첫 번째 사람',
+    personB: sessionData.personB.info.relationshipRole ?? '두 번째 사람',
+  };
   const romanticRelationTraits = isRomanticRel
     ? buildRomanticRelationTraits({
         personA: personAAnalysis,
@@ -107,6 +128,7 @@ function buildCoupleShareSnapshot(
         expressionDescription: archetypeResult.expressionSpeed.description,
         recoveryDescription: archetypeResult.recoveryStyle.description,
         relationType: sessionData.relationType,
+        personLabels,
       })
     : [];
   const romanticRelationshipRoles = isRomanticRel
@@ -119,6 +141,13 @@ function buildCoupleShareSnapshot(
         cardsB: definedCardsB,
       })
     : null;
+
+  const romanticCardFlowContrast = isRomanticRel
+    ? buildRomanticCardFlowContrast({ cardsA: definedCardsA, cardsB: definedCardsB, personLabels })
+    : undefined;
+  const romanticCardRecoveryRoutine = isRomanticRel
+    ? buildRomanticCardRecoveryRoutine(definedCardsA, definedCardsB)
+    : undefined;
 
   const immutableSessionData: CoupleSessionData = {
     relationType: sessionData.relationType,
@@ -137,6 +166,8 @@ function buildCoupleShareSnapshot(
     lightArchetypeResult,
     romanticRelationTraits,
     romanticRelationshipRoles,
+    romanticCardFlowContrast,
+    romanticCardRecoveryRoutine,
     personAIntegratedAnalysis: isRomanticRel
       ? buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA)
       : buildCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA),
@@ -626,7 +657,7 @@ export default function CoupleResultScreen() {
   const definedColorsB = colorsB.filter((color): color is NonNullable<typeof color> => Boolean(color));
   const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
   const definedCardsB = cardsB.filter((card): card is NonNullable<typeof card> => Boolean(card));
-  const cardLabels = ['무의식', '현재', '미래'];
+  const cardLabels = ['무의식', '현재', '회복 방향'];
   const roleA = personA.info.relationshipRole;
   const roleB = personB.info.relationshipRole;
   const romanticPersonLabels = {
@@ -660,6 +691,12 @@ export default function CoupleResultScreen() {
         cardsB: definedCardsB,
       })
     : null;
+  const calculatedRomanticCardFlowContrast = isRomanticRel
+    ? buildRomanticCardFlowContrast({ cardsA: definedCardsA, cardsB: definedCardsB, personLabels: romanticPersonLabels })
+    : undefined;
+  const calculatedRomanticCardRecoveryRoutine = isRomanticRel
+    ? buildRomanticCardRecoveryRoutine(definedCardsA, definedCardsB)
+    : undefined;
   const calculatedPersonAIntegratedAnalysis = buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA);
   const calculatedPersonBIntegratedAnalysis = buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsB, definedCardsB);
   // 공유 링크에서는 생성 당시 저장한 서술 결과를 우선해 이후 로컬 세션·새 검사와 분리한다.
@@ -669,6 +706,12 @@ export default function CoupleResultScreen() {
   const romanticRelationshipRoles = isRomanticRel && sharedSnapshot
     ? sharedSnapshot.romanticRelationshipRoles
     : calculatedRomanticRelationshipRoles;
+  const romanticCardFlowContrast = isRomanticRel && sharedSnapshot
+    ? sharedSnapshot.romanticCardFlowContrast
+    : calculatedRomanticCardFlowContrast;
+  const romanticCardRecoveryRoutine = isRomanticRel && sharedSnapshot
+    ? sharedSnapshot.romanticCardRecoveryRoutine
+    : calculatedRomanticCardRecoveryRoutine;
   const personAIntegratedAnalysis = isRomanticRel && sharedSnapshot
     ? sharedSnapshot.personAIntegratedAnalysis
     : calculatedPersonAIntegratedAnalysis;
@@ -811,7 +854,7 @@ export default function CoupleResultScreen() {
     .filter((card): card is NonNullable<typeof card> => Boolean(card))
     .slice(0, 3)
     .map((card, index) => ({
-    position: index === 0 ? '1번 카드 · 무의식' : index === 1 ? '2번 카드 · 현재 흐름' : '3번 카드 · 다음 방향',
+    position: index === 0 ? '1번 카드 · 무의식' : index === 1 ? '2번 카드 · 현재 흐름' : '3번 카드 · 회복 방향',
     colorName: card.colorKor,
     shapeName: card.shapeKor,
     colorHex: card.colorHex,
@@ -913,7 +956,7 @@ export default function CoupleResultScreen() {
         },
         relationship: {
           personLabels,
-          attractionAnalysis: coupleAnalysis.profileContrast || archetypeResult.profileContrastOverride?.attractionContrast || archetypeResult.tensionDescription,
+          attractionAnalysis: romanticCardFlowContrast ?? coupleAnalysis.profileContrast ?? archetypeResult.profileContrastOverride?.attractionContrast ?? archetypeResult.tensionDescription,
           roles: {
             personATitle: romanticRelationshipRoles.personA.title,
             personADescription: romanticRelationshipRoles.personA.description,
@@ -939,8 +982,8 @@ export default function CoupleResultScreen() {
           },
           recommendedColors: recommendedColors.map((color) => ({ name: color.korName, hex: color.hex, reason: color.reason })),
           togetherRoutine: {
-            routines: archetypeResult.togetherRoutine.routines,
-            energyNote: archetypeResult.togetherRoutine.energyNote,
+            routines: (romanticCardRecoveryRoutine ?? archetypeResult.togetherRoutine).routines,
+            energyNote: (romanticCardRecoveryRoutine ?? archetypeResult.togetherRoutine).energyNote,
             faithRoutine: hasFaith ? archetypeResult.togetherRoutine.faithRoutine : undefined,
           },
           basicPrinciples: '서로의 마음을 당연하게 여기지 않고, 감정과 필요를 차분히 확인하는 시간이 신뢰·이해·배려·존중을 함께 키워갈 수 있습니다.',
@@ -1198,7 +1241,7 @@ export default function CoupleResultScreen() {
                 </View>
                 <View style={styles.colorDots}>
                   {colorsA.map(c => c && (
-                    <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }]} />
+                    <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }, isLightHex(c.hex) && styles.lightColorDot]} />
                   ))}
                 </View>
                 <Text style={[styles.colorNames, { color: '#5F4B3B' }]}>
@@ -1212,7 +1255,7 @@ export default function CoupleResultScreen() {
                 </View>
                 <View style={styles.colorDots}>
                   {colorsB.map(c => c && (
-                    <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }]} />
+                    <View key={c.id} style={[styles.colorDot, { backgroundColor: c.hex }, isLightHex(c.hex) && styles.lightColorDot]} />
                   ))}
                 </View>
                 <Text style={[styles.colorNames, { color: '#5F4B3B' }]}>
@@ -1696,7 +1739,7 @@ export default function CoupleResultScreen() {
 
           {/* 두 사람 프로파일 대비 요약 — 끌림 이유 + 반복 패턴 + 해법 (archetype 오버라이드 우선) */}
           <SectionCard accentColor={accentCouple} label={getRelSectionLabel()} title={getRelSectionTitle()} colors={colors}>
-            <Text style={[styles.bodyText, { color: colors.foreground }]}>{coupleAnalysis.profileContrast || archetypeResult?.profileContrastOverride?.attractionContrast}</Text>
+            <Text style={[styles.bodyText, { color: colors.foreground }]}>{romanticCardFlowContrast ?? coupleAnalysis.profileContrast ?? archetypeResult?.profileContrastOverride?.attractionContrast}</Text>
           </SectionCard>
 
           {isRomanticRel && romanticRelationshipRoles && (
@@ -2055,7 +2098,9 @@ export default function CoupleResultScreen() {
               함께하면 좋은 회복 루틴
           ═══════════════════════════════════════════════════════ */}
           {(lightArchetypeResult?.togetherRoutine ?? archetypeResult.togetherRoutine) && (() => {
-            const tr = lightArchetypeResult?.togetherRoutine ?? archetypeResult.togetherRoutine;
+            const tr = isRomanticRel && romanticCardRecoveryRoutine
+              ? { ...archetypeResult.togetherRoutine, ...romanticCardRecoveryRoutine }
+              : lightArchetypeResult?.togetherRoutine ?? archetypeResult.togetherRoutine;
             const hasFaith = sessionData?.personA.info.faith === '기독교' || sessionData?.personB.info.faith === '기독교';
             const isParentChildPractice = isParentChildRel && Boolean(parentChildCoaching);
             // 연인/부부 루틴 분기: 연인은 동거 전제 표현을 자연스러운 데이트 표현으로 교체
@@ -2269,6 +2314,7 @@ const styles = StyleSheet.create({
   personBadgeText: { fontSize: 11, fontWeight: '700' },
   colorDots: { flexDirection: 'row', gap: 6 },
   colorDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
+  lightColorDot: { borderWidth: 1.5, borderColor: '#9A7B4F' },
   colorNames: { fontSize: 11, textAlign: 'center', fontWeight: '600', color: '#5F4B3B' },
 
   // ─── 심리카드 미니 카드 ──────────────────────────────────────

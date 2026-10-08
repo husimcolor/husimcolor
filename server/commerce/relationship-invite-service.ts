@@ -33,7 +33,11 @@ import { buildCouplePdfDownloadPayload } from "../../lib/couple-pdf-download";
 import { buildParentChildRelationshipAnalysis } from "../../lib/parent-child-relationship-analysis";
 import { getParentChildLabels } from "../../lib/parent-child-coaching";
 import { buildParentChildPdfDownloadPayload } from "../../lib/parent-child-pdf-download";
-import { buildRomanticRelationTraits } from "../../lib/couple-romantic-relation-traits";
+import {
+  buildRomanticCardFlowContrast,
+  buildRomanticCardRecoveryRoutine,
+  buildRomanticRelationTraits,
+} from "../../lib/couple-romantic-relation-traits";
 import { buildRomanticRelationshipRoles } from "../../lib/couple-romantic-relationship-roles";
 import { parseCoupleShareSnapshot, type CoupleShareSnapshot } from "../../shared/couple-share";
 import type { CommerceProductCode } from "../../shared/commerce";
@@ -183,6 +187,10 @@ function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapsho
   const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
   const definedCardsB = cardsB.filter((card): card is NonNullable<typeof card> => Boolean(card));
   const isRomantic = sessionData.relationType === "연인" || sessionData.relationType === "부부";
+  const personLabels = {
+    personA: sessionData.personA.info.relationshipRole ?? "첫 번째 사람",
+    personB: sessionData.personB.info.relationshipRole ?? "두 번째 사람",
+  };
   const romanticRelationTraits = isRomantic
     ? buildRomanticRelationTraits({
         personA: personAAnalysis,
@@ -194,10 +202,7 @@ function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapsho
         expressionDescription: archetypeResult.expressionSpeed.description,
         recoveryDescription: archetypeResult.recoveryStyle.description,
         relationType: sessionData.relationType,
-        personLabels: {
-          personA: sessionData.personA.info.relationshipRole ?? "첫 번째 사람",
-          personB: sessionData.personB.info.relationshipRole ?? "두 번째 사람",
-        },
+        personLabels,
       })
     : [];
   const romanticRelationshipRoles = isRomantic
@@ -210,6 +215,14 @@ function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapsho
         cardsB: definedCardsB,
       })
     : null;
+  // 각자 휴대폰 초대 완료 결과도 화면과 같은 카드 위치별 대비·회복 루틴을 저장한다.
+  // 이미 완료된 스냅샷은 불변으로 유지하고, 새 완료 결과에만 이 필드를 넣는다.
+  const romanticCardFlowContrast = isRomantic
+    ? buildRomanticCardFlowContrast({ cardsA: definedCardsA, cardsB: definedCardsB, personLabels })
+    : undefined;
+  const romanticCardRecoveryRoutine = isRomantic
+    ? buildRomanticCardRecoveryRoutine(definedCardsA, definedCardsB)
+    : undefined;
 
   return {
     schemaVersion: 1,
@@ -221,6 +234,8 @@ function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapsho
     lightArchetypeResult,
     romanticRelationTraits,
     romanticRelationshipRoles,
+    romanticCardFlowContrast,
+    romanticCardRecoveryRoutine,
     personAIntegratedAnalysis: isRomantic
       ? buildRomanticCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA)
       : buildCoupleColorCardIntegratedAnalysis(definedColorsA, definedCardsA),
@@ -310,7 +325,10 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
       },
       relationship: {
         personLabels,
-        attractionAnalysis: coupleAnalysis.profileContrast || archetypeResult.profileContrastOverride?.attractionContrast || archetypeResult.tensionDescription,
+        attractionAnalysis: snapshot.romanticCardFlowContrast
+          ?? coupleAnalysis.profileContrast
+          ?? archetypeResult.profileContrastOverride?.attractionContrast
+          ?? archetypeResult.tensionDescription,
         roles: {
           personATitle: roles.personA.title,
           personADescription: roles.personA.description,
@@ -336,8 +354,8 @@ async function buildDeliveryPayload(snapshot: CoupleShareSnapshot, productCode: 
         },
         recommendedColors: recommendedColors.map((color) => ({ name: color.korName, hex: color.hex, reason: color.reason })),
         togetherRoutine: {
-          routines: archetypeResult.togetherRoutine.routines,
-          energyNote: archetypeResult.togetherRoutine.energyNote,
+          routines: (snapshot.romanticCardRecoveryRoutine ?? archetypeResult.togetherRoutine).routines,
+          energyNote: (snapshot.romanticCardRecoveryRoutine ?? archetypeResult.togetherRoutine).energyNote,
           faithRoutine: hasFaith ? archetypeResult.togetherRoutine.faithRoutine : undefined,
         },
         basicPrinciples: "서로의 마음을 당연하게 여기지 않고, 감정과 필요를 차분히 확인하는 시간이 신뢰·이해·배려·존중을 함께 키워갈 수 있습니다.",

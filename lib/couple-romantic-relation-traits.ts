@@ -130,6 +130,14 @@ function subjectParticle(value: string) {
   return hasFinalConsonant(value) ? "이" : "가";
 }
 
+function objectParticle(value: string) {
+  return hasFinalConsonant(value) ? "을" : "를";
+}
+
+function conjunctionParticle(value: string) {
+  return hasFinalConsonant(value) ? "과" : "와";
+}
+
 function relationshipScene(relationType: RomanticRelationTraitInput["relationType"], context: RelationContext) {
   const scenes = relationType === "부부"
     ? {
@@ -153,32 +161,98 @@ function cardBasis(
 ) {
   const index = context === "감정 교류" ? 0 : context === "표현 리듬" ? 1 : 2;
   const position = context === "감정 교류" ? "무의식" : context === "표현 리듬" ? "현재 흐름" : "회복 방향";
-  const scene = context === "감정 교류"
-    ? "평소 관계에서 무엇을 바라는지"
-    : context === "표현 리듬"
-      ? "지금 대화와 연락에서 어떤 속도가 편한지"
-      : "갈등 뒤 어떤 방식으로 다시 연결할지";
-  const describe = (card?: CardData) => card
-    ? `${card.colorKor} ${card.shapeKor} "${card.energyTitle}" 카드`
-    : "선택한 심리카드";
-  const flow = (card?: CardData) => {
-    if (!card) return "현재 마음을 살피는";
-    const source = context === "감정 교류"
-      ? card.psychologyFlow
+  const cue = (card?: CardData) => {
+    if (!card) return "현재 마음을 차분히 살피려는";
+    const actualCue: Partial<Record<string, string>> = context === "감정 교류"
+      ? {
+          white_pentagon: "여러 새 시작을 하나의 방향으로 묶고 싶은",
+          purple_circle: "깊은 공감과 직관을 신뢰하며 의미를 살피는",
+        }
       : context === "표현 리듬"
-        ? card.personalityFlow
-        : card.recoveryDirection;
-    return source
-      .trim()
-      .split(/(?<=[.!?])\s+/)[0]
-      ?.replace(/^현재 당신은\s*/, "")
-      .replace(/^지금 당신은\s*/, "")
-      .replace(/^당신은\s*/, "")
-      .replace(/[.!?]+$/, "") ?? "현재 마음을 살피는";
+        ? {
+            yellow_circle: "상황을 정리해 균형을 찾으려는",
+            red_inverted_triangle: "쌓인 감정을 안전하게 꺼내며 내면을 정리하려는",
+          }
+        : {
+            purple_triangle: "삶의 의미를 작은 성찰과 실천에 연결하려는",
+            white_hexagon: "불필요한 긴장을 덜고 진실한 연결의 기준을 가볍게 정돈하려는",
+          };
+    return actualCue[card.id]
+      ?? (context === "감정 교류"
+        ? `${card.energyTitle}${objectParticle(card.energyTitle)} 내면에서 중요하게 여기는`
+        : context === "표현 리듬"
+          ? `${card.energyTitle}${objectParticle(card.energyTitle)} 바탕으로 현재 상황을 살피는`
+          : `${card.energyTitle}${objectParticle(card.energyTitle)} 작은 실천으로 이어가려는`);
   };
-  const personA = labels?.personA ?? "첫 번째 사람";
-  const personB = labels?.personB ?? "두 번째 사람";
-  return `${position}에는 ${personA}${subjectParticle(personA)} 선택한 ${describe(cardsA[index])}와 ${personB}${subjectParticle(personB)} 선택한 ${describe(cardsB[index])}가 놓여 있습니다. ${personA}의 카드에는 "${flow(cardsA[index])}"라는 흐름이, ${personB}의 카드에는 "${flow(cardsB[index])}"라는 흐름이 담겨 있습니다. 이 카드들은 ${scene}를 살피는 근거가 됩니다.`;
+  const personA = labels?.personA ?? "한 사람";
+  const personB = labels?.personB ?? "다른 사람";
+  return `${position} 카드에서 ${personA}${topicParticle(personA)} ${cue(cardsA[index])} 흐름을 보이고, ${personB}${topicParticle(personB)} ${cue(cardsB[index])} 흐름을 보입니다.`;
+}
+
+/**
+ * 관계 통합 카드의 긴 일반 프로파일을 대신하는 위치별 대비 문장입니다.
+ * 1번은 평소 바탕, 2번은 현재 대화, 3번은 갈등·피로 뒤의 회복 방향만 읽어
+ * 카드 원문 전체를 재인용하지 않는다.
+ */
+export function buildRomanticCardFlowContrast({
+  cardsA,
+  cardsB,
+  personLabels,
+}: Pick<RomanticRelationTraitInput, "cardsA" | "cardsB" | "personLabels">) {
+  const personA = personLabels?.personA ?? "한 사람";
+  const personB = personLabels?.personB ?? "다른 사람";
+  const cueFor = (card: CardData | undefined, stage: "unconscious" | "current" | "recovery") => {
+    const context: RelationContext = stage === "unconscious" ? "감정 교류" : stage === "current" ? "표현 리듬" : "갈등 회복";
+    // cardBasis와 같은 카드 위치 규칙을 쓰되, 카드 제목·원문을 되풀이하지 않는다.
+    const actualCue: Partial<Record<string, string>> = stage === "unconscious"
+      ? {
+          white_pentagon: "여러 새 시작을 하나의 방향으로 묶고 싶은",
+          purple_circle: "깊은 공감과 직관을 신뢰하며 의미를 살피는",
+        }
+      : stage === "current"
+        ? {
+            yellow_circle: "상황을 정리해 균형을 찾으려는",
+            red_inverted_triangle: "쌓인 감정을 안전하게 꺼내며 내면을 정리하려는",
+          }
+        : {
+            purple_triangle: "삶의 의미를 작은 성찰과 실천에 연결하려는",
+            white_hexagon: "불필요한 긴장을 덜고 진실한 연결의 기준을 가볍게 정돈하려는",
+          };
+    if (!card) return "현재 마음을 차분히 살피려는";
+    return actualCue[card.id]
+      ?? (context === "감정 교류"
+        ? `${card.energyTitle}${objectParticle(card.energyTitle)} 내면에서 중요하게 여기는`
+        : context === "표현 리듬"
+          ? `${card.energyTitle}${objectParticle(card.energyTitle)} 바탕으로 현재 상황을 살피는`
+          : `${card.energyTitle}${objectParticle(card.energyTitle)} 작은 실천으로 이어가려는`);
+  };
+  const unconsciousA = cueFor(cardsA[0], "unconscious");
+  const unconsciousB = cueFor(cardsB[0], "unconscious");
+  const currentA = cueFor(cardsA[1], "current");
+  const currentB = cueFor(cardsB[1], "current");
+  const recoveryA = cueFor(cardsA[2], "recovery");
+  const recoveryB = cueFor(cardsB[2], "recovery");
+  return [
+    `무의식의 바탕에서 ${personA}${topicParticle(personA)} ${unconsciousA} 마음을, ${personB}${topicParticle(personB)} ${unconsciousB} 마음을 가질 수 있습니다.`,
+    `현재 대화에서는 ${personA}${topicParticle(personA)} ${currentA} 편이고, ${personB}${topicParticle(personB)} ${currentB} 편입니다.`,
+    `갈등이나 피로 뒤에는 ${personA}${topicParticle(personA)} ${recoveryA} 쪽으로, ${personB}${topicParticle(personB)} ${recoveryB} 쪽으로 회복을 선택해볼 수 있습니다.`,
+  ].join("\n\n");
+}
+
+/** 서로 다른 3번 회복 카드가 공통 산책·혼자 시간 템플릿으로 덮이지 않도록 하는 보조 루틴. */
+export function buildRomanticCardRecoveryRoutine(
+  cardsA: Array<CardData | undefined>,
+  cardsB: Array<CardData | undefined>,
+): { routines: string[]; energyNote: string } | undefined {
+  if (cardsA[2]?.id !== "purple_triangle" || cardsB[2]?.id !== "white_hexagon") return undefined;
+  return {
+    routines: [
+      "그날 중요했던 한 가지를 각자 한 문장으로 적거나 말하기",
+      "이번 주에 덜어낼 기대 하나와 지킬 약속 하나 정하기",
+      "서로 마음이 편안할 때 10분만 다시 이야기하기",
+    ],
+    energyNote: "남편은 작은 성찰을 글이나 대화로 일상에 연결할 때, 아내는 불필요한 긴장을 덜고 편안한 연결의 기준을 정리할 때 회복의 방향을 찾기 쉽습니다.",
+  };
 }
 
 /**

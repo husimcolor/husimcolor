@@ -23,13 +23,21 @@ import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardInt
 import { splitCoupleReadableParagraphs } from '@/lib/couple-readable-text';
 import { trpc } from '@/lib/trpc';
 
-const POSITION_LABELS = ['무의식 · 내면 에너지', '현재 현실 에너지', '미래 · 회복 · 희망 에너지'];
+const POSITION_LABELS = ['무의식 · 내면 에너지', '현재 현실 에너지', '회복 방향 · 다음 방향 에너지'];
 const POSITION_DESCS = [
   '지금 의식하지 못하는 내면 깊은 곳의 에너지입니다.',
   '현재 현실에서 드러나는 심리 흐름입니다.',
-  '앞으로 회복하고 나아갈 방향의 에너지입니다.',
+  '갈등이나 피로 뒤에 참고할 회복 방향과 다음 방향의 에너지입니다.',
 ];
 const POSITION_COLORS = ['#3D6B3D', '#B5A0C8', '#C4956A'];
+
+function isLightCard(card: { colorHex: string }) {
+  const hex = card.colorHex.replace('#', '');
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  return (red * 0.299 + green * 0.587 + blue * 0.114) >= 175;
+}
 
 // 카드 3장 흐름 통합 분석 생성
 function buildCardFlowAnalysis(
@@ -170,6 +178,7 @@ function buildCardFlowAnalysis(
     teal: '이성적으로는 잘 정리되어 있지만 감정과의 연결이 조금 부족한 시기입니다. "괜찮아"라고 말하면서도 어딘가 무거운 느낌이 남아 있다면, 감정을 더 들여다볼 필요가 있습니다.',
     mint: '새롭게 시작하고 싶지만 먼저 깊은 휴식이 필요한 상태입니다. 쉬어야 한다는 것을 알면서도 쉬지 못하는 패턴이 반복되고 있을 수 있습니다.',
     indigo: '혼자 오래 생각하며 많은 것을 마음속에 담아온 시기입니다. 말하면 이해받지 못할 것 같아 혼자 정리하려는 경향이 나타날 수 있습니다.',
+    purple: '직관적으로 느낀 마음을 신뢰하면서도, 그 감각을 어떻게 현실의 말과 행동으로 옮길지 조용히 살피는 시기입니다.',
     violet: '내면을 깊이 들여다보고 싶은 마음이 강한 시기입니다. 현실보다 내면의 세계가 더 선명하게 느껴져 현실에 집중하기 어려운 때가 있을 수 있습니다.',
     black: '많은 것을 혼자 감당하며 경계를 지켜온 시기입니다. 가까워질수록 오히려 거리를 두고 싶어지는 패턴이 있다면, 그것은 자신을 보호하려는 무의식의 반응입니다.',
     silver: '감정을 조용히 정리하며 명료함을 찾고 있는 시기입니다. 감정보다 논리로 상황을 처리하다 보니 정작 자신이 어떤 감정인지 모를 때가 있을 수 있습니다.',
@@ -213,7 +222,20 @@ function buildCardFlowAnalysis(
   const c3Id = c3.color ?? c3.id;
   const coachingIntro = coachingIntros[c1Id] ?? '지금 마음속에 많은 것들이 쌓여 있는 시기입니다.';
   const recoveryKeyword = recoveryKeywords[c3Id] ?? '한 걸음씩 자신에게 돌아오는';
-  const coaching = `${coachingIntro} ${recoveryKeyword} 시간이 지금 가장 필요합니다.${faithNote}`;
+  const exactRecoveryCoaching: Record<string, { coaching: string; routine: string }> = {
+    purple_triangle: {
+      coaching: '삶에서 중요했던 한 가지를 짧게 돌아보고, 그것을 오늘의 작은 실천이나 대화로 연결해보세요.',
+      routine: '그날 중요했던 한 가지를 글이나 대화로 남겨보세요. 읽고 싶은 문장이나 나누고 싶은 생각을 하나 고르고, 부담 없는 행동 하나로 이어가면 내면의 성찰이 일상에 닿습니다.',
+    },
+    white_hexagon: {
+      coaching: '지금은 불필요하게 긴장되는 기대를 덜고, 진실한 연결에 필요한 기준만 가볍게 정리해보세요.',
+      routine: '마음에 걸리는 약속이나 기대를 하나 떠올려 덜어낼 것과 지킬 것을 나눠보세요. 공간을 비우는 일보다 관계 안에서 편안한 연결을 위한 기준을 정하는 데 초점을 둡니다.',
+    },
+  };
+  const exactRecovery = exactRecoveryCoaching[c3.id];
+  const coaching = exactRecovery
+    ? `${coachingIntro} ${exactRecovery.coaching}${faith === '기독교' ? faithNote : ''}`
+    : `${coachingIntro} ${recoveryKeyword} 시간이 지금 가장 필요합니다.${faithNote}`;
 
   // 보완 루틴: 3번 카드(회복 방향) 기반
   const routineMap: Record<string, string> = {
@@ -269,7 +291,7 @@ function buildCardFlowAnalysis(
     yellow: '좋아하는 것을 하며 가볍게 즐겨보세요. 작은 목표를 하나 정하고 달성해보는 것도 좋습니다. 밝음 뒤에 있는 감정도 충분히 다뤄주는 시간이 함께 필요합니다.',
   };
 
-  const routine = routineMap[c3Id] ?? '하루 5분, 조용히 자신의 감정을 들여다보는 시간을 가져보세요.';
+  const routine = exactRecovery?.routine ?? routineMap[c3Id] ?? '하루 5분, 조용히 자신의 감정을 들여다보는 시간을 가져보세요.';
 
   return { flow, coaching, routine };
 }
@@ -493,7 +515,7 @@ export default function CoupleCardResultScreen() {
           {/* 타이틀 */}
           <View style={styles.titleArea}>
             <Text style={styles.title}>심리카드 에너지 흐름</Text>
-            <Text style={styles.subtitle}>무의식 · 현재 · 미래 카드가 연결하는 내면의 이야기입니다</Text>
+            <Text style={styles.subtitle}>무의식 · 현재 흐름 · 회복 방향이 연결하는 내면의 이야기입니다</Text>
           </View>
 
           {/* 이전 단계 컬러 요약 */}
@@ -515,12 +537,12 @@ export default function CoupleCardResultScreen() {
           {selectedCards.map((card, i) => (
             <View key={card.id} style={[styles.cardSection, { borderColor: POSITION_COLORS[i] + '44' }]}>
               <View style={styles.cardHeader}>
-                <View style={[styles.cardVisual, { backgroundColor: card.colorHex }]}>
+                <View style={[styles.cardVisual, { backgroundColor: card.colorHex }, isLightCard(card) && styles.lightCardVisual]}>
                   <Text style={[styles.cardShape, {
-                    color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.92)',
+                    color: isLightCard(card) ? '#4A3728' : 'rgba(255,255,255,0.92)',
                   }]}>{card.shapeSymbol}</Text>
                   <Text style={[styles.cardColorName, {
-                    color: card.colorKor === '화이트' ? '#D4AF37' : 'rgba(255,255,255,0.95)',
+                    color: isLightCard(card) ? '#4A3728' : 'rgba(255,255,255,0.95)',
                   }]}>{card.colorKor}</Text>
                 </View>
                 <View style={styles.cardHeaderInfo}>
@@ -542,7 +564,7 @@ export default function CoupleCardResultScreen() {
             <>
               <View style={[styles.flowCard, { borderColor: accentColor + '44', backgroundColor: accentBg }]}>
                 <Text style={[styles.flowCardLabel, { color: accentColor }]}>🌿 컬러 × 심리카드 통합 분석</Text>
-                <Text style={[styles.flowCardTitle, { color: '#3D3530' }]}>선택 컬러 · 무의식 → 현재 → 다음 방향</Text>
+                <Text style={[styles.flowCardTitle, { color: '#3D3530' }]}>선택 컬러 · 무의식 → 현재 → 회복 방향</Text>
                 {integratedAnalysisSections.map((section, index) => (
                   <View
                     key={section.title}
@@ -647,6 +669,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2, shadowRadius: 5, elevation: 4,
   },
+  lightCardVisual: { borderWidth: 1.5, borderColor: '#9A7B4F' },
   cardShape: { fontSize: 22 },
   cardColorName: { fontSize: 9, fontWeight: '700' },
   cardHeaderInfo: { flex: 1, gap: 4 },

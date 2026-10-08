@@ -123,6 +123,12 @@ function connectiveParticle(value: string) {
   return hasFinalConsonant ? "과" : "와";
 }
 
+function subjectParticle(value: string) {
+  const last = value.charCodeAt(value.length - 1);
+  const hasFinalConsonant = last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+  return hasFinalConsonant ? "이" : "가";
+}
+
 export function buildRomanticColorLead(
   colorNameA: string | undefined,
   colorIdA: string | undefined,
@@ -134,5 +140,6 @@ export function buildRomanticColorLead(
   const profileB = getRomanticColorProfile(colorIdB);
   if (!profileA || !profileB || !colorNameA || !colorNameB) return undefined;
 
-  return `${colorNameA}의 ${profileA.relationshipStrength}${connectiveParticle(profileA.relationshipStrength)} ${colorNameB}의 ${profileB.relationshipStrength}이 ${context}에 함께 나타납니다.`;
+  const secondSubject = subjectParticle(profileB.relationshipStrength);
+  return `${colorNameA}의 ${profileA.relationshipStrength}${connectiveParticle(profileA.relationshipStrength)} ${colorNameB}의 ${profileB.relationshipStrength}${secondSubject} ${context}에 함께 나타납니다.`;
 }

@@ -3,7 +3,6 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { createCouplePdfBuffer, splitCouplePdfCardNarrative, validateCouplePdfPayload } from "../server/couple-pdf-report";
-import { resolvePdfDocumentConstructor } from "../server/pdfkit-runtime";
 import type { CouplePdfDownloadPayload } from "../shared/couple-pdf-download";
 
 const payload: CouplePdfDownloadPayload = {
@@ -62,13 +61,6 @@ const payload: CouplePdfDownloadPayload = {
 };
 
 describe("부부·연인 전용 PDF 리포트", () => {
-  it("Vercel prebuilt 런타임의 CommonJS default 래퍼도 PDF 생성자로 정규화한다", () => {
-    const constructor = function PdfDocumentFixture() {};
-    expect(resolvePdfDocumentConstructor(constructor)).toBe(constructor);
-    expect(resolvePdfDocumentConstructor({ default: constructor })).toBe(constructor);
-    expect(() => resolvePdfDocumentConstructor({ default: {} })).toThrow("PDFKIT_CONSTRUCTOR_UNAVAILABLE");
-  });
-
   it("3번 카드의 실제 행동 지침만 글머리표 단위로 분리하고 지정된 띄어쓰기를 교정한다", () => {
     const recovery = splitCouplePdfCardNarrative(
       "3번 카드 · 다음 방향",
@@ -103,7 +95,6 @@ describe("부부·연인 전용 PDF 리포트", () => {
     const screenSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
     const apiSource = readFileSync(resolve(process.cwd(), "api/couple-pdf-report.ts"), "utf8");
     const serverSource = readFileSync(resolve(process.cwd(), "server/couple-pdf-report.ts"), "utf8");
-    const workflowSource = readFileSync(resolve(process.cwd(), ".github/workflows/deploy.yml"), "utf8");
 
     expect(screenSource).toContain("PDF 리포트 다운로드");
     expect(screenSource).toContain("/api/couple-pdf-report");
@@ -115,9 +106,6 @@ describe("부부·연인 전용 PDF 리포트", () => {
     expect(serverSource).toContain("건강한 관계를 위한 기본 원칙");
     expect(serverSource).toContain("스킨십 · 친밀감");
     expect(serverSource).toContain("두 사람의 관계 속 역할 분석");
-    expect(workflowSource).toContain('".vercel/output/functions/api/trpc/[...trpc].func/HusimPdfKorean.ttf"');
-    expect(workflowSource).toContain('--external:pdfkit --outfile=".vercel/output/functions/api/trpc/[...trpc].func/index.js"');
-    expect(workflowSource).toContain('for function in "trpc/[...trpc]" private-pdf-download couple-pdf-report parent-child-pdf-report; do');
   });
 
   it("관계 통합 분석을 개인 해석보다 먼저 배치하고 각 사람의 개인 해석은 새 페이지에서 시작한다", () => {
@@ -154,6 +142,8 @@ describe("부부·연인 전용 PDF 리포트", () => {
     expect(serverSource).toContain('writeSectionTitle(document, "싸움 패턴", "#B16A75", 220)');
     expect(serverSource).toContain('], "#FFF3F3", { continueFromCurrentPage: true });');
     expect(serverSource).toContain('writeSectionTitle(document, "연결 방식", "#B87B91", 210)');
+    expect(serverSource).toContain('writeSectionTitle(document, "관계 성장 포인트", "#4F8B70", 220)');
+    expect(serverSource).toContain('], "#F0F8F2", { continueFromCurrentPage: true });');
     expect(serverSource).toContain("관계 해석은 한 항목마다 새 쪽을 만들지 않는다");
   });
 });

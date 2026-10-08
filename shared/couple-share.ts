@@ -21,6 +21,10 @@ export type CoupleShareSnapshot = {
   romanticRelationshipRoles: RomanticRelationshipRoles | null;
   personAIntegratedAnalysis: string;
   personBIntegratedAnalysis: string;
+  /** 새 스냅샷의 카드 위치별 관계 대비. 이전 스냅샷에는 없어도 유효하다. */
+  romanticCardFlowContrast?: string;
+  /** 새 스냅샷의 3번 카드 기반 회복 루틴. 이전 스냅샷에는 없어도 유효하다. */
+  romanticCardRecoveryRoutine?: { routines: string[]; energyNote: string };
   createdAt: string;
 };
 
