@@ -63,7 +63,15 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="휴심컬러" />
+        <meta name="application-name" content="휴심컬러" />
         <meta name="theme-color" content="#FAF8F3" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/pwa-icon-192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/pwa-icon-512.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png" />
 
         {/* 삼성 인터넷 등 브라우저 강제 다크모드 방지 */}
         <meta name="color-scheme" content="only light" />

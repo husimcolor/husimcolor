@@ -121,6 +121,7 @@ jobs:
               { "src": "/api/private-pdf-download", "dest": "/api/private-pdf-download" },
               { "src": "/api/couple-pdf-report", "dest": "/api/couple-pdf-report" },
               { "src": "/api/parent-child-pdf-report", "dest": "/api/parent-child-pdf-report" },
+              { "src": "/site.webmanifest", "headers": { "Content-Type": "application/manifest+json; charset=utf-8", "Cache-Control": "no-cache" }, "continue": true },
               { "src": "/_expo/static/js/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/_expo/static/css/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/_expo/static/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
