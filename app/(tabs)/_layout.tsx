@@ -48,6 +48,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="sample-report"
+        options={{
+          title: "샘플 리포트",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="premium-info"
         options={{
           title: "심화 정보 입력",

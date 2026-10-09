@@ -9,7 +9,7 @@ import {
   Animated, TouchableOpacity, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -36,6 +36,11 @@ const PARENT_CHILD_COMBOS: { value: RelationType; label: string }[] = [
 
 export default function CoupleStartScreen() {
   const router = useRouter();
+  const routeParams = useLocalSearchParams<{
+    restoreProduct?: string | string[];
+    restoreRelationType?: string | string[];
+    restoreParentChildCombo?: string | string[];
+  }>();
   const colors = useColors();
 
   const [relationType, setRelationType] = useState<RelationType | null>(null);
@@ -58,6 +63,32 @@ export default function CoupleStartScreen() {
   const tossLiveEnabled = commerceTestMode.data?.tossLiveEnabled === true;
   const tossPaymentEnabled = tossLiveEnabled || commerceTestMode.data?.tossTestEnabled === true;
   const openingCampaignActive = isOpeningCampaignActive();
+
+  const getRouteParam = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
+  const restoreProductId = getRouteParam(routeParams.restoreProduct);
+  const restoreRelationType = getRouteParam(routeParams.restoreRelationType) as RelationType | undefined;
+  const restoreParentChildCombo = getRouteParam(routeParams.restoreParentChildCombo) as RelationType | undefined;
+
+  // 샘플 리포트에서 돌아왔을 때 상품·관계 조합을 그대로 복원한다.
+  useEffect(() => {
+    const restoredProduct = VISIBLE_RELATION_PRODUCTS.find((product) => product.id === restoreProductId);
+    if (!restoredProduct) return;
+
+    setSelectedProductId(restoredProduct.id);
+    if (restoredProduct.id === 'parent-child') {
+      setRelationType('부모-자녀');
+      setParentChildCombo(PARENT_CHILD_COMBOS.some((combo) => combo.value === restoreParentChildCombo) ? restoreParentChildCombo ?? null : null);
+      return;
+    }
+    if (restoredProduct.id === 'romantic') {
+      setRelationType(ROMANTIC_RELATION_TYPES.some((relation) => relation.value === restoreRelationType) ? restoreRelationType ?? null : null);
+      setParentChildCombo(null);
+      return;
+    }
+    setRelationType('친구');
+    setParentChildCombo(null);
+  }, [restoreProductId, restoreRelationType, restoreParentChildCombo]);
+
   useEffect(() => {
     const track = async () => {
       try {
@@ -200,31 +231,58 @@ export default function CoupleStartScreen() {
               {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled && !tossLiveEnabled ? <Text style={styles.openingCampaignText}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text> : null}
             </View>}
             <View style={styles.productList}>
-              {VISIBLE_RELATION_PRODUCTS.map((product) => (
-                <Pressable
-                  key={product.id}
-                  style={({ pressed }) => [
-                    styles.productCard,
-                    {
-                      backgroundColor: selectedProductId === product.id ? '#2A2420' : '#F8F3EA',
-                      borderColor: selectedProductId === product.id ? '#2A2420' : '#D8C8B4',
-                    },
-                    pressed && { opacity: 0.86, transform: [{ scale: 0.985 }] },
-                  ]}
-                  onPress={() => handleProductSelect(product)}
-                  >
-                  <Text style={[styles.productTitle, { color: selectedProductId === product.id ? '#FFF9F0' : '#2D2420' }]}>
-                    {product.title}
-                  </Text>
-                  <Text style={[styles.productPrice, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>
-                    {product.price}
-                  </Text>
-                  {openingCampaignActive && product.id !== 'friend' ? <Text style={[styles.productCampaignPrice, { color: selectedProductId === product.id ? '#FFF0CA' : '#775B26' }]}>{product.id === 'romantic' ? '20% 적용 시 47,200원' : '20% 적용 시 31,200원'}</Text> : null}
-                  {product.id !== 'friend' && !paidAnalysisPublicEnabled && !tossCardReviewEnabled ? (
-                    <Text style={[styles.productPreparing, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>정식 오픈 준비중</Text>
-                  ) : null}
-                </Pressable>
-              ))}
+              {VISIBLE_RELATION_PRODUCTS.map((product) => {
+                const sampleProduct = product.id === 'romantic'
+                  ? 'couple_love_deep'
+                  : product.id === 'parent-child'
+                    ? 'parent_child_deep'
+                    : null;
+                return (
+                  <View key={product.id} style={styles.productCardGroup}>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.productCard,
+                        {
+                          backgroundColor: selectedProductId === product.id ? '#2A2420' : '#F8F3EA',
+                          borderColor: selectedProductId === product.id ? '#2A2420' : '#D8C8B4',
+                        },
+                        pressed && { opacity: 0.86, transform: [{ scale: 0.985 }] },
+                      ]}
+                      onPress={() => handleProductSelect(product)}
+                    >
+                      <Text style={[styles.productTitle, { color: selectedProductId === product.id ? '#FFF9F0' : '#2D2420' }]}>
+                        {product.title}
+                      </Text>
+                      <Text style={[styles.productPrice, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>
+                        {product.price}
+                      </Text>
+                      {openingCampaignActive && product.id !== 'friend' ? <Text style={[styles.productCampaignPrice, { color: selectedProductId === product.id ? '#FFF0CA' : '#775B26' }]}>{product.id === 'romantic' ? '20% 적용 시 47,200원' : '20% 적용 시 31,200원'}</Text> : null}
+                      {product.id !== 'friend' && !paidAnalysisPublicEnabled && !tossCardReviewEnabled ? (
+                        <Text style={[styles.productPreparing, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>정식 오픈 준비중</Text>
+                      ) : null}
+                    </Pressable>
+                    {sampleProduct ? (
+                      <Pressable
+                        onPress={() => router.push({
+                          pathname: '/(tabs)/sample-report',
+                          params: {
+                            product: sampleProduct,
+                            returnTo: 'couple-start',
+                            restoreProduct: selectedProductId ?? '',
+                            restoreRelationType: relationType ?? '',
+                            restoreParentChildCombo: parentChildCombo ?? '',
+                          },
+                        } as any)}
+                        style={({ pressed }) => [styles.productSampleLink, pressed && styles.productSampleLinkPressed]}
+                        accessibilityRole="link"
+                        accessibilityLabel={`${product.title} 샘플 리포트 보기`}
+                      >
+                        <Text style={styles.productSampleLinkText}>샘플 리포트 보기</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                );
+              })}
             </View>
           </View>
 
@@ -299,6 +357,7 @@ const styles = StyleSheet.create({
   openingCampaignTitle: { color: '#75561B', fontSize: 13, fontWeight: '800' },
   openingCampaignText: { color: '#8D6B25', fontSize: 11, lineHeight: 16 },
   productList: { gap: 10 },
+  productCardGroup: { gap: 3 },
   productCard: {
     minHeight: 70,
     borderRadius: 14,
@@ -314,6 +373,9 @@ const styles = StyleSheet.create({
   productPrice: { fontSize: 16, fontWeight: '800', letterSpacing: 0.2 },
   productCampaignPrice: { position: 'absolute', right: 16, top: 43, fontSize: 10, fontWeight: '800' },
   productPreparing: { fontSize: 11, fontWeight: '700', position: 'absolute', right: 16, bottom: 10 },
+  productSampleLink: { alignSelf: 'flex-start', minHeight: 28, justifyContent: 'center', paddingHorizontal: 4 },
+  productSampleLinkText: { color: '#6C5A49', fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
+  productSampleLinkPressed: { opacity: 0.65 },
   subSection: {
     borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 20, marginTop: -12,
   },

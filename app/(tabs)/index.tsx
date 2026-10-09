@@ -231,28 +231,38 @@ export default function HomeScreen() {
             </View>
           </Pressable>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.serviceCard,
-              styles.individualServiceCard,
-              !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCard,
-              pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
-            ]}
-            onPress={handlePersonalDeepEntry}
-            disabled={!paidAnalysisPublicEnabled && !tossCardReviewEnabled}
-          >
-            <View style={styles.serviceHeadingRow}>
-              <Text style={styles.serviceTitle}>🎨 컬러 + 심리카드 개인 심화분석</Text>
-              <Text style={styles.servicePrice}>29,000원</Text>
-            </View>
-            <Text style={styles.serviceSummary}>컬러 3개와 심리카드 3장으로 나를 깊이 살펴봅니다.</Text>
-            <Text style={[styles.serviceCta, !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCta]}>
-              {paidAnalysisPublicEnabled ? '나를 깊이 알아보기 →' : tossCardReviewEnabled ? '심사용 Toss 테스트 결제 열기 →' : '정식 오픈 준비중'}
-            </Text>
-            {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled && !tossLiveEnabled ? (
-              <Text style={styles.openingCampaignNote}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text>
-            ) : null}
-          </Pressable>
+          <View style={styles.serviceCardGroup}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.serviceCard,
+                styles.individualServiceCard,
+                !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCard,
+                pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+              ]}
+              onPress={handlePersonalDeepEntry}
+              disabled={!paidAnalysisPublicEnabled && !tossCardReviewEnabled}
+            >
+              <View style={styles.serviceHeadingRow}>
+                <Text style={styles.serviceTitle}>🎨 컬러 + 심리카드 개인 심화분석</Text>
+                <Text style={styles.servicePrice}>29,000원</Text>
+              </View>
+              <Text style={styles.serviceSummary}>컬러 3개와 심리카드 3장으로 나를 깊이 살펴봅니다.</Text>
+              <Text style={[styles.serviceCta, !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCta]}>
+                {paidAnalysisPublicEnabled ? '나를 깊이 알아보기 →' : tossCardReviewEnabled ? '심사용 Toss 테스트 결제 열기 →' : '정식 오픈 준비중'}
+              </Text>
+              {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled && !tossLiveEnabled ? (
+                <Text style={styles.openingCampaignNote}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text>
+              ) : null}
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/(tabs)/sample-report?product=personal_deep&returnTo=home' as any)}
+              style={({ pressed }) => [styles.sampleReportLink, pressed && styles.sampleReportLinkPressed]}
+              accessibilityRole="link"
+              accessibilityLabel="개인 심화분석 샘플 리포트 보기"
+            >
+              <Text style={styles.sampleReportLinkText}>샘플 리포트 보기</Text>
+            </Pressable>
+          </View>
 
           <Pressable
             style={({ pressed }) => [
@@ -381,6 +391,9 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 10,
   },
+  serviceCardGroup: {
+    gap: 4,
+  },
   serviceCard: {
     width: '100%',
     minHeight: 116,
@@ -475,6 +488,21 @@ const styles = StyleSheet.create({
   },
   preparingServiceCta: {
     color: '#8B5D2E',
+  },
+  sampleReportLink: {
+    alignSelf: 'flex-start',
+    minHeight: 32,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  sampleReportLinkText: {
+    color: '#6C5A49',
+    fontSize: 12,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
+  sampleReportLinkPressed: {
+    opacity: 0.65,
   },
   adminLink: {
     alignSelf: 'center',

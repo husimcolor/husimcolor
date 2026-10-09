@@ -22,7 +22,14 @@ describe('첫 진입 화면의 서비스 선택 UX', () => {
   });
 
   it('관계 분석의 기존 세 상품 선택과 숨김 관계 경로를 유지한다', () => {
-    expect(relationshipStartScreen).toContain('VISIBLE_RELATION_PRODUCTS.map((product) => (');
+    expect(relationshipStartScreen).toContain('VISIBLE_RELATION_PRODUCTS.map((product) => {');
     expect(relationshipStartScreen).toContain('const ROMANTIC_RELATION_TYPES');
+  });
+
+  it('상품별 샘플 링크가 결제·상품 선택과 분리된 읽기 전용 경로로 연결된다', () => {
+    expect(homeScreen).toContain("/(tabs)/sample-report?product=personal_deep&returnTo=home");
+    expect(relationshipStartScreen).toContain("pathname: '/(tabs)/sample-report'");
+    expect(relationshipStartScreen).toContain("returnTo: 'couple-start'");
+    expect(relationshipStartScreen).toContain('restoreProduct: selectedProductId');
   });
 });
