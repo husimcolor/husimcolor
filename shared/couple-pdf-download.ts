@@ -32,6 +32,8 @@ export type CouplePdfPerson = {
 export type CouplePdfDownloadPayload = {
   relationType: "부부" | "연인";
   generatedAt: string;
+  /** 공개용 가상 데이터 리포트에만 표지에 표시한다. 고객 PDF에는 전달하지 않는다. */
+  sampleNotice?: string;
   couple: {
     typeName: string;
     coreSummary: string;

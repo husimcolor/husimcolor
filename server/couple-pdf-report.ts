@@ -435,6 +435,9 @@ export async function createCouplePdfBuffer(payload: CouplePdfDownloadPayload): 
   document.fillColor("#5F8069").fontSize(12).text("HUSIM COLOR · COUPLE RELATIONSHIP REPORT", PAGE_LEFT, 160, { width: CONTENT_WIDTH });
   document.fillColor("#3D3530").fontSize(25).text(`${payload.relationType} 관계 리포트`, PAGE_LEFT, 198, { width: CONTENT_WIDTH });
   document.fillColor("#685C51").fontSize(12).text("두 사람의 컬러와 심리카드 흐름으로 읽는 관계의 연결과 회복", PAGE_LEFT, 240, { width: CONTENT_WIDTH });
+  if (payload.sampleNotice) {
+    document.fillColor("#80649B").fontSize(10.5).text(clean(payload.sampleNotice), PAGE_LEFT, 270, { width: CONTENT_WIDTH });
+  }
   document.fillColor("#80649B").fontSize(16).text(clean(payload.couple.typeName), PAGE_LEFT, 316, { width: CONTENT_WIDTH });
   document.fillColor("#4A3A2A").fontSize(16).text(clean(payload.couple.coreSummary), PAGE_LEFT, 348, { width: CONTENT_WIDTH, lineGap: 6 });
   document.fillColor("#75695D").fontSize(13).text(clean(payload.couple.tensionDescription), PAGE_LEFT, 408, { width: CONTENT_WIDTH, lineGap: 5 });

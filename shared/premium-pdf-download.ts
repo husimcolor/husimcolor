@@ -1,6 +1,8 @@
 export type PremiumPdfDownloadPayload = {
   profileLine: string;
   generatedAt: string;
+  /** 공개용 가상 데이터 리포트에만 표지에 표시한다. 고객 PDF에는 전달하지 않는다. */
+  sampleNotice?: string;
   selectedColors: Array<{ name: string; keywords: string; hex: string }>;
   stage2Bridge: string;
   cards: Array<{

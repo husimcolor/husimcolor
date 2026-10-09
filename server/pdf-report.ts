@@ -205,7 +205,10 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
   document.fillColor("#4C7A58").fontSize(12).text("HUSIM COLOR · PERSONAL DEEP REPORT", PAGE_LEFT, 168, { width: CONTENT_WIDTH });
   document.fillColor("#3D3530").fontSize(25).text("나의 컬러 심리 리포트", PAGE_LEFT, 204, { width: CONTENT_WIDTH });
   document.fillColor("#685C51").fontSize(12).text("색과 도형으로 살펴본 현재의 마음, 삶의 역할, 회복 리듬", PAGE_LEFT, 247, { width: CONTENT_WIDTH });
-  document.y = 315;
+  if (payload.sampleNotice) {
+    document.fillColor("#80649B").fontSize(10.5).text(normalizePdfText(payload.sampleNotice), PAGE_LEFT, 280, { width: CONTENT_WIDTH });
+  }
+  document.y = payload.sampleNotice ? 318 : 315;
   payload.selectedColors.slice(0, 3).forEach((color) => writeCoverColorChip(document, color));
   document.fillColor("#75695D").fontSize(12).text(`${payload.profileLine}\n리포트 생성일 · ${payload.generatedAt}`, PAGE_LEFT, 736, { width: CONTENT_WIDTH, lineGap: 5 });
 

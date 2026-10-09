@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
 import { isOpeningCampaignActive } from '@/shared/opening-campaign';
+import { getSampleReportUrl, type SampleReportProduct } from '@/shared/sample-reports';
 
 const { width, height } = Dimensions.get('window');
 
@@ -152,6 +153,18 @@ export default function HomeScreen() {
     router.push('/(tabs)/premium-info' as any);
   };
 
+  // 결제·상품 선택과 독립된 새 창/외부 브라우저로 열어 현재 화면 상태를 유지한다.
+  const handleOpenSamplePdf = (product: SampleReportProduct) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://husimcolor.vercel.app';
+    const url = getSampleReportUrl(product, origin);
+    if (!url) return;
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    void Linking.openURL(url);
+  };
+
   return (
     <ScreenContainer
       containerClassName="bg-background"
@@ -255,12 +268,12 @@ export default function HomeScreen() {
               ) : null}
             </Pressable>
             <Pressable
-              onPress={() => router.push('/(tabs)/sample-report?product=personal_deep&returnTo=home' as any)}
+              onPress={() => handleOpenSamplePdf('personal_deep')}
               style={({ pressed }) => [styles.sampleReportLink, pressed && styles.sampleReportLinkPressed]}
               accessibilityRole="link"
-              accessibilityLabel="개인 심화분석 샘플 리포트 보기"
+              accessibilityLabel="개인 심화분석 전체 샘플 PDF 보기"
             >
-              <Text style={styles.sampleReportLinkText}>샘플 리포트 보기</Text>
+              <Text style={styles.sampleReportLinkText}>전체 샘플 PDF 보기</Text>
             </Pressable>
           </View>
 

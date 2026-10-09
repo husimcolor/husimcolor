@@ -265,6 +265,9 @@ export async function createParentChildPdfBuffer(payload: ParentChildPdfDownload
   document.rect(0, 0, 595, 842).fill("#F8F4EE");
   document.fillColor("#5F8069").fontSize(12).text("HUSIM COLOR · PARENT & CHILD RELATIONSHIP REPORT", PAGE_LEFT, 160, { width: CONTENT_WIDTH });
   document.fillColor("#3D3530").fontSize(25).text("휴심컬러 부모·자녀\n감성 심리코칭 리포트", PAGE_LEFT, 198, { width: CONTENT_WIDTH, lineGap: 7 });
+  if (payload.sampleNotice) {
+    document.fillColor("#80649B").fontSize(10.5).text(clean(payload.sampleNotice), PAGE_LEFT, 280, { width: CONTENT_WIDTH });
+  }
   document.fillColor("#80649B").fontSize(17).text(`${payload.relationship.labels.parent}–${payload.relationship.labels.child}`, PAGE_LEFT, 302, { width: CONTENT_WIDTH });
   document.fillColor("#4A3A2A").fontSize(17).text(clean(payload.relationship.typeName), PAGE_LEFT, 338, { width: CONTENT_WIDTH });
   document.fillColor("#685C51").fontSize(12.5).text(clean(payload.relationship.coreSummary), PAGE_LEFT, 376, { width: CONTENT_WIDTH, lineGap: 6 });

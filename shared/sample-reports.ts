@@ -3,37 +3,32 @@ export type SampleReportProduct = "personal_deep" | "couple_love_deep" | "parent
 export type SampleReport = {
   product: SampleReportProduct;
   title: string;
-  pages: readonly string[];
+  fileName: string;
+  pageCount: number;
 };
 
 /**
- * 휴심컬러 홈페이지에서 현재 제공하는 대표 리포트 미리보기 원본입니다.
- * 새 문구나 축약본을 만들지 않고, 각 상품의 기존 2쪽 샘플 이미지를 그대로 사용합니다.
+ * 현재 운영 리포트 생성기로 만든 공개용 전체 샘플입니다.
+ * 가상 데이터만 사용하며, 고객 결과·주문·이메일과 연결되지 않습니다.
  */
 export const SAMPLE_REPORTS: Record<SampleReportProduct, SampleReport> = {
   personal_deep: {
     product: "personal_deep",
     title: "개인 심화분석",
-    pages: [
-      "https://husimcolor.com/manus-storage/personal-sample-2_2d0456e7.png",
-      "https://husimcolor.com/manus-storage/personal-sample-3_18ffebe0.png",
-    ],
+    fileName: "husimcolor-personal-deep-sample.pdf",
+    pageCount: 8,
   },
   couple_love_deep: {
     product: "couple_love_deep",
     title: "부부·연인 관계 심화분석",
-    pages: [
-      "https://husimcolor.com/manus-storage/couple-sample-11_e4550b97.png",
-      "https://husimcolor.com/manus-storage/couple-sample-12_ff4bc36e.png",
-    ],
+    fileName: "husimcolor-couple-love-sample.pdf",
+    pageCount: 18,
   },
   parent_child_deep: {
     product: "parent_child_deep",
     title: "부모·자녀 관계 심화분석",
-    pages: [
-      "https://husimcolor.com/manus-storage/parent-child-sample-09_7ba661de.png",
-      "https://husimcolor.com/manus-storage/parent-child-sample-10_5de7904b.png",
-    ],
+    fileName: "husimcolor-parent-child-sample.pdf",
+    pageCount: 17,
   },
 };
 
@@ -43,4 +38,13 @@ export function isSampleReportProduct(value: string | undefined): value is Sampl
 
 export function getSampleReport(value: string | undefined): SampleReport | null {
   return isSampleReportProduct(value) ? SAMPLE_REPORTS[value] : null;
+}
+
+/** 운영·개발 모두에서 동일한 정적 PDF 자산으로 연결한다. */
+export function getSampleReportUrl(value: string | undefined, origin?: string): string | null {
+  const report = getSampleReport(value);
+  if (!report) return null;
+  const pathname = `/sample-reports/${report.fileName}`;
+  if (!origin) return pathname;
+  return `${origin.replace(/\/$/, "")}${pathname}`;
 }
