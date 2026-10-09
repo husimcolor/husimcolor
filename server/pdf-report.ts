@@ -58,9 +58,17 @@ function writeParagraph(document: PdfWriter, value: string, options: { width?: n
   return height;
 }
 
-function writeSectionTitle(document: PdfWriter, title: string, tone = "#2D6A4F") {
+function writeParagraphBlocks(document: PdfWriter, value: string, options: { width?: number; size?: number; color?: string; lineGap?: number } = {}) {
+  const blocks = value.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+  blocks.forEach((block, index) => {
+    writeParagraph(document, block, options);
+    if (index < blocks.length - 1) document.moveDown(0.42);
+  });
+}
+
+function writeSectionTitle(document: PdfWriter, title: string, tone = "#2D6A4F", followingHeight = 0) {
   const safeTitle = normalizePdfText(title).replace(/^[^가-힣A-Za-z0-9]+/, "");
-  ensureSpace(document, 44);
+  ensureSpace(document, 44 + followingHeight);
   const top = document.y;
   document.fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, 31, 7).fill();
   document.fillColor("#FFFFFF").fontSize(14).text(safeTitle, PAGE_LEFT + 13, top + 8, { width: CONTENT_WIDTH - 26, lineBreak: false });
@@ -68,13 +76,19 @@ function writeSectionTitle(document: PdfWriter, title: string, tone = "#2D6A4F")
   document.moveDown(0.7);
 }
 
-function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label?: string; text: string }>, tone = "#F4FAF6") {
+function cardContentHeight(document: PdfWriter, paragraphs: Array<{ label?: string; text: string }>) {
   const innerWidth = CONTENT_WIDTH - 28;
-  const contentHeight = paragraphs.reduce((sum, paragraph) => {
+  return paragraphs.reduce((sum, paragraph) => {
     const label = paragraph.label ? 24 : 0;
     return sum + label + textHeight(document, normalizePdfText(paragraph.text), innerWidth, BODY_TEXT_SIZE, BODY_LINE_GAP) + 12;
-  }, 33);
-  ensureSpace(document, contentHeight + 16);
+  }, 33) + 16;
+}
+
+function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label?: string; text: string }>, tone = "#F4FAF6") {
+  const innerWidth = CONTENT_WIDTH - 28;
+  const cardHeight = cardContentHeight(document, paragraphs);
+  const contentHeight = cardHeight - 16;
+  ensureSpace(document, cardHeight);
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 16, 9).fill().restore();
   document.fillColor("#4A3A2A").fontSize(CARD_TITLE_SIZE).text(normalizePdfText(title), PAGE_LEFT + 14, top + 12, { width: innerWidth });
@@ -125,6 +139,13 @@ function writeBullets(document: PdfWriter, values: string[]) {
     document.fillColor("#302B27").fontSize(BODY_TEXT_SIZE).text(safeValue, PAGE_LEFT + 14, top, { width: CONTENT_WIDTH - 20, lineGap: BODY_LINE_GAP });
     document.moveDown(0.35);
   });
+}
+
+function bulletListHeight(document: PdfWriter, values: string[]) {
+  return values.reduce((sum, value) => {
+    const height = textHeight(document, normalizePdfText(value), CONTENT_WIDTH - 20, BODY_TEXT_SIZE, BODY_LINE_GAP);
+    return sum + height + 16;
+  }, 0);
 }
 
 function drawShape(document: PdfWriter, shape: PdfShape, centerX: number, centerY: number, radius: number, fill: string, stroke: string) {
@@ -218,7 +239,35 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
   document.fillColor("#75695D").fontSize(12).text(`${payload.profileLine}\n리포트 생성일 · ${payload.generatedAt}`, PAGE_LEFT, 736, { width: CONTENT_WIDTH, lineGap: 5 });
 
   addPage(document);
-  writeSectionTitle(document, "3장의 심리카드 해석");
+  if (payload.stage1?.colors.length) {
+    const [firstColor, ...remainingColors] = payload.stage1.colors;
+    const colorParagraphs = (color: typeof firstColor) => [
+      { label: color.role, text: `${color.keywords.join(" · ")}\n${color.description}` },
+      { label: "강점", text: color.strengths.join(" · ") },
+      { label: "마음이 지칠 때", text: color.tiredStates.join(" · ") },
+    ];
+    writeSectionTitle(document, "선택한 세 컬러의 상세 해석", "#2D6A4F", cardContentHeight(document, colorParagraphs(firstColor)));
+    writeCard(document, firstColor.name, colorParagraphs(firstColor));
+    remainingColors.forEach((color) => writeCard(document, color.name, colorParagraphs(color)));
+    const summaryParagraphs = [
+      { label: "세 컬러가 함께 나타날 때", text: payload.stage1.integrationBridge },
+      { label: "심리 성향", text: payload.stage1.psychologyTendency },
+      { label: "성격 경향", text: payload.stage1.personalityTendency },
+      { label: "관계 성향", text: payload.stage1.relationshipTendency },
+    ];
+    writeSectionTitle(document, "세 컬러 통합 해석", "#2D6A4F", cardContentHeight(document, summaryParagraphs));
+    writeCard(document, "나를 이루는 세 가지 흐름", summaryParagraphs);
+    ensureSpace(document, 92);
+    document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("주요 장점", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+    document.moveDown(0.4);
+    writePills(document, payload.stage1.strengths);
+    ensureSpace(document, 92);
+    document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("성장 가능성", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+    document.moveDown(0.4);
+    writePills(document, payload.stage1.growthPossibility);
+  }
+
+  writeSectionTitle(document, "3장의 심리카드 해석", "#2D6A4F", cardContentHeight(document, [{ text: payload.stage2Bridge }]));
   writeCard(document, "카드 흐름", [{ text: payload.stage2Bridge }], "#FCF8F0");
   writeCardPreviewRow(document, payload.cards);
   payload.cards.forEach((card) => writeCard(document, `${card.position} · ${card.colorName} ${card.shapeName}`, [
@@ -226,20 +275,23 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
     { label: "도형", text: card.shapeKeywords },
     { label: card.roleLabel, text: card.narrative },
   ]));
-  writeSectionTitle(document, "지금 나에게 필요한 컬러", "#8B6914");
+  writeSectionTitle(document, "지금 나에게 필요한 컬러", "#8B6914", 94);
+  writeParagraph(document, "현재 흐름에서 과해지기 쉬운 결을 누그러뜨리고, 회복 방향을 돕는 컬러입니다.", { size: DETAIL_TEXT_SIZE, color: "#75695D" });
+  document.moveDown(0.3);
   writePills(document, payload.complementColors.map((color) => `${color.name} · ${color.meaning}`));
-  writeSectionTitle(document, "나의 컬러 성향");
+  writeSectionTitle(document, "나의 컬러 성향", "#2D6A4F", textHeight(document, payload.colorFlowDescription));
   writeParagraph(document, payload.colorFlowDescription);
   document.moveDown(1);
-  writeSectionTitle(document, "지금 마음의 흐름");
-  writeParagraph(document, payload.combinedCoaching);
+  const firstFlowParagraph = payload.combinedCoaching.split(/\n{2,}/).find(Boolean) ?? payload.combinedCoaching;
+  writeSectionTitle(document, "지금 마음의 흐름", "#2D6A4F", textHeight(document, firstFlowParagraph));
+  writeParagraphBlocks(document, payload.combinedCoaching);
   document.moveDown(1);
   if (payload.scripture) {
-    writeSectionTitle(document, payload.scripture.label, "#8B6914");
+    writeSectionTitle(document, payload.scripture.label, "#8B6914", cardContentHeight(document, [{ text: `“${payload.scripture.text}”` }, { text: payload.scripture.ref }]));
     writeCard(document, "오늘의 문장", [{ text: `“${payload.scripture.text}”` }, { text: payload.scripture.ref }], "#FFF9EF");
   }
 
-  writeSectionTitle(document, "나의 삶의 역할 에너지", "#66557B");
+  writeSectionTitle(document, "나의 삶의 역할 에너지", "#66557B", cardContentHeight(document, [{ text: payload.lifeRole.description }]));
   writeCard(document, payload.lifeRole.title, [{ text: payload.lifeRole.description }], "#F8F5FF");
   document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("이 역할이 더하는 가치", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.4);
@@ -255,12 +307,16 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
   document.moveDown(0.35);
   writeBullets(document, payload.lifeRole.environments);
   document.moveDown(0.5);
+  ensureSpace(document, 32 + bulletListHeight(document, payload.lifeRole.shadows));
   document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("역할 에너지의 그림자", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.35);
   writeBullets(document, payload.lifeRole.shadows);
   writeCard(document, "지금의 작은 방향", [{ text: payload.lifeRole.smallDirection }], "#FCF8F0");
 
-  writeSectionTitle(document, "지금 몸과 마음의 흐름");
+  writeSectionTitle(document, "지금 몸과 마음의 흐름", "#2D6A4F", 45 + cardContentHeight(document, [
+    { text: payload.energyFlow.description },
+    { label: "지금 필요한 것", text: payload.energyFlow.recovery },
+  ]));
   writeParagraph(document, `에너지 관점 · 현재 주요 흐름 ${payload.energyFlow.currentElements.join(" · ")}`, { size: DETAIL_TEXT_SIZE, color: "#75695D" });
   document.moveDown(0.45);
   writeCard(document, payload.energyFlow.title, [
@@ -269,7 +325,7 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
   ]);
   writePills(document, payload.energyFlow.balanceKeywords);
   document.moveDown(0.6);
-  writeSectionTitle(document, "오늘의 맞춤 회복 루틴", "#8B6914");
+  writeSectionTitle(document, "오늘의 맞춤 회복 루틴", "#8B6914", 45 + cardContentHeight(document, [{ text: payload.recoveryRoutine.tea }]));
   writeParagraph(document, `보완 에너지 · ${payload.energyFlow.complementaryElements.join(" · ")}${payload.energyFlow.complementColors.length ? ` · 보완 컬러 ${payload.energyFlow.complementColors.join(" · ")}` : ""}`, { size: DETAIL_TEXT_SIZE, color: "#75695D" });
   document.moveDown(0.45);
   [
@@ -281,7 +337,10 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
     ["오늘의 회복 메시지", payload.recoveryRoutine.message],
   ].forEach(([label, text]) => writeCard(document, label, [{ text }], "#FFF9EF"));
   ensureSpace(document, 220);
-  writeSectionTitle(document, "휴심컬러 1:1 컬러코칭");
+  writeSectionTitle(document, "휴심컬러 1:1 컬러코칭", "#2D6A4F", cardContentHeight(document, [
+    { text: "지금의 마음 흐름과 나에게 맞는 회복의 방향을 더 깊이 나누고 싶다면, 1:1 컬러코칭으로 이어갈 수 있습니다." },
+    { text: payload.coachingUrl },
+  ]));
   writeCard(document, "더 깊은 나눔이 필요할 때", [
     { text: "지금의 마음 흐름과 나에게 맞는 회복의 방향을 더 깊이 나누고 싶다면, 1:1 컬러코칭으로 이어갈 수 있습니다." },
     { text: payload.coachingUrl },

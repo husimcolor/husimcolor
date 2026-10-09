@@ -859,8 +859,13 @@ export function buildPremiumStage1Interpretation(colors: readonly ColorData[]): 
   const miniContexts: string[] = [];
   const miniInterpretations = colors.map((color, index) => {
       const profile = [p1, p2, p3][index];
+      const descriptionCandidates = [
+        `${profile.psychology} 경향이 있습니다. 일상에서는 ${profile.behavior} 편입니다.`,
+        `${profile.psychology} 흐름이 있으며, 일상에서는 ${profile.behavior} 쪽으로 힘이 실립니다.`,
+        `${profile.psychology} 성향이 두드러집니다. 필요할 때 ${profile.behavior} 방식으로 균형을 잡습니다.`,
+      ];
       const description = polishKoreanOutput(
-        `${profile.psychology} 편입니다. ${profile.behavior} 모습이 보입니다.`,
+        descriptionCandidates[index] ?? descriptionCandidates[0],
         miniContexts,
       );
       miniContexts.push(description);

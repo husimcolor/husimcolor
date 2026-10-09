@@ -21,6 +21,23 @@ export function buildPremiumPdfDownloadPayload(input: PremiumPdfReportInput): Pr
       keywords: "keywords" in color ? color.keywords.slice(0, 3).join(" · ") : "",
       hex: "hex" in color && typeof color.hex === "string" ? color.hex : "#D7C9B5",
     })),
+    stage1: input.stage1Interpretation ? {
+      colors: input.stage1Interpretation.miniInterpretations.map((item, index) => ({
+        role: index === 0 ? "주기질" : index === 1 ? "나의 또 다른 성향" : "회복 방향",
+        name: item.colorName,
+        hex: item.hex,
+        keywords: [...item.keywords],
+        description: item.description,
+        strengths: [...item.strengths],
+        tiredStates: [...item.tiredStates],
+      })),
+      integrationBridge: input.stage1Interpretation.integrationBridge,
+      psychologyTendency: input.stage1Interpretation.psychologyTendency,
+      personalityTendency: input.stage1Interpretation.personalityTendency,
+      strengths: [...input.stage1Interpretation.strengths],
+      growthPossibility: [...input.stage1Interpretation.growthPossibility],
+      relationshipTendency: input.stage1Interpretation.relationshipTendency,
+    } : undefined,
     stage2Bridge: input.stage2Bridge,
     cards: input.cards.slice(0, 3).map((card, index) => {
       const interpretation = input.stage2Cards[index];

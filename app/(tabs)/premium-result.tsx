@@ -18,7 +18,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { type CardData, CARD_DATA } from "@/constants/cardData";
-import { type ColorData } from "@/constants/colorData";
+import { COLOR_DATA, type ColorData } from "@/constants/colorData";
+import { buildPremiumStage1Interpretation } from "@/constants/premiumStage1Data";
 import { buildStage2CardInterpretations, buildStage2ColorBridge } from "@/constants/premiumStage2CardInterpretation";
 import { type UserProfile } from "./profile";
 import { trpc } from "@/lib/trpc";
@@ -27,6 +28,9 @@ import { buildLifeRoleEnergyReport } from "@/constants/lifeRoleEnergy";
 import { buildPremiumPdfHtml } from "@/lib/premium-pdf-report";
 import { buildPremiumPdfDownloadPayload } from "@/lib/premium-pdf-download";
 import { buildPremiumShareCardData } from "@/lib/premium-share-card";
+import { buildPremiumCardFlowSummary } from "@/lib/premium-card-flow-summary";
+import { buildPremiumColorFlowDescription } from "@/lib/premium-color-flow-summary";
+import { COACHING_BOOKING_URL } from "@/shared/coaching-booking";
 import { PremiumShareSummaryCard } from "@/components/premium-share-summary-card";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
@@ -120,13 +124,19 @@ function getColorChipStyle(korName: string): { chipBg: string; chipBorder: strin
 const POSITION_LABELS = [
   { label: "1번 카드", sub: "무의식 · 내면 에너지", color: "#4A7A4A" },
   { label: "2번 카드", sub: "현재 현실 에너지", color: "#7A5CA8" },
-  { label: "3번 카드", sub: "미래 · 회복 · 희망 에너지", color: "#8B6030" },
+  { label: "3번 카드", sub: "회복 방향 · 다음 방향", color: "#8B6030" },
 ];
 
 type DisplayComplementColor = { name: string; meaning: string };
 
 /** 현재 결과 화면의 보완 컬러 선택 규칙을 PDF에서도 같은 값으로 재사용한다. */
-function selectDisplayComplementColors(card1: CardData, card2: CardData, card3: CardData): DisplayComplementColor[] {
+function selectDisplayComplementColors(
+  card1: CardData,
+  card2: CardData,
+  card3: CardData,
+  lifeEnergyResult?: LifeEnergyResult,
+  selectedColors?: readonly ColorData[],
+): DisplayComplementColor[] {
   const calmRecovery = ['화이트', '아이보리', '베이지', '그린', '세이지그린', '네이비', '블루', '라이트블루', '스카이블루', '라벤더', '퍼플', '라일락', '인디고', '실버', '미드나이트'];
   const highEnergy = ['레드', '코랄', '오렌지', '마젠타'];
   const similarGroups = [
@@ -141,7 +151,22 @@ function selectDisplayComplementColors(card1: CardData, card2: CardData, card3: 
     const index = similarGroups.findIndex((group) => group.includes(name));
     if (index >= 0) activeGroups.add(index);
   });
-  const allColors = [...card3.complementColors, ...card1.complementColors];
+  const recoveryColorCandidates = selectedColors?.[2]?.complementColors.map((name) => {
+    const color = COLOR_DATA.find((item) => item.korName === name || item.name === name);
+    return { name, meaning: color?.recovery ?? "회복에 필요한 흐름" };
+  }) ?? [];
+  const candidates = [...card3.complementColors, ...card1.complementColors, ...recoveryColorCandidates];
+  const overloadedElements = new Set(lifeEnergyResult?.currentFiveElements.elements ?? []);
+  const avoidForOverload = new Set<string>([
+    ...(overloadedElements.has('화') ? highEnergy : []),
+    ...(overloadedElements.has('수') ? ['블루', '네이비', '인디고', '블랙', '틸'] : []),
+    ...(overloadedElements.has('토') ? ['옐로우', '골드', '베이지', '크림', '브라운', '테라코타'] : []),
+    ...(overloadedElements.has('금') ? ['화이트', '실버', '라벤더'] : []),
+    ...(overloadedElements.has('목') ? ['그린', '올리브', '민트', '세이지그린', '스카이블루', '퍼플'] : []),
+  ]);
+  const allColors = candidates.some((color) => !avoidForOverload.has(color.name))
+    ? candidates.filter((color) => !avoidForOverload.has(color.name))
+    : candidates;
   const canUseRed = [card1.colorKor, card2.colorKor, card3.colorKor].every((color) => coolStable.includes(color));
   const isCalm = calmRecovery.includes(card3.colorKor);
   const seen = new Set<string>();
@@ -668,6 +693,7 @@ export default function PremiumResultScreen() {
       if (!delivery) return;
       automaticPdfDeliveryStartedRef.current = true;
       const [firstCard, secondCard, thirdCard] = cards;
+      const stage1Interpretation = buildPremiumStage1Interpretation(prevColors);
       const stage2Cards = buildStage2CardInterpretations([firstCard, secondCard, thirdCard]);
       const stage2Bridge = buildStage2ColorBridge(prevColors);
       const lifeEnergyResult = buildLifeEnergyResult(
@@ -692,12 +718,13 @@ export default function PremiumResultScreen() {
       const payload = buildPremiumPdfDownloadPayload({
         profile,
         selectedColors: prevColors,
+        stage1Interpretation,
         cards,
         stage2Bridge,
         stage2Cards,
-        complementColors: selectDisplayComplementColors(firstCard, secondCard, thirdCard),
-        colorFlowDescription: `${prevColors[0].korName}의 ${prevColors[0].keywords[0]}·${prevColors[1].korName}의 ${prevColors[1].keywords[0]}·${prevColors[2].korName}의 ${prevColors[2].keywords[0]}이 당신의 성향을 이루고 있습니다.`,
-        combinedCoaching: generateCombinedCoaching(firstCard, secondCard, thirdCard, prevColors),
+        complementColors: selectDisplayComplementColors(firstCard, secondCard, thirdCard, lifeEnergyResult, prevColors),
+        colorFlowDescription: buildPremiumColorFlowDescription(prevColors),
+        combinedCoaching: buildPremiumCardFlowSummary([firstCard, secondCard, thirdCard]),
         scripture: jobCoaching?.scriptureVerse ?? null,
         lifeRoleReport,
         lifeEnergyResult,
@@ -709,7 +736,7 @@ export default function PremiumResultScreen() {
           smallPractice: sanitizeRecovery(recovery.smallPractice, profile.faith),
           message: recovery.message,
         },
-        coachingUrl: "https://naver.me/ID3fxw2W",
+        coachingUrl: COACHING_BOOKING_URL,
       });
       try {
         await queueAndSendPdf.mutateAsync({
@@ -738,6 +765,9 @@ export default function PremiumResultScreen() {
   }
 
   const [card1, card2, card3] = cards;
+  const stage1Interpretation = prevColors.length >= 3
+    ? buildPremiumStage1Interpretation(prevColors)
+    : undefined;
   const stage2Cards = buildStage2CardInterpretations([card1, card2, card3]);
   const stage2Bridge = buildStage2ColorBridge(prevColors);
 
@@ -766,10 +796,10 @@ export default function PremiumResultScreen() {
   const jobCoaching = profile ? getJobCoaching(profile.job, profile.faith, card3?.color, profile.concerns, _lifeFlowType, _archetypeKey) : null;
 
   // 3카드 조합 종합 코칭 메시지 생성 (감정 공감 중심)
-  const combinedCoaching = generateCombinedCoaching(card1, card2, card3, prevColors.length >= 3 ? prevColors : undefined);
+  const combinedCoaching = buildPremiumCardFlowSummary([card1, card2, card3]);
   // 하단 여운 문장: 3번 카드(회복 방향) 기준
   const closingLine = card3.closingLine;
-  const displayComplementColors = selectDisplayComplementColors(card1, card2, card3);
+  const displayComplementColors = selectDisplayComplementColors(card1, card2, card3, lifeEnergyResult, prevColors);
   const shareCardData = buildPremiumShareCardData({
     selectedColors: prevColors,
     cards: [card1, card2, card3],
@@ -845,12 +875,11 @@ export default function PremiumResultScreen() {
     setPdfDownloadState('preparing');
     setPdfDownloadMessage('PDF 리포트를 준비하고 있습니다.');
     try {
-      const colorFlowDescription = prevColors.length >= 3
-        ? `${prevColors[0].korName}의 ${prevColors[0].keywords[0]}·${prevColors[1].korName}의 ${prevColors[1].keywords[0]}·${prevColors[2].korName}의 ${prevColors[2].keywords[0]}이 당신의 성향을 이루고 있습니다.`
-        : '';
+      const colorFlowDescription = buildPremiumColorFlowDescription(prevColors);
       const reportInput = {
         profile,
         selectedColors: prevColors,
+        stage1Interpretation,
         cards,
         stage2Bridge,
         stage2Cards,
@@ -868,7 +897,7 @@ export default function PremiumResultScreen() {
           smallPractice: sanitizeRecovery(customRecoveryRoutine.smallPractice, profile?.faith ?? ''),
           message: customRecoveryRoutine.message,
         },
-        coachingUrl: 'https://naver.me/ID3fxw2W',
+        coachingUrl: COACHING_BOOKING_URL,
       };
       if (Platform.OS === 'web') {
         setPdfDownloadState('requesting');
@@ -1098,7 +1127,7 @@ export default function PremiumResultScreen() {
         >
           <View style={styles.complementContent}>
             <Text style={[styles.complementDesc, { color: '#555555' }]}>
-              지금 마음을 채워줄 컬러입니다
+              현재 흐름에서 과해지기 쉬운 결을 누그러뜨리고, 회복 방향을 돕는 컬러입니다.
             </Text>
             <View style={styles.tagsRow}>
               {displayComplementColors.map((c) => {
@@ -1168,8 +1197,7 @@ export default function PremiumResultScreen() {
               ))}
             </View>
             <Text style={[styles.colorFlowSectionDesc, { color: "#4A3010" }]}>
-              {prevColors[0].korName}의 {prevColors[0].keywords[0]}·{prevColors[1].korName}의 {prevColors[1].keywords[0]}·{prevColors[2].korName}의 {prevColors[2].keywords[0]} 이
-              {" "}당신의 성향을 이루고 있습니다.
+              {buildPremiumColorFlowDescription(prevColors)}
             </Text>
           </View>
         )}
@@ -1468,7 +1496,7 @@ export default function PremiumResultScreen() {
           <TouchableOpacity
             style={[styles.coachingLinkBtn, { backgroundColor: "#03C75A" }]}
             onPress={() => {
-              Linking.openURL("https://naver.me/ID3fxw2W");
+              Linking.openURL(COACHING_BOOKING_URL);
             }}
             activeOpacity={0.8}
           >

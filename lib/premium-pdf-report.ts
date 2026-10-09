@@ -1,4 +1,5 @@
 import type { CardData } from "@/constants/cardData";
+import type { PremiumStage1Interpretation } from "@/constants/premiumStage1Data";
 import type { Stage2CardInterpretation } from "@/constants/premiumStage2CardInterpretation";
 import type { LifeEnergyResult } from "@/constants/lifeArchetype";
 import type { LifeRoleEnergyReport } from "@/constants/lifeRoleEnergy";
@@ -9,6 +10,7 @@ type ComplementColor = { name: string; meaning: string };
 export type PremiumPdfReportInput = {
   profile: UserProfile | null;
   selectedColors: CardData[] | { korName: string; keywords: string[]; hex?: string }[];
+  stage1Interpretation?: PremiumStage1Interpretation;
   cards: CardData[];
   stage2Bridge: string;
   stage2Cards: Stage2CardInterpretation[];
@@ -85,11 +87,30 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
       <p><b>${escapeHtml(interpretation?.roleLabel ?? "카드 해석")}</b><br />${paragraph(interpretation?.narrative)}</p>
     </article>`;
   }).join("");
+  const stage1ColorDetails = input.stage1Interpretation?.miniInterpretations.map((item, index) => `<article class="report-card color-detail">
+    <p class="eyebrow">${escapeHtml(index === 0 ? "주기질" : index === 1 ? "나의 또 다른 성향" : "회복 방향")}</p>
+    <h3>${escapeHtml(item.colorName)}</h3>
+    <p class="keywords">${escapeHtml(item.keywords.join(" · "))}</p>
+    <p>${paragraph(item.description)}</p>
+    <p class="meta"><b>강점</b> · ${escapeHtml(item.strengths.join(" · "))}<br /><b>마음이 지칠 때</b> · ${escapeHtml(item.tiredStates.join(" · "))}</p>
+  </article>`).join("") ?? "";
+  const stage1Summary = input.stage1Interpretation ? `
+    <article class="report-card"><h3>세 컬러가 함께 나타날 때</h3><p>${paragraph(input.stage1Interpretation.integrationBridge)}</p></article>
+    <article class="report-card"><p class="small-title">심리 성향</p><p>${paragraph(input.stage1Interpretation.psychologyTendency)}</p><p class="small-title">성격 경향</p><p>${paragraph(input.stage1Interpretation.personalityTendency)}</p><p class="small-title">관계 성향</p><p>${paragraph(input.stage1Interpretation.relationshipTendency)}</p></article>
+    <p class="small-title">주요 장점</p><div class="tag-grid">${tagList(input.stage1Interpretation.strengths)}</div>
+    <p class="small-title" style="margin-top:12px">성장 가능성</p><div class="tag-grid">${tagList(input.stage1Interpretation.growthPossibility)}</div>
+  ` : "";
   const directions = input.lifeRoleReport.directions.map((direction) => `<article class="direction-card">
     <h3>${escapeHtml(direction.title)}</h3>
     <p>${paragraph(direction.description)}</p>
     <p class="preparation"><b>준비 방향</b> · ${paragraph(direction.preparation)}</p>
   </article>`).join("");
+  const cardFlowParagraphs = input.combinedCoaching
+    .split(/\n{2,}/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => `<p>${paragraph(item)}</p>`)
+    .join("");
   const coachingUrl = escapeHtml(input.coachingUrl);
 
   return `<!DOCTYPE html>
@@ -148,10 +169,11 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
         <p class="meta">${profileLine}<br />리포트 생성일 · ${escapeHtml(generatedAt)}</p>
       </section>
 
+      ${input.stage1Interpretation ? section("선택한 세 컬러의 상세 해석", `<div class="card-stack">${stage1ColorDetails}</div>${stage1Summary}`) : ""}
       ${section("3장의 심리카드 해석", `<p class="note">${paragraph(input.stage2Bridge)}</p><div class="card-stack">${cardDetails}</div>`)}
-      ${section("지금 나에게 필요한 컬러", `<div class="tag-grid">${input.complementColors.map((color) => `<span class="tag"><b>${escapeHtml(color.name)}</b> · ${escapeHtml(color.meaning)}</span>`).join("")}</div>`, "gold")}
+      ${section("지금 나에게 필요한 컬러", `<p class="meta">현재 흐름에서 과해지기 쉬운 결을 누그러뜨리고, 회복 방향을 돕는 컬러입니다.</p><div class="tag-grid">${input.complementColors.map((color) => `<span class="tag"><b>${escapeHtml(color.name)}</b> · ${escapeHtml(color.meaning)}</span>`).join("")}</div>`, "gold")}
       ${section("나의 컬러 성향", `<p>${paragraph(input.colorFlowDescription)}</p>`)}
-      ${section("지금 마음의 흐름", `<p>${paragraph(input.combinedCoaching)}</p>`)}
+      ${section("지금 마음의 흐름", cardFlowParagraphs)}
       ${input.scripture ? section(plainPdfLabel(input.scripture.label), `<p>“${paragraph(input.scripture.text)}”</p><p class="meta">— ${escapeHtml(input.scripture.ref)}</p>`, "gold") : ""}
 
       ${section("나의 삶의 역할 에너지", `

@@ -5,10 +5,14 @@ import { CARD_DATA, type CardData } from "../constants/cardData";
 import { COLOR_DATA } from "../constants/colorData";
 import { buildCustomRecoveryRoutine, buildLifeEnergyResult } from "../constants/lifeArchetype";
 import { buildLifeRoleEnergyReport } from "../constants/lifeRoleEnergy";
+import { buildPremiumStage1Interpretation } from "../constants/premiumStage1Data";
 import { buildPremiumPdfHtml } from "../lib/premium-pdf-report";
 import { buildPremiumPdfDownloadPayload } from "../lib/premium-pdf-download";
 import { buildPremiumShareCardData } from "../lib/premium-share-card";
+import { buildPremiumCardFlowSummary } from "../lib/premium-card-flow-summary";
+import { buildPremiumColorFlowDescription } from "../lib/premium-color-flow-summary";
 import { createPremiumPdfBuffer, validatePremiumPdfPayload } from "../server/pdf-report";
+import { COACHING_BOOKING_URL } from "../shared/coaching-booking";
 import { buildStage2CardInterpretations, buildStage2ColorBridge } from "../constants/premiumStage2CardInterpretation";
 
 const getCard = (id: string): CardData => {
@@ -32,10 +36,12 @@ describe("유료 결과 PDF 리포트", () => {
     energy.currentRoutines,
   );
   const stage2Cards = buildStage2CardInterpretations(cards);
+  const stage1 = buildPremiumStage1Interpretation(colors);
   const lifeRole = buildLifeRoleEnergyReport(colors.map((color) => color.id), cards, "45세");
   const html = buildPremiumPdfHtml({
     profile: null,
     selectedColors: colors,
+    stage1Interpretation: stage1,
     cards,
     stage2Bridge: buildStage2ColorBridge(colors),
     stage2Cards,
@@ -58,6 +64,8 @@ describe("유료 결과 PDF 리포트", () => {
 
   it("웹 결과의 카드·오행·회복·역할 데이터를 새 해석 없이 A4 HTML로 재배치한다", () => {
     expect(html).toContain(stage2Cards[0].narrative);
+    expect(html).toContain(stage1.miniInterpretations[0].description);
+    expect(html).toContain(stage1.relationshipTendency);
     expect(html).toContain(energy.currentFiveElements.elements.join(" · "));
     expect(html).toContain(energy.complementaryFiveElements.elements.join(" · "));
     expect(html).toContain(routine.food);
@@ -114,6 +122,7 @@ describe("유료 결과 PDF 리포트", () => {
     const payload = buildPremiumPdfDownloadPayload({
       profile: null,
       selectedColors: colors,
+      stage1Interpretation: stage1,
       cards,
       stage2Bridge: buildStage2ColorBridge(colors),
       stage2Cards,
@@ -138,6 +147,8 @@ describe("유료 결과 PDF 리포트", () => {
     expect(pdf.subarray(0, 4).toString("utf8")).toBe("%PDF");
     expect(pdf.length).toBeGreaterThan(2_000);
     expect(validated.cards[0].narrative).toBe(stage2Cards[0].narrative);
+    expect(validated.stage1?.colors[0].description).toBe(stage1.miniInterpretations[0].description);
+    expect(validated.stage1?.relationshipTendency).toBe(stage1.relationshipTendency);
     expect(validated.energyFlow.currentElements).toEqual(energy.currentFiveElements.elements);
     expect(validated.selectedColors[0].hex).toBe(colors[0].hex);
     expect(validated.cards[0]).toMatchObject({ colorHex: cards[0].colorHex, shape: cards[0].shape });
@@ -172,9 +183,49 @@ describe("유료 결과 PDF 리포트", () => {
     expect(recoverySource).not.toMatch(/낙실|낙살|앜아|시간 에|꼼어|쉽히|잋는|흥수/);
   });
 
+  it("현재 흐름이 과열된 경우에는 같은 화 계열을 보완 에너지로 다시 추천하지 않는다", () => {
+    expect(energy.flowType).toBe("진장");
+    expect(energy.complementaryFiveElements.elements).not.toContain("화");
+    expect(energy.complementaryFiveElements.complementColors).not.toContain("레드");
+    expect(energy.complementaryFiveElements.complementColors).not.toContain("오렌지");
+  });
+
+  it("현재 마음의 흐름은 카드 원문을 되풀이하지 않고 무의식·현재·회복 방향을 구분한다", () => {
+    const summary = buildPremiumCardFlowSummary(cards);
+    expect(summary).toContain("1번 레드 삼각형은 평소");
+    expect(summary).toContain("2번 블루 마름모는 지금");
+    expect(summary).toContain("3번 화이트 네모는 회복할 때");
+    expect(summary).toContain("회복할 때");
+    expect(summary).not.toContain(stage2Cards[0].narrative);
+    expect(COACHING_BOOKING_URL).toBe("https://naver.me/ID3fxw2W");
+  });
+
+  it("컬러 성향 문장은 마지막 키워드의 종성에 맞춰 화이트의 정화가처럼 연결한다", () => {
+    expect(buildPremiumColorFlowDescription([
+      { korName: "레드", keywords: ["열정"] },
+      { korName: "블루", keywords: ["신뢰"] },
+      { korName: "화이트", keywords: ["정화"] },
+    ])).toBe("레드의 열정 · 블루의 신뢰 · 화이트의 정화가 당신의 성향을 이루고 있습니다.");
+  });
+
   it("에너지 제목의 조사는 종성에 맞게 처리해 체계을 같은 오류가 재발하지 않는다", () => {
     const screen = readFileSync(resolve(process.cwd(), "app/(tabs)/premium-result.tsx"), "utf8");
     expect(screen).toContain("josaCoach(base, '을', '를')");
     expect(screen).not.toContain("`${base}을 향한 마음");
+  });
+
+  it("역할 에너지의 그림자 제목과 모든 항목을 같은 페이지에 배치할 높이를 먼저 확보한다", () => {
+    const source = readFileSync(resolve(process.cwd(), "server/pdf-report.ts"), "utf8");
+    expect(source).toContain("function bulletListHeight");
+    expect(source).toContain("ensureSpace(document, 32 + bulletListHeight(document, payload.lifeRole.shadows));");
+  });
+
+  it("세 카드 종합 흐름은 서버·네이티브 PDF 모두 카드 위치별 짧은 문단으로 표시한다", () => {
+    const server = readFileSync(resolve(process.cwd(), "server/pdf-report.ts"), "utf8");
+    const nativeHtml = readFileSync(resolve(process.cwd(), "lib/premium-pdf-report.ts"), "utf8");
+    expect(server).toContain("function writeParagraphBlocks");
+    expect(server).toContain("writeParagraphBlocks(document, payload.combinedCoaching);");
+    expect(nativeHtml).toContain("const cardFlowParagraphs = input.combinedCoaching");
+    expect(nativeHtml).toContain('section("지금 마음의 흐름", cardFlowParagraphs)');
   });
 });

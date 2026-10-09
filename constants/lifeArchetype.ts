@@ -174,17 +174,26 @@ export function deriveCurrentFiveElements(
 
 /**
  * 보완오행은 A(3번 심리카드 보완 컬러)를 먼저, B(1단계 3번 회복방향 컬러의
- * 기존 보완 컬러)를 다음으로 읽는다. 현재 주요 오행과 점수를 합산하지 않는다.
+ * 기존 보완 컬러)를 다음으로 읽는다. 다만 현재 흐름이 과열된 계열은 다시 권하지 않고,
+ * 같은 원문 후보 안에서 그 계열을 제외한 회복 컬러를 우선한다.
  */
 export function deriveComplementaryFiveElements(
   recoveryCardComplementColors: ReadonlyArray<{ name: string }>,
   recoveryDirectionColorId: string,
+  currentFlow?: FiveElementsResult,
 ): FiveElementsResult {
   const sources: OhangSource[] = [];
+  const currentDominant = currentFlow ? dominant(currentFlow.score) : undefined;
+  const totalCurrentScore = currentFlow
+    ? Object.values(currentFlow.score).reduce((sum, score) => sum + score, 0)
+    : 0;
+  const shouldAvoidCurrentDominant = Boolean(
+    currentDominant && totalCurrentScore > 0 && (currentFlow?.score[currentDominant] ?? 0) / totalCurrentScore >= 0.35,
+  );
   const appendColor = (name: string, label: string, priority: number) => {
     const colorId = colorNameToId(name);
     const element = colorId ? COLOR_ID_TO_OHANG[colorId] : undefined;
-    if (!element) return;
+    if (!element || (shouldAvoidCurrentDominant && element === currentDominant)) return;
     sources.push({ label, element, priority, colorName: name });
   };
 
@@ -763,7 +772,7 @@ function buildContextualRoutinesForFlow(
       '완성하지 못한 것을 시작한 것으로 인정하기',
     ],
     '균형': [
-      '지금 이 상태를 유지하는 작은 루틴 하나 선택하기',
+      '일정 사이에 10분 비우는 시간을 먼저 정해 두기',
       '오늘 자신에게 좋았던 순간을 떠올려보기',
       '미루던 연락이나 일을 하나 실행하기',
       '오늘 하루를 짧게 일기로 정리하기',
@@ -829,7 +838,7 @@ function buildContextualRoutinesForFlow(
     '정체': '멈춰있는 것이 실패가 아닙니다. 지금은 정리의 시간입니다.',
     '예민': '예민함은 당신이 더 많은 것을 느끼고 있다는 증거입니다.',
     '성장': '모든 것을 동시에 이루려 하지 않아도 됩니다. 하나씩 충분합니다.',
-    '균형': '지금 이 상태를 유지하는 것 자체가 이미 회복입니다.',
+    '균형': '안정감이 느껴지는 날에도 쉼과 일을 나누는 리듬을 지켜보세요.',
   };
 
   // 기본 루틴 3개 + Archetype 특화 루틴 1개 조합
@@ -940,6 +949,7 @@ export function buildLifeEnergyResult(
   const complementaryFiveElements = deriveComplementaryFiveElements(
     recoveryCardComplementColors,
     colorIds[2] ?? cards[2]?.color ?? 'green',
+    currentFiveElements,
   );
   const archetypes = deriveLifeArchetypes(colorIds, cards);
   const archetypeCoaching = buildArchetypeCoaching(archetypes);

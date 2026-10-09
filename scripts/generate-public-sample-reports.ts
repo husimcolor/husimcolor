@@ -11,15 +11,19 @@ import {
 } from "../constants/coupleData";
 import { buildCustomRecoveryRoutine, buildLifeEnergyResult } from "../constants/lifeArchetype";
 import { buildLifeRoleEnergyReport } from "../constants/lifeRoleEnergy";
+import { buildPremiumStage1Interpretation } from "../constants/premiumStage1Data";
 import { buildStage2CardInterpretations, buildStage2ColorBridge } from "../constants/premiumStage2CardInterpretation";
 import { buildCoupleColorCardIntegratedAnalysis } from "../lib/couple-color-card-analysis";
 import { buildParentChildCoaching } from "../lib/parent-child-coaching";
 import { buildParentChildRelationshipAnalysis } from "../lib/parent-child-relationship-analysis";
+import { buildPremiumCardFlowSummary } from "../lib/premium-card-flow-summary";
+import { buildPremiumColorFlowDescription } from "../lib/premium-color-flow-summary";
 import { buildPremiumPdfDownloadPayload } from "../lib/premium-pdf-download";
 import { buildParentChildPdfDownloadPayload } from "../lib/parent-child-pdf-download";
 import { createCouplePdfBuffer } from "../server/couple-pdf-report";
 import { createParentChildPdfBuffer } from "../server/parent-child-pdf-report";
 import { createPremiumPdfBuffer } from "../server/pdf-report";
+import { COACHING_BOOKING_URL } from "../shared/coaching-booking";
 import type { CouplePdfDownloadPayload, CouplePdfPerson } from "../shared/couple-pdf-download";
 
 const SAMPLE_NOTICE = "공개 예시 리포트 · 가상 데이터로 생성됨 · 실제 고객 개인정보 미사용";
@@ -125,15 +129,27 @@ async function createPersonalSample() {
   );
   const stage2Cards = buildStage2CardInterpretations(cards as [CardData, CardData, CardData]);
   const lifeRole = buildLifeRoleEnergyReport(colors.map((color) => color.id), cards, "가상 성인");
+  const complementCandidates = [
+    ...cards[2].complementColors,
+    ...cards[0].complementColors,
+    ...colors[2].complementColors.map((name) => ({
+      name,
+      meaning: COLOR_DATA.find((color) => color.korName === name || color.name === name)?.recovery ?? "회복에 필요한 흐름",
+    })),
+  ];
+  const complementColors = energy.complementaryFiveElements.complementColors?.length
+    ? energy.complementaryFiveElements.complementColors.map((name) => complementCandidates.find((color) => color.name === name) ?? { name, meaning: "회복에 필요한 흐름" })
+    : cards[2].complementColors;
   const payload = buildPremiumPdfDownloadPayload({
     profile: null,
     selectedColors: colors,
+    stage1Interpretation: buildPremiumStage1Interpretation(colors),
     cards,
     stage2Bridge: buildStage2ColorBridge(colors),
     stage2Cards,
-    complementColors: cards[2].complementColors,
-    colorFlowDescription: `${colors[0].korName}의 ${colors[0].keywords[0]}·${colors[1].korName}의 ${colors[1].keywords[0]}·${colors[2].korName}의 ${colors[2].keywords[0]}이 가상 인물의 성향 흐름을 이룹니다.`,
-    combinedCoaching: `${stage2Cards[0].narrative}\n\n${stage2Cards[1].narrative}\n\n${stage2Cards[2].narrative}`,
+    complementColors,
+    colorFlowDescription: buildPremiumColorFlowDescription(colors, "가상 인물의 성향 흐름"),
+    combinedCoaching: buildPremiumCardFlowSummary(cards as [CardData, CardData, CardData]),
     scripture: null,
     lifeRoleReport: lifeRole,
     lifeEnergyResult: energy,
@@ -145,7 +161,7 @@ async function createPersonalSample() {
       smallPractice: routine.smallPractice,
       message: routine.message,
     },
-    coachingUrl: "https://husimcolor.vercel.app",
+    coachingUrl: COACHING_BOOKING_URL,
   });
   payload.profileLine = "개인 심화분석 · 가상 인물";
   payload.generatedAt = dateLabel();
