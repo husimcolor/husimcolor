@@ -61,6 +61,9 @@ describe("카카오톡 PDF 다운로드 호환성", () => {
       expect(source).toContain("Content-Disposition");
     }
     expect(endpoint).toContain('req.method !== "GET" && req.method !== "HEAD"');
+    expect(workflow).toContain("pdf-report.func/index.js");
+    expect(workflow).toContain("pdf-report.func/HusimPdfKorean.ttf");
+    expect(workflow).toContain('"/api/pdf-report"');
     expect(workflow).toContain("private-pdf-download.func");
     expect(workflow).toContain('"/api/private-pdf-download"');
   });

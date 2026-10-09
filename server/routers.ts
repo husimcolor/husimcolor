@@ -91,16 +91,12 @@ import {
 } from "./commerce/relationship-invite-service";
 
 /**
- * PDFKit은 Vercel 함수 번들에서 상대 ICC 파일을 해석하지 못할 수 있으므로,
- * 일반 tRPC 요청의 초기 로딩에서는 PDF 생성기를 포함하지 않는다.
- * 실제 PDF 전달 요청에서만 기존 생성기를 불러와 개발·심사용 흐름을 유지한다.
+ * 일반 tRPC 요청의 초기 로딩에는 PDF 생성기를 넣지 않고, 결과 전달을 요청한
+ * 시점에만 불러온다. Production 번들에는 PDFKit 및 글꼴 런타임이 별도로
+ * 포함되므로 라이브 결제 결과도 같은 private-document/outbox 경로를 사용한다.
  */
 export async function loadPrivatePdfDeliveryService() {
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("PRIVATE_PDF_DELIVERY_RUNTIME_NOT_ENABLED");
-  }
-  const sourceModule: string = "./commerce/pdf-delivery-service";
-  return import(sourceModule);
+  return import("./commerce/pdf-delivery-service");
 }
 
 export const appRouter = router({
