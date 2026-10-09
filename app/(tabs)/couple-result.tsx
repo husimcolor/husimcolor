@@ -67,6 +67,12 @@ function readableSwatchTextColor(hex: string) {
   return isLightHex(hex) ? '#4A3728' : hex;
 }
 
+function koreanSubject(value: string) {
+  const last = value.trim().charCodeAt(value.trim().length - 1);
+  const hasFinalConsonant = last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+  return `${value}${hasFinalConsonant ? '이' : '가'}`;
+}
+
 function SectionCard({
   label, title, accentColor, colors, children, variant = 'default',
 }: {
@@ -1534,7 +1540,7 @@ export default function CoupleResultScreen() {
                     </View>
                     <View style={styles.parentChildConflictDivider} />
                     <View style={styles.parentChildConflictStep}>
-                      <Text style={[styles.parentChildConflictLabel, { color: '#326E68' }]}>{parentChildCoaching.labels.child}이 받아들이는 방식</Text>
+                      <Text style={[styles.parentChildConflictLabel, { color: '#326E68' }]}>{koreanSubject(parentChildCoaching.labels.child)} 받아들이는 방식</Text>
                       <Text style={styles.parentChildConflictText}>{parentChildCoaching.conflictRecovery.childReception}</Text>
                     </View>
                     <View style={styles.parentChildConflictDivider} />

@@ -32,6 +32,12 @@ function clean(value: string) {
     .trim();
 }
 
+function subjectLabel(value: string) {
+  const last = value.trim().charCodeAt(value.trim().length - 1);
+  const hasFinalConsonant = last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+  return `${value}${hasFinalConsonant ? "이" : "가"}`;
+}
+
 function addPage(document: PdfWriter) {
   document.addPage({ size: "A4", margins: { top: PAGE_TOP, bottom: PAGE_TOP, left: PAGE_LEFT, right: PAGE_LEFT } });
 }
@@ -155,7 +161,11 @@ function writeColorCards(document: PdfWriter, colors: CouplePdfPerson["colors"])
 
 function writeCards(document: PdfWriter, cards: CouplePdfPerson["cards"]) {
   cards.forEach((card) => {
-    ensureSpace(document, 32);
+    // 카드 색상·도형 이름이 페이지 끝에 남고 카드 제목·첫 해석이 다음 쪽으로
+    // 분리되지 않도록 세 요소를 한 배치 단위로 계산한다.
+    const narrativeHeight = heightOf(document, card.narrative, CONTENT_WIDTH - 30);
+    const requiredHeight = 43 + CARD_TITLE_BLOCK_HEIGHT + narrativeHeight + CARD_PARAGRAPH_GAP + 27;
+    ensureSpace(document, requiredHeight);
     const top = document.y;
     document.save().fillColor(card.colorHex).roundedRect(PAGE_LEFT, top, 36, 36, 7).fill().restore();
     drawShape(document, card.shape, PAGE_LEFT + 18, top + 18, 9, "#FFFDF9", "#FFFDF9");
@@ -169,7 +179,11 @@ function writePerson(document: PdfWriter, person: CouplePdfPerson, tone: string)
   writeSectionTitle(document, `${person.label}의 컬러·심리카드 결과`, tone, 120);
   writeCard(document, "선택한 3컬러", [{ text: "선택한 컬러는 현재의 마음과 관계 안에서 중요하게 느끼는 방향을 함께 보여줍니다." }], "#F7F4EE");
   writeColorCards(document, person.colors);
-  writeSectionTitle(document, `${person.label}의 심리카드 해석`, tone, 155);
+  const firstCard = person.cards[0];
+  const firstCardHeight = firstCard
+    ? 43 + CARD_TITLE_BLOCK_HEIGHT + heightOf(document, firstCard.narrative, CONTENT_WIDTH - 30) + CARD_PARAGRAPH_GAP + 27
+    : 155;
+  writeSectionTitle(document, `${person.label}의 심리카드 해석`, tone, Math.max(155, firstCardHeight));
   writeCards(document, person.cards);
   writeCard(document, "컬러 × 심리카드 통합 분석", person.integratedAnalysis.split(/\n\n+/).filter(Boolean).map((text) => ({ text })), "#F2F7F3");
   writeCard(document, "관계 성향과 회복 방향", [
@@ -182,15 +196,23 @@ function writePerson(document: PdfWriter, person: CouplePdfPerson, tone: string)
 
 function writeRelationship(document: PdfWriter, payload: ParentChildPdfDownloadPayload) {
   const relation = payload.relationship;
+  const currentFlowSections = relation.cardFlowSummary
+    .split(/\n{2,}/)
+    .map((section) => section.trim())
+    .filter(Boolean)
+    .map((section) => {
+      const [label, ...body] = section.split("\n");
+      return { label: label?.trim(), text: body.join("\n").trim() };
+    });
   addPage(document);
-  writeSectionTitle(document, "두 사람의 종합 관계 분석", "#80649B", 120);
+  writeSectionTitle(document, "두 사람의 종합 관계 분석", "#80649B", 245);
   writeCard(document, "두 사람의 컬러 및 심리카드 흐름 요약", [
     { text: relation.coreSummary },
     { text: relation.description },
-    { label: "두 사람의 현재 심리 흐름", text: relation.cardFlowSummary },
+    ...currentFlowSections,
   ], "#F6F1FA");
   writeCard(document, "관계 유형", [{ label: relation.typeName, text: relation.coreSummary }], "#EFF7F0");
-  writeSectionTitle(document, "부모와 자녀로 만나는 두 역할", "#5F8069", 150);
+  writeSectionTitle(document, "부모와 자녀로 만나는 두 역할", "#5F8069", 285);
   writeCard(document, "각자의 사회적 역할", [
     { label: `${relation.labels.parent}의 사회적 역할 · ${relation.socialRoles.parent.title}`, text: relation.socialRoles.parent.description },
     { label: `${relation.labels.child}의 사회적 역할 · ${relation.socialRoles.child.title}`, text: relation.socialRoles.child.description },
@@ -200,13 +222,13 @@ function writeRelationship(document: PdfWriter, payload: ParentChildPdfDownloadP
     { label: `${relation.labels.child} · ${relation.relationshipRoles.child.title}`, text: relation.relationshipRoles.child.description },
     { label: "두 역할이 만났을 때", text: relation.relationshipRoles.together },
   ], "#F2F7F3");
-  writeSectionTitle(document, "자녀 기질 맞춤 소통", "#B16A75", 150);
+  writeSectionTitle(document, "자녀 기질 맞춤 소통", "#B16A75", 235);
   writeCard(document, `${relation.labels.child}의 마음을 이해하는 방법`, [
     { label: "마음이 닫히기 쉬운 순간", text: relation.childCommunication.closesWhen },
     { label: "자신감을 얻는 순간", text: relation.childCommunication.gainsConfidenceWhen },
   ], "#FFF3F3");
   if (relation.lifeScenes.strengths.length || relation.lifeScenes.tensions.length) {
-    writeSectionTitle(document, "잘 맞는 부분과 부딪히는 부분", "#8B7259", 130);
+    writeSectionTitle(document, "잘 맞는 부분과 부딪히는 부분", "#8B7259", 235);
     if (relation.lifeScenes.strengths.length) {
       writeCard(document, "잘 맞는 부분", relation.lifeScenes.strengths.map((scene) => ({ label: scene.title, text: scene.description })), "#FBF6EF");
     }
@@ -214,18 +236,18 @@ function writeRelationship(document: PdfWriter, payload: ParentChildPdfDownloadP
       writeCard(document, "부딪히는 부분", relation.lifeScenes.tensions.map((scene) => ({ label: scene.title, text: scene.description })), "#FFF3F3");
     }
   }
-  writeSectionTitle(document, "부모의 대화 DO & DON'T", "#A86773", 145);
+  writeSectionTitle(document, "부모의 대화 DO & DON'T", "#A86773", 255);
   writeCard(document, `${relation.labels.child}에게 힘이 되는 말 · DO`, [{ bullets: relation.dialogue.doMessages }], "#FFF4F7");
-  writeCard(document, `${relation.labels.child}이 부담을 느끼는 말 · DON'T`, [{ bullets: relation.dialogue.dontMessages }], "#FFF3F3");
-  writeSectionTitle(document, "갈등이 생기는 이유와 다시 연결되는 순서", "#B87B91", 155);
+  writeCard(document, `${subjectLabel(relation.labels.child)} 부담을 느끼는 말 · DON'T`, [{ bullets: relation.dialogue.dontMessages }], "#FFF3F3");
+  writeSectionTitle(document, "갈등이 생기는 이유와 다시 연결되는 순서", "#B87B91", 255);
   writeCard(document, "갈등이 시작되는 지점", [
-    { label: "갈등이 시작되는 지점", text: relation.conflictRecovery.conflictStart },
+    { text: relation.conflictRecovery.conflictStart },
     { label: `${relation.labels.parent}의 의도`, text: relation.conflictRecovery.parentIntent },
-    { label: `${relation.labels.child}이 받아들이는 방식`, text: relation.conflictRecovery.childReception },
+    { label: `${subjectLabel(relation.labels.child)} 받아들이는 방식`, text: relation.conflictRecovery.childReception },
   ], "#FFF3F3");
   writeCard(document, "관계가 어긋나는 지점", [{ text: relation.conflictRecovery.mismatch }], "#FFF3F3");
   writeCard(document, "회복에 필요한 순서", [{ text: relation.conflictRecovery.recoveryOrder }], "#F0F6F1");
-  writeSectionTitle(document, "추천 컬러와 우리 관계를 위한 3가지 실천", "#94723D", 130);
+  writeSectionTitle(document, "추천 컬러와 우리 관계를 위한 3가지 실천", "#94723D", 235);
   writeCard(document, "두 사람에게 권하는 컬러", relation.recommendedColors.map((color) => ({ label: color.name, text: color.reason })), "#FCF8EF");
   writeCard(document, "우리 관계를 위한 3가지 실천", [{ bullets: relation.practices }], "#F0F6F1");
   writeCard(document, "마무리 코칭 메시지", [{ text: relation.closingMessage }], "#F4F0EA");

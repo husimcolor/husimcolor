@@ -130,6 +130,28 @@ const DIMENSION_LABEL: Record<RelationDimension, string> = {
   space: "자기 리듬과 거리를 지키는 여백",
 };
 
+const DIMENSION_NOUN: Record<RelationDimension, string> = {
+  stability: "안정과 지속성",
+  care: "돌봄과 배려",
+  inquiry: "질문과 이해",
+  connection: "연결과 공감",
+  expression: "표현과 솔직함",
+  action: "실천과 추진",
+  structure: "기준과 정리",
+  space: "자기 리듬과 여백",
+};
+
+const DIMENSION_ACTION: Record<RelationDimension, string> = {
+  stability: "안정과 지속성을 중요하게 여기는",
+  care: "돌봄과 배려를 소중히 여기는",
+  inquiry: "이유를 충분히 살피며 이해하려는",
+  connection: "마음과 마음을 이어 가려는",
+  expression: "생각과 감정을 솔직하게 드러내려는",
+  action: "작은 움직임을 시작하고 실천하려는",
+  structure: "기준과 순서를 분명히 세우려는",
+  space: "자기 리듬과 여백을 지키려는",
+};
+
 const DIMENSION_ROLE: Record<RelationDimension, string> = {
   stability: "안정된 흐름을 지키는",
   care: "사람을 편안히 살피는",
@@ -272,12 +294,18 @@ function recoverySupport(profile: PersonProfile, label: string): string {
   const colorText = profile.recoveryColor
     ? `${profile.recoveryColor.korName}의 ${profile.recoveryColor.recovery}`
     : "선택한 회복 컬러의 방향";
-  const cardText = futureCard ? `${futureCard.colorKor} ${futureCard.shapeKor} 카드` : "미래 카드";
-  return `${label}에게는 ${colorText}이 회복 방향으로 쓰일 수 있으며, ${cardText}는 앞으로 필요한 연결 방식을 보완합니다.`;
+  const cardText = futureCard ? `${futureCard.colorKor} ${futureCard.shapeKor} 카드` : "선택한 회복 심리카드";
+  return `${label}에게는 ${object(colorText)} 회복 방향으로 참고할 수 있습니다. ${subject(cardText)} 편안한 연결을 다시 만드는 방법을 보완합니다.`;
 }
 
 function dimensionPairText(profile: PersonProfile): string {
-  return `${profile.colors[0].korName}의 ${DIMENSION_LABEL[profile.primaryDimension]}과 ${profile.colors[1].korName}의 ${DIMENSION_LABEL[profile.secondaryDimension]}`;
+  return colorDimensionPair(profile);
+}
+
+function colorDimensionPair(profile: PersonProfile): string {
+  const first = `${profile.colors[0].korName}의 ${DIMENSION_LABEL[profile.primaryDimension]}`;
+  const second = `${profile.colors[1].korName}의 ${DIMENSION_LABEL[profile.secondaryDimension]}`;
+  return `${first}, ${second}`;
 }
 
 function findSharedDimension(parent: PersonProfile, child: PersonProfile): RelationDimension | undefined {
@@ -733,7 +761,7 @@ function cardFlowAt(card: CardData | undefined, position: "inner" | "current" | 
 }
 
 function futureCardCue(card: CardData | undefined): string {
-  if (!card) return "선택한 미래 심리카드가 가리키는 회복 흐름";
+  if (!card) return "선택한 회복 심리카드가 가리키는 회복 흐름";
   return `${card.colorKor} ${card.shapeKor} 카드가 보완하는 회복 방향`;
 }
 
@@ -808,10 +836,10 @@ function buildRelationshipSummary(
     id: typeId,
     typeName: type.name,
     accentColor: type.accentColor,
-    coreSummary: `${parentLabel}의 ${parentDimension}과 ${childLabel}의 ${childDimension}이 만나, 서로의 강점을 관계 안에서 조율해 갈 수 있는 흐름입니다.`,
-    description: `${parentLabel}의 1·2순위 ${parentText}는 ${parentDimension}과 ${object(DIMENSION_LABEL[parent.secondaryDimension])} 관계의 중심에 둡니다. ${childLabel}의 1·2순위 ${childText}는 ${childDimension}과 ${object(DIMENSION_LABEL[child.secondaryDimension])} 더합니다. 그래서 두 사람은 ${tension.title}처럼 서로 다른 지점이 생길 수 있지만, 그 차이를 확인하는 방식 자체가 관계의 신뢰를 키우는 자원이 될 수 있습니다.`,
+    coreSummary: `${subject(parentLabel)} ${DIMENSION_ACTION[parent.primaryDimension]} 마음과 ${subject(childLabel)} ${DIMENSION_ACTION[child.primaryDimension]} 마음이 만나 서로의 강점을 조율해 갈 수 있습니다.`,
+    description: `${parentLabel}의 1·2순위 ${parentText}는 ${object(colorDimensionPair(parent))} 관계의 중심에 둡니다. ${childLabel}의 1·2순위 ${childText}는 ${object(colorDimensionPair(child))} 더합니다. 그래서 두 사람은 ${tension.title}처럼 서로 다른 지점이 생길 수 있지만, 그 차이를 확인하는 방식 자체가 관계의 신뢰를 키우는 자원이 될 수 있습니다.`,
     recommendedColors: tension.recommendedColors,
-    closingMessage: `${parentLabel}의 ${parent.colors[0].korName}이 지키려는 ${parentDimension}과 ${childLabel}의 ${child.colors[0].korName}이 찾는 ${childDimension}은 서로를 고치는 방향이 아니라, 함께 더 편안한 선택을 만드는 힘이 될 수 있습니다.`,
+    closingMessage: `${parentLabel}의 ${subject(parent.colors[0].korName)} 지키려는 ${DIMENSION_NOUN[parent.primaryDimension]}, ${childLabel}의 ${subject(child.colors[0].korName)} 더하는 ${topic(DIMENSION_NOUN[child.primaryDimension])} 서로를 고치는 방향이 아니라, 함께 더 편안한 선택을 만드는 힘이 될 수 있습니다.`,
   };
 }
 
@@ -828,6 +856,9 @@ function buildCoaching(
   const shared = findSharedDimension(parent, child);
   const parentCurrent = currentCardSupport(parent.cards[1]);
   const childCurrent = currentCardSupport(child.cards[1]);
+  const childBoundaryNote = child.primaryDimension === "connection"
+    ? " 관계의 분위기를 살피는 강점은 가족의 감정을 대신 책임져야 한다는 뜻이 아니며, 자신의 감정과 경계를 말할 권리도 함께 있습니다."
+    : "";
   const sharedScene = buildStrengthScene(labels.parent, labels.child, parent, child);
   const doMessages = buildPersonalizedDoMessages(labels.parent, labels.child, parent, child, type, sharedScene);
   const dontMessages = buildPersonalizedDontMessages(labels.parent, labels.child, parent, child, type, tension);
@@ -841,11 +872,11 @@ function buildCoaching(
     socialRoles: {
       parent: {
         title: `${DIMENSION_ROLE[parent.primaryDimension]} 조율자`,
-        description: `${topic(labels.parent)} ${parent.colors[0].korName}의 ${DIMENSION_LABEL[parent.primaryDimension]}과 ${parent.colors[1].korName}의 ${object(DIMENSION_LABEL[parent.secondaryDimension])} 바탕으로, 관계가 무리 없이 이어질 방법을 살피는 역할 에너지로 나타날 수 있습니다. ${parentCurrent}`,
+        description: `${topic(labels.parent)} ${colorDimensionPair(parent)}을 바탕으로, 관계가 무리 없이 이어질 방법을 살피는 역할 에너지로 나타날 수 있습니다. ${parentCurrent}`,
       },
       child: {
         title: `${DIMENSION_ROLE[child.primaryDimension]} 탐색자`,
-        description: `${topic(labels.child)} ${child.colors[0].korName}의 ${DIMENSION_LABEL[child.primaryDimension]}과 ${child.colors[1].korName}의 ${object(DIMENSION_LABEL[child.secondaryDimension])} 바탕으로, 자신에게 맞는 이유와 관계의 온도를 함께 살피는 역할 에너지로 나타날 수 있습니다. ${childCurrent}`,
+        description: `${topic(labels.child)} ${colorDimensionPair(child)}을 바탕으로, 자신에게 맞는 이유와 관계의 온도를 함께 살피는 역할 에너지로 나타날 수 있습니다.${childBoundaryNote} ${childCurrent}`,
       },
     },
     relationshipRoles: {
@@ -869,7 +900,7 @@ function buildCoaching(
     conflictRecovery: {
       conflictStart,
       parentIntent: `${labels.parent}의 말과 행동은 ${parent.colors[0].korName}·${parent.colors[1].korName}에서 드러난 ${object(DIMENSION_LABEL[parent.primaryDimension])} 관계 안에 지키고 싶은 마음에서 출발할 수 있습니다. ${parentCurrent}`,
-      childReception: `${topic(labels.child)} ${child.colors[0].korName}·${child.colors[1].korName}의 ${object(DIMENSION_LABEL[child.primaryDimension])} 충분히 반영되지 않으면, 도움보다 자신의 방식이 밀려난 신호로 받아들일 수 있습니다. ${childCurrent}`,
+      childReception: `${topic(labels.child)} ${subject(colorDimensionPair(child))} 충분히 반영되지 않으면, 도움보다 자신의 방식이 밀려난 신호로 받아들일 수 있습니다.${childBoundaryNote} ${childCurrent}`,
       mismatch,
       recoveryOrder: `먼저 ${pairSubject(labels.parent, labels.child)} 각각 무엇을 지키고 싶었는지 한 문장으로 확인합니다. 다음으로 이번에 바로 정할 일과 다시 살펴볼 일을 나눕니다. ${recoverySupport(parent, labels.parent)} ${recoverySupport(child, labels.child)}`,
     },
@@ -901,7 +932,7 @@ export function buildParentChildRelationshipAnalysis(input: {
     sectionEvidence: [
       {
         section: "관계 요약과 사회적 역할",
-        colorBasis: `${labels.parent} 1·2순위 ${parent.colors.map((color) => color.korName).join("·")}의 ${DIMENSION_LABEL[parent.primaryDimension]}·${DIMENSION_LABEL[parent.secondaryDimension]}과 ${labels.child} 1·2순위 ${child.colors.map((color) => color.korName).join("·")}의 ${DIMENSION_LABEL[child.primaryDimension]}·${object(DIMENSION_LABEL[child.secondaryDimension])} 비교했습니다.`,
+        colorBasis: `${labels.parent} 1·2순위 ${parent.colors.map((color) => color.korName).join("·")}의 ${DIMENSION_LABEL[parent.primaryDimension]}·${DIMENSION_LABEL[parent.secondaryDimension]}과 ${labels.child} 1·2순위 ${child.colors.map((color) => color.korName).join("·")}의 ${DIMENSION_LABEL[child.primaryDimension]}·${DIMENSION_LABEL[child.secondaryDimension]}을 비교했습니다.`,
         cardSupport: `${labels.parent} ${currentCardSupport(parent.cards[1])} ${labels.child} ${currentCardSupport(child.cards[1])}`,
       },
       {

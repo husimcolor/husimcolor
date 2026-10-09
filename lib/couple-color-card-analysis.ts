@@ -167,6 +167,13 @@ function relationshipHabit(value: string) {
   return `${relationship} 관계 방식을`;
 }
 
+function relationshipNeedObject(value: string) {
+  const relationship = value.trim();
+  if (!relationship) return "진심을 편안하게 나누는 관계를";
+  if (relationship.includes("관계")) return `${relationship} 방식을`;
+  return `${relationship} 관계를`;
+}
+
 function cardLabel(card: CardInput) {
   return `${card.colorKor} ${card.shapeKor}의 ${card.energyTitle}`;
 }
@@ -211,9 +218,9 @@ export function buildCoupleColorCardIntegratedAnalysis(
   const relationshipNeed = primary.relStyle?.[0] ?? "진심을 편안하게 나누는 관계";
   const expressionNeed = secondary.relStyle?.[1] ?? "서로의 마음을 확인하는 대화";
 
-  const coreNeedParagraph = `당신은 ${primaryKeyword}${objectParticle(primaryKeyword)} 소중히 여기고, ${secondaryKeyword}${objectParticle(secondaryKeyword)} 쉽게 놓치지 않는 편입니다. 마음 깊은 곳에는 ${unconscious.energyTitle}에 가까운 바람이 있습니다. 그래서 관계에서는 ${relationshipNeed} 관계 방식을 중요하게 여길 수 있습니다.`;
+  const coreNeedParagraph = `당신은 ${primaryKeyword}${objectParticle(primaryKeyword)} 소중히 여기고, ${secondaryKeyword}${objectParticle(secondaryKeyword)} 쉽게 놓치지 않는 편입니다. 마음 깊은 곳에서는 ${unconscious.energyTitle}${subjectParticle(unconscious.energyTitle)} 중요하게 느껴질 수 있습니다. 그래서 ${relationshipNeedObject(relationshipNeed)} 중요하게 여길 수 있습니다.`;
   const innerOuterParagraph = `겉으로는 ${current.energyTitle} 쪽으로 상황을 풀어가려는 모습이 먼저 보일 수 있습니다. ${expressionNeed} 방식에 익숙한 편이라, 정작 내면의 바람은 충분히 말하기 전까지 조용히 남아 있을 수 있습니다.`;
-  const directionParagraph = `지금은 ${future.energyTitle}에 가까운 회복의 방향을 따라 ${recovery.recovery} 감각을 일상에서 조금씩 되찾아 보는 시간이 필요할 수 있습니다. ${recoveryKeyword}${objectParticle(recoveryKeyword)} 지키는 작은 말과 행동이 관계의 긴장을 낮추고, 자기 마음을 더 편안히 돌보는 시작이 될 수 있습니다.`;
+  const directionParagraph = `지금은 3번 회복 방향 카드의 ${future.energyTitle}${objectParticle(future.energyTitle)} 바탕으로, ${recovery.recovery} 감각을 일상에서 조금씩 되찾아 보는 시간이 필요할 수 있습니다. ${recoveryKeyword}${objectParticle(recoveryKeyword)} 지키는 작은 말과 행동이 관계의 긴장을 낮추고, 자기 마음을 더 편안히 돌보는 시작이 될 수 있습니다.`;
 
   return [coreNeedParagraph, innerOuterParagraph, directionParagraph].join("\n\n");
 }

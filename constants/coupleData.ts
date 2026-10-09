@@ -234,7 +234,7 @@ function getPersonEnergyProfile(families: EnergyFamily[], primaryFamily?: Energy
 
   // 관계 성향 — 조합 기반 차별화 (secondary 반영)
   const relationshipStyleMap: Record<PersonProfile, string> = {
-    expressive: '감정을 직접 표현하며 관계를 이끌어가는 성향이 있습니다. 함께 활동하고 표현을 나눌 때 가장 연결된 느낌을 받으며, 관계에서 활기와 공유를 중요하게 여깁니다.',
+    expressive: '관계 안에서 진심과 활기를 나누고 싶어 하는 성향이 있습니다. 함께 활동하고 표현을 나눌 때 연결감을 느끼기 쉽고, 관계에서 활기와 공유를 중요하게 여깁니다.',
     warm_connector: '따뜻하게 배려하며 관계를 이어가는 성향이 있습니다. 상대방의 감정을 먼저 살피며, 온기 있는 말과 세심한 배려로 연결되는 것을 소중히 여깁니다.',
     stable_seeker: '안정적이고 꾸준하게 관계를 이어가는 성향이 있습니다. 약속을 지키고 일관된 행동으로 신뢰를 쌓으며, 관계에서 편안함과 지속성을 가장 중요하게 여깁니다.',
     free_spirit: '자유롭고 명료한 방식으로 관계를 이어가는 성향이 있습니다. 각자의 공간을 존중하며, 부담 없이 솔직하게 소통할 수 있는 관계를 선호합니다.',
@@ -330,9 +330,18 @@ export function generatePersonAnalysis(
   const allFamilies = [card1, card2, card3].map(c => getFamily(c.id));
   const [f1, f2] = allFamilies;
   const energyProfile = getPersonEnergyProfile(allFamilies, f1, f2);
+  const unconsciousCard = CARD_DATA.find((card) => card.id === session.cards[0]);
+  const currentCard = CARD_DATA.find((card) => card.id === session.cards[1]);
+  const recoveryCard = CARD_DATA.find((card) => card.id === session.cards[2]);
 
-  // 감정 표현 방식 — 1번 카드 기반 (기존 유지)
-  const emotionExpression = getEmotionExpression(f1, card1);
+  // 감정 표현 방식은 기본 컬러의 평소 성향을 바탕으로 하되, 실제 심리카드의
+  // 무의식·현재·회복 위치가 서로 모순처럼 읽히지 않도록 필요한 경우에만 보완한다.
+  const emotionExpression = buildCardAwareEmotionExpression(
+    getEmotionExpression(f1, card1),
+    unconsciousCard,
+    currentCard,
+    recoveryCard,
+  );
 
   // 보완 컬러 — 3번 카드와 반대 계열에서 선택
   const complement = pickComplementColor(session.colors, card3.id);
@@ -345,7 +354,12 @@ export function generatePersonAnalysis(
     psychologyFlow: energyProfile.psychologyFlowText,
     currentFlow: energyProfile.currentFlowText,
     recoveryDirection: card3.reading3,
-    relationshipStyle: energyProfile.relationshipStyleText,
+    relationshipStyle: buildCardAwareRelationshipStyle(
+      energyProfile.relationshipStyleText,
+      unconsciousCard,
+      currentCard,
+      recoveryCard,
+    ),
     emotionExpression,
     complementColor: complement,
     coachingMessage,
@@ -395,6 +409,63 @@ function getEmotionExpression(family: EnergyFamily, card: ColorData): string {
     neutral: `감정을 추스른 후 표현하는 편이며, 명료하고 균형 잡힌 방식으로 소통하는 성향이 있습니다. ${card.korName}처럼 차분하고 중심 잡힌 표현 방식을 가지고 있습니다.`,
   };
   return map[family];
+}
+
+function buildCardAwareEmotionExpression(
+  base: string,
+  unconscious?: CardData,
+  current?: CardData,
+  recovery?: CardData,
+): string {
+  let adjustedBase = base;
+  const additions: string[] = [];
+  if (unconscious?.id === 'white_pentagon') {
+    additions.push('평소 마음의 바탕에서는 여러 가능성과 새 시작을 하나의 방향으로 묶고 싶어 할 수 있습니다.');
+  }
+  if (current?.id === 'yellow_circle') {
+    adjustedBase = adjustedBase
+      .replace(
+        '감정을 솔직하게 표현하는 편이며, 관계 안에서 서로의 마음을 나누는 것을 중요하게 여깁니다.',
+        '관계 안에서 서로의 마음을 솔직하게 나누고 싶어 합니다.',
+      )
+      .replace(
+        '감정이 생기면 바로 표현하는 편입니다. 답답함을 참지 못하고 즉각 반응하며, 표현 속도가 빠르고 직선적입니다.',
+        '감정을 바로 꺼내고 싶은 마음은 있어도, 지금은 반응을 서두르기보다 상황을 정리한 뒤 표현하려는 편입니다.',
+      )
+      .replace(
+        '감정을 직접적으로 표현하는 편이며, 느끼는 것을 바로 드러내는 경향이 있습니다.',
+        '감정을 직접적으로 표현하고 싶은 마음은 있어도, 지금은 반응을 서두르기보다 상황을 정리한 뒤 말하려는 흐름이 더해집니다.',
+      );
+    additions.push('현재는 반응을 서두르기보다 상황을 정리해 균형 잡힌 판단을 찾으려는 흐름이 더해집니다.');
+  }
+  if (recovery?.id === 'purple_triangle') {
+    additions.push('갈등이나 피로 뒤에는 중요했던 마음을 성찰하고, 작은 실천이나 대화로 의미를 이어갈 때 회복에 도움이 될 수 있습니다.');
+  }
+  return additions.length ? `${adjustedBase} ${additions.join(' ')}` : adjustedBase;
+}
+
+/**
+ * 컬러는 관계에서 바라는 기본 결을, 카드 위치는 마음을 꺼내는 순서를 읽는다.
+ * 현재 카드가 균형·정리 흐름일 때 기본 컬러의 활기를 이미 적극적인 표현으로
+ * 단정하지 않도록 화면과 PDF가 함께 사용하는 관계 성향 문장을 보정한다.
+ */
+function buildCardAwareRelationshipStyle(
+  base: string,
+  unconscious?: CardData,
+  current?: CardData,
+  recovery?: CardData,
+): string {
+  const additions: string[] = [];
+  if (unconscious?.id === 'white_pentagon') {
+    additions.push('내면에서는 여러 새 시작과 가능성을 자신이 납득할 한 방향으로 묶고 싶어 할 수 있습니다.');
+  }
+  if (current?.id === 'yellow_circle') {
+    additions.push('지금은 감정을 바로 앞세우기보다 상황을 정리하고 균형을 살핀 뒤, 필요한 마음을 표현하려는 흐름이 더해집니다.');
+  }
+  if (recovery?.id === 'purple_triangle') {
+    additions.push('회복 방향에서는 중요했던 마음을 성찰해 작은 대화나 실천으로 이어갈 때 관계의 의미를 다시 살필 수 있습니다.');
+  }
+  return additions.length ? `${base} ${additions.join(' ')}` : base;
 }
 
 function pickComplementColor(
@@ -516,7 +587,7 @@ function buildPersonCoachingMessage(
   const intro = buildCard1Intro(card1);
   const recoveryKeyword = RECOVERY_KEYWORD[card3.id] ?? `한 걸음씩 자신에게 돌아오는`;
 
-  return `${intro} ${recoveryKeyword} 시간을 한 번 만들어보세요.${faithNote}`;
+  return `${intro} ${recoveryKeyword} 작은 실천을 한 번 만들어 보세요.${faithNote}`;
 }
 
 // ── 통합 관계 해석 ────────────────────────────────────────────────
@@ -5021,7 +5092,7 @@ const ARCHETYPE_DATA: Record<RelationArchetype, Omit<ArchetypeResult, 'archetype
           },
           growthPoint: {
             strength: '갈등 뒤에도 서로의 마음을 다시 살피려는 시도가 관계의 강점이 될 수 있습니다.',
-            blindSpot: '회복에 집중하다 갈등의 원인을 해결하지 않으면 같은 경향이 나타날 수 있습니다. 회복과 함께 원인도 함께 이야기해야 합니다.',
+            blindSpot: '회복에 집중하다 갈등의 원인을 해결하지 않으면 같은 경향이 나타날 수 있습니다. 회복 뒤에는 원인도 차분히 함께 이야기할 필요가 있습니다.',
             growthDirection: '회복하는 것만큼 "왜 이런 갈등이 반복되는지"를 함께 이야기하는 연습이 필요합니다. 회복 후 짧게 "다음에는 이렇게 해보자"를 나눠보세요.',
             tip: '갈등 후 회복됐을 때 "다음에는 이렇게 해보자" 한마디 — 이것이 이 관계를 성장시킵니다.',
           },

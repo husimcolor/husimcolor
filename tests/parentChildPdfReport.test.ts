@@ -84,6 +84,8 @@ describe("부모·자녀 전용 PDF 리포트", () => {
     expect(source).toContain("addPage(document);\n  writePerson(document, payload.personA");
     expect(source).toContain("addPage(document);\n  writePerson(document, payload.personB");
     expect(screen).toContain("첫 번째 사람 - ${parentChildLabels.parent}");
+    expect(source).toContain(".split(/\\n{2,}/)");
+    expect(source).toContain("...currentFlowSections");
   });
 
   it("부부·연인 PDF와 분리된 API·쿠키·CTA를 사용하고 부모·자녀일 때만 노출한다", () => {

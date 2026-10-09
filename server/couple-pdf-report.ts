@@ -331,7 +331,7 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
   const personA = relation.personLabels?.personA ?? "첫 번째 사람";
   const personB = relation.personLabels?.personB ?? "두 번째 사람";
   addPage(document);
-  writeSectionTitle(document, "두 사람의 관계 통합 분석", "#80649B", 120);
+  writeSectionTitle(document, "두 사람의 관계 통합 분석", "#80649B", 230);
   writeCard(document, "왜 끌리는데 왜 힘든지", relation.attractionAnalysis
     .split(/\n\n+/)
     .filter(Boolean)
@@ -352,7 +352,7 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
   }
   // 관계 해석은 한 항목마다 새 쪽을 만들지 않는다. 제목과 첫 본문을 함께 둘 수 있는
   // 최소 높이만 확보해 앞 카드의 남는 공간을 자연스럽게 활용한다.
-  writeSectionTitle(document, "관계 핵심", "#5F8069", 180);
+  writeSectionTitle(document, "관계 핵심", "#5F8069", 270);
   writeCard(document, relation.core.headline, [
     { label: "핵심 키워드", text: relation.core.keywords.join(" · ") },
     { text: relation.core.description },
@@ -364,21 +364,21 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
     { label: "조율 포인트", text: item.tension },
   ]), "#FBF6EF", { continueFromCurrentPage: true });
   // 갈등 카드는 제목과 첫 설명을 함께 두고, 남은 문단만 자연스럽게 이어 준다.
-  writeSectionTitle(document, "싸움 패턴", "#B16A75", 220);
+  writeSectionTitle(document, "싸움 패턴", "#B16A75", 255);
   writeCard(document, "이 관계의 갈등 흐름", [
     { label: "싸움이 시작되는 순간", text: relation.conflict.trigger },
     { label: "갈등 직후 반응", text: relation.conflict.reaction },
     { label: "반복 위험 패턴", text: relation.conflict.danger },
     { label: "싸울 때 조심할 말", text: relation.conflict.forbiddenWords.join("\n") },
   ], "#FFF3F3", { continueFromCurrentPage: true });
-  writeSectionTitle(document, "연결 방식", "#B87B91", 210);
+  writeSectionTitle(document, "연결 방식", "#B87B91", 250);
   writeCard(document, relation.connection.headline, [
     { text: relation.connection.description },
     { label: "함께 해볼 연결", text: relation.connection.actions.join("\n") },
     { label: "스킨십 · 친밀감", text: relation.connection.intimacyNote },
   ], "#FFF4F7", { continueFromCurrentPage: true });
   // 성장 포인트도 제목만 남기지 않고 첫 해석과 같은 페이지에서 시작한다.
-  writeSectionTitle(document, "관계 성장 포인트", "#4F8B70", 220);
+  writeSectionTitle(document, "관계 성장 포인트", "#4F8B70", 260);
   writeCard(document, "이 관계가 오래가는 이유와 성장 방향", [
     { label: "이 관계의 강점", text: relation.growth.strength },
     { label: "조금 더 의식하면", text: relation.growth.blindSpot },
@@ -387,7 +387,7 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
   ], "#F0F8F2", { continueFromCurrentPage: true });
   // 앞선 성장 포인트의 남는 공간을 활용해 회복 루틴이 불필요하게 한 페이지 늦게 시작하지 않도록 한다.
   // 실제 카드 본문은 writeCard가 단락 단위로 안전하게 다음 페이지로 넘긴다.
-  writeSectionTitle(document, "추천 컬러와 함께하는 회복 루틴", "#94723D", 250);
+  writeSectionTitle(document, "추천 컬러와 함께하는 회복 루틴", "#94723D", 280);
   writeCard(document, "함께 회복하는 이번 주의 흐름", [
     ...relation.recommendedColors.map((color) => ({ label: `추천 컬러 · ${color.name}`, text: color.reason })),
     ...relation.togetherRoutine.routines.map((routine, index) => ({

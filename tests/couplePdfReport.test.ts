@@ -138,11 +138,11 @@ describe("부부·연인 전용 PDF 리포트", () => {
     expect(serverSource).not.toContain('text: relation.togetherRoutine.routines.join("\\n")');
     expect(serverSource).toContain("감정 교류 · 표현 리듬 · 갈등 회복");
     expect(serverSource).toContain('label: "마무리 코칭 메시지", text: relation.closingMessage');
-    expect(serverSource).toContain('writeSectionTitle(document, "관계 핵심", "#5F8069", 180)');
-    expect(serverSource).toContain('writeSectionTitle(document, "싸움 패턴", "#B16A75", 220)');
+    expect(serverSource).toContain('writeSectionTitle(document, "관계 핵심", "#5F8069", 270)');
+    expect(serverSource).toContain('writeSectionTitle(document, "싸움 패턴", "#B16A75", 255)');
     expect(serverSource).toContain('], "#FFF3F3", { continueFromCurrentPage: true });');
-    expect(serverSource).toContain('writeSectionTitle(document, "연결 방식", "#B87B91", 210)');
-    expect(serverSource).toContain('writeSectionTitle(document, "관계 성장 포인트", "#4F8B70", 220)');
+    expect(serverSource).toContain('writeSectionTitle(document, "연결 방식", "#B87B91", 250)');
+    expect(serverSource).toContain('writeSectionTitle(document, "관계 성장 포인트", "#4F8B70", 260)');
     expect(serverSource).toContain('], "#F0F8F2", { continueFromCurrentPage: true });');
     expect(serverSource).toContain("관계 해석은 한 항목마다 새 쪽을 만들지 않는다");
   });

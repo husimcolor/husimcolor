@@ -280,6 +280,11 @@ describe("부부·연인 결과 4단계 문구 검수", () => {
 
     expect(integrated).toContain("상황을 정리해 균형 잡힌 판단을 하려는 흐름");
     expect(integrated).toContain("짧은 성찰과 실천으로 삶의 의미를 일상과 잇는 일");
+    expect(personA.relationshipStyle).toContain("진심과 활기를 나누고 싶어 하는 성향");
+    expect(personA.relationshipStyle).toContain("감정을 바로 앞세우기보다 상황을 정리하고 균형을 살핀 뒤");
+    expect(personA.relationshipStyle).toContain("중요했던 마음을 성찰해 작은 대화나 실천으로 이어갈 때");
+    expect(personA.relationshipStyle).not.toContain("감정을 직접 표현하며 관계를 이끌어가는 성향");
+    expect(personA.emotionExpression).toContain("반응을 서두르기보다 상황을 정리해 균형 잡힌 판단");
     expect(traitText).toContain("남편은 상황을 정리해 균형을 찾으려는 흐름");
     expect(traitText).toContain("아내는 쌓인 감정을 안전하게 꺼내며 내면을 정리하려는 흐름");
     expect(traitText).toContain("아내는 불필요한 긴장을 덜고 진실한 연결의 기준을 가볍게 정돈하려는 흐름");

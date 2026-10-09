@@ -105,6 +105,8 @@ describe("부모·자녀 1·2순위 컬러 관계 분석", () => {
   it("실제 관계 호칭과 핵심 기질의 조사를 자연스럽게 출력한다", () => {
     const result = analyze(["green", "sage", "lavender"], ["yellow", "pink", "coral"]);
     const output = [
+      result.relationshipSummary.coreSummary,
+      result.relationshipSummary.description,
       result.coaching.socialRoles.parent.description,
       result.coaching.socialRoles.child.description,
       result.coaching.relationshipRoles.parent.title,
@@ -124,6 +126,29 @@ describe("부모·자녀 1·2순위 컬러 관계 분석", () => {
     expect(output).not.toContain("딸는");
     expect(output).not.toContain("엄마이");
     expect(output).not.toContain("지속성를");
+    expect(output).not.toContain("이해이");
+    expect(output).not.toContain("이해과");
+    expect(output).not.toContain("옐로우이");
+  });
+
+  it("자녀의 관계 조율 강점은 가족의 감정을 대신 책임지는 의무가 아니라 경계를 말할 권리와 함께 안내한다", () => {
+    const result = analyzeRelationship({
+      relationType: "엄마-딸",
+      parentGender: "여성",
+      childGender: "여성",
+      parentColors: ["pink", "peach", "blue"],
+      childColors: ["pink", "peach", "green"],
+      parentCards: ["red_circle", "white_square", "blue_diamond"],
+      childCards: ["yellow_circle", "purple_diamond", "green_hexagon"],
+    });
+    const text = [
+      result.coaching.relationshipRoles.child.description,
+      result.coaching.childCommunication.closesWhen,
+      result.coaching.conflictRecovery.childReception,
+    ].join(" ");
+
+    expect(text).toContain("가족의 감정을 대신 책임져야 한다는 뜻이 아니며");
+    expect(text).toContain("자신의 감정과 경계");
   });
 
   it("DON'T·갈등 시작·세 가지 실천은 관계 유형과 1·2순위 교차에 따라 달라지며 같은 입력에는 재현된다", () => {

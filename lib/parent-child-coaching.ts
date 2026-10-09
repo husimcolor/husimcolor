@@ -85,7 +85,7 @@ const PARENT_RELATIONSHIP_ROLE: Record<RoleKey, { title: string; description: st
 const CHILD_RELATIONSHIP_ROLE: Record<RoleKey, { title: string; description: string }> = {
   connector: {
     title: "관계를 부드럽게 이어 가는 역할",
-    description: "주변의 마음을 살피며 대화의 온도를 조절하고, 가족 안에서 서로를 이어 주는 역할 에너지가 드러날 수 있습니다.",
+    description: "주변의 마음을 섬세하게 살피며 대화의 온도를 읽는 강점이 드러날 수 있습니다. 다만 가족의 감정을 대신 책임질 필요는 없으며, 자신의 감정과 경계도 함께 말할 수 있습니다.",
   },
   healer: {
     title: "마음을 섬세하게 알아차리는 역할",
@@ -110,7 +110,7 @@ const CHILD_RELATIONSHIP_ROLE: Record<RoleKey, { title: string; description: str
 };
 
 const CHILD_CLOSES_WHEN: Record<RoleKey, string> = {
-  connector: "여러 사람의 기대나 감정을 한꺼번에 맞춰야 한다고 느낄 때, 자신의 생각을 뒤로 미루며 마음을 닫을 수 있습니다. 한 번에 한 가지씩 묻고, 바로 답하지 않아도 괜찮다는 여유를 주는 편이 부담을 낮춥니다.",
+  connector: "여러 사람의 기대나 분위기를 한꺼번에 맞춰야 한다고 느낄 때, 자신의 생각을 뒤로 미루며 마음을 닫을 수 있습니다. 한 번에 한 가지씩 묻고, 바로 답하지 않아도 괜찮다는 여유를 주는 편이 부담을 낮춥니다.",
   healer: "부모의 걱정이나 실망을 자기 몫처럼 받아들여야 한다고 느낄 때, 마음을 숨기거나 무리해서 맞추려 할 수 있습니다. 아이의 감정이 먼저 안전하다는 신호를 주면 이야기를 꺼내기 쉬워집니다.",
   analyst: "충분히 이해하기 전에 결론이나 답을 요구받을 때, 자신의 판단이 존중되지 않는다고 느끼며 말문을 닫을 수 있습니다. 이유를 함께 살피고 생각할 시간을 주는 방식이 잘 맞습니다.",
   leader: "방향을 스스로 정해 볼 기회 없이 지시만 이어질 때, 의욕이 반항이나 거리두기처럼 보일 수 있습니다. 선택할 수 있는 작은 범위를 남겨 두면 마음의 문이 다시 열릴 수 있습니다.",
@@ -182,7 +182,7 @@ const PARENT_INTENT_BY_ROLE: Record<RoleKey, string> = {
 };
 
 const CHILD_RECEIVES_BY_ROLE: Record<RoleKey, string> = {
-  connector: "주변의 분위기와 여러 사람의 마음까지 한꺼번에 살펴야 한다는 부담으로 받아들일 수 있습니다.",
+  connector: "주변 분위기를 빠르게 읽어야 한다는 부담으로 받아들일 수 있습니다. 자신의 감정과 경계를 말할 여지가 남아 있을 때 더 편안하게 참여할 수 있습니다.",
   healer: "부모의 걱정까지 자신이 감당해야 한다는 마음이 들면, 속마음을 더 조심스럽게 감출 수 있습니다.",
   analyst: "아직 생각을 충분히 정리하지 못했는데 답을 내야 한다는 압박으로 받아들일 수 있습니다.",
   leader: "자신이 선택해 볼 여지 없이 방향이 정해졌다는 느낌을 받으면, 의욕이 거리두기처럼 보일 수 있습니다.",
@@ -298,7 +298,7 @@ export function buildParentChildCoaching(input: ParentChildCoachingInput): Paren
     relationshipRoles: {
       parent: parentRelationshipRole,
       child: childRelationshipRole,
-      together: `${labels.parent}가 ${parentRelationshipRole.title}로 마음을 전할 때, ${labels.child}은 그 마음을 방향과 관심으로 받아들일 수 있습니다. 다만 ${labels.child}의 ${childRelationshipRole.title} 에너지가 충분히 표현되지 못하면, 같은 마음도 압박이나 통제로 느껴질 수 있습니다. ${labels.child}의 조용함이나 빠른 반응을 단정하기보다 무엇이 부담스러운지 먼저 묻고, 한 번에 하나의 약속을 함께 정해 보세요. ${typeHint} 흐름에서는 이런 작은 대화의 순서가 서로를 더 편안하게 만듭니다.`,
+      together: `${withSubject(labels.parent)} ${parentRelationshipRole.title}로 마음을 전할 때, ${withTopic(labels.child)} 그 마음을 방향과 관심으로 받아들일 수 있습니다. 다만 ${labels.child}의 ${childRelationshipRole.title} 에너지가 충분히 표현되지 못하면, 같은 마음도 압박이나 통제로 느껴질 수 있습니다. ${labels.child}의 조용함이나 빠른 반응을 단정하기보다 무엇이 부담스러운지 먼저 묻고, 한 번에 하나의 약속을 함께 정해 보세요. ${typeHint} 흐름에서는 이런 작은 대화의 순서가 서로를 더 편안하게 만듭니다.`,
     },
     childCommunication: {
       closesWhen: CHILD_CLOSES_WHEN[childKey],
@@ -321,9 +321,9 @@ export function buildParentChildCoaching(input: ParentChildCoachingInput): Paren
     conflictRecovery: {
       conflictStart: `${labels.parent}에게는 ${parentConflictStart}`,
       parentIntent: `${labels.parent}의 말과 행동은 ${parentIntent}에서 출발할 수 있습니다.`,
-      childReception: `${labels.child}은 ${childReception}`,
+      childReception: `${withTopic(labels.child)} ${childReception}`,
       mismatch: `${labels.parent}의 관심이 빠른 해결이나 설명으로 전달되면, ${labels.child}에게는 자신의 속도와 생각이 충분히 존중되지 않는 느낌으로 닿을 수 있습니다. 이때 두 사람 모두 ‘내 마음을 알아주지 않는다’고 느끼며 대화가 어긋나기 쉽습니다.`,
-      recoveryOrder: `먼저 ${labels.parent}가 해결보다 ${labels.child}이 무엇을 이해받고 싶어 하는지 충분히 듣고, 다음으로 ${labels.child}이 자기 생각을 정리할 여지를 남기는 순서가 좋습니다. 그다음 지금 가능한 한 가지 약속을 함께 정하면, ${typeHint} 흐름의 긴장이 서로를 배우는 시간으로 바뀔 수 있습니다.`,
+      recoveryOrder: `먼저 ${withSubject(labels.parent)} 해결보다 ${withSubject(labels.child)} 무엇을 이해받고 싶어 하는지 충분히 듣고, 다음으로 ${withSubject(labels.child)} 자기 생각을 정리할 여지를 남기는 순서가 좋습니다. 그다음 지금 가능한 한 가지 약속을 함께 정하면, ${typeHint} 흐름의 긴장이 서로를 배우는 시간으로 바뀔 수 있습니다.`,
     },
     practices: [
       buildParentConflictPractice(parentKey, labels.parent, labels.child),

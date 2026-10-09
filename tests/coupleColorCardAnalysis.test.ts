@@ -46,14 +46,21 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
   });
 
   it("부모·자녀·친구·동료·형제자매의 개인 통합 분석은 기존 생성 문구를 유지한다", () => {
-    const colors = COLOR_DATA.slice(0, 3);
-    const cards = CARD_DATA.slice(0, 3);
+    const colors = ["green", "blue", "orange"]
+      .map((id) => COLOR_DATA.find((color) => color.id === id))
+      .filter(Boolean) as (typeof COLOR_DATA)[number][];
+    const cards = ["purple_circle", "red_inverted_triangle", "white_hexagon"]
+      .map((id) => CARD_DATA.find((card) => card.id === id))
+      .filter(Boolean) as (typeof CARD_DATA)[number][];
     const legacy = buildCoupleColorCardIntegratedAnalysis(colors, cards);
     const romantic = buildRomanticCoupleColorCardIntegratedAnalysis(colors, cards);
 
     expect(legacy).toContain(cards[0].energyTitle);
     expect(legacy).toContain(colors[0].keywords[0]);
     expect(romantic).not.toBe(legacy);
+    expect(legacy).not.toContain("관계에서는 관계 안에서");
+    expect(legacy).not.toContain("만들어가는을");
+    expect(legacy).not.toContain("소통하는을");
   });
 
   it("심리카드 실행 문장의 기존 가운데점 불릿을 안정적인 불릿으로 통일하고 문장 덩어리를 나눈다", () => {
