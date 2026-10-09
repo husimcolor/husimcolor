@@ -20,7 +20,7 @@ import {
 } from '@/constants/relationProducts';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
 import { isOpeningCampaignActive } from '@/shared/opening-campaign';
-import { getSampleReportUrl, type SampleReportProduct } from '@/shared/sample-reports';
+import { getSampleReportUrl, SAMPLE_REPORT_LINK_LABEL, type SampleReportProduct } from '@/shared/sample-reports';
 
 const ROMANTIC_RELATION_TYPES: { value: Extract<RelationType, '연인' | '부부'>; label: string; emoji: string }[] = [
   { value: '연인', label: '연인', emoji: '💑' },
@@ -279,9 +279,9 @@ export default function CoupleStartScreen() {
                         onPress={() => handleOpenSamplePdf(sampleProduct)}
                         style={({ pressed }) => [styles.productSampleLink, pressed && styles.productSampleLinkPressed]}
                         accessibilityRole="link"
-                        accessibilityLabel={`${product.title} 전체 샘플 PDF 보기`}
+                        accessibilityLabel={`${product.title} ${SAMPLE_REPORT_LINK_LABEL}`}
                       >
-                        <Text style={styles.productSampleLinkText}>전체 샘플 PDF 보기</Text>
+                        <Text style={styles.productSampleLinkText}>{SAMPLE_REPORT_LINK_LABEL}</Text>
                       </Pressable>
                     ) : null}
                   </View>

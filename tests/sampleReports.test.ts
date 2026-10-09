@@ -2,12 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import {
   SAMPLE_REPORTS,
+  SAMPLE_REPORT_LINK_LABEL,
   getSampleReport,
   getSampleReportUrl,
   isSampleReportProduct,
 } from "../shared/sample-reports";
 
 describe("homepage sample report references", () => {
+  it("uses one clear Korean label for every public sample PDF link", () => {
+    expect(SAMPLE_REPORT_LINK_LABEL).toBe("PDF 리포트 샘플 보기");
+  });
+
   it("keeps one complete public PDF for each paid analysis product", () => {
     expect(Object.keys(SAMPLE_REPORTS).sort()).toEqual([
       "couple_love_deep",

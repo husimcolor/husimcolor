@@ -2,7 +2,7 @@ import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-nati
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
-import { getSampleReport, getSampleReportUrl } from "@/shared/sample-reports";
+import { getSampleReport, getSampleReportUrl, SAMPLE_REPORT_LINK_LABEL } from "@/shared/sample-reports";
 
 function getSingleParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -78,8 +78,8 @@ export default function SampleReportScreen() {
           <Text style={styles.eyebrow}>휴심컬러 공개 샘플</Text>
           <Text style={styles.title}>{sampleReport.title}</Text>
           <Text style={styles.pageCount}>전체 {sampleReport.pageCount}쪽 · 가상 데이터</Text>
-          <Pressable onPress={handleOpenPdf} style={({ pressed }) => [styles.pdfButton, pressed && styles.pressed]} accessibilityRole="link" accessibilityLabel={`${sampleReport.title} 전체 샘플 PDF 보기`}>
-            <Text style={styles.pdfButtonText}>전체 샘플 PDF 보기</Text>
+          <Pressable onPress={handleOpenPdf} style={({ pressed }) => [styles.pdfButton, pressed && styles.pressed]} accessibilityRole="link" accessibilityLabel={`${sampleReport.title} ${SAMPLE_REPORT_LINK_LABEL}`}>
+            <Text style={styles.pdfButtonText}>{SAMPLE_REPORT_LINK_LABEL}</Text>
           </Pressable>
         </View>
       </View>

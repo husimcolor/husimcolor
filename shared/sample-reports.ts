@@ -1,5 +1,8 @@
 export type SampleReportProduct = "personal_deep" | "couple_love_deep" | "parent_child_deep";
 
+/** 모든 상품 진입 화면에서 동일하게 쓰는 공개 PDF 링크 문구. */
+export const SAMPLE_REPORT_LINK_LABEL = "PDF 리포트 샘플 보기";
+
 export type SampleReport = {
   product: SampleReportProduct;
   title: string;

@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
 import { isOpeningCampaignActive } from '@/shared/opening-campaign';
-import { getSampleReportUrl, type SampleReportProduct } from '@/shared/sample-reports';
+import { getSampleReportUrl, SAMPLE_REPORT_LINK_LABEL, type SampleReportProduct } from '@/shared/sample-reports';
 
 const { width, height } = Dimensions.get('window');
 
@@ -271,9 +271,9 @@ export default function HomeScreen() {
               onPress={() => handleOpenSamplePdf('personal_deep')}
               style={({ pressed }) => [styles.sampleReportLink, pressed && styles.sampleReportLinkPressed]}
               accessibilityRole="link"
-              accessibilityLabel="개인 심화분석 전체 샘플 PDF 보기"
+              accessibilityLabel={`개인 심화분석 ${SAMPLE_REPORT_LINK_LABEL}`}
             >
-              <Text style={styles.sampleReportLinkText}>전체 샘플 PDF 보기</Text>
+              <Text style={styles.sampleReportLinkText}>{SAMPLE_REPORT_LINK_LABEL}</Text>
             </Pressable>
           </View>
 
