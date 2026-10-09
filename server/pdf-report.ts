@@ -1,4 +1,4 @@
-import { createReadStream } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import path from "node:path";
 import type { PremiumPdfDownloadPayload } from "../shared/premium-pdf-download";
 import { PDFDocument } from "./pdfkit-runtime";
@@ -6,7 +6,12 @@ import { PDFDocument } from "./pdfkit-runtime";
 const PAGE_BOTTOM = 799;
 const PAGE_LEFT = 43;
 const CONTENT_WIDTH = 509;
-const FONT_PATH = path.join(process.cwd(), "server", "assets", "HusimPdfKorean.ttf");
+// Serverless functions receive the font beside their bundled index.js. Local
+// development and unit tests retain the repository asset fallback.
+const BUNDLED_FONT_PATH = path.join(__dirname, "HusimPdfKorean.ttf");
+const FONT_PATH = existsSync(BUNDLED_FONT_PATH)
+  ? BUNDLED_FONT_PATH
+  : path.join(process.cwd(), "server", "assets", "HusimPdfKorean.ttf");
 const BODY_TEXT_SIZE = 18.5;
 const BODY_LABEL_SIZE = 16;
 const CARD_TITLE_SIZE = 13.5;

@@ -144,6 +144,8 @@ describe("유료 결과 PDF 리포트", () => {
     const source = readFileSync(resolve(process.cwd(), "server/pdf-report.ts"), "utf8");
     expect(source).toContain("writeCoverColorChip");
     expect(source).toContain("writeCardPreviewRow");
+    expect(source).toContain('path.join(__dirname, "HusimPdfKorean.ttf")');
+    expect(source).toContain("existsSync(BUNDLED_FONT_PATH)");
     expect(source).toContain("BODY_TEXT_SIZE = 18.5");
     expect(source).toContain("BODY_LABEL_SIZE = 16");
     expect(source).toContain("BODY_LINE_GAP = 7.5");
