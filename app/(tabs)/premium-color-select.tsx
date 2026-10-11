@@ -77,7 +77,7 @@ export default function PremiumColorSelectScreen() {
       }
       const active = await isPremiumActive();
       if (!active) {
-        router.replace("/payment" as any);
+        router.replace("/(tabs)/commerce-checkout?product=personal_deep" as any);
       }
     };
     checkAccess();

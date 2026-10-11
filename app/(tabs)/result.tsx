@@ -24,8 +24,6 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import { generateInterpretation, COLOR_DATA, COLOR_PERSONALITY_TRAITS } from '@/constants/colorData';
-import { isPremiumActive, getTrialStatus } from '@/lib/trialUtils';
-
 // 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
 function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -51,7 +49,6 @@ const APP_SHARE_TEXT = '마음이 끌리는 3가지 컬러를 선택해 지금�
 
 export default function ResultScreen() {
   const router = useRouter();
-  const [trialStatus, setTrialStatus] = useState<'none' | 'active' | 'expired' | 'paid'>('none');
   const { selectedColors, resetColors } = useColorContext();
   const colors = useColors();
 
@@ -221,10 +218,6 @@ export default function ResultScreen() {
   const card1 = selectedColors[0];
   const card2 = selectedColors[1];
   const card3 = selectedColors[2];
-
-  useEffect(() => {
-    getTrialStatus().then(setTrialStatus);
-  }, []);
 
   const logVisitor = trpc.visitors.log.useMutation();
   useEffect(() => {
@@ -639,7 +632,7 @@ export default function ResultScreen() {
           </View>
         </View>
 
-        {/* 심화 코칭 결제 유도 배너 */}
+        {/* 개인 심화분석 안내 — 결제는 다음 화면에서 고객이 별도로 선택한다. */}
         <View style={styles.upsellBanner}>
           <Text style={styles.upsellTitle}>
             🌿 더 깊은 내면의 흐름이 궁금하신가요?
@@ -648,33 +641,15 @@ export default function ResultScreen() {
             63장 컬러+도형 카드로 무의식 · 현재 심리 · 회복 방향을{"\n"}
             심층 분석해 드립니다
           </Text>
-          {trialStatus === 'none' && (
-            <TouchableOpacity
-              style={[styles.upsellTrialBtn]}
-              onPress={() => router.push('/payment' as any)}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.upsellTrialBtnText}>🌿 초기 오픈 체험 중 · 지금 무료로 시작하기</Text>
-            </TouchableOpacity>
-          )}
-          {trialStatus === 'active' && (
-            <TouchableOpacity
-              style={[styles.upsellActiveBtn]}
-              onPress={() => router.push('/payment' as any)}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.upsellActiveBtnText}>심화 분석 열기 →</Text>
-            </TouchableOpacity>
-          )}
-          {(trialStatus === 'expired' || trialStatus === 'paid') && (
-            <TouchableOpacity
-              style={[styles.upsellPayBtn]}
-              onPress={() => router.push('/payment' as any)}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.upsellPayBtnText}>심화 코칭 전체 보기 (30,000원) →</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={styles.upsellCtaButton}
+            onPress={() => router.push('/(tabs)/commerce-checkout?product=personal_deep' as any)}
+            activeOpacity={0.85}
+            accessibilityRole="link"
+            accessibilityLabel="개인 심화분석 상품 안내 보기"
+          >
+            <Text style={styles.upsellCtaButtonText}>개인 심화분석 알아보기 →</Text>
+          </TouchableOpacity>
         </View>
         {/* 후기 남기기 버튼 */}
         <View style={styles.reviewButtonSection}>
@@ -1502,38 +1477,14 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 14,
   },
-  upsellTrialBtn: {
-    backgroundColor: '#8BAF8B',
-    borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignItems: 'center' as const,
-  },
-  upsellTrialBtnText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  upsellActiveBtn: {
-    backgroundColor: '#5A8A5A',
-    borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignItems: 'center' as const,
-  },
-  upsellActiveBtnText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  upsellPayBtn: {
+  upsellCtaButton: {
     backgroundColor: '#3A6B3A',
     borderRadius: 24,
     paddingVertical: 12,
     paddingHorizontal: 24,
     alignItems: 'center' as const,
   },
-  upsellPayBtnText: {
+  upsellCtaButtonText: {
     color: '#fff',
     fontWeight: '700',
     fontSize: 15,

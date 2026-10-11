@@ -29,6 +29,23 @@ type TossPaymentsInstance = {
 const ANALYSIS_SERVICE_PERIOD = "검사 완료 즉시 제공 · 기술적 오류 발생 시 최대 24시간 이내 제공 상태를 확인·안내";
 const COACHING_SERVICE_PERIOD = "희망 일정 접수 후 3영업일 이내 일정 안내 · 결제일로부터 최대 60일 이내 서비스 제공";
 const REFUND_POLICY_URL = "https://husimcolor.com/refund-policy";
+const ANALYSIS_PRODUCT_GUIDES: Record<Extract<CommerceProductCode, "personal_deep" | "couple_love_deep" | "parent_child_deep">, readonly string[]> = {
+  personal_deep: [
+    "컬러 3개와 심리카드 3장의 순서별 해석",
+    "컬러별 상세 해석 · 세 컬러 통합 · 심리·성격·관계 성향",
+    "회복 루틴과 PDF 리포트 제공",
+  ],
+  couple_love_deep: [
+    "두 사람의 컬러와 심리카드 흐름을 함께 해석",
+    "관계 특성 · 생활 패턴 · 갈등과 회복 방향",
+    "역할에 맞춘 관계 PDF 리포트 제공",
+  ],
+  parent_child_deep: [
+    "부모와 자녀 각자의 컬러와 심리카드 흐름 해석",
+    "생활 장면 · 대화 방식 · 갈등과 회복 방향",
+    "실제 역할을 반영한 관계 PDF 리포트 제공",
+  ],
+};
 
 declare global {
   interface Window {
@@ -143,6 +160,12 @@ export default function CommerceCheckoutScreen() {
   );
   const cardReviewServicePeriod = getCardReviewServicePeriod(productCode);
   const openingCampaignAvailable = isOpeningCampaignAvailable(productCode);
+  const productGuide = isPaidAnalysisCode(productCode) ? ANALYSIS_PRODUCT_GUIDES[productCode] : undefined;
+  useEffect(() => {
+    if (openingCampaignAvailable) {
+      setCouponCode((current) => current || OPENING_CAMPAIGN_COUPON_CODE);
+    }
+  }, [openingCampaignAvailable]);
   const couponQuote = trpc.commerce.coupons.preview.useQuery(
     {
       couponCode: couponCode.trim(),
@@ -351,6 +374,10 @@ export default function CommerceCheckoutScreen() {
         <Text style={styles.notice}>{tossLiveEnabled
           ? "토스페이먼츠 라이브 결제입니다. 결제 승인 시 실제 청구가 발생하며, 승인된 주문에만 검사 이용권이 발급됩니다."
           : "현재 테스트 운영 중입니다. Toss 테스트키로만 동작하며 실제 청구는 발생하지 않습니다."}</Text>
+        {productGuide ? <View style={styles.productGuideCard}>
+          <Text style={styles.productGuideTitle}>이 분석에서 확인하는 내용</Text>
+          {productGuide.map((item) => <Text key={item} style={styles.productGuideItem}>• {item}</Text>)}
+        </View> : null}
         <View style={styles.servicePeriodCard}>
           <Text style={styles.servicePeriodTitle}>서비스 제공기간</Text>
           <Text style={styles.servicePeriodText}>{ANALYSIS_SERVICE_PERIOD}</Text>
@@ -364,10 +391,7 @@ export default function CommerceCheckoutScreen() {
         {openingCampaignAvailable && <View style={styles.openingCampaignCard}>
           <Text style={styles.openingCampaignTitle}>휴심컬러 유료 심화분석 오픈 기념 20% 할인</Text>
           <Text style={styles.openingCampaignText}>10월 30일까지 · 회원가입 없이 이용 가능 · 오프라인 코칭 제외</Text>
-          <Text style={styles.openingCampaignPrompt}>오픈 기념 20% 할인 쿠폰을 적용해 주세요.</Text>
-          <Pressable onPress={() => { setCouponCode(OPENING_CAMPAIGN_COUPON_CODE); setMessage(null); }} style={styles.campaignButton}>
-            <Text style={styles.campaignButtonText}>20% 할인 쿠폰 적용</Text>
-          </Pressable>
+          <Text style={styles.openingCampaignPrompt}>오픈 기념 할인 코드가 자동 적용되어 정가와 할인가를 바로 확인할 수 있습니다.</Text>
         </View>}
         <TextInput style={styles.input} value={couponCode} onChangeText={(value) => { setCouponCode(value); setMessage(null); }} autoCapitalize="characters" placeholder="쿠폰 코드를 입력하세요" placeholderTextColor="#94887C" />
         {couponQuote.isSuccess && couponQuote.data && <View style={styles.couponQuote}>
@@ -393,6 +417,9 @@ const styles = StyleSheet.create({
   price: { color: "#7D5E38", fontSize: 20, fontWeight: "800", marginTop: 8, textAlign: "center" },
   notice: { color: "#6D6258", fontSize: 14, lineHeight: 22, marginTop: 18, marginBottom: 28 },
   reviewNotice: { color: "#5C4B3E", fontSize: 14, lineHeight: 22, marginTop: 18, marginBottom: 28, textAlign: "center" },
+  productGuideCard: { backgroundColor: "#F7F1E8", borderColor: "#D9C7AE", borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 4, gap: 5 },
+  productGuideTitle: { color: "#654C35", fontSize: 14, fontWeight: "800", marginBottom: 3 },
+  productGuideItem: { color: "#66594E", fontSize: 13, lineHeight: 20 },
   servicePeriodCard: { backgroundColor: "#EFF6EE", borderColor: "#B4CCB3", borderWidth: 1, borderRadius: 14, padding: 14, marginTop: 14, marginBottom: 22 },
   servicePeriodTitle: { color: "#3D6645", fontSize: 14, fontWeight: "800" },
   servicePeriodText: { color: "#4D594D", fontSize: 13, lineHeight: 20, marginTop: 5 },
@@ -404,8 +431,6 @@ const styles = StyleSheet.create({
   openingCampaignTitle: { color: "#75561B", fontSize: 14, fontWeight: "800" },
   openingCampaignText: { color: "#8D6B25", fontSize: 12, lineHeight: 18 },
   openingCampaignPrompt: { color: "#765B27", fontSize: 12, fontWeight: "700", marginTop: 2 },
-  campaignButton: { alignSelf: "flex-start", backgroundColor: "#7E6428", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, marginTop: 2 },
-  campaignButtonText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
   couponQuote: { backgroundColor: "#EFF6EE", borderColor: "#B4CCB3", borderWidth: 1, borderRadius: 12, padding: 12, marginTop: -8, marginBottom: 16, gap: 4 },
   couponQuoteTitle: { color: "#3D6645", fontSize: 13, fontWeight: "800" },
   couponQuoteText: { color: "#4D594D", fontSize: 12, lineHeight: 18 },

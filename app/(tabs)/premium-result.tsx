@@ -33,7 +33,6 @@ import { buildPremiumColorFlowDescription } from "@/lib/premium-color-flow-summa
 import { COACHING_BOOKING_URL } from "@/shared/coaching-booking";
 import { PremiumShareSummaryCard } from "@/components/premium-share-summary-card";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { getTrialStatus, getTrialRemainingLabel, type TrialStatus } from "@/lib/trialUtils";
 import { getCommerceAnalysisDelivery } from "@/lib/commerce-access";
 import { buildPrivatePdfDownloadUrl, isKakaoTalkInAppBrowser, openInExternalBrowser, requestWebPdfDownload } from "@/lib/kakao-pdf-download";
 import * as Sharing from 'expo-sharing';
@@ -517,8 +516,6 @@ export default function PremiumResultScreen() {
   const router = useRouter();
   const [cards, setCards] = useState<CardData[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [trialStatus, setTrialStatus] = useState<TrialStatus>("none");
-  const [remainingLabel, setRemainingLabel] = useState<string | null>(null);
    const [prevColors, setPrevColors] = useState<ColorData[]>([]);
   // 후기 state
   const [reviewDone, setReviewDone] = useState(false);
@@ -660,13 +657,6 @@ export default function PremiumResultScreen() {
             setReviewTags(saved.tags ?? []);
             if (saved.id) setReviewId(saved.id);
           } catch {}
-        }
-        const status = await getTrialStatus();
-        if (!mounted) return;
-        setTrialStatus(status);
-        if (status === "active") {
-          const label = await getTrialRemainingLabel();
-          if (mounted) setRemainingLabel(label);
         }
       })();
       return () => { mounted = false; };
@@ -1397,42 +1387,6 @@ export default function PremiumResultScreen() {
           </View>
         </View>
 
-        {/* 체험 중 결제 유도 배너 */}
-        {(trialStatus === "active" || trialStatus === "expired") && (
-          <View style={[styles.trialBanner, {
-            backgroundColor: trialStatus === "expired" ? "#F5EDE0" : "#EDF5ED",
-            borderColor: trialStatus === "expired" ? "#C4956A55" : "#8BAF8B55",
-          }]}>
-            {trialStatus === "active" && remainingLabel ? (
-              <>
-                <Text style={[styles.trialBannerTitle, { color: "#5A8A5A" }]}>
-                  🌿 무료체험 중 · 남은 시간 {remainingLabel}
-                </Text>
-                <Text style={[styles.trialBannerDesc, { color: "#5A8A5A" }]}>
-                  체험 기간 종료 후에는 결제 후 이용 가능합니다
-                </Text>
-              </>
-            ) : (
-              <>
-                <Text style={[styles.trialBannerTitle, { color: "#7A4A10" }]}>
-                  현재 초기 오픈 체험중입니다
-                </Text>
-                <Text style={[styles.trialBannerDesc, { color: "#7A4A10" }]}>
-                  공유와 후기를 남겨주시면 큰 도움이 됩니다 🙂
-                </Text>
-              </>
-            )}
-            <TouchableOpacity
-              style={[styles.trialBannerBtn, {
-                backgroundColor: trialStatus === "expired" ? "#C4956A" : "#8BAF8B",
-              }]}
-              onPress={() => router.push("/payment" as any)}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.trialBannerBtnText}>컬러+도형 심층 해석 (유료)</Text>
-            </TouchableOpacity>
-          </View>
-        )}
         {/* 공유 버튼 */}
         <TouchableOpacity
           style={[styles.shareButton, { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE' }]}
@@ -2665,35 +2619,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     fontWeight: '500',
-  },
-  // 체험 중/만료 배너
-  trialBanner: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 18,
-    gap: 8,
-    alignItems: 'center',
-  },
-  trialBannerTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  trialBannerDesc: {
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  trialBannerBtn: {
-    marginTop: 4,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-  },
-  trialBannerBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
   },
   // 후기 섹션 스타일
   reviewSection: {

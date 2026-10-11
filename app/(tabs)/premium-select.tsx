@@ -404,7 +404,7 @@ export default function PremiumSelectScreen() {
         }
         return;
       }
-      if (!await isPremiumActive()) router.replace("/payment" as any);
+      if (!await isPremiumActive()) router.replace("/(tabs)/commerce-checkout?product=personal_deep" as any);
     };
     checkAccess();
   }, [commerceTestMode.isLoading, commerceTestMode.data?.tossTestEnabled, commerceTestMode.data?.tossLiveEnabled]);
