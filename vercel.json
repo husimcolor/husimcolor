@@ -8,6 +8,10 @@
       "maxDuration": 30,
       "includeFiles": "server/assets/HusimPdfKorean.ttf"
     },
+    "api/zh-cn-pilot-personal-pdf.ts": {
+      "maxDuration": 30,
+      "includeFiles": "server/assets/NotoSansCJKsc-Regular.otf"
+    },
     "api/couple-pdf-report.ts": {
       "maxDuration": 30,
       "includeFiles": "server/assets/HusimPdfKorean.ttf"
@@ -19,6 +23,7 @@
     { "source": "/api/auth/legacy-admin-logout", "destination": "/api/trpc/[...trpc]?legacyAdminRoute=legacy-admin-logout" },
     { "source": "/api/trpc/:path*", "destination": "/api/trpc/[...trpc]" },
     { "source": "/api/pdf-report", "destination": "/api/pdf-report" },
+    { "source": "/api/zh-cn-pilot-personal-pdf", "destination": "/api/zh-cn-pilot-personal-pdf" },
     { "source": "/api/couple-pdf-report", "destination": "/api/couple-pdf-report" },
     { "source": "/((?!_expo/|assets/).*)", "destination": "/index.html" }
   ],
