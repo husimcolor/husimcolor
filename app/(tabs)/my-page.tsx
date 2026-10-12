@@ -7,6 +7,7 @@ import { startKakaoLogin } from "@/constants/oauth";
 import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
+import { getMemberIdentityDisplay } from "@/shared/account-display";
 
 const orderStatus: Record<string, string> = {
   pending: "결제 대기", processing: "결제 확인 중", paid: "결제 완료", failed: "결제 실패",
@@ -117,11 +118,16 @@ export default function MyPageScreen() {
   }
 
   const data = dashboard.data;
+  const accountIdentity = getMemberIdentityDisplay({
+    name: auth.user?.name,
+    email: auth.user?.email,
+    loginMethod: auth.user?.loginMethod,
+  });
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
-          <View><Text style={[styles.eyebrow, { color: colors.primary }]}>HUSIMCOLOR MEMBER</Text><Text style={[styles.title, { color: colors.foreground }]}>{auth.user?.name || "회원"}님의 마이페이지</Text><Text style={[styles.body, { color: colors.muted }]}>주문과 이용 이력을 안전하게 확인하세요.</Text></View>
+          <View><Text style={[styles.eyebrow, { color: colors.primary }]}>HUSIMCOLOR MEMBER</Text><Text style={[styles.title, { color: colors.foreground }]}>{accountIdentity.displayName}님의 마이페이지</Text><Text style={[styles.body, { color: colors.muted }]}>주문과 이용 이력은 현재 인증된 계정에서만 확인할 수 있습니다.</Text></View>
           <TouchableOpacity onPress={() => auth.logout()} style={styles.logout}><Text style={styles.logoutText}>로그아웃</Text></TouchableOpacity>
         </View>
 
@@ -153,7 +159,7 @@ export default function MyPageScreen() {
           <Section title="문의내역">
             {data?.inquiries.length ? data.inquiries.map((item) => <View key={`inquiry-${item.id}`} style={styles.card}><Text style={styles.cardTitle}>{inquiryTypeLabels[item.inquiryType] ?? item.inquiryType} · {item.subject}</Text><Text style={styles.meta}>{inquiryStatusLabels[item.status] ?? item.status} · {dateText(item.respondedAt ?? item.createdAt)}</Text></View>) : <Text style={styles.empty}>접수한 문의가 없습니다.</Text>}
           </Section>
-          <Section title="내 정보"><View style={styles.card}><Text style={styles.cardTitle}>{auth.user?.name ?? "회원"}</Text><Text style={styles.meta}>{auth.user?.email ?? "이메일 정보 없음"} · {data?.account.emailLinked ? "구매 이메일 연결 완료" : "구매 이력 연결 가능"}</Text></View></Section>
+          <Section title="내 정보"><View style={styles.card}><Text style={styles.cardTitle}>현재 로그인 계정</Text><Text style={styles.accountProvider}>{accountIdentity.providerLabel}</Text><Text style={styles.meta}>{accountIdentity.identifier} · {data?.account.emailLinked ? "구매 이메일 연결 완료" : "구매 이력 연결 가능"}</Text></View></Section>
         </>}
       </ScrollView>
     </ScreenContainer>
@@ -184,5 +190,6 @@ const styles = StyleSheet.create({
   section: { gap: 8 }, sectionTitle: { color: "#3d3530", fontSize: 17, fontWeight: "800", marginTop: 8 },
   card: { borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 14, padding: 14, gap: 5 },
   cardTitle: { color: "#3d3530", fontSize: 14, fontWeight: "800" }, meta: { color: "#6c6860", fontSize: 12, lineHeight: 18 },
+  accountProvider: { color: "#3f7b52", fontSize: 12, fontWeight: "800" },
   empty: { color: "#8a857c", fontSize: 13, paddingVertical: 8 }, loading: { paddingVertical: 44 }, errorText: { color: "#b5584f", fontSize: 13 },
 });

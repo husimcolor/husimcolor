@@ -27,4 +27,10 @@ describe("홈 화면 회원 진입", () => {
     expect(home).not.toContain("createTossLive");
     expect(home).not.toContain("queueAndSendPdf");
   });
+
+  it("마이페이지에는 인증 수단과 마스킹된 계정 식별자를 표시한다", () => {
+    expect(memberPage).toContain("getMemberIdentityDisplay");
+    expect(memberPage).toContain("현재 로그인 계정");
+    expect(memberPage).not.toContain("auth.user?.email ??");
+  });
 });
