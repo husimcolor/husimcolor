@@ -214,7 +214,7 @@ export async function createZhCnPilotPersonalPdfBuffer(): Promise<Buffer> {
   ]));
 
   sectionTitle(document, `此刻适合你的${report.complementColorTerm}`, "#8B6914", 45);
-  paragraph(document, "这些色彩并非要改变你，而是可在当前节奏中帮助缓和容易过度用力的部分，并支持恢复方向的参考。", { size: 12.5, color: "#75695D" });
+  paragraph(document, "这些颜色可作为日常自我调节的参考，帮助你放松身心、找回平衡，而不是要求你改变自己。", { size: 12.5, color: "#75695D" });
   document.moveDown(0.25);
   pills(document, report.complementColors.map((color) => `${color.name} · ${color.meaning}`));
   sectionTitle(document, "我的色彩倾向", "#2D6A4F", textHeight(document, report.colorFlowDescription));

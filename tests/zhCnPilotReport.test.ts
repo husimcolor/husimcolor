@@ -17,11 +17,26 @@ describe("zh-CN personal pilot report", () => {
     expect(ZH_CN_PERSONAL_PILOT_REPORT.lifeRole.directions).toHaveLength(3);
     expect(serialized).toContain("潜在心理倾向");
     expect(serialized).toContain("逐步找回对日常生活的掌控感");
+    expect(serialized).toContain("把要做的事情列下来，一件件完成");
+    expect(serialized).toContain("再了解相关信息，作出判断");
+    expect(serialized).toContain("你往往能较快理清事情的轻重缓急");
+    expect(serialized).toContain("认真对待事情，也看重彼此之间的信任");
+    expect(serialized).toContain("把彼此的想法说清楚");
+    expect(serialized).toContain("用自己认可的方式继续往下做");
+    expect(serialized).toContain("第3张卡 · 调整方向");
     expect(ZH_CN_PERSONAL_PILOT_REPORT.lifeRole.title).toBe("信息梳理与判断型");
     expect(ZH_CN_PERSONAL_PILOT_REPORT.recoveryRoutine.message).toBe("敏感不需要被否定；它也提醒你正在察觉更多细微的变化。");
     expect(serialized).not.toContain("潜在心理流向");
     expect(serialized).not.toContain("生命角色能量");
     expect(serialized).not.toContain("策略解读者型");
+    expect(serialized).not.toContain("列出待办、逐项完成");
+    expect(serialized).not.toContain("再充分听取信息后作出判断");
+    expect(serialized).not.toContain("你能较快厘清工作的轻重缓急");
+    expect(serialized).not.toContain("认真投入和深入信任");
+    expect(serialized).not.toContain("清楚交换彼此的想法");
+    expect(serialized).not.toContain("你擅长");
+    expect(serialized).not.toContain("用自己认可的方式往前推进");
+    expect(serialized).not.toContain("第3张卡 · 恢复方向");
     const rendererSource = readFileSync(path.join(process.cwd(), "server", "zh-cn-pilot-pdf-report.ts"), "utf8");
     expect(rendererSource).toContain("值得关注的成长方向");
     expect(rendererSource).toContain("当下的内心变化");
@@ -29,6 +44,7 @@ describe("zh-CN personal pilot report", () => {
     expect(rendererSource).toContain("需要留意的一面");
     expect(rendererSource).toContain("今天给自己的话");
     expect(rendererSource).toContain("今天的调整小练习");
+    expect(rendererSource).toContain("这些颜色可作为日常自我调节的参考，帮助你放松身心、找回平衡，而不是要求你改变自己。");
     expect(rendererSource).not.toContain("今天的专属恢复小练习");
   });
 
