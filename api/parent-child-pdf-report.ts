@@ -1,6 +1,7 @@
 import "dotenv/config";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createParentChildPdfBuffer, validateParentChildPdfPayload } from "../server/parent-child-pdf-report";
+import { localizePayload } from "../lib/zh-cn-copy";
 
 export const config = {
   maxDuration: 30,
@@ -29,9 +30,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const requestId = getBodyField(req.body, "requestId");
     if (requestId && !/^[A-Za-z0-9_-]{8,80}$/.test(requestId)) throw new Error("PDF 다운로드 요청이 올바르지 않습니다.");
     const payload = validateParentChildPdfPayload(JSON.parse(rawPayload));
-    const pdf = await createParentChildPdfBuffer(payload);
+    const locale = payload.locale === "zh-CN" ? "zh-CN" : "ko";
+    const pdf = await createParentChildPdfBuffer(localizePayload(payload, locale));
     const date = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-    const filename = `휴심컬러_${payload.relationship.labels.parent}-${payload.relationship.labels.child}_감성심리코칭리포트_${date}.pdf`;
+    const filename = locale === "zh-CN" ? `HUSIM_COLOR_亲子关系报告_${date}.pdf` : `휴심컬러_${payload.relationship.labels.parent}-${payload.relationship.labels.child}_감성심리코칭리포트_${date}.pdf`;
     res.status(200);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Length", String(pdf.length));

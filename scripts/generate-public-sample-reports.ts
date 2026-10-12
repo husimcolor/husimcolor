@@ -20,6 +20,7 @@ import { buildPremiumCardFlowSummary } from "../lib/premium-card-flow-summary";
 import { buildPremiumColorFlowDescription } from "../lib/premium-color-flow-summary";
 import { buildPremiumPdfDownloadPayload } from "../lib/premium-pdf-download";
 import { buildParentChildPdfDownloadPayload } from "../lib/parent-child-pdf-download";
+import { localizePayload } from "../lib/zh-cn-copy";
 import { createCouplePdfBuffer } from "../server/couple-pdf-report";
 import { createParentChildPdfBuffer } from "../server/parent-child-pdf-report";
 import { createPremiumPdfBuffer } from "../server/pdf-report";
@@ -27,9 +28,17 @@ import { COACHING_BOOKING_URL } from "../shared/coaching-booking";
 import type { CouplePdfDownloadPayload, CouplePdfPerson } from "../shared/couple-pdf-download";
 
 const SAMPLE_NOTICE = "공개 예시 리포트 · 가상 데이터로 생성됨 · 실제 고객 개인정보 미사용";
+const REPORT_LOCALE = process.env.SAMPLE_REPORT_LOCALE === "zh-CN" ? "zh-CN" : "ko";
 const OUTPUT_DIR = process.env.SAMPLE_REPORT_OUTPUT_DIR
   ? path.resolve(process.env.SAMPLE_REPORT_OUTPUT_DIR)
   : path.resolve(process.cwd(), "public", "sample-reports");
+const PAYLOAD_DIR = process.env.SAMPLE_REPORT_PAYLOAD_DIR ? path.resolve(process.env.SAMPLE_REPORT_PAYLOAD_DIR) : null;
+
+function savePayload(name: string, payload: unknown) {
+  if (!PAYLOAD_DIR) return;
+  mkdirSync(PAYLOAD_DIR, { recursive: true });
+  writeFileSync(path.join(PAYLOAD_DIR, name), JSON.stringify(payload, null, 2));
+}
 
 type EnergyFamily = "warm_active" | "warm_soft" | "warm_grounded" | "cool_clear" | "cool_deep" | "nature" | "neutral";
 
@@ -110,6 +119,7 @@ function personPdfData(label: string, session: PersonSession): CouplePdfPerson {
 
 function dateLabel() {
   const now = new Date();
+  if (REPORT_LOCALE === "zh-CN") return `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
   return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
 }
 
@@ -166,7 +176,10 @@ async function createPersonalSample() {
   payload.profileLine = "개인 심화분석 · 가상 인물";
   payload.generatedAt = dateLabel();
   payload.sampleNotice = SAMPLE_NOTICE;
-  return createPremiumPdfBuffer(payload);
+  payload.locale = REPORT_LOCALE;
+  payload.copyVersion = REPORT_LOCALE === "zh-CN" ? "zh-CN-review-v1" : "ko-canonical";
+  savePayload("personal.json", payload);
+  return createPremiumPdfBuffer(localizePayload(payload, REPORT_LOCALE));
 }
 
 async function createCoupleSample() {
@@ -270,7 +283,10 @@ async function createCoupleSample() {
       closingMessage: archetype.closingMessage ?? coupleAnalysis.closingMessage,
     },
   };
-  return createCouplePdfBuffer(payload);
+  payload.locale = REPORT_LOCALE;
+  payload.copyVersion = REPORT_LOCALE === "zh-CN" ? "zh-CN-review-v1" : "ko-canonical";
+  savePayload("couple.json", payload);
+  return createCouplePdfBuffer(localizePayload(payload, REPORT_LOCALE));
 }
 
 async function createParentChildSample() {
@@ -337,7 +353,10 @@ async function createParentChildSample() {
     },
   });
   payload.generatedAt = dateLabel();
-  return createParentChildPdfBuffer(payload);
+  payload.locale = REPORT_LOCALE;
+  payload.copyVersion = REPORT_LOCALE === "zh-CN" ? "zh-CN-review-v1" : "ko-canonical";
+  savePayload("parent-child.json", payload);
+  return createParentChildPdfBuffer(localizePayload(payload, REPORT_LOCALE));
 }
 
 async function main() {
