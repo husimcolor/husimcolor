@@ -3,7 +3,6 @@ import React, { useRef, useState, useEffect } from "react";
 import { Linking } from "react-native";
 import {
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -16,6 +15,7 @@ import {
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenContainer } from "@/components/screen-container";
+import { LocalizedText as Text } from "@/components/localized-text";
 import { useColors } from "@/hooks/use-colors";
 import { type CardData, CARD_DATA } from "@/constants/cardData";
 import { COLOR_DATA, type ColorData } from "@/constants/colorData";
@@ -34,6 +34,8 @@ import { COACHING_BOOKING_URL } from "@/shared/coaching-booking";
 import { PremiumShareSummaryCard } from "@/components/premium-share-summary-card";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { getCommerceAnalysisDelivery } from "@/lib/commerce-access";
+import { useLocalization } from "@/lib/localization-context";
+import { localizePayload } from "@/lib/zh-cn-copy";
 import { buildPrivatePdfDownloadUrl, isKakaoTalkInAppBrowser, openInExternalBrowser, requestWebPdfDownload } from "@/lib/kakao-pdf-download";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -514,6 +516,7 @@ function SectionCard({
 export default function PremiumResultScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { locale, copyVersion } = useLocalization();
   const [cards, setCards] = useState<CardData[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
    const [prevColors, setPrevColors] = useState<ColorData[]>([]);
@@ -728,6 +731,8 @@ export default function PremiumResultScreen() {
         },
         coachingUrl: COACHING_BOOKING_URL,
       });
+      payload.locale = delivery.locale ?? locale;
+      payload.copyVersion = delivery.copyVersion ?? copyVersion;
       try {
         await queueAndSendPdf.mutateAsync({
           analysisRunId: delivery.analysisRunId,
@@ -756,28 +761,28 @@ export default function PremiumResultScreen() {
 
   const [card1, card2, card3] = cards;
   const stage1Interpretation = prevColors.length >= 3
-    ? buildPremiumStage1Interpretation(prevColors)
+    ? localizePayload(buildPremiumStage1Interpretation(prevColors), locale)
     : undefined;
-  const stage2Cards = buildStage2CardInterpretations([card1, card2, card3]);
-  const stage2Bridge = buildStage2ColorBridge(prevColors);
+  const stage2Cards = localizePayload(buildStage2CardInterpretations([card1, card2, card3]), locale);
+  const stage2Bridge = localizePayload(buildStage2ColorBridge(prevColors), locale);
 
   // 삶의 역할 Archetype + 오행 기반 에너지 흐름 해석 (jobCoaching보다 먼저 계산)
-  const lifeEnergyResult: LifeEnergyResult = buildLifeEnergyResult(
+  const lifeEnergyResult: LifeEnergyResult = localizePayload(buildLifeEnergyResult(
     prevColors.length >= 3 ? prevColors.map((c) => c.id) : [card1.color, card2.color, card3.color],
     [card1, card2, card3].map((c) => ({ color: c.color, shape: c.shape })),
     card3.complementColors,
-  );
+  ), locale);
   const customRecoveryRoutine = buildCustomRecoveryRoutine(
     lifeEnergyResult.complementaryFiveElements.elements,
     card3.wellness,
     lifeEnergyResult.routines,
     lifeEnergyResult.currentRoutines,
   );
-  const lifeRoleReport = buildLifeRoleEnergyReport(
+  const lifeRoleReport = localizePayload(buildLifeRoleEnergyReport(
     prevColors.length >= 3 ? prevColors.map((color) => color.id) : [card1.color, card2.color, card3.color],
     [card1, card2, card3].map((card) => ({ color: card.color, shape: card.shape })),
-    profile?.age,
-  );
+    profile?.age ?? '',
+  ), locale);
   // 오행 흐름 유형 및 메인 Archetype 키 추출 (성경구절 매칭용)
   const _lifeFlowType = lifeEnergyResult.flowType;
   const _archetypeKey = lifeEnergyResult.archetypes[0]?.key ?? '';
@@ -926,7 +931,10 @@ export default function PremiumResultScreen() {
           setPdfDownloadMessage('PDF 다운로드를 시작했습니다.');
           pdfDownloadTimersRef.current.push(setTimeout(() => setPdfDownloadMessage(null), 3_000));
         }, 250);
-        submitServerPdfDownload(buildPremiumPdfDownloadPayload(reportInput), requestId);
+        const payload = buildPremiumPdfDownloadPayload(reportInput);
+        payload.locale = delivery?.locale ?? locale;
+        payload.copyVersion = delivery?.copyVersion ?? copyVersion;
+        submitServerPdfDownload(payload, requestId);
         pdfDownloadTimersRef.current.push(
           setTimeout(() => {
             if (!pdfDownloadLockRef.current) return;

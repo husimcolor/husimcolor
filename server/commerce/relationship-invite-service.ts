@@ -436,6 +436,8 @@ export async function createRelationshipInviteSession(tx: any, input: {
   productId: number;
   productCode: CommerceProductCode;
   relationType: RelationType;
+  locale: "ko" | "zh-CN";
+  copyVersion: string;
 }): Promise<RelationshipInviteStart> {
   const productAndRelationTypeMatch = input.productCode === "couple_love_deep"
     ? input.relationType === "연인" || input.relationType === "부부"
@@ -454,6 +456,8 @@ export async function createRelationshipInviteSession(tx: any, input: {
     productId: input.productId,
     relationType: input.relationType,
     mode: "invite_link",
+    locale: input.locale,
+    copyVersion: input.copyVersion,
     ownerTokenHash: hashCommerceValue(ownerAccessToken),
     inviteTokenHash: hashCommerceValue(inviteToken),
     resultTokenHash: hashCommerceValue(resultToken),
