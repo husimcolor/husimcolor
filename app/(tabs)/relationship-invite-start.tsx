@@ -6,6 +6,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { getRelationshipRoleOptions, type FaithType, type GenderType, type RelationType, type RelationshipRole } from "@/constants/coupleData";
 import { getCommerceStartGrant, markCommerceAnalysisStarted, removeCommerceStartGrant } from "@/lib/commerce-access";
 import { trpc } from "@/lib/trpc";
+import { useLocalization } from "@/lib/localization-context";
 import type { CommerceProductCode } from "@/shared/commerce";
 
 const genders: GenderType[] = ["남성", "여성"];
@@ -14,6 +15,7 @@ function one(value: string | string[] | undefined) { return Array.isArray(value)
 
 export default function RelationshipInviteStartScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const params = useLocalSearchParams<{ product?: string | string[]; relationType?: string | string[] }>();
   const productCode = one(params.product) as CommerceProductCode | undefined;
   const relationType = one(params.relationType) as RelationType | undefined;
@@ -44,6 +46,7 @@ export default function RelationshipInviteStartScreen() {
         productCode: relationshipProductCode,
         relationshipMode: "invite_link",
         relationType,
+        locale,
       });
       if (!consumed.relationshipInvite) throw new Error("RELATIONSHIP_INVITE_NOT_ISSUED");
       await removeCommerceStartGrant(relationshipProductCode);

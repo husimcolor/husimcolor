@@ -1,6 +1,7 @@
 import { createReadStream, existsSync } from "node:fs";
 import path from "node:path";
 import type { PremiumPdfDownloadPayload } from "../shared/premium-pdf-download";
+import { localizeStaticCopy } from "../lib/zh-cn-copy";
 import { PDFDocument } from "./pdfkit-runtime";
 
 const PAGE_BOTTOM = 799;
@@ -12,6 +13,10 @@ const BUNDLED_FONT_PATH = path.join(__dirname, "HusimPdfKorean.ttf");
 const FONT_PATH = existsSync(BUNDLED_FONT_PATH)
   ? BUNDLED_FONT_PATH
   : path.join(process.cwd(), "server", "assets", "HusimPdfKorean.ttf");
+const BUNDLED_ZH_FONT_PATH = path.join(__dirname, "NotoSansCJKsc-Regular.otf");
+const ZH_FONT_PATH = existsSync(BUNDLED_ZH_FONT_PATH)
+  ? BUNDLED_ZH_FONT_PATH
+  : path.join(process.cwd(), "server", "assets", "NotoSansCJKsc-Regular.otf");
 const BODY_TEXT_SIZE = 18.5;
 const BODY_LABEL_SIZE = 16;
 const CARD_TITLE_SIZE = 13.5;
@@ -23,6 +28,10 @@ const PILL_ROW_HEIGHT = 35;
 
 type PdfWriter = InstanceType<typeof PDFDocument>;
 type PdfShape = PremiumPdfDownloadPayload["cards"][number]["shape"];
+
+function localizedPdfText(document: PdfWriter, value: string) {
+  return localizeStaticCopy(value, ((document as any).__locale ?? "ko") as "ko" | "zh-CN");
+}
 
 function normalizePdfText(value: string) {
   return value
@@ -44,11 +53,11 @@ function ensureSpace(document: PdfWriter, height: number) {
 
 function textHeight(document: PdfWriter, value: string, width = CONTENT_WIDTH, size = BODY_TEXT_SIZE, lineGap = BODY_LINE_GAP) {
   document.fontSize(size);
-  return document.heightOfString(normalizePdfText(value) || " ", { width, lineGap });
+  return document.heightOfString(normalizePdfText(localizedPdfText(document, value)) || " ", { width, lineGap });
 }
 
 function writeParagraph(document: PdfWriter, value: string, options: { width?: number; size?: number; color?: string; lineGap?: number } = {}) {
-  const safeValue = normalizePdfText(value);
+  const safeValue = normalizePdfText(localizedPdfText(document, value));
   const width = options.width ?? CONTENT_WIDTH;
   const size = options.size ?? BODY_TEXT_SIZE;
   const lineGap = options.lineGap ?? BODY_LINE_GAP;
@@ -67,7 +76,7 @@ function writeParagraphBlocks(document: PdfWriter, value: string, options: { wid
 }
 
 function writeSectionTitle(document: PdfWriter, title: string, tone = "#2D6A4F", followingHeight = 0) {
-  const safeTitle = normalizePdfText(title).replace(/^[^가-힣A-Za-z0-9]+/, "");
+  const safeTitle = normalizePdfText(localizedPdfText(document, title)).replace(/^[^가-힣A-Za-z0-9]+/, "");
   ensureSpace(document, 44 + followingHeight);
   const top = document.y;
   document.fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, 31, 7).fill();
@@ -91,14 +100,14 @@ function writeCard(document: PdfWriter, title: string, paragraphs: Array<{ label
   ensureSpace(document, cardHeight);
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 16, 9).fill().restore();
-  document.fillColor("#4A3A2A").fontSize(CARD_TITLE_SIZE).text(normalizePdfText(title), PAGE_LEFT + 14, top + 12, { width: innerWidth });
+  document.fillColor("#4A3A2A").fontSize(CARD_TITLE_SIZE).text(normalizePdfText(localizedPdfText(document, title)), PAGE_LEFT + 14, top + 12, { width: innerWidth });
   document.y = top + 34;
   for (const paragraph of paragraphs) {
     if (paragraph.label) {
-      document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text(normalizePdfText(paragraph.label), PAGE_LEFT + 14, document.y, { width: innerWidth });
+      document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text(normalizePdfText(localizedPdfText(document, paragraph.label)), PAGE_LEFT + 14, document.y, { width: innerWidth });
       document.moveDown(0.22);
     }
-    document.fillColor("#302B27").fontSize(BODY_TEXT_SIZE).text(normalizePdfText(paragraph.text), PAGE_LEFT + 14, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
+    document.fillColor("#302B27").fontSize(BODY_TEXT_SIZE).text(normalizePdfText(localizedPdfText(document, paragraph.text)), PAGE_LEFT + 14, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
     document.moveDown(0.76);
   }
   document.y = top + contentHeight + 16;
@@ -110,7 +119,7 @@ function writePills(document: PdfWriter, values: string[]) {
   let x = PAGE_LEFT;
   let y = document.y;
   for (const value of values) {
-    const safeValue = normalizePdfText(value);
+    const safeValue = normalizePdfText(localizedPdfText(document, value));
     document.fontSize(PILL_TEXT_SIZE);
     const width = Math.min(document.widthOfString(safeValue) + 18, available);
     if (x + width > PAGE_LEFT + available) {
@@ -131,7 +140,7 @@ function writePills(document: PdfWriter, values: string[]) {
 
 function writeBullets(document: PdfWriter, values: string[]) {
   values.forEach((value) => {
-    const safeValue = normalizePdfText(value);
+    const safeValue = normalizePdfText(localizedPdfText(document, value));
     const height = textHeight(document, safeValue, CONTENT_WIDTH - 20, BODY_TEXT_SIZE, BODY_LINE_GAP);
     ensureSpace(document, height + 5);
     const top = document.y;
@@ -178,8 +187,8 @@ function writeCoverColorChip(document: PdfWriter, color: PremiumPdfDownloadPaylo
   const height = 62;
   document.save().fillColor("#FFFDF9").roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, height, 9).fill().restore();
   document.save().lineWidth(1).fillColor(color.hex).strokeColor("#CBBEAC").circle(PAGE_LEFT + 30, top + 31, 16).fillAndStroke().restore();
-  document.fillColor("#4A3A2A").fontSize(14).text(normalizePdfText(color.name), PAGE_LEFT + 58, top + 11, { width: CONTENT_WIDTH - 72 });
-  document.fillColor("#75695D").fontSize(14).text(normalizePdfText(color.keywords), PAGE_LEFT + 58, top + 34, { width: CONTENT_WIDTH - 72 });
+  document.fillColor("#4A3A2A").fontSize(14).text(normalizePdfText(localizedPdfText(document, color.name)), PAGE_LEFT + 58, top + 11, { width: CONTENT_WIDTH - 72 });
+  document.fillColor("#75695D").fontSize(14).text(normalizePdfText(localizedPdfText(document, color.keywords)), PAGE_LEFT + 58, top + 34, { width: CONTENT_WIDTH - 72 });
   document.y = top + height + 7;
 }
 
@@ -194,8 +203,8 @@ function writeCardPreviewRow(document: PdfWriter, cards: PremiumPdfDownloadPaylo
     const isLightCard = card.colorHex.toUpperCase() === "#F5F5F0" || card.colorHex.toUpperCase() === "#FDD835";
     document.save().fillColor(card.colorHex).strokeColor("#D9D1C8").lineWidth(0.8).roundedRect(x, top, cardWidth, 57, 8).fillAndStroke().restore();
     drawShape(document, card.shape, x + cardWidth / 2, top + 28, 14, isLightCard ? "#FFFDF9" : "#FFFFFF", isLightCard ? "#4A3A2A" : "#FFFFFF");
-    document.fillColor("#4A3A2A").fontSize(8.7).text(`${index + 1}번 카드`, x, top + 65, { width: cardWidth, align: "center", lineBreak: false });
-    document.fillColor("#75695D").fontSize(8.2).text(`${normalizePdfText(card.colorName)} ${normalizePdfText(card.shapeName)}`, x, top + 78, { width: cardWidth, align: "center", lineBreak: false });
+    document.fillColor("#4A3A2A").fontSize(8.7).text(localizedPdfText(document, `${index + 1}번 카드`), x, top + 65, { width: cardWidth, align: "center", lineBreak: false });
+    document.fillColor("#75695D").fontSize(8.2).text(`${normalizePdfText(localizedPdfText(document, card.colorName))} ${normalizePdfText(localizedPdfText(document, card.shapeName))}`, x, top + 78, { width: cardWidth, align: "center", lineBreak: false });
   });
   document.y = top + cardHeight + 5;
 }
@@ -212,11 +221,13 @@ export function validatePremiumPdfPayload(value: unknown): PremiumPdfDownloadPay
 
 /** 현재 화면에서 완성된 데이터만 문서 레이아웃으로 옮겨 PDF Buffer를 만든다. */
 export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload): Promise<Buffer> {
+  const locale = payload.locale === "zh-CN" ? "zh-CN" : "ko";
+  const fontPath = locale === "zh-CN" ? ZH_FONT_PATH : FONT_PATH;
   const document = new PDFDocument({
     size: "A4",
     margins: { top: 43, bottom: 43, left: PAGE_LEFT, right: PAGE_LEFT },
-    font: FONT_PATH,
-    info: { Title: "휴심컬러 나의 컬러 심리 해석" },
+    font: fontPath,
+    info: { Title: locale === "zh-CN" ? "HUSIM COLOR 个人色彩心理报告" : "휴심컬러 나의 컬러 심리 해석" },
   });
   const chunks: Buffer[] = [];
   document.on("data", (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
@@ -224,19 +235,20 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
     document.on("end", () => resolve(Buffer.concat(chunks)));
     document.on("error", reject);
   });
-  document.registerFont("NotoSansKR", FONT_PATH);
-  document.font("NotoSansKR");
+  document.registerFont("HusimReportFont", fontPath);
+  document.font("HusimReportFont");
+  (document as any).__locale = locale;
 
   document.rect(0, 0, 595, 842).fill("#F8F4EE");
   document.fillColor("#4C7A58").fontSize(12).text("HUSIM COLOR · PERSONAL DEEP REPORT", PAGE_LEFT, 168, { width: CONTENT_WIDTH });
-  document.fillColor("#3D3530").fontSize(25).text("나의 컬러 심리 리포트", PAGE_LEFT, 204, { width: CONTENT_WIDTH });
-  document.fillColor("#685C51").fontSize(12).text("색과 도형으로 살펴본 현재의 마음, 삶의 역할, 회복 리듬", PAGE_LEFT, 247, { width: CONTENT_WIDTH });
+  document.fillColor("#3D3530").fontSize(25).text(locale === "zh-CN" ? "我的色彩心理报告" : "나의 컬러 심리 리포트", PAGE_LEFT, 204, { width: CONTENT_WIDTH });
+  document.fillColor("#685C51").fontSize(12).text(locale === "zh-CN" ? "通过色彩与图形，了解当下的内心感受、社会角色与自我调节的方向" : "색과 도형으로 살펴본 현재의 마음, 삶의 역할, 회복 리듬", PAGE_LEFT, 247, { width: CONTENT_WIDTH });
   if (payload.sampleNotice) {
-    document.fillColor("#80649B").fontSize(10.5).text(normalizePdfText(payload.sampleNotice), PAGE_LEFT, 280, { width: CONTENT_WIDTH });
+    document.fillColor("#80649B").fontSize(10.5).text(normalizePdfText(localizedPdfText(document, payload.sampleNotice)), PAGE_LEFT, 280, { width: CONTENT_WIDTH });
   }
   document.y = payload.sampleNotice ? 318 : 315;
   payload.selectedColors.slice(0, 3).forEach((color) => writeCoverColorChip(document, color));
-  document.fillColor("#75695D").fontSize(12).text(`${payload.profileLine}\n리포트 생성일 · ${payload.generatedAt}`, PAGE_LEFT, 736, { width: CONTENT_WIDTH, lineGap: 5 });
+  document.fillColor("#75695D").fontSize(12).text(localizedPdfText(document, `${payload.profileLine}\n리포트 생성일 · ${payload.generatedAt}`), PAGE_LEFT, 736, { width: CONTENT_WIDTH, lineGap: 5 });
 
   addPage(document);
   if (payload.stage1?.colors.length) {
@@ -258,11 +270,11 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
     writeSectionTitle(document, "세 컬러 통합 해석", "#2D6A4F", cardContentHeight(document, summaryParagraphs));
     writeCard(document, "나를 이루는 세 가지 흐름", summaryParagraphs);
     ensureSpace(document, 92);
-    document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("주요 장점", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+    document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text(localizedPdfText(document, "주요 장점"), PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
     document.moveDown(0.4);
     writePills(document, payload.stage1.strengths);
     ensureSpace(document, 92);
-    document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("성장 가능성", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+    document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text(localizedPdfText(document, "성장 가능성"), PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
     document.moveDown(0.4);
     writePills(document, payload.stage1.growthPossibility);
   }
@@ -293,22 +305,22 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
 
   writeSectionTitle(document, "나의 삶의 역할 에너지", "#66557B", cardContentHeight(document, [{ text: payload.lifeRole.description }]));
   writeCard(document, payload.lifeRole.title, [{ text: payload.lifeRole.description }], "#F8F5FF");
-  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("이 역할이 더하는 가치", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text(localizedPdfText(document, "이 역할이 더하는 가치"), PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.4);
   writePills(document, payload.lifeRole.humanStrengths);
   document.moveDown(0.6);
-  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("사회적 쓰임새 · 진로 방향", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text(localizedPdfText(document, "사회적 쓰임새 · 진로 방향"), PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.4);
   payload.lifeRole.directions.forEach((direction) => writeCard(document, direction.title, [
     { text: direction.description },
     { label: "준비 방향", text: direction.preparation },
   ], "#F8F5FF"));
-  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("잘 맞는 일의 환경", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text(localizedPdfText(document, "잘 맞는 일의 환경"), PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.35);
   writeBullets(document, payload.lifeRole.environments);
   document.moveDown(0.5);
   ensureSpace(document, 32 + bulletListHeight(document, payload.lifeRole.shadows));
-  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text("역할 에너지의 그림자", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.fillColor("#6A5843").fontSize(BODY_LABEL_SIZE).text(localizedPdfText(document, "역할 에너지의 그림자"), PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.35);
   writeBullets(document, payload.lifeRole.shadows);
   writeCard(document, "지금의 작은 방향", [{ text: payload.lifeRole.smallDirection }], "#FCF8F0");

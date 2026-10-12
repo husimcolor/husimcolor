@@ -1,6 +1,7 @@
 import "dotenv/config";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createPremiumPdfBuffer, validatePremiumPdfPayload } from "../server/pdf-report";
+import { localizePayload } from "../lib/zh-cn-copy";
 
 export const config = {
   maxDuration: 30,
@@ -39,9 +40,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!rawPayload) throw new Error("PDF 리포트 데이터가 없습니다.");
     const requestId = getRequestId(req.body);
     const payload = validatePremiumPdfPayload(JSON.parse(rawPayload));
-    const pdf = await createPremiumPdfBuffer(payload);
+    const locale = payload.locale === "zh-CN" ? "zh-CN" : "ko";
+    const pdf = await createPremiumPdfBuffer(localizePayload(payload, locale));
     const date = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-    const filename = `휴심컬러_나의컬러심리해석_${date}.pdf`;
+    const filename = locale === "zh-CN" ? `HUSIM_COLOR_个人色彩心理报告_${date}.pdf` : `휴심컬러_나의컬러심리해석_${date}.pdf`;
     const encodedName = encodeURIComponent(filename);
     res.status(200);
     res.setHeader("Content-Type", "application/pdf");

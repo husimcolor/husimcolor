@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Linking, Alert } from 'react-native';
+import { View, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Linking, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,6 +13,7 @@ import { isOpeningCampaignActive } from '@/shared/opening-campaign';
 import { getSampleReportUrl, SAMPLE_REPORT_LINK_LABEL, type SampleReportProduct } from '@/shared/sample-reports';
 import { startKakaoLogin } from '@/constants/oauth';
 import { useAuth } from '@/hooks/use-auth';
+import { LanguageSelector } from '@/components/language-selector';
 
 const { width, height } = Dimensions.get('window');
 
@@ -192,6 +194,9 @@ export default function HomeScreen() {
         overScrollMode="always"
       >
       <View style={styles.container}>
+        <View style={styles.languageSelectorWrap}>
+          <LanguageSelector compact />
+        </View>
         {/* 배경 장식 원 */}
         <View style={[styles.decorCircle1, { backgroundColor: colors.sage + '20' }]} />
         <View style={[styles.decorCircle2, { backgroundColor: colors.warmgold + '15' }]} />
@@ -345,6 +350,12 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 8,
     gap: 18,
+  },
+  languageSelectorWrap: {
+    alignSelf: 'stretch',
+    alignItems: 'flex-end',
+    marginBottom: 4,
+    zIndex: 3,
   },
   decorCircle1: {
     position: 'absolute',

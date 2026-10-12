@@ -1,6 +1,9 @@
 import type { CouplePdfPerson } from "./couple-pdf-download";
 
 export type ParentChildPdfDownloadPayload = {
+  /** 신규 결과의 언어를 PDF와 이메일까지 고정한다. */
+  locale?: "ko" | "zh-CN";
+  copyVersion?: string;
   relationType: "아빠-아들" | "아빠-딸" | "엄마-아들" | "엄마-딸" | "부모-자녀";
   generatedAt: string;
   /** 공개용 가상 데이터 리포트에만 표지에 표시한다. 고객 PDF에는 전달하지 않는다. */

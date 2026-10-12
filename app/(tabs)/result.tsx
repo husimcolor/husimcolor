@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
 import {
   View,
-  Text,
   Pressable,
   TouchableOpacity,
   ScrollView,
@@ -21,9 +20,18 @@ import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import { generateInterpretation, COLOR_DATA, COLOR_PERSONALITY_TRAITS } from '@/constants/colorData';
+import { useLocalization } from '@/lib/localization-context';
+import { ROLE_LABELS } from '@/shared/localization';
+import {
+  getLocalizedColorName,
+  getLocalizedColorRecovery,
+  getLocalizedColorTraits,
+  localizeFreeResult,
+} from '@/lib/free-result-localization';
 // 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
 function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -51,6 +59,7 @@ export default function ResultScreen() {
   const router = useRouter();
   const { selectedColors, resetColors } = useColorContext();
   const colors = useColors();
+  const { locale, t } = useLocalization();
 
   // Animated 완전 제거 - 인앱 브라우저(인스타/카카오)에서 opacity 0 버그 방지
   const viewShotRef = useRef<ViewShotRef>(null);
@@ -243,7 +252,13 @@ export default function ResultScreen() {
 
   if (!card1 || !card2 || !card3) return null;
 
-  const interpretation = generateInterpretation(card1, card2, card3);
+  const interpretation = localizeFreeResult(
+    locale,
+    [card1, card2, card3],
+    generateInterpretation(card1, card2, card3),
+  );
+  const roleLabels = ROLE_LABELS[locale];
+  const displayColorName = (card: typeof COLOR_DATA[number]) => getLocalizedColorName(card, locale);
 
   const handleRestart = () => {
     resetColors();
@@ -275,9 +290,9 @@ export default function ResultScreen() {
           style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]}
           onPress={() => router.push({ pathname: '/(tabs)/select', params: { step: '2' } })}
         >
-          <Text style={[styles.backButtonText, { color: '#9B8E85' }]}>← 다시 선택</Text>
+          <Text style={[styles.backButtonText, { color: '#9B8E85' }]}>{t("backToSelection")}</Text>
         </Pressable>
-        <Text style={[styles.headerTitle, { color: '#3D3530' }]}>나의 컬러 해석</Text>
+        <Text style={[styles.headerTitle, { color: '#3D3530' }]}>{t("colourInterpretation")}</Text>
         <View style={{ minWidth: 60 }} />
       </View>
 
@@ -290,12 +305,12 @@ export default function ResultScreen() {
         <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 0.95 }}>
         {/* 선택한 컬러 카드 3개 */}
         <View style={styles.colorCardsSection}>
-          <Text style={[styles.sectionLabel, { color: '#555555' }]}>나를 읽어주는 3가지 컬러</Text>
+          <Text style={[styles.sectionLabel, { color: '#555555' }]}>{t("threeColours")}</Text>
           <View style={styles.colorCards}>
             {[
-              { card: card1, label: '1번 컬러', desc: '주기질' },
-              { card: card2, label: '2번 컬러', desc: '보조기질' },
-              { card: card3, label: '3번 컬러', desc: '회복방향' },
+              { card: card1, label: t("firstColour"), desc: roleLabels.primaryTrait },
+              { card: card2, label: t("secondColour"), desc: roleLabels.supportingTrait },
+              { card: card3, label: t("thirdColour"), desc: roleLabels.recoveryDirection },
             ].map(({ card, label, desc }, i) => (
               <View
                 key={i}
@@ -332,7 +347,7 @@ export default function ResultScreen() {
                   />
                 </View>
                 <Text style={[styles.colorCardLabel, { color: '#555555' }]}>{label}</Text>
-                <Text style={[styles.colorCardName, { color: '#3D3530' }]}>{card.korName}</Text>
+                <Text style={[styles.colorCardName, { color: '#3D3530' }]}>{displayColorName(card)}</Text>
                 <Text style={[styles.colorCardDesc, { color: '#555555' }]}>{desc}</Text>
               </View>
             ))}
@@ -345,7 +360,7 @@ export default function ResultScreen() {
           {/* 현재 심리 흐름 */}
           <ResultCard
             icon="🌊"
-            title="주기질 — 나의 기본 성향"
+            title={locale === "zh-CN" ? "主要心理特征 — 你的基本倾向" : "주기질 — 나의 기본 성향"}
             content={interpretation.psychologyFlow}
             bgColor="#F2EFE7"
             borderColor="#DDD8CE"
@@ -353,16 +368,17 @@ export default function ResultScreen() {
             contentColor="#3D3530"
             colorContext={{
               card: card1,
-              role: '주기질',
-              description: '나의 기본 성향',
+              role: roleLabels.primaryTrait,
+              description: locale === "zh-CN" ? "你的基本倾向" : "나의 기본 성향",
+              displayName: displayColorName(card1),
             }}
-            personalityTraits={COLOR_PERSONALITY_TRAITS[card1.id]}
+            personalityTraits={getLocalizedColorTraits(card1, COLOR_PERSONALITY_TRAITS[card1.id], locale)}
           />
 
           {/* 성격 흐름 */}
           <ResultCard
             icon="🌿"
-            title="보조기질 — 함께 드러나는 성향"
+            title={locale === "zh-CN" ? "辅助心理特征 — 同时呈现的倾向" : "보조기질 — 함께 드러나는 성향"}
             content={interpretation.personalityFlow}
             bgColor="#F2EFE7"
             borderColor="#DDD8CE"
@@ -370,10 +386,11 @@ export default function ResultScreen() {
             contentColor="#3D3530"
             colorContext={{
               card: card2,
-              role: '보조기질',
-              description: '함께 드러나는 성향',
+              role: roleLabels.supportingTrait,
+              description: locale === "zh-CN" ? "同时呈现的倾向" : "함께 드러나는 성향",
+              displayName: displayColorName(card2),
             }}
-            personalityTraits={COLOR_PERSONALITY_TRAITS[card2.id]}
+            personalityTraits={getLocalizedColorTraits(card2, COLOR_PERSONALITY_TRAITS[card2.id], locale)}
           />
 
           {/* 장점 & 감정 패턴 나란히 */}
@@ -385,7 +402,7 @@ export default function ResultScreen() {
               ]}
             >
               <Text style={styles.halfCardIcon}>✨</Text>
-              <Text style={[styles.halfCardTitle, { color: '#4A7A4A' }]}>장점</Text>
+              <Text style={[styles.halfCardTitle, { color: '#4A7A4A' }]}>{t("strengths")}</Text>
               {interpretation.strengths.map((s, i) => (
                 <View key={i} style={styles.tagRow}>
                   <View style={[styles.tag, { backgroundColor: '#C8DFC8' }]}>
@@ -401,7 +418,7 @@ export default function ResultScreen() {
               ]}
             >
               <Text style={styles.halfCardIcon}>💛</Text>
-              <Text style={[styles.halfCardTitle, { color: '#8A6A3A' }]}>마음 습관</Text>
+              <Text style={[styles.halfCardTitle, { color: '#8A6A3A' }]}>{t("emotionalHabit")}</Text>
               {interpretation.shadows.map((s, i) => (
                 <View key={i} style={styles.tagRow}>
                   <View style={[styles.tag, { backgroundColor: '#E8D8C0' }]}>
@@ -421,10 +438,10 @@ export default function ResultScreen() {
           >
             <View style={styles.complementHeader}>
               <Text style={styles.complementIcon}>🎨</Text>
-              <Text style={[styles.complementTitle, { color: '#2A2A2A' }]}>추천 보완컬러</Text>
+              <Text style={[styles.complementTitle, { color: '#2A2A2A' }]}>{t("suggestedBalancing")}</Text>
             </View>
             <Text style={[styles.complementDesc, { color: '#555555' }]}>
-              지금 나에게 도움이 되는 컬러
+              {t("helpfulNow")}
             </Text>
             <View style={styles.complementTags}>
               {interpretation.complementColors.map((c, i) => {
@@ -437,7 +454,7 @@ export default function ResultScreen() {
                     <View style={[styles.complementChip, { backgroundColor: colorInfo?.hex ?? '#C8BFB0' }, colorInfo ? getLightColorBorder(colorInfo.hex) : {}]} />
                     <View style={styles.complementTextGroup}>
                       <Text style={[styles.complementTagText, { color: '#3D3530' }]}>{c}</Text>
-                      <Text style={styles.complementMeaning}>{colorInfo?.recovery ?? '균형 회복'}</Text>
+                      <Text style={styles.complementMeaning}>{colorInfo ? getLocalizedColorRecovery(colorInfo, locale) : (locale === "zh-CN" ? "找回平衡" : "균형 회복")}</Text>
                     </View>
                   </View>
                 );
@@ -454,22 +471,23 @@ export default function ResultScreen() {
           >
             <View style={styles.recoveryHeader}>
               <Text style={styles.recoveryIcon}>🌱</Text>
-              <Text style={[styles.recoveryTitle, { color: '#2A6A3A' }]}>회복방향 — 지금 필요한 회복</Text>
+              <Text style={[styles.recoveryTitle, { color: '#2A6A3A' }]}>{locale === "zh-CN" ? "恢复方向 — 此刻需要的调整" : "회복방향 — 지금 필요한 회복"}</Text>
             </View>
             <ColorContextBadge
               card={card3}
-              role="회복방향"
-              description="지금 필요한 회복"
+              role={roleLabels.recoveryDirection}
+              description={locale === "zh-CN" ? "此刻需要的调整" : "지금 필요한 회복"}
+              displayName={displayColorName(card3)}
               textColor="#1A5A2A"
               backgroundColor="#D8EED8"
               borderColor="#A8CEB0"
             />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               <View style={[styles.recoveryBadge, { backgroundColor: '#B8D8C0', borderColor: '#8ABF9A' }]}>
-                <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{card3.korName} 컬러</Text>
+                <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{locale === "zh-CN" ? `${displayColorName(card3)}色` : `${card3.korName} 컬러`}</Text>
               </View>
               <View style={[styles.recoveryBadge, { backgroundColor: '#D8EED8', borderColor: '#A8CEB0' }]}>
-                <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{card3.recovery}</Text>
+                <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{getLocalizedColorRecovery(card3, locale)}</Text>
               </View>
             </View>
             <Text style={[styles.recoveryDetail, { color: '#2A5A3A', lineHeight: 24 }]}>
@@ -486,7 +504,7 @@ export default function ResultScreen() {
           >
             <View style={styles.coachingHeader}>
               <Text style={styles.coachingIcon}>💌</Text>
-              <Text style={[styles.coachingTitle, { color: '#8A6A3A' }]}>오늘의 코칭 메시지</Text>
+              <Text style={[styles.coachingTitle, { color: '#8A6A3A' }]}>{t("coachingMessage")}</Text>
             </View>
             <View style={[styles.coachingDivider, { backgroundColor: '#E8D8C0' }]} />
             <Text style={[styles.coachingMessage, { color: '#4A3010', lineHeight: 30, textAlign: 'center' }]}>
@@ -708,6 +726,7 @@ function ResultCard({
     card: typeof COLOR_DATA[number];
     role: string;
     description: string;
+    displayName: string;
   };
   personalityTraits?: readonly string[];
 }) {
@@ -722,6 +741,7 @@ function ResultCard({
           card={colorContext.card}
           role={colorContext.role}
           description={colorContext.description}
+          displayName={colorContext.displayName}
           textColor={titleColor}
           backgroundColor="#FFFFFF99"
           borderColor={borderColor}
@@ -729,7 +749,7 @@ function ResultCard({
       )}
       {personalityTraits && personalityTraits.length > 0 && (
         <View style={styles.personalityTraitsSection}>
-          <Text style={[styles.personalityTraitsLabel, { color: titleColor }]}>성격 특징</Text>
+          <LocalizedTraitsHeading color={titleColor} />
           <View style={styles.personalityTraitsList}>
             {personalityTraits.map((trait) => (
               <View key={trait} style={[styles.personalityTraitTag, { borderColor, backgroundColor: '#FFFFFF99' }]}>
@@ -744,10 +764,16 @@ function ResultCard({
   );
 }
 
+function LocalizedTraitsHeading({ color }: { color: string }) {
+  const { t } = useLocalization();
+  return <Text style={[styles.personalityTraitsLabel, { color }]}>{t("personalityTraits")}</Text>;
+}
+
 function ColorContextBadge({
   card,
   role,
   description,
+  displayName,
   textColor,
   backgroundColor,
   borderColor,
@@ -755,6 +781,7 @@ function ColorContextBadge({
   card: typeof COLOR_DATA[number];
   role: string;
   description: string;
+  displayName: string;
   textColor: string;
   backgroundColor: string;
   borderColor: string;
@@ -762,7 +789,7 @@ function ColorContextBadge({
   return (
     <View style={[styles.colorContextBadge, { backgroundColor, borderColor }]}>
       <View style={[styles.colorContextChip, { backgroundColor: card.hex }, getLightColorBorder(card.hex)]} />
-      <Text style={[styles.colorContextMain, { color: textColor }]}>{card.korName} · {role}</Text>
+      <Text style={[styles.colorContextMain, { color: textColor }]}>{displayName} · {role}</Text>
       <Text style={[styles.colorContextArrow, { color: textColor }]}>→</Text>
       <Text style={[styles.colorContextDescription, { color: textColor }]}>{description}</Text>
     </View>
@@ -786,10 +813,12 @@ function ShareSummaryCard({
   recoverySummary: string;
   message: string;
 }) {
+  const { locale, t } = useLocalization();
+  const roleLabels = ROLE_LABELS[locale];
   const selected = [
-    { card: card1, role: '주기질', summary: primarySummary },
-    { card: card2, role: '보조기질', summary: supportingSummary },
-    { card: card3, role: '회복방향', summary: recoverySummary },
+    { card: card1, role: roleLabels.primaryTrait, summary: primarySummary },
+    { card: card2, role: roleLabels.supportingTrait, summary: supportingSummary },
+    { card: card3, role: roleLabels.recoveryDirection, summary: recoverySummary },
   ];
 
   return (
@@ -800,25 +829,25 @@ function ShareSummaryCard({
         style={StyleSheet.absoluteFillObject}
       />
       <View style={styles.storyTopRow}>
-        <Text style={styles.storyBrand}>휴심컬러</Text>
+        <Text style={styles.storyBrand}>HUSIM COLOR</Text>
         <Text style={styles.storyBrandSub}>COLOR PSYCHOLOGY</Text>
       </View>
       <View style={styles.storyDivider} />
       <Text style={styles.storyEyebrow}>TODAY&apos;S COLOR NOTE</Text>
-      <Text style={styles.storyTitle}>오늘 나를 읽어주는{`\n`}3가지 컬러</Text>
+      <Text style={styles.storyTitle}>{locale === "zh-CN" ? "读懂自己的\n三种颜色" : "오늘 나를 읽어주는\n3가지 컬러"}</Text>
       <View style={styles.storyColorList}>
         {selected.map(({ card, role, summary }) => (
           <View key={role} style={styles.storyColorRow}>
             <View style={[styles.storyColorChip, { backgroundColor: card.hex }, getLightColorBorder(card.hex)]} />
             <View style={styles.storyColorText}>
-              <Text style={styles.storyColorName}>{role} · {card.korName}</Text>
+              <Text style={styles.storyColorName}>{role} · {getLocalizedColorName(card, locale)}</Text>
               <Text numberOfLines={2} style={styles.storyColorSummary}>{summary}</Text>
             </View>
           </View>
         ))}
       </View>
       <View style={styles.storyMessageBox}>
-        <Text style={styles.storyMessageLabel}>오늘의 코칭 메시지</Text>
+        <Text style={styles.storyMessageLabel}>{t("coachingMessage")}</Text>
         <Text style={styles.storyMessage}>“{message.replace(/\n/g, ' ')}”</Text>
       </View>
       <View style={styles.storyFooter}>
