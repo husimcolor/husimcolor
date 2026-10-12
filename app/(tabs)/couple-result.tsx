@@ -663,7 +663,7 @@ export default function CoupleResultScreen() {
   const definedColorsB = colorsB.filter((color): color is NonNullable<typeof color> => Boolean(color));
   const definedCardsA = cardsA.filter((card): card is NonNullable<typeof card> => Boolean(card));
   const definedCardsB = cardsB.filter((card): card is NonNullable<typeof card> => Boolean(card));
-  const cardLabels = ['무의식', '현재', '회복 방향'];
+  const cardLabels = ['무의식', '현재흐름', '회복방향'];
   const roleA = personA.info.relationshipRole;
   const roleB = personB.info.relationshipRole;
   const romanticPersonLabels = {
@@ -841,7 +841,7 @@ export default function CoupleResultScreen() {
     .slice(0, 3)
     .map((color, index) => {
     const content = COLOR_ROLE_CONTENT[color.id];
-    const role = index === 0 ? '주기질' : index === 1 ? '보조기질' : '회복 방향';
+    const role = index === 0 ? '주기질' : index === 1 ? '보조기질' : '회복방향';
     const interpretation = index === 0
       ? content?.primaryTrait
       : index === 1
@@ -860,7 +860,7 @@ export default function CoupleResultScreen() {
     .filter((card): card is NonNullable<typeof card> => Boolean(card))
     .slice(0, 3)
     .map((card, index) => ({
-    position: index === 0 ? '1번 카드 · 무의식' : index === 1 ? '2번 카드 · 현재 흐름' : '3번 카드 · 회복 방향',
+    position: index === 0 ? '1번 카드 · 무의식' : index === 1 ? '2번 카드 · 현재흐름' : '3번 카드 · 회복방향',
     colorName: card.colorKor,
     shapeName: card.shapeKor,
     colorHex: card.colorHex,
@@ -1099,7 +1099,7 @@ export default function CoupleResultScreen() {
           typeName: parentChildSummary.typeName,
           coreSummary: parentChildSummary.coreSummary,
           description: parentChildSummary.description,
-          cardFlowSummary: `${parentChildLabels.parent}의 현재 흐름 · ${cardsA[1]?.energyTitle ?? '현재 마음의 흐름'}\n${cardsA[1]?.personalityFlow ?? ''}\n\n${parentChildLabels.child}의 현재 흐름 · ${cardsB[1]?.energyTitle ?? '현재 마음의 흐름'}\n${cardsB[1]?.personalityFlow ?? ''}`,
+          cardFlowSummary: `${parentChildLabels.parent}의 현재흐름 · ${cardsA[1]?.energyTitle ?? '현재 마음의 흐름'}\n${cardsA[1]?.personalityFlow ?? ''}\n\n${parentChildLabels.child}의 현재흐름 · ${cardsB[1]?.energyTitle ?? '현재 마음의 흐름'}\n${cardsB[1]?.personalityFlow ?? ''}`,
           socialRoles: parentChildCoaching.socialRoles,
           relationshipRoles: parentChildCoaching.relationshipRoles,
           childCommunication: parentChildCoaching.childCommunication,
@@ -1429,7 +1429,7 @@ export default function CoupleResultScreen() {
                             <Text style={styles.priorityPilotSceneTitle}>{item.section}</Text>
                             <Text style={styles.parentChildBodyText}>{item.colorBasis}</Text>
                             <Text style={styles.priorityPilotEvidence}>심리카드 보완 · {item.cardSupport}</Text>
-                            {item.recoveryUse ? <Text style={styles.priorityPilotEvidence}>회복 방향 · {item.recoveryUse}</Text> : null}
+                            {item.recoveryUse ? <Text style={styles.priorityPilotEvidence}>회복방향 · {item.recoveryUse}</Text> : null}
                           </View>
                         ))}
                       </SectionCard>

@@ -341,7 +341,7 @@ export default function PremiumColorSelectScreen() {
               </Text>
               <Text style={[styles.nextStepDesc, { color: '#8A7A68' }]}>
                 이제 보지 않고 직관으로 카드 3장을 선택합니다.{"\n"}
-                무의식 · 현재 · 회복 방향의 에너지를 확인해 보세요.
+                무의식 · 현재흐름 · 회복방향의 에너지를 확인해 보세요.
               </Text>
             </View>
 

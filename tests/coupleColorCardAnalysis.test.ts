@@ -28,8 +28,8 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(analysis).toContain(`레드 삼각형의 ${cards[1].energyTitle}`);
     expect(analysis).toContain(`레드 역삼각형의 ${cards[2].energyTitle}`);
     expect(analysis).toContain("무의식 카드인");
-    expect(analysis).toContain("현재 흐름 카드인");
-    expect(analysis).toContain("회복 방향 카드인");
+    expect(analysis).toContain("현재흐름 카드인");
+    expect(analysis).toContain("회복방향 카드인");
     expect(analysis).not.toContain("핑크 · 라벤더 · 그린");
     expect(analysis).not.toContain("「");
     expect(analysis).not.toContain("」");
@@ -107,8 +107,8 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
       "utf8",
     );
 
-    const recoveryIndex = colorResultSource.indexOf("🌱 회복 방향");
-    const complementIndex = colorResultSource.indexOf("🎨 보완 컬러");
+    const recoveryIndex = colorResultSource.indexOf("🌱 회복방향");
+    const complementIndex = colorResultSource.indexOf("🎨 추천 보완컬러");
     const relationshipIndex = colorResultSource.indexOf("💚 관계 성향");
 
     expect(recoveryIndex).toBeGreaterThan(-1);

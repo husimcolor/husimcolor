@@ -11,7 +11,7 @@ export function buildPremiumPdfDownloadPayload(input: PremiumPdfReportInput): Pr
   const profileLine = input.profile
     ? [input.profile.age ? `${input.profile.age}세` : "", input.profile.job, input.profile.faith].filter(Boolean).join(" · ")
     : "휴심컬러 개인 심화해석";
-  const positions = ["1번 카드 · 무의식", "2번 카드 · 현재 흐름", "3번 카드 · 다음 방향"];
+  const positions = ["1번 카드 · 무의식", "2번 카드 · 현재흐름", "3번 카드 · 회복방향"];
 
   return {
     profileLine,
@@ -23,7 +23,7 @@ export function buildPremiumPdfDownloadPayload(input: PremiumPdfReportInput): Pr
     })),
     stage1: input.stage1Interpretation ? {
       colors: input.stage1Interpretation.miniInterpretations.map((item, index) => ({
-        role: index === 0 ? "주기질" : index === 1 ? "나의 또 다른 성향" : "회복 방향",
+        role: index === 0 ? "주기질" : index === 1 ? "보조기질" : "회복방향",
         name: item.colorName,
         hex: item.hex,
         keywords: [...item.keywords],

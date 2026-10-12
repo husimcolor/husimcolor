@@ -219,13 +219,13 @@ export default function CoupleColorResultScreen() {
 
               {/* 회복 방향 */}
               <View style={[styles.card, { borderColor: accentBorder, backgroundColor: accentBg }]}>
-                <Text style={[styles.cardLabel, { color: accentColor }]}>🌱 회복 방향</Text>
+                <Text style={[styles.cardLabel, { color: accentColor }]}>🌱 회복방향</Text>
                 <ReadableParagraphs text={analysis.recoveryDirection} textStyle={styles.cardContent} />
               </View>
 
               {/* 보완 컬러 — 기존 산출·문구를 유지한 채 회복 방향과 관계 성향 사이에 배치 */}
               <View style={[styles.card, { borderColor: accentBorder, backgroundColor: accentBg }]}>
-                <Text style={[styles.cardLabel, { color: accentColor }]}>🎨 보완 컬러</Text>
+                <Text style={[styles.cardLabel, { color: accentColor }]}>🎨 추천 보완컬러</Text>
                 <View style={[styles.complementRow, { backgroundColor: '#FBF7F2', borderColor: analysis.complementColor.hex + '60' }]}>
                   <View style={[styles.complementDot, { backgroundColor: analysis.complementColor.hex, shadowColor: analysis.complementColor.hex }, isLightHex(analysis.complementColor.hex) && styles.lightComplementDot]} />
                   <View style={styles.complementText}>
@@ -254,7 +254,7 @@ export default function CoupleColorResultScreen() {
               <View style={[styles.previewBanner, { backgroundColor: accentColor + '0F', borderColor: accentColor + '33' }]}>
                 <Text style={[styles.previewBannerTitle, { color: accentColor }]}>🃏 2단계에서 더 깊이 읽어드립니다</Text>
                 <Text style={styles.previewBannerText}>
-                  심리카드 3장이 무의식 · 현재 · 회복 방향을 연결하여{"\n"}코칭 메시지와 회복 루틴을 안내해 드립니다.                </Text>
+                  심리카드 3장이 무의식 · 현재흐름 · 회복방향을 연결하여{"\n"}코칭 메시지와 회복 루틴을 안내해 드립니다.                </Text>
               </View>
             </>
           )}
@@ -265,7 +265,7 @@ export default function CoupleColorResultScreen() {
             <Text style={styles.nextHintText}>
               이 컬러 흐름을 바탕으로, 63장의 심리카드 중에서{'\n'}
               마음이 이끄는 카드 3장을 선택합니다.{'\n'}
-              카드는 무의식·현재·회복 방향을 읽어드립니다.
+              카드는 무의식·현재흐름·회복방향을 읽어드립니다.
             </Text>
           </View>
 

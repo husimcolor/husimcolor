@@ -13,12 +13,12 @@ const payload: ParentChildPdfDownloadPayload = {
     colors: [
       { role: "주기질", name: "그린", hex: "#5D8A62", keywords: "균형 · 돌봄", interpretation: "관계의 균형과 안정된 흐름을 소중히 여깁니다." },
       { role: "보조기질", name: "세이지그린", hex: "#9AAF88", keywords: "배려 · 지속", interpretation: "차분하게 살피며 꾸준한 연결을 이어갑니다." },
-      { role: "회복 방향", name: "라벤더", hex: "#B9A5C9", keywords: "여백 · 회복", interpretation: "마음을 가라앉히고 서로의 여백을 존중합니다." },
+      { role: "회복방향", name: "라벤더", hex: "#B9A5C9", keywords: "여백 · 회복", interpretation: "마음을 가라앉히고 서로의 여백을 존중합니다." },
     ],
     cards: [
       { position: "1번 카드 · 무의식", colorName: "레드", shapeName: "동그라미", colorHex: "#E65B50", shape: "circle", title: "따뜻한 시작", narrative: "관계를 지키고 싶은 마음이 있습니다." },
-      { position: "2번 카드 · 현재 흐름", colorName: "화이트", shapeName: "네모", colorHex: "#EEECE2", shape: "square", title: "정리의 시간", narrative: "지금은 핵심을 차분히 정리하고 싶을 수 있습니다." },
-      { position: "3번 카드 · 다음 방향", colorName: "블루", shapeName: "마름모", colorHex: "#5677A5", shape: "diamond", title: "신뢰의 회복", narrative: "한 번에 한 가지씩 마음을 확인해 보세요." },
+      { position: "2번 카드 · 현재흐름", colorName: "화이트", shapeName: "네모", colorHex: "#EEECE2", shape: "square", title: "정리의 시간", narrative: "지금은 핵심을 차분히 정리하고 싶을 수 있습니다." },
+      { position: "3번 카드 · 회복방향", colorName: "블루", shapeName: "마름모", colorHex: "#5677A5", shape: "diamond", title: "신뢰의 회복", narrative: "한 번에 한 가지씩 마음을 확인해 보세요." },
     ],
     integratedAnalysis: "안정과 배려를 함께 중요하게 여깁니다.\n\n마음을 지키며 관계의 균형을 찾습니다.",
     relationshipStyle: "꾸준한 돌봄과 일관된 행동으로 관계를 이어갑니다.",
@@ -31,12 +31,12 @@ const payload: ParentChildPdfDownloadPayload = {
     colors: [
       { role: "주기질", name: "옐로우", hex: "#E1B84F", keywords: "이해 · 탐색", interpretation: "이유와 가능성을 살피며 스스로 답을 찾아갑니다." },
       { role: "보조기질", name: "핑크", hex: "#D98A9C", keywords: "연결 · 공감", interpretation: "따뜻한 반응 안에서 마음을 표현합니다." },
-      { role: "회복 방향", name: "코랄", hex: "#D77961", keywords: "표현 · 활력", interpretation: "작은 표현으로 관계의 숨통을 엽니다." },
+      { role: "회복방향", name: "코랄", hex: "#D77961", keywords: "표현 · 활력", interpretation: "작은 표현으로 관계의 숨통을 엽니다." },
     ],
     cards: [
       { position: "1번 카드 · 무의식", colorName: "옐로우", shapeName: "동그라미", colorHex: "#E1B84F", shape: "circle", title: "이해의 흐름", narrative: "이유를 충분히 알고 싶은 마음이 있습니다." },
-      { position: "2번 카드 · 현재 흐름", colorName: "퍼플", shapeName: "마름모", colorHex: "#8D6AA8", shape: "diamond", title: "의미의 탐색", narrative: "지금은 여러 마음을 비교하며 생각을 정리합니다." },
-      { position: "3번 카드 · 다음 방향", colorName: "그린", shapeName: "육각형", colorHex: "#5D8A62", shape: "hexagon", title: "관계의 균형", narrative: "편안한 대화로 다시 연결해 보세요." },
+      { position: "2번 카드 · 현재흐름", colorName: "퍼플", shapeName: "마름모", colorHex: "#8D6AA8", shape: "diamond", title: "의미의 탐색", narrative: "지금은 여러 마음을 비교하며 생각을 정리합니다." },
+      { position: "3번 카드 · 회복방향", colorName: "그린", shapeName: "육각형", colorHex: "#5D8A62", shape: "hexagon", title: "관계의 균형", narrative: "편안한 대화로 다시 연결해 보세요." },
     ],
     integratedAnalysis: "이해와 연결을 함께 중요하게 여깁니다.\n\n충분히 생각한 뒤 자신의 마음을 표현합니다.",
     relationshipStyle: "이유를 납득하고 공감받을 때 관계에 더 편안하게 참여합니다.",

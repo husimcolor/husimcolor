@@ -50,7 +50,7 @@ const PAYMENT_PLANS = [
     description: "나의 컬러 에너지 흐름 심층 분석",
     features: [
       { icon: "🎨", title: "63장 컬러+도형 심리카드", desc: "9가지 컬러 × 7가지 도형 조합" },
-      { icon: "🌿", title: "3장 카드 심층 해석", desc: "무의식 · 현재 · 회복 방향 분석" },
+      { icon: "🌿", title: "3장 카드 심층 해석", desc: "무의식 · 현재흐름 · 회복방향 분석" },
       { icon: "💚", title: "개인 맞춤 코칭 메시지", desc: "나이·직업·신앙 여부 반영 해석" },
       { icon: "🌿", title: "지금 나에게 필요한 컬러 안내", desc: "지금 마음을 채워줄 컬러 제안" },
     ],
@@ -69,7 +69,7 @@ const PAYMENT_PLANS = [
       { icon: "💑", title: "커플 카드 각자 선택", desc: "두 사람이 각각 3장씩 선택" },
       { icon: "🔗", title: "관계 에너지 흐름 분석", desc: "두 사람의 에너지 조화·충돌 해석" },
       { icon: "💬", title: "관계 맞춤 코칭 메시지", desc: "두 사람의 회복 방향 제안" },
-      { icon: "🌿", title: "함께하는 보완 컬러 안내", desc: "관계 회복에 도움이 되는 컬러 제안" },
+      { icon: "🌿", title: "함께하는 추천 보완컬러 안내", desc: "관계 회복에 도움이 되는 컬러 제안" },
     ],
     qrImage: require("@/assets/images/qr_60000.jpg") as number,
     qrNote: "카카오페이 · 토스 · 계좌이체 가능",

@@ -34,7 +34,7 @@ export function buildPremiumShareCardData(input: {
   lifeEnergyResult: LifeEnergyResult;
   recoveryMessage: string;
 }): PremiumShareCardData {
-  const cardLabels = ["내면의 바람", "지금의 반응", "다음 방향"];
+  const cardLabels = ["무의식", "현재흐름", "회복방향"];
   return {
     colors: input.cards.slice(0, 3).map((card, index) => {
       const selected = input.selectedColors[index] ?? input.selectedColors.find((color) => color.id === card.color);

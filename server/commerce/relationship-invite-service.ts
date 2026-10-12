@@ -253,7 +253,7 @@ function getPdfColorRows(selectedColors: string[]) {
     .slice(0, 3)
     .map((color, index) => {
       const content = COLOR_ROLE_CONTENT[color.id];
-      const role = index === 0 ? "주기질" : index === 1 ? "보조기질" : "회복 방향";
+      const role = index === 0 ? "주기질" : index === 1 ? "보조기질" : "회복방향";
       return {
         role,
         name: color.korName,
@@ -270,7 +270,7 @@ function getPdfCardRows(selectedCards: string[]) {
     .filter((card): card is NonNullable<typeof card> => Boolean(card))
     .slice(0, 3)
     .map((card, index) => ({
-      position: index === 0 ? "1번 카드 · 무의식" : index === 1 ? "2번 카드 · 현재 흐름" : "3번 카드 · 다음 방향",
+      position: index === 0 ? "1번 카드 · 무의식" : index === 1 ? "2번 카드 · 현재흐름" : "3번 카드 · 회복방향",
       colorName: card.colorKor,
       shapeName: card.shapeKor,
       colorHex: card.colorHex,

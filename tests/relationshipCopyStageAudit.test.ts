@@ -111,8 +111,8 @@ describe("부부·연인 결과 4단계 문구 검수", () => {
       const result = buildRomanticCoupleColorCardIntegratedAnalysis(colors, [card, card, card]);
       expect(result).toContain(`${card.colorKor} ${card.shapeKor}의 ${card.energyTitle}`);
       expect(result).toContain("무의식 카드인");
-      expect(result).toContain("현재 흐름 카드인");
-      expect(result).toContain("회복 방향 카드인");
+      expect(result).toContain("현재흐름 카드인");
+      expect(result).toContain("회복방향 카드인");
       expect(result).not.toContain(`${card.energyTitle}은`);
       expect(result).not.toContain(`${card.energyTitle}는`);
     });

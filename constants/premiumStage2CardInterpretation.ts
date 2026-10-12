@@ -26,18 +26,18 @@ export interface Stage2CardInterpretation {
 
 const ROLE_METADATA: Record<Stage2CardRole, Pick<Stage2CardInterpretation, "roleTitle" | "roleLabel" | "roleQuestion">> = {
   unconscious: {
-    roleTitle: "마음 깊은 곳의 욕구",
-    roleLabel: "내면의 바람",
+    roleTitle: "무의식",
+    roleLabel: "무의식",
     roleQuestion: "겉으로 말하지 않아도, 나는 무엇을 바라고 있을까요?",
   },
   current: {
-    roleTitle: "지금의 마음과 삶의 흐름",
-    roleLabel: "지금의 반응",
+    roleTitle: "현재흐름",
+    roleLabel: "현재흐름",
     roleQuestion: "나는 요즘 어떤 방식으로 선택하고 움직이고 있을까요?",
   },
   recovery: {
-    roleTitle: "마음이 향하는 다음 방향",
-    roleLabel: "다음 방향",
+    roleTitle: "회복방향",
+    roleLabel: "회복방향",
     roleQuestion: "지금의 나는 어디로 조금씩 움직이고 싶을까요?",
   },
 };
@@ -198,9 +198,9 @@ export function buildStage2CardInterpretations(cards: readonly [CardData, CardDa
 export function buildStage2ColorBridge(colors: readonly ColorData[]): string {
   const names = colors.slice(0, 3).map((color) => color.korName).filter(Boolean);
   if (names.length === 3) {
-    return `${names.join(" · ")}에서 드러난 기본 성향을 바탕으로, 세 장의 카드는 숨은 바람 · 지금의 반응 · 다음 방향을 차례로 비춥니다.`;
+    return `${names.join(" · ")}에서 드러난 기본 성향을 바탕으로, 세 장의 카드는 무의식 · 현재흐름 · 회복방향을 차례로 비춥니다.`;
   }
-  return "세 장의 카드는 숨은 바람 · 지금의 반응 · 다음 방향을 차례로 비춥니다.";
+  return "세 장의 카드는 무의식 · 현재흐름 · 회복방향을 차례로 비춥니다.";
 }
 
 export const STAGE2_CARD_KEYWORD_SOURCES = { COLOR_LENSES, SHAPE_LENSES };

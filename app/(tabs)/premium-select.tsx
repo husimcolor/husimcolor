@@ -32,7 +32,7 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a;
 }
 
-const POSITION_LABELS = ["무의식 · 내면 에너지", "현재 현실 에너지", "미래 · 회복 · 희망 에너지"];
+const POSITION_LABELS = ["무의식 · 내면 에너지", "현재흐름 · 현재의 반응", "회복방향 · 회복의 실천"];
 const POSITION_COLORS = ["#3D6B3D", "#B5A0C8", "#C4956A"];
 
 const CARD_BACK_COLOR = "#D8CEBC";

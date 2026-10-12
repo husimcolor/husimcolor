@@ -285,8 +285,8 @@ function determineType(parent: PersonProfile, child: PersonProfile): ParentChild
 }
 
 function currentCardSupport(card?: CardData): string {
-  if (!card) return "현재 심리카드가 선택되지 않아 컬러 1·2순위만으로 읽었습니다.";
-  return `${card.colorKor} ${card.shapeKor} 카드는 현재 ${CURRENT_CARD_COLOR[card.color]} 반응과 ${CURRENT_CARD_SHAPE[card.shape]} 태도를 보완합니다.`;
+  if (!card) return "현재흐름 심리카드가 선택되지 않아 컬러 1·2순위만으로 읽었습니다.";
+  return `${card.colorKor} ${card.shapeKor} 카드는 현재흐름에서 ${CURRENT_CARD_COLOR[card.color]} 반응과 ${CURRENT_CARD_SHAPE[card.shape]} 태도를 보완합니다.`;
 }
 
 function recoverySupport(profile: PersonProfile, label: string): string {

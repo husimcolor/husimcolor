@@ -63,7 +63,7 @@ function colorRows(colors: readonly ColorData[]) {
   return colors.slice(0, 3).map((color, index) => {
     const content = COLOR_ROLE_CONTENT[color.id];
     return {
-      role: index === 0 ? "주기질" : index === 1 ? "보조기질" : "회복 방향",
+      role: index === 0 ? "주기질" : index === 1 ? "보조기질" : "회복방향",
       name: color.korName,
       hex: color.hex,
       keywords: color.keywords.slice(0, 3).join(" · "),
@@ -78,7 +78,7 @@ function colorRows(colors: readonly ColorData[]) {
 
 function cardRows(cards: readonly CardData[]) {
   return cards.slice(0, 3).map((card, index) => ({
-    position: index === 0 ? "1번 카드 · 무의식" : index === 1 ? "2번 카드 · 현재 흐름" : "3번 카드 · 회복 방향",
+    position: index === 0 ? "1번 카드 · 무의식" : index === 1 ? "2번 카드 · 현재흐름" : "3번 카드 · 회복방향",
     colorName: card.colorKor,
     shapeName: card.shapeKor,
     colorHex: card.colorHex,
@@ -321,7 +321,7 @@ async function createParentChildSample() {
       typeName: summary.typeName,
       coreSummary: summary.coreSummary,
       description: summary.description,
-      cardFlowSummary: `${coaching.labels.parent}의 현재 흐름 · ${parentCards[1]?.energyTitle ?? "현재 마음의 흐름"}\n${parentCards[1]?.personalityFlow ?? ""}\n\n${coaching.labels.child}의 현재 흐름 · ${childCards[1]?.energyTitle ?? "현재 마음의 흐름"}\n${childCards[1]?.personalityFlow ?? ""}`,
+      cardFlowSummary: `${coaching.labels.parent}의 현재흐름 · ${parentCards[1]?.energyTitle ?? "현재 마음의 흐름"}\n${parentCards[1]?.personalityFlow ?? ""}\n\n${coaching.labels.child}의 현재흐름 · ${childCards[1]?.energyTitle ?? "현재 마음의 흐름"}\n${childCards[1]?.personalityFlow ?? ""}`,
       socialRoles: coaching.socialRoles,
       relationshipRoles: coaching.relationshipRoles,
       childCommunication: coaching.childCommunication,

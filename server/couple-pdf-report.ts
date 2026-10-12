@@ -321,7 +321,7 @@ function writePerson(document: PdfWriter, person: CouplePdfDownloadPayload["pers
   writeCard(document, "관계 성향과 회복 방향", [
     { label: "관계 성향", text: person.relationshipStyle },
     { label: "감정 표현", text: person.emotionExpression },
-    { label: `보완 컬러 · ${person.complementColor.name}`, text: person.complementColor.meaning },
+    { label: `추천 보완컬러 · ${person.complementColor.name}`, text: person.complementColor.meaning },
     { label: "오늘의 코칭", text: person.coachingMessage },
   ], "#F8F4FA");
 }

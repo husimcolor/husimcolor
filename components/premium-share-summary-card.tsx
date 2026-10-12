@@ -54,7 +54,7 @@ export function PremiumShareSummaryCard({ data }: { data: PremiumShareCardData }
       <View style={styles.energyBox}>
         <Text style={styles.energyLine}><Text style={styles.energyLabel}>현재 주요 오행</Text> {data.currentElements.join(' · ')}</Text>
         <Text style={styles.energyLine}><Text style={styles.energyLabel}>보완 에너지</Text> {data.complementaryElements.join(' · ')}</Text>
-        <Text style={styles.energyLine}><Text style={styles.energyLabel}>보완 컬러</Text> {data.complementaryColors.join(' · ') || '현재 결과의 보완 컬러'}</Text>
+        <Text style={styles.energyLine}><Text style={styles.energyLabel}>추천 보완컬러</Text> {data.complementaryColors.join(' · ') || '현재 결과의 추천 보완컬러'}</Text>
       </View>
 
       <View style={styles.messageBox}>

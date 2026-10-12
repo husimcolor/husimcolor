@@ -36,9 +36,9 @@ describe("premium stage 2 card interpretation engine", () => {
 
     expect(interpretations.map((item) => item.role)).toEqual(["unconscious", "current", "recovery"]);
     expect(interpretations.map((item) => item.roleTitle)).toEqual([
-      "마음 깊은 곳의 욕구",
-      "지금의 마음과 삶의 흐름",
-      "마음이 향하는 다음 방향",
+      "무의식",
+      "현재흐름",
+      "회복방향",
     ]);
     expect(new Set(interpretations.map((item) => item.narrative)).size).toBe(3);
     expect(interpretations[0].cardLabel).toBe("네이비 · 마름모");

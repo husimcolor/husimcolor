@@ -122,8 +122,8 @@ function getColorChipStyle(korName: string): { chipBg: string; chipBorder: strin
 
 const POSITION_LABELS = [
   { label: "1번 카드", sub: "무의식 · 내면 에너지", color: "#4A7A4A" },
-  { label: "2번 카드", sub: "현재 현실 에너지", color: "#7A5CA8" },
-  { label: "3번 카드", sub: "회복 방향 · 다음 방향", color: "#8B6030" },
+  { label: "2번 카드", sub: "현재흐름 · 현재의 반응", color: "#7A5CA8" },
+  { label: "3번 카드", sub: "회복방향 · 회복의 실천", color: "#8B6030" },
 ];
 
 type DisplayComplementColor = { name: string; meaning: string };
@@ -1111,7 +1111,7 @@ export default function PremiumResultScreen() {
 
         {/* 보완 컬러 */}
         <SectionCard
-          title="지금 나에게 필요한 컬러"
+          title="추천 보완컬러"
           accentColor="#7A4A10"
           colors={colors}
         >
@@ -1298,7 +1298,7 @@ export default function PremiumResultScreen() {
             🌊 지금 몸과 마음의 흐름
           </Text>
           <Text style={[styles.energyFlowSub, { color: '#4A8C70' }]}>
-            주기질·보조기질과 무의식·현재 흐름이 읽어주는 현재 에너지
+            주기질·보조기질과 무의식·현재흐름이 읽어주는 현재 에너지
           </Text>
           <Text style={[styles.energyElementNote, { color: '#39715A' }]}>
             에너지 관점 · 현재 주요 흐름 {lifeEnergyResult.currentFiveElements.elements.join(' · ')}
@@ -1338,7 +1338,7 @@ export default function PremiumResultScreen() {
           <Text style={[styles.wellnessElementNote, { color: '#8B6914' }]}>
             보완 에너지 · {lifeEnergyResult.complementaryFiveElements.elements.join(' · ')}
             {lifeEnergyResult.complementaryFiveElements.complementColors?.length
-              ? ` · 보완 컬러 ${lifeEnergyResult.complementaryFiveElements.complementColors.slice(0, 2).join(' · ')}`
+              ? ` · 추천 보완컬러 ${lifeEnergyResult.complementaryFiveElements.complementColors.slice(0, 2).join(' · ')}`
               : ''}
           </Text>
           <View style={styles.wellnessRow}>

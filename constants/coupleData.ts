@@ -2713,10 +2713,10 @@ function buildProfileContrast(
   // 컬러 = 평소 감정 에너지 방향, 3번 회복 카드의 도형 = 갈등 뒤 회복 반응
   const shapeProfileNote = (shapeCtxA && shapeCtxB)
     ? shapeCtxA.modifier === shapeCtxB.modifier
-      ? `\n\n회복 방향 카드의 도형이 말해주는 갈등 뒤 반응: 두 사람 모두 ${shapeCtxA.modifier} 방식으로 마음을 다듬을 수 있습니다. 같은 반응 구조를 가진 두 사람은 침묵과 거리 조절이 필요한 순간을 더 잘 알아차릴 수 있습니다. 평소 관계 성향은 컬러 흐름으로, 지금의 대화와 연락 리듬은 2번 현재 카드로, 갈등 뒤 회복 방식은 3번 회복 카드로 살펴봅니다.`
-      : `\n\n회복 방향 카드의 도형이 말해주는 갈등 뒤 반응: ${withTopicParticle(personAName)} ${shapeCtxA.modifier} 방식으로 마음을 다듬을 수 있습니다. ${withTopicParticle(personBName)} ${shapeCtxB.modifier} 방식으로 다시 연결할 수 있습니다. 평소 관계 성향은 컬러 흐름으로, 지금의 대화와 연락 리듬은 2번 현재 카드로, 갈등 뒤 회복 방식은 3번 회복 카드로 살펴봅니다.`
+      ? `\n\n회복방향 카드의 도형이 말해주는 갈등 뒤 반응: 두 사람 모두 ${shapeCtxA.modifier} 방식으로 마음을 다듬을 수 있습니다. 같은 반응 구조를 가진 두 사람은 침묵과 거리 조절이 필요한 순간을 더 잘 알아차릴 수 있습니다. 평소 관계 성향은 컬러 흐름으로, 지금의 대화와 연락 리듬은 2번 현재흐름 카드로, 갈등 뒤 회복 방식은 3번 회복방향 카드로 살펴봅니다.`
+      : `\n\n회복방향 카드의 도형이 말해주는 갈등 뒤 반응: ${withTopicParticle(personAName)} ${shapeCtxA.modifier} 방식으로 마음을 다듬을 수 있습니다. ${withTopicParticle(personBName)} ${shapeCtxB.modifier} 방식으로 다시 연결할 수 있습니다. 평소 관계 성향은 컬러 흐름으로, 지금의 대화와 연락 리듬은 2번 현재흐름 카드로, 갈등 뒤 회복 방식은 3번 회복방향 카드로 살펴봅니다.`
     : shapeCtxA
-      ? `\n\n회복 방향 카드의 도형은 갈등 뒤 ${shapeCtxA.modifier} 방식으로 마음을 다듬는 흐름을 보여줍니다.`
+      ? `\n\n회복방향 카드의 도형은 갈등 뒤 ${shapeCtxA.modifier} 방식으로 마음을 다듬는 흐름을 보여줍니다.`
       : '';
   const relLabel = rel === '연인' || rel === '부부' ? '두 분' : '두 사람';
   const nameA = colorsA[0]?.korName ?? 'A';

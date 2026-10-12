@@ -60,8 +60,8 @@ describe("25컬러·심리카드·연인 문맥 전체 검수", () => {
     cardsByShape.forEach((card, index) => {
       expect(outputs[index]).toContain(`${card.colorKor} ${card.shapeKor}의 ${card.energyTitle}`);
       expect(outputs[index]).toContain("무의식 카드인");
-      expect(outputs[index]).toContain("현재 흐름 카드인");
-      expect(outputs[index]).toContain("회복 방향 카드인");
+      expect(outputs[index]).toContain("현재흐름 카드인");
+      expect(outputs[index]).toContain("회복방향 카드인");
     });
   });
 

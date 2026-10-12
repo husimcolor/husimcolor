@@ -79,7 +79,7 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
   }).join("");
   const cardDetails = input.cards.slice(0, 3).map((card, index) => {
     const interpretation = input.stage2Cards[index];
-    const position = ["1번 카드 · 무의식", "2번 카드 · 현재 흐름", "3번 카드 · 다음 방향"][index] ?? `${index + 1}번 카드`;
+    const position = ["1번 카드 · 무의식", "2번 카드 · 현재흐름", "3번 카드 · 회복방향"][index] ?? `${index + 1}번 카드`;
     return `<article class="report-card card-detail">
       <p class="eyebrow">${escapeHtml(position)}</p>
       <h3>${escapeHtml(`${card.colorKor} ${card.shapeKor}`)}</h3>
@@ -88,7 +88,7 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
     </article>`;
   }).join("");
   const stage1ColorDetails = input.stage1Interpretation?.miniInterpretations.map((item, index) => `<article class="report-card color-detail">
-    <p class="eyebrow">${escapeHtml(index === 0 ? "주기질" : index === 1 ? "나의 또 다른 성향" : "회복 방향")}</p>
+    <p class="eyebrow">${escapeHtml(index === 0 ? "주기질" : index === 1 ? "보조기질" : "회복방향")}</p>
     <h3>${escapeHtml(item.colorName)}</h3>
     <p class="keywords">${escapeHtml(item.keywords.join(" · "))}</p>
     <p>${paragraph(item.description)}</p>
@@ -171,7 +171,7 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
 
       ${input.stage1Interpretation ? section("선택한 세 컬러의 상세 해석", `<div class="card-stack">${stage1ColorDetails}</div>${stage1Summary}`) : ""}
       ${section("3장의 심리카드 해석", `<p class="note">${paragraph(input.stage2Bridge)}</p><div class="card-stack">${cardDetails}</div>`)}
-      ${section("지금 나에게 필요한 컬러", `<p class="meta">현재 흐름에서 과해지기 쉬운 결을 누그러뜨리고, 회복 방향을 돕는 컬러입니다.</p><div class="tag-grid">${input.complementColors.map((color) => `<span class="tag"><b>${escapeHtml(color.name)}</b> · ${escapeHtml(color.meaning)}</span>`).join("")}</div>`, "gold")}
+      ${section("추천 보완컬러", `<p class="meta">현재 흐름에서 과해지기 쉬운 결을 누그러뜨리고, 회복 방향을 돕는 컬러입니다.</p><div class="tag-grid">${input.complementColors.map((color) => `<span class="tag"><b>${escapeHtml(color.name)}</b> · ${escapeHtml(color.meaning)}</span>`).join("")}</div>`, "gold")}
       ${section("나의 컬러 성향", `<p>${paragraph(input.colorFlowDescription)}</p>`)}
       ${section("지금 마음의 흐름", cardFlowParagraphs)}
       ${input.scripture ? section(plainPdfLabel(input.scripture.label), `<p>“${paragraph(input.scripture.text)}”</p><p class="meta">— ${escapeHtml(input.scripture.ref)}</p>`, "gold") : ""}
@@ -189,7 +189,7 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
         <article class="report-card"><h3>${escapeHtml(input.lifeEnergyResult.energyFlow.title)}</h3><p>${paragraph(input.lifeEnergyResult.energyFlow.description)}</p><p class="note"><b>지금 필요한 것</b><br />${paragraph(input.lifeEnergyResult.energyFlow.recovery)}</p><div class="tag-grid">${tagList(input.lifeEnergyResult.energyFlow.balanceKeywords)}</div></article>
       `)}
       ${section("오늘의 맞춤 회복 루틴", `
-        <p class="meta">보완 에너지 · ${escapeHtml(input.lifeEnergyResult.complementaryFiveElements.elements.join(" · "))}${input.lifeEnergyResult.complementaryFiveElements.complementColors?.length ? ` · 보완 컬러 ${escapeHtml(input.lifeEnergyResult.complementaryFiveElements.complementColors.slice(0, 2).join(" · "))}` : ""}</p>
+        <p class="meta">보완 에너지 · ${escapeHtml(input.lifeEnergyResult.complementaryFiveElements.elements.join(" · "))}${input.lifeEnergyResult.complementaryFiveElements.complementColors?.length ? ` · 추천 보완컬러 ${escapeHtml(input.lifeEnergyResult.complementaryFiveElements.complementColors.slice(0, 2).join(" · "))}` : ""}</p>
         <div class="routine-row"><span class="routine-label">추천 차</span><span>${escapeHtml(input.customRecoveryRoutine.tea ?? "")}</span></div>
         <div class="routine-row"><span class="routine-label">추천 음식</span><span>${escapeHtml(input.customRecoveryRoutine.food)}</span></div>
         <div class="routine-row"><span class="routine-label">추천 호흡</span><span>${escapeHtml(input.customRecoveryRoutine.breath)}</span></div>

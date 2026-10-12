@@ -198,9 +198,9 @@ export function buildRomanticCoupleColorCardIntegratedAnalysis(
 
   const coreNeedParagraph = `${coreAction(primaryLanguage.core)} 편이며, ${coreAction(secondaryLanguage.core)} 마음도 관계 안에 담는 편입니다. 1번 무의식 카드인 ${cardLabel(unconscious)}${subjectParticle(cardLabel(unconscious))} ${cardStageSummary(unconscious, "unconscious")}을 내면의 바탕으로 보여 줍니다. 그래서 ${relationshipHabit(relationshipNeed)} 소중히 여길 수 있습니다.`;
 
-  const innerOuterParagraph = `2번 현재 흐름 카드인 ${cardLabel(current)}에서는 ${cardStageSummary(current, "current")}이 드러납니다. 평소 ${expressionHabit(expressionNeed)} 이 흐름이 더해질 때에는 결론을 서두르기보다, 생각을 정리할 시간과 마음을 말할 순간을 구분해보는 것이 도움이 됩니다.`;
+  const innerOuterParagraph = `2번 현재흐름 카드인 ${cardLabel(current)}에서는 ${cardStageSummary(current, "current")}이 드러납니다. 평소 ${expressionHabit(expressionNeed)} 이 흐름이 더해질 때에는 결론을 서두르기보다, 생각을 정리할 시간과 마음을 말할 순간을 구분해보는 것이 도움이 됩니다.`;
 
-  const directionParagraph = `3번 회복 방향 카드인 ${cardLabel(future)}${subjectParticle(cardLabel(future))} ${cardStageSummary(future, "recovery")}을 안내합니다. 회복 컬러인 ${recovery.korName}${topicParticle(recovery.korName)} 이 실천을 자신의 일상에서 무리 없이 이어가도록 돕습니다. ${cardRecoveryPractice(future, recoveryLanguage.recovery)}`;
+  const directionParagraph = `3번 회복방향 카드인 ${cardLabel(future)}${subjectParticle(cardLabel(future))} ${cardStageSummary(future, "recovery")}을 안내합니다. 회복 컬러인 ${recovery.korName}${topicParticle(recovery.korName)} 이 실천을 자신의 일상에서 무리 없이 이어가도록 돕습니다. ${cardRecoveryPractice(future, recoveryLanguage.recovery)}`;
 
   return [coreNeedParagraph, innerOuterParagraph, directionParagraph].join("\n\n");
 }
@@ -220,7 +220,7 @@ export function buildCoupleColorCardIntegratedAnalysis(
 
   const coreNeedParagraph = `당신은 ${primaryKeyword}${objectParticle(primaryKeyword)} 소중히 여기고, ${secondaryKeyword}${objectParticle(secondaryKeyword)} 쉽게 놓치지 않는 편입니다. 마음 깊은 곳에서는 ${unconscious.energyTitle}${subjectParticle(unconscious.energyTitle)} 중요하게 느껴질 수 있습니다. 그래서 ${relationshipNeedObject(relationshipNeed)} 중요하게 여길 수 있습니다.`;
   const innerOuterParagraph = `겉으로는 ${current.energyTitle} 쪽으로 상황을 풀어가려는 모습이 먼저 보일 수 있습니다. ${expressionNeed} 방식에 익숙한 편이라, 정작 내면의 바람은 충분히 말하기 전까지 조용히 남아 있을 수 있습니다.`;
-  const directionParagraph = `지금은 3번 회복 방향 카드의 ${future.energyTitle}${objectParticle(future.energyTitle)} 바탕으로, ${recovery.recovery} 감각을 일상에서 조금씩 되찾아 보는 시간이 필요할 수 있습니다. ${recoveryKeyword}${objectParticle(recoveryKeyword)} 지키는 작은 말과 행동이 관계의 긴장을 낮추고, 자기 마음을 더 편안히 돌보는 시작이 될 수 있습니다.`;
+  const directionParagraph = `지금은 3번 회복방향 카드의 ${future.energyTitle}${objectParticle(future.energyTitle)} 바탕으로, ${recovery.recovery} 감각을 일상에서 조금씩 되찾아 보는 시간이 필요할 수 있습니다. ${recoveryKeyword}${objectParticle(recoveryKeyword)} 지키는 작은 말과 행동이 관계의 긴장을 낮추고, 자기 마음을 더 편안히 돌보는 시작이 될 수 있습니다.`;
 
   return [coreNeedParagraph, innerOuterParagraph, directionParagraph].join("\n\n");
 }

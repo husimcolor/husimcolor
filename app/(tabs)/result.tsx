@@ -362,7 +362,7 @@ export default function ResultScreen() {
           {/* 성격 흐름 */}
           <ResultCard
             icon="🌿"
-            title="보조기질 — 나의 또 다른 성향"
+            title="보조기질 — 함께 드러나는 성향"
             content={interpretation.personalityFlow}
             bgColor="#F2EFE7"
             borderColor="#DDD8CE"
@@ -371,7 +371,7 @@ export default function ResultScreen() {
             colorContext={{
               card: card2,
               role: '보조기질',
-              description: '나의 또 다른 성향',
+              description: '함께 드러나는 성향',
             }}
             personalityTraits={COLOR_PERSONALITY_TRAITS[card2.id]}
           />
@@ -421,7 +421,7 @@ export default function ResultScreen() {
           >
             <View style={styles.complementHeader}>
               <Text style={styles.complementIcon}>🎨</Text>
-              <Text style={[styles.complementTitle, { color: '#2A2A2A' }]}>보완 컬러</Text>
+              <Text style={[styles.complementTitle, { color: '#2A2A2A' }]}>추천 보완컬러</Text>
             </View>
             <Text style={[styles.complementDesc, { color: '#555555' }]}>
               지금 나에게 도움이 되는 컬러
@@ -638,7 +638,7 @@ export default function ResultScreen() {
             🌿 더 깊은 내면의 흐름이 궁금하신가요?
           </Text>
           <Text style={styles.upsellDesc}>
-            63장 컬러+도형 카드로 무의식 · 현재 심리 · 회복 방향을{"\n"}
+            63장 컬러+도형 카드로 무의식 · 현재흐름 · 회복방향을{"\n"}
             심층 분석해 드립니다
           </Text>
           <TouchableOpacity

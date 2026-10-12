@@ -23,11 +23,11 @@ import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardInt
 import { splitCoupleReadableParagraphs } from '@/lib/couple-readable-text';
 import { trpc } from '@/lib/trpc';
 
-const POSITION_LABELS = ['무의식 · 내면 에너지', '현재 현실 에너지', '회복 방향 · 다음 방향 에너지'];
+const POSITION_LABELS = ['무의식 · 내면 에너지', '현재흐름 · 현재의 반응', '회복방향 · 회복의 실천'];
 const POSITION_DESCS = [
   '지금 의식하지 못하는 내면 깊은 곳의 에너지입니다.',
   '현재 현실에서 드러나는 심리 흐름입니다.',
-  '갈등이나 피로 뒤에 참고할 회복 방향과 다음 방향의 에너지입니다.',
+  '갈등이나 피로 뒤에 참고할 회복방향의 에너지입니다.',
 ];
 const POSITION_COLORS = ['#3D6B3D', '#B5A0C8', '#C4956A'];
 
@@ -515,7 +515,7 @@ export default function CoupleCardResultScreen() {
           {/* 타이틀 */}
           <View style={styles.titleArea}>
             <Text style={styles.title}>심리카드 에너지 흐름</Text>
-            <Text style={styles.subtitle}>무의식 · 현재 흐름 · 회복 방향이 연결하는 내면의 이야기입니다</Text>
+            <Text style={styles.subtitle}>무의식 · 현재흐름 · 회복방향이 연결하는 내면의 이야기입니다</Text>
           </View>
 
           {/* 이전 단계 컬러 요약 */}
@@ -564,7 +564,7 @@ export default function CoupleCardResultScreen() {
             <>
               <View style={[styles.flowCard, { borderColor: accentColor + '44', backgroundColor: accentBg }]}>
                 <Text style={[styles.flowCardLabel, { color: accentColor }]}>🌿 컬러 × 심리카드 통합 분석</Text>
-                <Text style={[styles.flowCardTitle, { color: '#3D3530' }]}>선택 컬러 · 무의식 → 현재 → 회복 방향</Text>
+                <Text style={[styles.flowCardTitle, { color: '#3D3530' }]}>선택 컬러 · 무의식 → 현재흐름 → 회복방향</Text>
                 {integratedAnalysisSections.map((section, index) => (
                   <View
                     key={section.title}

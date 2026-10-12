@@ -14,12 +14,12 @@ const payload: CouplePdfDownloadPayload = {
     colors: [
       { role: "주기질", name: "레드", hex: "#E53935", keywords: "열정 · 추진", interpretation: "마음을 움직이는 힘을 소중히 여깁니다." },
       { role: "보조기질", name: "블루", hex: "#1E88E5", keywords: "신뢰 · 경청", interpretation: "신뢰를 확인하며 관계를 이어갑니다." },
-      { role: "회복 방향", name: "그린", hex: "#43A047", keywords: "균형 · 회복", interpretation: "조율과 회복의 시간을 만들어 보세요." },
+      { role: "회복방향", name: "그린", hex: "#43A047", keywords: "균형 · 회복", interpretation: "조율과 회복의 시간을 만들어 보세요." },
     ],
     cards: [
       { position: "1번 카드 · 무의식", colorName: "레드", shapeName: "동그라미", colorHex: "#E53935", shape: "circle", title: "열정과 포용", narrative: "내면에는 따뜻한 생명력과 연결되고 싶은 마음이 있습니다." },
-      { position: "2번 카드 · 현재 흐름", colorName: "블루", shapeName: "마름모", colorHex: "#1E88E5", shape: "diamond", title: "신뢰의 균형", narrative: "지금은 감정을 차분히 표현할 방법을 찾고 있습니다." },
-      { position: "3번 카드 · 다음 방향", colorName: "그린", shapeName: "네모", colorHex: "#43A047", shape: "square", title: "안정의 회복", narrative: "작은 일상 리듬으로 마음을 회복해 보세요." },
+      { position: "2번 카드 · 현재흐름", colorName: "블루", shapeName: "마름모", colorHex: "#1E88E5", shape: "diamond", title: "신뢰의 균형", narrative: "지금은 감정을 차분히 표현할 방법을 찾고 있습니다." },
+      { position: "3번 카드 · 회복방향", colorName: "그린", shapeName: "네모", colorHex: "#43A047", shape: "square", title: "안정의 회복", narrative: "작은 일상 리듬으로 마음을 회복해 보세요." },
     ],
     integratedAnalysis: "관계에서 진심과 신뢰를 함께 중요하게 여깁니다.\n\n겉으로는 단단해 보여도 마음을 확인받고 싶을 수 있습니다.\n\n서두르기보다 차분한 대화가 회복을 돕습니다.",
     relationshipStyle: "따뜻한 말과 행동으로 관계를 이어갑니다.",
@@ -32,12 +32,12 @@ const payload: CouplePdfDownloadPayload = {
     colors: [
       { role: "주기질", name: "라벤더", hex: "#B39DDB", keywords: "섬세함 · 성찰", interpretation: "마음의 결을 깊이 살피는 편입니다." },
       { role: "보조기질", name: "핑크", hex: "#F48FB1", keywords: "교감 · 온기", interpretation: "다정한 연결과 공감을 소중히 여깁니다." },
-      { role: "회복 방향", name: "옐로우", hex: "#FDD835", keywords: "이해 · 성장", interpretation: "가벼운 호기심으로 관계의 숨통을 열어 보세요." },
+      { role: "회복방향", name: "옐로우", hex: "#FDD835", keywords: "이해 · 성장", interpretation: "가벼운 호기심으로 관계의 숨통을 열어 보세요." },
     ],
     cards: [
       { position: "1번 카드 · 무의식", colorName: "퍼플", shapeName: "삼각형", colorHex: "#8E24AA", shape: "triangle", title: "내면의 방향", narrative: "깊은 관계의 의미를 찾고 싶은 마음이 있습니다." },
-      { position: "2번 카드 · 현재 흐름", colorName: "화이트", shapeName: "네모", colorHex: "#F5F5F0", shape: "square", title: "정리의 시간", narrative: "생각을 정리한 뒤 안정적으로 표현합니다." },
-      { position: "3번 카드 · 다음 방향", colorName: "옐로우", shapeName: "육각형", colorHex: "#FDD835", shape: "hexagon", title: "함께하는 확장", narrative: "부드러운 대화가 다음 연결을 열어 줍니다." },
+      { position: "2번 카드 · 현재흐름", colorName: "화이트", shapeName: "네모", colorHex: "#F5F5F0", shape: "square", title: "정리의 시간", narrative: "생각을 정리한 뒤 안정적으로 표현합니다." },
+      { position: "3번 카드 · 회복방향", colorName: "옐로우", shapeName: "육각형", colorHex: "#FDD835", shape: "hexagon", title: "함께하는 확장", narrative: "부드러운 대화가 다음 연결을 열어 줍니다." },
     ],
     integratedAnalysis: "관계의 온기와 내면의 의미를 함께 중요하게 여깁니다.\n\n표현하기 전 마음을 오래 살필 수 있습니다.\n\n편안하게 말할 수 있는 시간을 만들어 보세요.",
     relationshipStyle: "신뢰가 쌓인 뒤 마음을 나눕니다.",
@@ -63,7 +63,7 @@ const payload: CouplePdfDownloadPayload = {
 describe("부부·연인 전용 PDF 리포트", () => {
   it("3번 카드의 실제 행동 지침만 글머리표 단위로 분리하고 지정된 띄어쓰기를 교정한다", () => {
     const recovery = splitCouplePdfCardNarrative(
-      "3번 카드 · 다음 방향",
+      "3번 카드 · 회복방향",
       "붙어있는 시간보다 마음을 확인하는 시간이 필요합니다.\n· 짧은 포옹이나 손 잡기가 관계의 온도를 높일 수 있습니다.\n· 오늘 한 번 안부를 먼저 건네 보세요.",
     );
     const interpretation = splitCouplePdfCardNarrative(

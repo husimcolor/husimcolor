@@ -275,7 +275,7 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
     { label: "도형", text: card.shapeKeywords },
     { label: card.roleLabel, text: card.narrative },
   ]));
-  writeSectionTitle(document, "지금 나에게 필요한 컬러", "#8B6914", 94);
+  writeSectionTitle(document, "추천 보완컬러", "#8B6914", 94);
   writeParagraph(document, "현재 흐름에서 과해지기 쉬운 결을 누그러뜨리고, 회복 방향을 돕는 컬러입니다.", { size: DETAIL_TEXT_SIZE, color: "#75695D" });
   document.moveDown(0.3);
   writePills(document, payload.complementColors.map((color) => `${color.name} · ${color.meaning}`));
@@ -326,7 +326,7 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
   writePills(document, payload.energyFlow.balanceKeywords);
   document.moveDown(0.6);
   writeSectionTitle(document, "오늘의 맞춤 회복 루틴", "#8B6914", 45 + cardContentHeight(document, [{ text: payload.recoveryRoutine.tea }]));
-  writeParagraph(document, `보완 에너지 · ${payload.energyFlow.complementaryElements.join(" · ")}${payload.energyFlow.complementColors.length ? ` · 보완 컬러 ${payload.energyFlow.complementColors.join(" · ")}` : ""}`, { size: DETAIL_TEXT_SIZE, color: "#75695D" });
+  writeParagraph(document, `보완 에너지 · ${payload.energyFlow.complementaryElements.join(" · ")}${payload.energyFlow.complementColors.length ? ` · 추천 보완컬러 ${payload.energyFlow.complementColors.join(" · ")}` : ""}`, { size: DETAIL_TEXT_SIZE, color: "#75695D" });
   document.moveDown(0.45);
   [
     ["추천 차", payload.recoveryRoutine.tea],
