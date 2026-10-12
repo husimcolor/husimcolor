@@ -109,8 +109,8 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
         tiredStates: ["独自承担", "把真实感受压在心里"],
       },
       {
-        role: "恢复方向",
-        koreanRole: "회복 방향",
+        role: "调和色",
+        koreanRole: "보완컬러 · 파일럿 기준",
         name: "白色",
         koreanName: "화이트",
         hex: "#F0EDE8",
@@ -127,7 +127,7 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
     growthPossibility: ["事情紧急时，容易先加快脚步", "为了理清想法，回复有时会晚一些", "觉得准备不够时，可能会暂缓回答"],
     relationshipTendency: "你可能更希望把彼此的想法说清楚，一起找到双方都能接受的方向。听完对方的说法后，再谨慎回应；约定和角色越明确，信任越容易建立。",
   },
-  stage2Bridge: "以红色、蓝色与白色呈现的基础倾向为线索，三张心理卡依次呈现内在愿望、当下的反应与下一步方向。",
+    stage2Bridge: "以红色、蓝色与白色呈现的基础倾向为线索，三张心理卡依次呈现潜意识、当前状态与恢复方向。",
   cards: [
     {
       position: "第1张卡 · 潜意识",
@@ -154,7 +154,7 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
       narrative: "现在，你可能会按步骤处理眼前的事，用自己认可的方式继续往下做；也会比较不同的情况，为其他选择留出空间。",
     },
     {
-      position: "第3张卡 · 下一步方向",
+      position: "第3张卡 · 恢复方向",
       label: "白色 · 方形",
       colorName: "白色",
       shapeName: "方形",
@@ -162,7 +162,7 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
       shape: "square",
       colorKeywords: "整理 · 留白 · 清晰",
       shapeKeywords: "结构 · 稳定 · 现实感",
-      roleLabel: "下一步方向",
+      roleLabel: "恢复方向",
       narrative: "需要调整状态时，你可能更想卸下不必要的负担，用轻松些的方式安排一天。可以先从手边能完成的小事开始，重新建立日常的节奏。",
     },
   ],

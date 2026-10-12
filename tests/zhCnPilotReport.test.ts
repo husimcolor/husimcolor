@@ -23,8 +23,9 @@ describe("zh-CN personal pilot report", () => {
     expect(serialized).toContain("认真对待事情，也看重彼此之间的信任");
     expect(serialized).toContain("一起找到双方都能接受的方向");
     expect(serialized).toContain("用自己认可的方式继续往下做");
-    expect(serialized).toContain("第3张卡 · 下一步方向");
+    expect(serialized).toContain("第3张卡 · 恢复方向");
     expect(serialized).toContain("恢复方向");
+    expect(ZH_CN_PERSONAL_PILOT_REPORT.stage1.colors[2]?.role).toBe("调和色");
     expect(serialized).toContain("想等了解得更充分后再行动，因此容易迟迟没有开始。");
     expect(serialized).toContain("报告示例");
     expect(ZH_CN_PERSONAL_PILOT_REPORT.lifeRole.title).toBe("信息梳理与判断型");
@@ -50,6 +51,7 @@ describe("zh-CN personal pilot report", () => {
     expect(rendererSource).toContain("今天给自己的话");
     expect(rendererSource).toContain("今天的调整小练习");
     expect(rendererSource).toContain("三张卡所呈现的心理变化");
+    expect(rendererSource).toContain("推荐${report.complementColorTerm}");
     expect(rendererSource).toContain("这些颜色可作为日常自我调节的参考，帮助你放松身心、找回平衡，而不是要求你改变自己。");
     expect(rendererSource).not.toContain("今天的专属恢复小练习");
   });
@@ -76,6 +78,6 @@ describe("zh-CN personal pilot report", () => {
     expect(overview).toContain("一起找到双方都能接受的方向");
     expect(cards).toContain("三张卡所呈现的心理变化");
     expect(cards).toContain("第1张卡 · 潜意识");
-    expect(cards).toContain("第3张卡 · 下一步方向");
+    expect(cards).toContain("第3张卡 · 恢复方向");
   });
 });

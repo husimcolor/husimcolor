@@ -12,6 +12,10 @@
       "maxDuration": 30,
       "includeFiles": "server/assets/NotoSansCJKsc-Regular.otf"
     },
+    "api/en-pilot-personal-pdf.ts": {
+      "maxDuration": 30,
+      "includeFiles": "server/assets/NotoSansCJKsc-Regular.otf"
+    },
     "api/couple-pdf-report.ts": {
       "maxDuration": 30,
       "includeFiles": "server/assets/HusimPdfKorean.ttf"
@@ -24,11 +28,16 @@
     { "source": "/api/trpc/:path*", "destination": "/api/trpc/[...trpc]" },
     { "source": "/api/pdf-report", "destination": "/api/pdf-report" },
     { "source": "/api/zh-cn-pilot-personal-pdf", "destination": "/api/zh-cn-pilot-personal-pdf" },
+    { "source": "/api/en-pilot-personal-pdf", "destination": "/api/en-pilot-personal-pdf" },
     { "source": "/api/couple-pdf-report", "destination": "/api/couple-pdf-report" },
     { "source": "/zh-cn-pilot", "destination": "/zh-cn-pilot.html" },
     { "source": "/zh-cn-pilot/colors", "destination": "/zh-cn-pilot-colors.html" },
     { "source": "/zh-cn-pilot/cards", "destination": "/zh-cn-pilot-cards.html" },
     { "source": "/zh-cn-pilot/recovery", "destination": "/zh-cn-pilot-recovery.html" },
+    { "source": "/en-pilot", "destination": "/en-pilot.html" },
+    { "source": "/en-pilot/colours", "destination": "/en-pilot-colours.html" },
+    { "source": "/en-pilot/cards", "destination": "/en-pilot-cards.html" },
+    { "source": "/en-pilot/recovery", "destination": "/en-pilot-recovery.html" },
     { "source": "/((?!_expo/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
