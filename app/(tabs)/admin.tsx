@@ -112,7 +112,7 @@ export default function AdminScreen() {
   const isAdmin = auth.data?.role === "admin";
   const hasAdminAccess = isAdmin || legacyAdmin;
   const secured = { enabled: hasAdminAccess, retry: false };
-  const dashboard = trpc.admin.dashboard.useQuery(undefined, secured);
+  const dailyOperations = trpc.admin.dailyOperationsSignals.useQuery(undefined, secured);
   const orders = trpc.admin.orders.useQuery({ limit: 50 }, secured);
   const previewVerification = trpc.admin.previewVerification.useQuery(undefined, secured);
   const customers = trpc.admin.customers.useQuery({ limit: 50 }, secured);
@@ -128,9 +128,9 @@ export default function AdminScreen() {
   const visits = trpc.visitors.stats.useQuery(undefined, secured);
   const tests = trpc.visitors.testStats.useQuery(undefined, secured);
   const logout = trpc.auth.logout.useMutation({ onSuccess: () => router.replace("/(tabs)") });
-  const updateLegacy = trpc.admin.updateLegacyPayment.useMutation({ onSuccess: () => { legacy.refetch(); dashboard.refetch(); } });
+  const updateLegacy = trpc.admin.updateLegacyPayment.useMutation({ onSuccess: () => { legacy.refetch(); dailyOperations.refetch(); } });
   const retryMail = trpc.commerce.adminDelivery.retry.useMutation({ onSuccess: () => delivery.refetch() });
-  const updateBooking = trpc.admin.updateCoachingBooking.useMutation({ onSuccess: () => { bookings.refetch(); dashboard.refetch(); } });
+  const updateBooking = trpc.admin.updateCoachingBooking.useMutation({ onSuccess: () => { bookings.refetch(); dailyOperations.refetch(); } });
   const createBlackoutDate = trpc.admin.createCoachingBlackoutDate.useMutation({
     onSuccess: (result) => {
       if (!result.created) {
@@ -241,7 +241,7 @@ export default function AdminScreen() {
 
   const refresh = async () => {
     setRefreshing(true);
-    await Promise.all([auth.refetch(), dashboard.refetch(), orders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), blackoutDates.refetch(), supportTickets.refetch(), coupons.refetch(), targetedCoupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
+    await Promise.all([auth.refetch(), dailyOperations.refetch(), orders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), blackoutDates.refetch(), supportTickets.refetch(), coupons.refetch(), targetedCoupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
     setRefreshing(false);
   };
   const updatePayment = (id: number, status: LegacyStatus) => Alert.alert("과거 신청 상태", `“${legacyLabels[status]}”으로 변경하시겠습니까?`, [
@@ -381,26 +381,24 @@ export default function AdminScreen() {
         </>}
 
         {tab === "운영 홈" && <>
-          <Text style={[styles.section, { color: colors.foreground }]}>오늘의 운영 신호</Text>
+          <Text style={[styles.section, { color: colors.foreground }]}>오늘의 운영 신호 · KST {dailyOperations.data?.kstDate ?? "—"}</Text>
           <View style={styles.grid}>
-            <Metric value={dashboard.data?.paidOrders ?? 0} label="결제 완료 주문" />
-            <Metric value={dashboard.data?.paidWebOrders ?? 0} label="홈페이지 결제 완료" color="#4d6f9f" />
-            <Metric value={dashboard.data?.paidAppOrders ?? 0} label="앱 결제 완료" color="#4d6f9f" />
-            <Metric value={dashboard.data?.testOrders ?? 0} label="테스트 주문 (매출 제외)" color="#8a7a68" />
-            <Metric value={dashboard.data?.startedAnalyses ?? 0} label="검사 진행 중" color="#4d6f9f" />
-            <Metric value={dashboard.data?.failedDocuments ?? 0} label="PDF 실패" color="#b5584f" />
-            <Metric value={dashboard.data?.failedEmails ?? 0} label="메일 실패" color="#b5584f" />
-            <Metric value={dashboard.data?.pendingBookings ?? 0} label="예약 일정 대기" color="#b58c2c" />
-            <Metric value={dashboard.data?.legacyPending ?? 0} label="과거 입금 대기" color="#b58c2c" />
+            <Metric value={dailyOperations.data?.homepageVisitors ?? 0} label="오늘 홈페이지 방문자" />
+            <Metric value={dailyOperations.data?.appVisitors ?? 0} label="오늘 앱 방문자" color="#4d6f9f" />
+            <Metric value={dailyOperations.data?.freeColorCompletions ?? 0} label="오늘 무료 3컬러 완료" color="#4d6f9f" />
+            <Metric value={dailyOperations.data?.friendFreeCompletions ?? 0} label="오늘 지인 무료테스트 완료" color="#4d6f9f" />
+            <Metric value={dailyOperations.data?.livePaidOrderCount ?? 0} label="오늘 실결제 완료" />
+            <Metric value={dailyOperations.data?.personalDeepPaidCount ?? 0} label="개인 심화 실결제" color="#4d6f9f" />
+            <Metric value={dailyOperations.data?.coupleLoveDeepPaidCount ?? 0} label="부부·연인 실결제" color="#4d6f9f" />
+            <Metric value={dailyOperations.data?.parentChildDeepPaidCount ?? 0} label="부모·자녀 실결제" color="#4d6f9f" />
           </View>
-          <Text style={[styles.section, { color: colors.foreground }]}>기존 체험 지표</Text>
+          <Panel><Text style={styles.noticeTitle}>오늘 매출금액</Text><Text style={[styles.revenueValue, { color: "#3f7b52" }]}>{(dailyOperations.data?.revenueKrw ?? 0).toLocaleString()}원</Text><Text style={styles.noticeText}>할인 적용 후 Toss 라이브 승인 주문만 합산합니다. 테스트키·개발 테스트·무료 이용권·실패·미완료 주문은 제외하며, 취소·환불로 상태가 바뀐 주문은 매출에 포함하지 않습니다.</Text></Panel>
+          <Text style={[styles.section, { color: colors.foreground }]}>기존 누적 지표</Text>
           <View style={styles.grid}>
             <Metric value={visits.data?.totalVisitors ?? 0} label="고유 방문 기기" />
-            <Metric value={tests.data?.freeStart ?? 0} label="무료 시작" color="#b58c2c" />
-            <Metric value={tests.data?.deepResult ?? 0} label="개인 심화 결과" color="#4d6f9f" />
-            <Metric value={tests.data?.coupleResult ?? 0} label="관계 결과" />
           </View>
-          <Panel><Text style={styles.noticeTitle}>공개 운영 상태</Text><Text style={styles.noticeText}>유료 심화분석은 Toss 테스트키 기반 공개 테스트 운영 중입니다. 실제 청구는 발생하지 않으며, 테스트 주문은 매출에서 제외됩니다. 이 화면은 분석 문구·결과·PDF·공유 내용을 수정하지 않고 운영 상태만 추적합니다.</Text></Panel>
+          <Panel><Text style={styles.noticeTitle}>집계 기준</Text><Text style={styles.noticeText}>오늘은 한국시간 00:00~24:00입니다. 방문자는 서비스별 같은 기기의 당일 재방문을 한 번으로 계산합니다. 무료 완료는 결과 화면 도달 이벤트만, 지인 무료테스트는 관계 결과 중 ‘친구’ 유형 완료만 계산합니다. 운영 신호는 2026.10.09 KST부터 남은 앱·결제 원장으로 재집계합니다. 홈페이지 방문은 기존 원장이 없어 {dailyOperations.data?.homepageVisitorCollectionStartLabel ?? "2026.10.12 KST"}부터 기록합니다.</Text></Panel>
+          <Panel><Text style={styles.noticeTitle}>공개 운영 상태</Text><Text style={styles.noticeText}>유료 심화분석은 Toss 라이브 결제로 운영 중입니다. 승인된 실제 결제에만 이용권이 연결되며, 테스트 주문과 무료 이용권은 실결제·매출 집계에서 분리됩니다.</Text></Panel>
         </>}
 
         {tab === "주문·결제" && <><Text style={[styles.section, { color: colors.foreground }]}>주문·결제</Text><Text style={[styles.helper, { color: colors.muted }]}>고객 → 주문 → 결제 → 이용권 흐름의 공통 원장을 표시합니다. 이메일은 마스킹됩니다.</Text>{orders.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {dateText(item.createdAt)}</Text><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · 결제 {item.finalAmountKrw.toLocaleString()}원 · 할인 {item.discountAmountKrw.toLocaleString()}원 · {item.provider ?? "결제 대기"} · {item.channel === "web" ? "홈페이지 유입" : "앱 유입"}{item.isTest ? " · 테스트 주문(매출 제외)" : ""}</Text><Text style={[styles.meta, { color: colors.muted }]}>결제 상태 {item.paymentStatus ?? "—"} · 이용권 {item.entitlementStatus ?? "—"}</Text></Panel>)}</>}
@@ -474,7 +472,7 @@ const styles = StyleSheet.create({
   section: { fontSize: 17, fontWeight: "800", marginTop: 8 }, helper: { fontSize: 12, lineHeight: 18, marginTop: -5 }, grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   metric: { width: "31.8%", minHeight: 92, borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 15, alignItems: "center", justifyContent: "center", padding: 7 }, metricValue: { fontSize: 25, fontWeight: "800" }, metricLabel: { fontSize: 10, textAlign: "center", color: "#77736a", marginTop: 5 },
   panel: { borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 15, padding: 14, gap: 7 }, row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }, cardTitle: { fontSize: 14, fontWeight: "800", flexShrink: 1 }, meta: { fontSize: 11, lineHeight: 17 },
-  badge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }, badgeText: { fontSize: 10, fontWeight: "800" }, noticeTitle: { color: "#3f7b52", fontSize: 14, fontWeight: "800" }, noticeText: { color: "#55705a", fontSize: 12, lineHeight: 19 },
+  badge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }, badgeText: { fontSize: 10, fontWeight: "800" }, noticeTitle: { color: "#3f7b52", fontSize: 14, fontWeight: "800" }, revenueValue: { fontSize: 27, fontWeight: "800" }, noticeText: { color: "#55705a", fontSize: 12, lineHeight: 19 },
   action: { alignSelf: "flex-start", backgroundColor: "#3f7b52", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }, actionText: { color: "#fff", fontSize: 12, fontWeight: "800" }, input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, fontSize: 12 }, passwordInput: { width: "100%", maxWidth: 320 }, passwordError: { color: "#b5584f", fontSize: 12, textAlign: "center" }, actions: { flexDirection: "row", flexWrap: "wrap", gap: 7 }, smallAction: { borderWidth: 1, borderColor: "#a9c8ae", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, smallActionText: { color: "#3f7b52", fontSize: 11, fontWeight: "800" }, dangerAction: { borderWidth: 1, borderColor: "#e3aaa3", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, dangerActionText: { color: "#b5584f", fontSize: 11, fontWeight: "800" },
   expanded: { borderTopWidth: 1, borderTopColor: "#ded9ce", paddingTop: 10, gap: 8 }, delete: { color: "#b5584f", fontSize: 11, fontWeight: "800" }, review: { fontSize: 12, lineHeight: 18 }, trialUrl: { minHeight: 84, textAlignVertical: "top", fontSize: 10, lineHeight: 15 }, compactInput: { width: 96 },
 });

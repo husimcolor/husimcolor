@@ -54,6 +54,7 @@ import {
 import { applyProductionOpeningCampaignConfiguration } from "./commerce/production-opening-campaign-config-service";
 import { applyProductionLivePaymentProviderMigration } from "./commerce/production-live-payment-migration-service";
 import { getSupportTicketSchemaAudit } from "./commerce/support-ticket-schema-audit";
+import { getAdminDailyOperationsSignals } from "./commerce/admin-daily-operations-service";
 import {
   deleteAdminReview,
   getAdminCoachingBookingList,
@@ -452,6 +453,7 @@ export const appRouter = router({
   // 통합 운영 관리 API. 모든 조회·변경은 서버의 users.role=admin을 요구한다.
   admin: router({
     dashboard: adminProcedure.query(() => getAdminOperationsDashboard()),
+    dailyOperationsSignals: adminProcedure.query(() => getAdminDailyOperationsSignals()),
     orders: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminOrderList(input.limit)),
