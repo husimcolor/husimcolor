@@ -2,8 +2,8 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { parse as parseCookieHeader } from "cookie";
 import type { Express, Request, Response } from "express";
 
-import { getUserByEmail, getUserByOpenId, upsertUser } from "../db";
-import { ensureCommonAccountForAuthenticatedUser } from "../commerce/account-service";
+import { getUserByEmail, getUserById, getUserByOpenId, upsertUser } from "../db";
+import { ensureCommonAccountForAuthenticatedUser, findCanonicalUserIdForAccountIdentity } from "../commerce/account-service";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const";
 import { getSessionCookieOptions } from "./cookies";
 import { ENV } from "./env";
@@ -117,6 +117,17 @@ export function createKakaoAuthorizeUrl(input: { redirectUri: string; state: str
   return url.toString();
 }
 
+export function chooseKakaoCanonicalUserSource(input: {
+  hasOpenIdUser: boolean;
+  identityUserId: number | null;
+  hasVerifiedEmail: boolean;
+}): "openId" | "kakaoIdentity" | "verifiedEmail" | "newUser" {
+  if (input.hasOpenIdUser) return "openId";
+  if (input.identityUserId != null) return "kakaoIdentity";
+  if (input.hasVerifiedEmail) return "verifiedEmail";
+  return "newUser";
+}
+
 async function exchangeKakaoCode(code: string, redirectUri: string) {
   const body = new URLSearchParams({
     grant_type: "authorization_code",
@@ -156,10 +167,17 @@ async function syncKakaoUser(kakaoUser: KakaoUserResponse) {
       : null;
   const name = account?.profile?.nickname ?? "카카오 사용자";
 
-  // 검증된 이메일로 기존 회원을 찾을 때만 같은 canonical users.id에 카카오 식별자를 추가한다.
-  // 이력 연결은 account-service가 동일 이메일과 단일 계정 조건을 다시 확인한다.
-  let user = await getUserByOpenId(openId);
-  if (!user && verifiedEmail) user = await getUserByEmail(verifiedEmail);
+  // 이미 연결한 Kakao subject가 가장 강한 identity다. 카카오가 다음 로그인에서
+  // 이메일을 제공하지 않아도 새 users 행을 만들거나 기존 identity를 옮기지 않는다.
+  const openIdUser = await getUserByOpenId(openId);
+  const identityUserId = await findCanonicalUserIdForAccountIdentity({ provider: "kakao", providerSubject: subject });
+  const source = chooseKakaoCanonicalUserSource({ hasOpenIdUser: Boolean(openIdUser), identityUserId, hasVerifiedEmail: Boolean(verifiedEmail) });
+  let user = openIdUser;
+  if (source === "kakaoIdentity") {
+    user = await getUserById(identityUserId!);
+    if (!user) throw new Error("KAKAO_IDENTITY_USER_MISSING");
+  }
+  if (source === "verifiedEmail" && verifiedEmail) user = await getUserByEmail(verifiedEmail);
   if (!user) {
     await upsertUser({
       openId,

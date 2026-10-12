@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { canAutoLinkAuthenticatedCheckout, getNoCommerceGuestClaimResult } from "../server/commerce/account-service";
+import { canAttachAccountIdentity, canAutoLinkAuthenticatedCheckout, getNoCommerceGuestClaimResult } from "../server/commerce/account-service";
 import { hashCommerceValue, normalizeCommerceEmail } from "../server/commerce/crypto";
 
 beforeAll(() => {
@@ -28,5 +28,11 @@ describe("공통 회원·비회원 상거래 연결", () => {
 
   it("주문이 없는 인증 이메일은 소유권 확인만 완료하고 연결 대상이 0건인 것이 정상이다", () => {
     expect(getNoCommerceGuestClaimResult()).toEqual({ customerId: null, linkedOrders: 0 });
+  });
+
+  it("이미 다른 회원에 연결된 소셜 식별자나 이메일 identity를 덮어쓰지 않는다", () => {
+    expect(canAttachAccountIdentity({ existingUserId: null, authenticatedUserId: 7 })).toBe(true);
+    expect(canAttachAccountIdentity({ existingUserId: 7, authenticatedUserId: 7 })).toBe(true);
+    expect(canAttachAccountIdentity({ existingUserId: 8, authenticatedUserId: 7 })).toBe(false);
   });
 });

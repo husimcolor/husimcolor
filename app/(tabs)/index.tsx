@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Linking } from 'react-native';
+import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Linking, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -10,11 +10,14 @@ import { trpc } from '@/lib/trpc';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
 import { isOpeningCampaignActive } from '@/shared/opening-campaign';
 import { getSampleReportUrl, SAMPLE_REPORT_LINK_LABEL, type SampleReportProduct } from '@/shared/sample-reports';
+import { startKakaoLogin } from '@/constants/oauth';
+import { useAuth } from '@/hooks/use-auth';
 
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const router = useRouter();
+  const auth = useAuth();
   const { resetColors } = useColorContext();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -65,6 +68,7 @@ export default function HomeScreen() {
   // 카카오/네이버 인앱브라우저 대응: sessionStorage + localStorage + AsyncStorage 삼중 저장
   const logVisitor = trpc.visitors.log.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
+  const kakao = trpc.auth.kakaoStatus.useQuery();
   const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
   const tossCardReviewEnabled = commerceTestMode.data?.tossCardReviewEnabled ?? false;
   const tossLiveEnabled = commerceTestMode.data?.tossLiveEnabled === true;
@@ -132,6 +136,17 @@ export default function HomeScreen() {
   const handleStart = () => {
     resetColors();
     router.push({ pathname: '/(tabs)/select', params: { step: '0' } });
+  };
+
+  const handleMemberEntry = () => {
+    if (auth.isAuthenticated) {
+      router.push('/my-page' as any);
+      return;
+    }
+    if (!kakao.data?.enabled) return;
+    if (!startKakaoLogin('/my-page')) {
+      Alert.alert('카카오 로그인 안내', '카카오 로그인은 현재 휴심컬러 웹앱에서 이용할 수 있습니다.');
+    }
   };
 
   const handlePersonalDeepEntry = () => {
@@ -221,6 +236,13 @@ export default function HomeScreen() {
             <Text style={styles.openingCampaignText}>10월 30일까지 · 회원가입 없이 이용 가능</Text>
             <Text style={styles.openingCampaignNote}>개인·부부/연인·부모/자녀 심화분석 대상 · 오프라인 코칭 제외</Text>
           </View>}
+        </Animated.View>
+
+        <Animated.View style={[styles.memberEntry, { opacity: fadeAnim }]}>
+          {auth.loading ? <Text style={styles.memberLoadingText}>회원 상태를 확인하고 있습니다.</Text> : auth.isAuthenticated ? <>
+            <Pressable onPress={handleMemberEntry} style={({ pressed }) => [styles.memberPrimaryButton, pressed && styles.memberButtonPressed]} accessibilityRole="button"><Text style={styles.memberPrimaryText}>마이페이지</Text></Pressable>
+            <Pressable onPress={() => { void auth.logout(); }} style={({ pressed }) => [styles.memberSecondaryButton, pressed && styles.memberButtonPressed]} accessibilityRole="button"><Text style={styles.memberSecondaryText}>로그아웃</Text></Pressable>
+          </> : <Pressable onPress={handleMemberEntry} disabled={!kakao.data?.enabled} style={({ pressed }) => [styles.memberKakaoButton, !kakao.data?.enabled && styles.memberButtonDisabled, pressed && kakao.data?.enabled && styles.memberButtonPressed]} accessibilityRole="button" accessibilityLabel="로그인 또는 회원가입 후 카카오로 시작하기"><Text style={styles.memberKakaoText}>{kakao.isLoading ? '로그인 준비 중…' : kakao.data?.enabled ? '로그인 · 회원가입 · 카카오로 시작하기' : '카카오 로그인 준비 중'}</Text></Pressable>}
         </Animated.View>
 
         {/* 세 가지 서비스 진입 */}
@@ -379,6 +401,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  memberEntry: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  memberLoadingText: { color: '#7A7166', fontSize: 12, fontWeight: '700' },
+  memberKakaoButton: { minHeight: 42, borderRadius: 12, backgroundColor: '#FEE500', paddingHorizontal: 16, justifyContent: 'center', borderWidth: 1, borderColor: '#E6D100' },
+  memberKakaoText: { color: '#3B3422', fontSize: 13, fontWeight: '800' },
+  memberPrimaryButton: { minHeight: 40, borderRadius: 11, backgroundColor: '#557A59', paddingHorizontal: 18, justifyContent: 'center' },
+  memberPrimaryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
+  memberSecondaryButton: { minHeight: 40, borderRadius: 11, borderWidth: 1, borderColor: '#B8C9B4', backgroundColor: '#FFFFFF', paddingHorizontal: 15, justifyContent: 'center' },
+  memberSecondaryText: { color: '#557A59', fontSize: 13, fontWeight: '800' },
+  memberButtonDisabled: { backgroundColor: '#DEDAD0', borderColor: '#D2CDC2' },
+  memberButtonPressed: { opacity: 0.82, transform: [{ scale: 0.97 }] },
   brandName: {
     fontSize: 32,
     fontWeight: '700',

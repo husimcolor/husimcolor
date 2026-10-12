@@ -53,6 +53,31 @@ function accountIdentityHash(provider: IdentityProvider | "email", subject: stri
   return hashCommerceValue(`${provider}:${subject.trim().toLowerCase()}`);
 }
 
+export function canAttachAccountIdentity(input: {
+  existingUserId: number | null | undefined;
+  authenticatedUserId: number;
+}) {
+  return input.existingUserId == null || input.existingUserId === input.authenticatedUserId;
+}
+
+/** OAuth provider subject is the stable first lookup, even when email is unavailable later. */
+export async function findCanonicalUserIdForAccountIdentity(input: {
+  provider: IdentityProvider;
+  providerSubject: string;
+}): Promise<number | null> {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const rows = await db
+    .select({ userId: accountIdentities.userId })
+    .from(accountIdentities)
+    .where(and(
+      eq(accountIdentities.provider, input.provider),
+      eq(accountIdentities.providerSubjectHash, accountIdentityHash(input.provider, input.providerSubject)),
+    ))
+    .limit(1);
+  return rows[0]?.userId ?? null;
+}
+
 async function linkCommerceRowsForCustomer(tx: any, input: { customerId: number; userId: number }) {
   const matchCustomer = eq(orders.customerId, input.customerId);
   await tx.update(orders).set({ userId: input.userId }).where(matchCustomer);
@@ -82,17 +107,29 @@ export async function ensureCommonAccountForAuthenticatedUser(
 
   return (db as any).transaction(async (tx: any) => {
     const now = new Date();
+    const identityHash = accountIdentityHash(identity.provider, identity.providerSubject);
+    const existingProviderIdentity = await tx
+      .select({ userId: accountIdentities.userId })
+      .from(accountIdentities)
+      .where(and(
+        eq(accountIdentities.provider, identity.provider),
+        eq(accountIdentities.providerSubjectHash, identityHash),
+      ))
+      .limit(1);
+    if (!canAttachAccountIdentity({ existingUserId: existingProviderIdentity[0]?.userId, authenticatedUserId: user.id })) {
+      throw new Error("IDENTITY_ALREADY_LINKED_TO_ANOTHER_ACCOUNT");
+    }
     await tx
       .insert(accountIdentities)
       .values({
         userId: user.id,
         provider: identity.provider,
-        providerSubjectHash: accountIdentityHash(identity.provider, identity.providerSubject),
+        providerSubjectHash: identityHash,
         emailHash: user.email ? hashCommerceEmail(user.email) : null,
         verifiedAt: now,
       })
       .onDuplicateKeyUpdate({
-        set: { userId: user.id, emailHash: user.email ? hashCommerceEmail(user.email) : null, verifiedAt: now },
+        set: { emailHash: user.email ? hashCommerceEmail(user.email) : null, verifiedAt: now },
       });
 
     if (!user.email) return { userId: user.id, customerId: null, autoLinked: false };

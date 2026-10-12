@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createKakaoAuthorizeUrl,
   createKakaoState,
+  chooseKakaoCanonicalUserSource,
   getKakaoRedirectUri,
   isKakaoLoginEnabled,
   normalizeReturnTo,
@@ -42,5 +43,11 @@ describe("Kakao OAuth configuration", () => {
 
   it("uses the registered fixed app callback origin instead of a changing Preview host", () => {
     expect(getKakaoRedirectUri()).toBe("https://husimcolor.vercel.app/api/auth/kakao/callback");
+  });
+
+  it("reuses a linked Kakao identity even if a later provider response omits email", () => {
+    expect(chooseKakaoCanonicalUserSource({ hasOpenIdUser: false, identityUserId: 42, hasVerifiedEmail: false })).toBe("kakaoIdentity");
+    expect(chooseKakaoCanonicalUserSource({ hasOpenIdUser: false, identityUserId: null, hasVerifiedEmail: true })).toBe("verifiedEmail");
+    expect(chooseKakaoCanonicalUserSource({ hasOpenIdUser: false, identityUserId: null, hasVerifiedEmail: false })).toBe("newUser");
   });
 });

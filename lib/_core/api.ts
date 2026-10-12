@@ -118,7 +118,7 @@ export async function exchangeOAuthCode(
 
 // Logout
 export async function logout(): Promise<void> {
-  await apiCall<void>("/api/auth/logout", {
+  await apiCall<void>("/api/trpc/auth.logout?batch=1&input=%7B%220%22%3A%7B%7D%7D", {
     method: "POST",
   });
 }
@@ -134,8 +134,11 @@ export async function getMe(): Promise<{
   lastSignedIn: string;
 } | null> {
   try {
-    const result = await apiCall<{ user: any }>("/api/auth/me");
-    return result.user || null;
+    // The deployed Vercel output contains tRPC auth; the REST catch-all is not a session endpoint.
+    const result = await apiCall<Array<{ result?: { data?: { json?: any } } }>>(
+      "/api/trpc/auth.me?batch=1&input=%7B%220%22%3A%7B%7D%7D",
+    );
+    return result[0]?.result?.data?.json ?? null;
   } catch (error) {
     console.error("[API] getMe failed:", error);
     return null;
