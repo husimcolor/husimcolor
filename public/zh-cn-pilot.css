@@ -1,0 +1,36 @@
+:root { --ink: #302821; --muted: #74685d; --line: #ddd2c4; --green: #496e50; --soft-green: #f1f5ed; --cream: #f8f3ea; --card: #fffdf9; --gold-bg: #fff3d7; --gold-line: #e8c879; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--cream); color: var(--ink); font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; line-height: 1.62; }
+main { width: min(700px, calc(100% - 36px)); margin: 0 auto; padding: 20px 0 42px; }
+.notice, .hero, .card, .pdf-box { border-radius: 18px; border: 1px solid var(--line); padding: 18px; margin-bottom: 16px; background: var(--card); }
+.notice { background: var(--gold-bg); border-color: var(--gold-line); padding: 13px 16px; }
+.notice strong { color: #745218; display: block; font-size: 14px; }
+.notice p { color: #806f50; font-size: 13px; margin: 3px 0 0; }
+.hero { background: var(--soft-green); border-color: #ccd9c8; }
+.brand { color: #325c40; font-size: 17px; font-weight: 900; letter-spacing: .08em; margin: 0 0 2px; }
+.eyebrow { color: #7d6550; font-size: 13px; font-weight: 800; margin: 0; }
+h1 { font-size: clamp(25px, 5vw, 31px); line-height: 1.25; margin: 4px 0 0; }
+h2 { color: #2f4934; font-size: 20px; line-height: 1.35; margin: 0 0 10px; }
+h3 { font-size: 18px; margin: 0; line-height: 1.35; }
+p { margin: 7px 0; }
+nav { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 16px; }
+nav a { border: 1px solid var(--line); border-radius: 99px; padding: 7px 13px; color: #685c51; background: #fff; text-decoration: none; font-size: 13px; font-weight: 800; }
+nav a[aria-current="page"] { color: #fff; background: var(--green); border-color: var(--green); }
+.label { color: #806143; font-size: 12px; font-weight: 900; margin: 0 0 3px; }
+.copy { color: #5f554d; font-size: 15px; }
+.divider { height: 1px; background: #ece3d8; margin: 14px 0; }
+.color-title { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+.dot { width: 16px; height: 16px; border: 1px solid #b9aa99; border-radius: 50%; flex: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
+.chip { background: #eaf3e9; border-radius: 99px; color: #376849; font-size: 12px; font-weight: 800; padding: 5px 10px; }
+.card-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 4px; }
+.card-icon { height: 65px; border-radius: 12px; display: grid; place-items: center; color: white; font-size: 27px; font-weight: 900; border: 1px solid #d8caba; }
+.card-name { color: #6d6259; font-size: 12px; text-align: center; margin-top: 5px; }
+.card-name strong { color: var(--ink); display: block; }
+.pdf-box { background: #f2f5ef; border-color: #b8c9b4; }
+.pdf-box h2 { color: #365c3e; font-size: 17px; }
+.button { display: inline-block; background: var(--green); color: #fff; text-decoration: none; font-weight: 900; font-size: 14px; border-radius: 10px; padding: 10px 15px; margin-top: 8px; }
+.footer { color: #8a7e71; font-size: 12px; margin: 20px 4px 0; }
+.routine { padding: 10px 0; border-bottom: 1px solid #ece3d8; }
+.message { background: #fff7e8; color: #735b38; border-radius: 12px; font-weight: 700; padding: 13px; margin-top: 12px; }
+@media (max-width: 420px) { main { width: min(100% - 24px, 700px); padding-top: 12px; } .notice, .hero, .card, .pdf-box { padding: 15px; } }
