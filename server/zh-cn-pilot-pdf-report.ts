@@ -213,7 +213,7 @@ export async function createZhCnPilotPersonalPdfBuffer(): Promise<Buffer> {
     { label: item.roleLabel, text: item.narrative },
   ]));
 
-  sectionTitle(document, `此刻适合你的推荐${report.complementColorTerm}`, "#8B6914", 45);
+  sectionTitle(document, `此刻适合你的${report.recommendedComplementColorTerm}`, "#8B6914", 45);
   paragraph(document, "这些颜色可作为日常自我调节的参考，帮助你放松身心、找回平衡，而不是要求你改变自己。", { size: 12.5, color: "#75695D" });
   document.moveDown(0.25);
   pills(document, report.complementColors.map((color) => `${color.name} · ${color.meaning}`));
@@ -248,7 +248,7 @@ export async function createZhCnPilotPersonalPdfBuffer(): Promise<Buffer> {
   card(document, report.energyFlow.title, [{ text: report.energyFlow.description }, { label: "可以尝试的支持", text: report.energyFlow.recovery }]);
   pills(document, report.energyFlow.balanceKeywords);
   sectionTitle(document, "今天的调整小练习", "#8B6914", 120);
-  paragraph(document, `调和参考 · ${report.energyFlow.complementaryElements.join(" · ")}${report.energyFlow.complementColors.length ? ` · ${report.complementColorTerm} ${report.energyFlow.complementColors.join(" · ")}` : ""}`, { size: 12.5, color: "#75695D" });
+  paragraph(document, `调和参考 · ${report.energyFlow.complementaryElements.join(" · ")}${report.energyFlow.complementColors.length ? ` · ${report.recommendedComplementColorTerm} ${report.energyFlow.complementColors.join(" · ")}` : ""}`, { size: 12.5, color: "#75695D" });
   document.moveDown(0.35);
   [
     ["推荐茶饮", report.recoveryRoutine.tea],

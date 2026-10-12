@@ -10,10 +10,12 @@ describe("English personal pilot report", () => {
     const serialized = JSON.stringify(EN_PERSONAL_PILOT_REPORT);
     expect(serialized).toContain("Primary Disposition");
     expect(serialized).toContain("Supporting Disposition");
-    expect(serialized).toContain("Complementary Colour");
+    expect(serialized).toContain("Suggested Balancing Colours");
     expect(serialized).toContain("Card 1 · Unconscious");
     expect(serialized).toContain("Card 2 · Current State");
     expect(serialized).toContain("Card 3 · Recovery Direction");
+    expect(EN_PERSONAL_PILOT_REPORT.stage1.colors[2]?.role).toBe("Recovery Direction");
+    expect(serialized).not.toContain("Complementary Colour");
     expect(EN_PERSONAL_PILOT_REPORT.stage1.colors).toHaveLength(3);
     expect(EN_PERSONAL_PILOT_REPORT.cards).toHaveLength(3);
     expect(EN_PERSONAL_PILOT_REPORT.combinedCoaching).toHaveLength(3);
@@ -21,7 +23,7 @@ describe("English personal pilot report", () => {
     expect(serialized).toContain("listen carefully to what the other person has to say");
     expect(EN_PILOT_DISCLAIMER).toContain("not a medical diagnosis or treatment recommendation");
     const rendererSource = readFileSync(path.join(process.cwd(), "server", "en-pilot-pdf-report.ts"), "utf8");
-    expect(rendererSource).toContain("Suggested complementary colours for this moment");
+    expect(rendererSource).toContain("suggestedBalancingColourTerm");
   });
 
   it("renders a non-empty English PDF from fixed fictional data", async () => {
@@ -39,5 +41,9 @@ describe("English personal pilot report", () => {
       expect(source).toContain("Report sample");
       expect(source).not.toMatch(/trpc|localStorage|AsyncStorage|fetch\s*\(|XMLHttpRequest/i);
     }
+    const colours = readFileSync(path.join(process.cwd(), "public", "en-pilot-colours.html"), "utf8");
+    const recovery = readFileSync(path.join(process.cwd(), "public", "en-pilot-recovery.html"), "utf8");
+    expect(colours).toContain("Recovery Direction");
+    expect(recovery).toContain("Suggested balancing colours for this moment");
   });
 });

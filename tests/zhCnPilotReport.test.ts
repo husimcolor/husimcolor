@@ -10,7 +10,7 @@ describe("zh-CN personal pilot report", () => {
     const serialized = JSON.stringify(ZH_CN_PERSONAL_PILOT_REPORT);
     expect(serialized).toContain("主要心理特征");
     expect(serialized).toContain("辅助心理特征");
-    expect(serialized).toContain("调和色");
+    expect(serialized).toContain("推荐调和色");
     expect(ZH_CN_PERSONAL_PILOT_REPORT.stage1.colors).toHaveLength(3);
     expect(ZH_CN_PERSONAL_PILOT_REPORT.cards).toHaveLength(3);
     expect(ZH_CN_PERSONAL_PILOT_REPORT.combinedCoaching).toHaveLength(3);
@@ -25,7 +25,7 @@ describe("zh-CN personal pilot report", () => {
     expect(serialized).toContain("用自己认可的方式继续往下做");
     expect(serialized).toContain("第3张卡 · 恢复方向");
     expect(serialized).toContain("恢复方向");
-    expect(ZH_CN_PERSONAL_PILOT_REPORT.stage1.colors[2]?.role).toBe("调和色");
+    expect(ZH_CN_PERSONAL_PILOT_REPORT.stage1.colors[2]?.role).toBe("恢复方向");
     expect(serialized).toContain("想等了解得更充分后再行动，因此容易迟迟没有开始。");
     expect(serialized).toContain("报告示例");
     expect(ZH_CN_PERSONAL_PILOT_REPORT.lifeRole.title).toBe("信息梳理与判断型");
@@ -51,7 +51,7 @@ describe("zh-CN personal pilot report", () => {
     expect(rendererSource).toContain("今天给自己的话");
     expect(rendererSource).toContain("今天的调整小练习");
     expect(rendererSource).toContain("三张卡所呈现的心理变化");
-    expect(rendererSource).toContain("推荐${report.complementColorTerm}");
+    expect(rendererSource).toContain("recommendedComplementColorTerm");
     expect(rendererSource).toContain("这些颜色可作为日常自我调节的参考，帮助你放松身心、找回平衡，而不是要求你改变自己。");
     expect(rendererSource).not.toContain("今天的专属恢复小练习");
   });
@@ -76,6 +76,7 @@ describe("zh-CN personal pilot report", () => {
     const cards = readFileSync(path.join(process.cwd(), "public", "zh-cn-pilot-cards.html"), "utf8");
     expect(overview).toContain("充分听取对方的想法后，再作判断");
     expect(overview).toContain("一起找到双方都能接受的方向");
+    expect(overview).toContain("推荐调和色");
     expect(cards).toContain("三张卡所呈现的心理变化");
     expect(cards).toContain("第1张卡 · 潜意识");
     expect(cards).toContain("第3张卡 · 恢复方向");

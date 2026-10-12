@@ -4,7 +4,7 @@ export type ZhCnPilotReport = {
   profileLine: string;
   generatedAt: string;
   sampleNotice: string;
-  complementColorTerm: "调和色";
+  recommendedComplementColorTerm: "推荐调和色";
   selectedColors: Array<{ name: string; koreanName: string; keywords: string; hex: string }>;
   stage1: {
     colors: Array<{
@@ -78,7 +78,7 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
   profileLine: "个人深度分析 · 虚拟人物",
   generatedAt: "2026年10月12日",
   sampleNotice: "报告示例 · 由虚拟数据生成 · 未使用真实客户个人信息",
-  complementColorTerm: "调和色",
+  recommendedComplementColorTerm: "推荐调和色",
   selectedColors: [
     { name: "红色", koreanName: "레드", keywords: "热情 · 紧张感 · 行动力", hex: "#CC1A1A" },
     { name: "蓝色", koreanName: "블루", keywords: "责任感 · 信任 · 沉静", hex: "#5A7EC4" },
@@ -109,8 +109,8 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
         tiredStates: ["独自承担", "把真实感受压在心里"],
       },
       {
-        role: "调和色",
-        koreanRole: "보완컬러 · 파일럿 기준",
+        role: "恢复方向",
+        koreanRole: "회복방향",
         name: "白色",
         koreanName: "화이트",
         hex: "#F0EDE8",

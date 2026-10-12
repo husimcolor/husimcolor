@@ -169,7 +169,7 @@ export async function createEnPilotPersonalPdfBuffer(): Promise<Buffer> {
   document.rect(0, 0, 595, 842).fill("#F8F4EE");
   document.font(FONT_NAME).fillColor("#4C7A58").fontSize(11.2).text("HUSIM COLOR · PERSONAL DEEP REPORT · ENGLISH PILOT", PAGE_LEFT, 168, { width: CONTENT_WIDTH });
   document.fillColor("#3D3530").fontSize(25).text("My Colour Psychology Report", PAGE_LEFT, 204, { width: CONTENT_WIDTH });
-  document.fillColor("#685C51").fontSize(12).text("Using colour and shape to explore your present inner experience, social role, and direction for self-regulation", PAGE_LEFT, 247, { width: CONTENT_WIDTH });
+  document.fillColor("#685C51").fontSize(12).text("Using colour and shape to explore your present inner experience, social role, and direction for finding balance", PAGE_LEFT, 247, { width: CONTENT_WIDTH });
   document.fillColor("#80649B").fontSize(10.5).text(report.sampleNotice, PAGE_LEFT, 280, { width: CONTENT_WIDTH });
   document.y = 318;
   report.selectedColors.forEach((color) => {
@@ -213,8 +213,8 @@ export async function createEnPilotPersonalPdfBuffer(): Promise<Buffer> {
     { label: item.roleLabel, text: item.narrative },
   ]));
 
-  sectionTitle(document, "Suggested complementary colours for this moment", "#8B6914", 45);
-  paragraph(document, "These colours are references for everyday self-regulation. They can help you ease your body and mind and regain balance; they are not a request to change who you are.", { size: 12.5, color: "#75695D" });
+  sectionTitle(document, `${report.suggestedBalancingColourTerm} for this moment`, "#8B6914", 45);
+  paragraph(document, "These colours can be a reference for everyday balance. They can help you ease your body and mind and regain balance; they are not a request to change who you are.", { size: 12.5, color: "#75695D" });
   document.moveDown(0.25);
   pills(document, report.complementColors.map((color) => `${color.name} · ${color.meaning}`));
   sectionTitle(document, "My colour tendencies", "#2D6A4F", textHeight(document, report.colorFlowDescription));
@@ -248,7 +248,7 @@ export async function createEnPilotPersonalPdfBuffer(): Promise<Buffer> {
   card(document, report.energyFlow.title, [{ text: report.energyFlow.description }, { label: "Support you might try", text: report.energyFlow.recovery }]);
   pills(document, report.energyFlow.balanceKeywords);
   sectionTitle(document, "A small practice for today", "#8B6914", 120);
-  paragraph(document, `Balancing references · ${report.energyFlow.complementaryElements.join(" · ")}${report.energyFlow.complementColors.length ? ` · ${report.complementaryColorTerm} ${report.energyFlow.complementColors.join(" · ")}` : ""}`, { size: 12.5, color: "#75695D" });
+  paragraph(document, `Balancing references · ${report.energyFlow.complementaryElements.join(" · ")}${report.energyFlow.complementColors.length ? ` · ${report.suggestedBalancingColourTerm} ${report.energyFlow.complementColors.join(" · ")}` : ""}`, { size: 12.5, color: "#75695D" });
   document.moveDown(0.35);
   [
     ["Suggested tea", report.recoveryRoutine.tea],

@@ -4,7 +4,7 @@ export type EnPilotReport = {
   profileLine: string;
   generatedAt: string;
   sampleNotice: string;
-  complementaryColorTerm: "Complementary Colour";
+  suggestedBalancingColourTerm: "Suggested Balancing Colours";
   selectedColors: Array<{ name: string; koreanName: string; keywords: string; hex: string }>;
   stage1: {
     colors: Array<{
@@ -79,7 +79,7 @@ export const EN_PERSONAL_PILOT_REPORT: EnPilotReport = {
   profileLine: "Personal Deep Analysis · Fictional Profile",
   generatedAt: "12 October 2026",
   sampleNotice: "Report sample · Generated from fictional data · No real customer information is used",
-  complementaryColorTerm: "Complementary Colour",
+  suggestedBalancingColourTerm: "Suggested Balancing Colours",
   selectedColors: [
     { name: "Red", koreanName: "레드", keywords: "Passion · Tension · Drive", hex: "#CC1A1A" },
     { name: "Blue", koreanName: "블루", keywords: "Responsibility · Trust · Quiet focus", hex: "#5A7EC4" },
@@ -110,8 +110,8 @@ export const EN_PERSONAL_PILOT_REPORT: EnPilotReport = {
         tiredStates: ["Carrying things alone", "Keeping your true feelings inside"],
       },
       {
-        role: "Complementary Colour",
-        koreanRole: "보완컬러 · 파일럿 기준",
+        role: "Recovery Direction",
+        koreanRole: "회복방향",
         name: "White",
         koreanName: "화이트",
         hex: "#F0EDE8",
@@ -178,7 +178,7 @@ export const EN_PERSONAL_PILOT_REPORT: EnPilotReport = {
     "The white square in Card 3 suggests that, when you need to reset, it can help to set down unnecessary burdens and reorganise the shape of your day. You might begin with one visible, manageable task and gradually regain a sense of steadiness in daily life.",
   ],
   lifeRole: {
-    title: "Information Sense-Making & Judgment Profile",
+    title: "Making Sense of Information",
     description: "You may find it easier to identify what matters within complex information and consider what could come next. Turning a considered idea into practical steps and taking time to attend to details may support how your strengths show up in work and social roles. As you explore a new direction, your accumulated experience and these strengths can offer support.",
     humanStrengths: ["Judgment that identifies the key point", "Giving complex material a clear structure", "Making choices with reasons"],
     directions: [
