@@ -15,7 +15,21 @@ describe("zh-CN personal pilot report", () => {
     expect(ZH_CN_PERSONAL_PILOT_REPORT.cards).toHaveLength(3);
     expect(ZH_CN_PERSONAL_PILOT_REPORT.combinedCoaching).toHaveLength(3);
     expect(ZH_CN_PERSONAL_PILOT_REPORT.lifeRole.directions).toHaveLength(3);
-    expect(ZH_CN_PERSONAL_PILOT_REPORT.recoveryRoutine.message).toContain("可能");
+    expect(serialized).toContain("潜在心理倾向");
+    expect(serialized).toContain("逐步找回对日常生活的掌控感");
+    expect(ZH_CN_PERSONAL_PILOT_REPORT.lifeRole.title).toBe("信息梳理与判断型");
+    expect(ZH_CN_PERSONAL_PILOT_REPORT.recoveryRoutine.message).toBe("敏感不需要被否定；它也提醒你正在察觉更多细微的变化。");
+    expect(serialized).not.toContain("潜在心理流向");
+    expect(serialized).not.toContain("生命角色能量");
+    expect(serialized).not.toContain("策略解读者型");
+    const rendererSource = readFileSync(path.join(process.cwd(), "server", "zh-cn-pilot-pdf-report.ts"), "utf8");
+    expect(rendererSource).toContain("值得关注的成长方向");
+    expect(rendererSource).toContain("当下的内心变化");
+    expect(rendererSource).toContain("我的社会角色与优势");
+    expect(rendererSource).toContain("需要留意的一面");
+    expect(rendererSource).toContain("今天给自己的话");
+    expect(rendererSource).toContain("今天的调整小练习");
+    expect(rendererSource).not.toContain("今天的专属恢复小练习");
   });
 
   it("renders a non-empty simplified Chinese PDF from fixed virtual data", async () => {

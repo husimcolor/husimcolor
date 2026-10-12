@@ -169,7 +169,7 @@ export async function createZhCnPilotPersonalPdfBuffer(): Promise<Buffer> {
   document.rect(0, 0, 595, 842).fill("#F8F4EE");
   document.font(FONT_NAME).fillColor("#4C7A58").fontSize(11.2).text("HUSIM COLOR · PERSONAL DEEP REPORT · ZH-CN PILOT", PAGE_LEFT, 168, { width: CONTENT_WIDTH });
   document.fillColor("#3D3530").fontSize(25).text("我的色彩心理报告", PAGE_LEFT, 204, { width: CONTENT_WIDTH });
-  document.fillColor("#685C51").fontSize(12).text("从色彩与图形，温和地看看此刻的内心、生命角色与恢复节奏", PAGE_LEFT, 247, { width: CONTENT_WIDTH });
+  document.fillColor("#685C51").fontSize(12).text("通过色彩与图形，了解当下的内心感受、社会角色与自我调节的方向", PAGE_LEFT, 247, { width: CONTENT_WIDTH });
   document.fillColor("#80649B").fontSize(10.5).text(report.sampleNotice, PAGE_LEFT, 280, { width: CONTENT_WIDTH });
   document.y = 318;
   report.selectedColors.forEach((color) => {
@@ -200,7 +200,7 @@ export async function createZhCnPilotPersonalPdfBuffer(): Promise<Buffer> {
   document.font(FONT_NAME).fillColor("#6A5843").fontSize(11.5).text("主要优势", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.32);
   pills(document, report.stage1.strengths);
-  document.font(FONT_NAME).fillColor("#6A5843").fontSize(11.5).text("可能留意的成长方向", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.font(FONT_NAME).fillColor("#6A5843").fontSize(11.5).text("值得关注的成长方向", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.32);
   pills(document, report.stage1.growthPossibility);
 
@@ -220,35 +220,35 @@ export async function createZhCnPilotPersonalPdfBuffer(): Promise<Buffer> {
   sectionTitle(document, "我的色彩倾向", "#2D6A4F", textHeight(document, report.colorFlowDescription));
   paragraph(document, report.colorFlowDescription);
   document.moveDown(0.75);
-  sectionTitle(document, "此刻内心的流动", "#2D6A4F", textHeight(document, report.combinedCoaching[0]));
+  sectionTitle(document, "当下的内心变化", "#2D6A4F", textHeight(document, report.combinedCoaching[0]));
   report.combinedCoaching.forEach((text, index) => {
     paragraph(document, text);
     if (index < report.combinedCoaching.length - 1) document.moveDown(0.45);
   });
 
-  sectionTitle(document, "我的生命角色能量", "#66557B", 100);
+  sectionTitle(document, "我的社会角色与优势", "#66557B", 100);
   card(document, report.lifeRole.title, [{ text: report.lifeRole.description }], "#F8F5FF");
-  document.font(FONT_NAME).fillColor("#6A5843").fontSize(11.5).text("这份角色能量带来的价值", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.font(FONT_NAME).fillColor("#6A5843").fontSize(11.5).text("这些优势带来的价值", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.32);
   pills(document, report.lifeRole.humanStrengths);
-  document.font(FONT_NAME).fillColor("#6A5843").fontSize(11.5).text("社会中的应用与发展方向", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.font(FONT_NAME).fillColor("#6A5843").fontSize(11.5).text("社会角色中的应用与发展方向", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.32);
   report.lifeRole.directions.forEach((direction) => card(document, direction.title, [{ text: direction.description }, { label: "准备方向", text: direction.preparation }], "#F8F5FF"));
   document.font(FONT_NAME).fillColor("#6A5843").fontSize(11.5).text("较适合的工作环境", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.3);
   bullets(document, report.lifeRole.environments);
-  document.font(FONT_NAME).fillColor("#6A5843").fontSize(11.5).text("角色能量的阴影面", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
+  document.font(FONT_NAME).fillColor("#6A5843").fontSize(11.5).text("需要留意的一面", PAGE_LEFT + 14, document.y, { width: CONTENT_WIDTH - 14 });
   document.moveDown(0.3);
   bullets(document, report.lifeRole.shadows);
   card(document, "现在可以尝试的小方向", [{ text: report.lifeRole.smallDirection }], "#FCF8F0");
 
-  sectionTitle(document, "此刻身体与内心的节奏", "#2D6A4F", 110);
-  paragraph(document, `五行视角 · 当前主要流向 ${report.energyFlow.currentElements.join(" · ")}`, { size: 12.5, color: "#75695D" });
+  sectionTitle(document, "当下身心状态", "#2D6A4F", 110);
+  paragraph(document, `五行视角 · 当下关注的元素 ${report.energyFlow.currentElements.join(" · ")}`, { size: 12.5, color: "#75695D" });
   document.moveDown(0.35);
-  card(document, report.energyFlow.title, [{ text: report.energyFlow.description }, { label: "此刻可能需要的支持", text: report.energyFlow.recovery }]);
+  card(document, report.energyFlow.title, [{ text: report.energyFlow.description }, { label: "可以尝试的支持", text: report.energyFlow.recovery }]);
   pills(document, report.energyFlow.balanceKeywords);
-  sectionTitle(document, "今天的专属恢复小练习", "#8B6914", 120);
-  paragraph(document, `调和能量 · ${report.energyFlow.complementaryElements.join(" · ")}${report.energyFlow.complementColors.length ? ` · ${report.complementColorTerm} ${report.energyFlow.complementColors.join(" · ")}` : ""}`, { size: 12.5, color: "#75695D" });
+  sectionTitle(document, "今天的调整小练习", "#8B6914", 120);
+  paragraph(document, `调和参考 · ${report.energyFlow.complementaryElements.join(" · ")}${report.energyFlow.complementColors.length ? ` · ${report.complementColorTerm} ${report.energyFlow.complementColors.join(" · ")}` : ""}`, { size: 12.5, color: "#75695D" });
   document.moveDown(0.35);
   [
     ["推荐茶饮", report.recoveryRoutine.tea],
@@ -256,11 +256,11 @@ export async function createZhCnPilotPersonalPdfBuffer(): Promise<Buffer> {
     ["推荐呼吸", report.recoveryRoutine.breath],
     ["推荐活动", report.recoveryRoutine.movement],
     ["今天的小练习", report.recoveryRoutine.smallPractice],
-    ["今天的恢复讯息", report.recoveryRoutine.message],
+    ["今天给自己的话", report.recoveryRoutine.message],
   ].forEach(([label, text]) => card(document, label, [{ text }], "#FFF9EF"));
-  sectionTitle(document, "休心色彩 1:1 色彩教练", "#2D6A4F", 90);
+  sectionTitle(document, "HUSIM COLOR 1:1 色彩心理对话", "#2D6A4F", 90);
   card(document, "想进一步聊聊时", [
-    { text: "如果你想更深入地聊聊此刻的内心节奏，以及适合自己的恢复方向，可以继续了解 1:1 色彩教练。" },
+    { text: "如果你想进一步梳理当下的内心感受，并了解适合自己的调整方向，可以预约 1:1 色彩心理对话。" },
     { text: report.coachingUrl },
   ], "#F2F7F1");
   paragraph(document, ZH_CN_PILOT_DISCLAIMER, { size: 10.4, color: "#8B8176", lineGap: 4.8 });
