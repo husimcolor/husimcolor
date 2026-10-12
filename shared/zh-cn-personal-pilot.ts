@@ -77,7 +77,7 @@ export type ZhCnPilotReport = {
 export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
   profileLine: "个人深度分析 · 虚拟人物",
   generatedAt: "2026年10月12日",
-  sampleNotice: "公开审核样本 · 由虚拟数据生成 · 未使用真实客户个人信息",
+  sampleNotice: "报告示例 · 由虚拟数据生成 · 未使用真实客户个人信息",
   complementColorTerm: "调和色",
   selectedColors: [
     { name: "红色", koreanName: "레드", keywords: "热情 · 紧张感 · 行动力", hex: "#CC1A1A" },
@@ -93,7 +93,7 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
         koreanName: "레드",
         hex: "#CC1A1A",
         keywords: ["热情", "紧张感", "行动力"],
-        description: "从这次选择来看，目标越清楚，你往往越容易感到踏实；做出决定后，也更倾向于尽快行动。",
+        description: "目标越清楚，你往往越容易感到踏实；做出决定后，也更倾向于尽快行动。",
         strengths: ["较快行动", "明确表达意愿"],
         tiredStates: ["容易心急", "持续向前而难以休息"],
       },
@@ -104,12 +104,12 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
         koreanName: "블루",
         hex: "#5A7EC4",
         keywords: ["责任感", "信任", "沉静"],
-        description: "从这次选择来看，你可能更倾向于认真对待事情，也看重彼此之间的信任。与其只用言语，你往往更愿意用行动来兑现承诺。",
+        description: "你可能更倾向于认真对待事情，也看重彼此之间的信任。与其只用言语，你往往更愿意用行动来兑现承诺。",
         strengths: ["责任感", "深入倾听"],
         tiredStates: ["独自承担", "把真实感受压在心里"],
       },
       {
-        role: "调整方向",
+        role: "恢复方向",
         koreanRole: "회복 방향",
         name: "白色",
         koreanName: "화이트",
@@ -120,17 +120,17 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
         tiredStates: ["倾向独自整理", "先与人拉开距离"],
       },
     ],
-    integrationBridge: "面对要处理的事，你可能更倾向于先确认方向，再了解相关信息，作出判断。步骤清楚时，心里也更踏实。",
+    integrationBridge: "面对需要处理的事情，你往往会先明确方向，充分听取对方的想法后，再作判断。步骤清楚时，心里也更踏实。",
     psychologyTendency: "事情停滞不前时，你可能会较在意；没说出口的部分，也容易多想一步。把要做的事理顺后，思路会更清晰。",
-    personalityTendency: "从这次选择来看，你往往能较快理清事情的轻重缓急；了解相关信息、想一想后再回应，并在结束前确认是否有遗漏。",
+    personalityTendency: "你往往能较快理清事情的轻重缓急；了解相关信息、想一想后再回应，并在结束前确认是否有遗漏。",
     strengths: ["清楚的行动方向", "认真检查", "有条理地整理事情", "事情紧急时先理出步骤"],
     growthPossibility: ["事情紧急时，容易先加快脚步", "为了理清想法，回复有时会晚一些", "觉得准备不够时，可能会暂缓回答"],
-    relationshipTendency: "你可能更希望把彼此的想法说清楚，一起把方向协调好。听完对方的说法后，再谨慎回应；约定和角色越明确，信任越容易建立。",
+    relationshipTendency: "你可能更希望把彼此的想法说清楚，一起找到双方都能接受的方向。听完对方的说法后，再谨慎回应；约定和角色越明确，信任越容易建立。",
   },
-  stage2Bridge: "以红色、蓝色与白色呈现的基础倾向为线索，三张心理卡依次呈现内在愿望、当下状态与下一步调整方向。",
+  stage2Bridge: "以红色、蓝色与白色呈现的基础倾向为线索，三张心理卡依次呈现内在愿望、当下的反应与下一步方向。",
   cards: [
     {
-      position: "第1张卡 · 潜在心理倾向",
+      position: "第1张卡 · 潜意识",
       label: "红色 · 三角形",
       colorName: "红色",
       shapeName: "三角形",
@@ -139,7 +139,7 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
       colorKeywords: "推进 · 表达 · 活力",
       shapeKeywords: "目标 · 成长 · 推进",
       roleLabel: "内在的愿望",
-      narrative: "从这次选择来看，当你有了想做的事，内心可能更想亲自行动。自己设定的目标逐渐清楚时，这份愿望也会更清晰。",
+      narrative: "当你有了想做的事，内心可能更想亲自行动。自己设定的目标逐渐清楚时，这份愿望也会更清晰。",
     },
     {
       position: "第2张卡 · 当前状态",
@@ -154,7 +154,7 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
       narrative: "现在，你可能会按步骤处理眼前的事，用自己认可的方式继续往下做；也会比较不同的情况，为其他选择留出空间。",
     },
     {
-      position: "第3张卡 · 调整方向",
+      position: "第3张卡 · 下一步方向",
       label: "白色 · 方形",
       colorName: "白色",
       shapeName: "方形",
@@ -178,7 +178,7 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
   ],
   lifeRole: {
     title: "信息梳理与判断型",
-    description: "从这次选择来看，你可能更容易从复杂信息中找到重点，想一想下一步可以怎么做。把决定落实到行动、愿意沉下心处理细节，这些特点或许会在工作和社会角色中帮助你发挥自己的优势。在尝试新的方向时，积累的经验和这些优势也可以成为支持。",
+    description: "你可能更容易从复杂信息中找到重点，想一想下一步可以怎么做。把想好的事一步步做出来、静下心处理细节的方式，可能会在工作和社会角色中支持你发挥优势。在尝试新的方向时，积累的经验和这些优势也可以为你提供支持。",
     humanStrengths: ["抓住重点的判断", "把复杂内容理成脉络", "有依据地做选择"],
     directions: [
       {
@@ -198,7 +198,7 @@ export const ZH_CN_PERSONAL_PILOT_REPORT: ZhCnPilotReport = {
       },
     ],
     environments: ["可以留出深入思考时间的环境", "标准与角色较明确的环境", "可以一步步检查结果的环境"],
-    shadows: ["想先了解得更充分再行动，开始的时点容易往后拖", "为了找更好的答案，可能会反复检查已经做出的结论"],
+    shadows: ["想等了解得更充分后再行动，因此容易迟迟没有开始。", "为了找更好的答案，可能会反复检查已经做出的结论"],
     smallDirection: "不妨从最近负责的一件事中，写下最复杂的部分，以及你如何把它梳理清楚；三行就够了。",
   },
   energyFlow: {

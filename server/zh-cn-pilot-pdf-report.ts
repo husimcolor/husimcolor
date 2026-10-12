@@ -205,7 +205,7 @@ export async function createZhCnPilotPersonalPdfBuffer(): Promise<Buffer> {
   pills(document, report.stage1.growthPossibility);
 
   sectionTitle(document, "三张心理卡的解读", "#2D6A4F", textHeight(document, report.stage2Bridge));
-  card(document, "卡片的流动", [{ text: report.stage2Bridge }], "#FCF8F0");
+  card(document, "三张卡所呈现的心理变化", [{ text: report.stage2Bridge }], "#FCF8F0");
   cardPreviewRow(document);
   report.cards.forEach((item) => card(document, `${item.position} · ${item.colorName} ${item.shapeName}`, [
     { label: "色彩关键词", text: item.colorKeywords },
