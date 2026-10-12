@@ -1,9 +1,9 @@
-import { and, asc, eq, inArray, lt, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, like, lt, lte, or, sql } from "drizzle-orm";
 
-import { accountLinkChallenges, analysisRuns, emailOutbox, privateDocuments, products, supportTickets } from "../../drizzle/schema";
+import { accountLinkChallenges, analysisRuns, emailOutbox, orderItems, orders, privateDocuments, products, supportTickets } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { storageGetBuffer } from "../storage";
-import { decryptCommerceEmail, decryptCommerceValue } from "./crypto";
+import { decryptCommerceEmail, decryptCommerceValue, hashCommerceEmail } from "./crypto";
 import { getPrivatePdfFilename } from "./pdf-delivery-policy";
 import {
   isApprovedPreviewOutboxCandidate,
@@ -351,10 +351,16 @@ export async function processApprovedPreviewOutboxForUser(userId: number, limit 
 /** 기존 cron import 호환성을 유지하면서 PDF·계정 연결 메일을 함께 처리한다. */
 export const processDuePrivatePdfOutbox = processDueEmailOutbox;
 
-export async function getPrivatePdfOutboxSnapshot(limit = 50): Promise<Array<{
+export async function getPrivatePdfOutboxSnapshot(input: {
+  limit?: number;
+  search?: string;
+} = {}): Promise<Array<{
   id: number;
   orderId: number | null;
+  orderNumber: string | null;
   privateDocumentId: number | null;
+  productName: string | null;
+  recipientEmailMasked: string;
   status: "queued" | "sending" | "sent" | "failed" | "cancelled";
   attemptCount: number;
   nextAttemptAt: Date;
@@ -364,12 +370,61 @@ export async function getPrivatePdfOutboxSnapshot(limit = 50): Promise<Array<{
 }>> {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
-  return db
-    .select({ id: emailOutbox.id, orderId: emailOutbox.orderId, privateDocumentId: emailOutbox.privateDocumentId, status: emailOutbox.status, attemptCount: emailOutbox.attemptCount, nextAttemptAt: emailOutbox.nextAttemptAt, sentAt: emailOutbox.sentAt, lastErrorCode: emailOutbox.lastErrorCode, createdAt: emailOutbox.createdAt })
+  const search = input.search?.trim() ?? "";
+  const filters = [eq(emailOutbox.purpose, "analysis_result_pdf")];
+  if (search) {
+    const conditions = [like(orders.orderNumber, `%${search}%`)];
+    if (search.includes("@")) conditions.push(eq(emailOutbox.toEmailHash, hashCommerceEmail(search)));
+    filters.push(or(...conditions)!);
+  }
+  const rows = await db
+    .select({
+      id: emailOutbox.id,
+      orderId: emailOutbox.orderId,
+      orderNumber: orders.orderNumber,
+      privateDocumentId: emailOutbox.privateDocumentId,
+      productName: orderItems.productNameSnapshot,
+      toEmailEncrypted: emailOutbox.toEmailEncrypted,
+      status: emailOutbox.status,
+      attemptCount: emailOutbox.attemptCount,
+      nextAttemptAt: emailOutbox.nextAttemptAt,
+      sentAt: emailOutbox.sentAt,
+      lastErrorCode: emailOutbox.lastErrorCode,
+      createdAt: emailOutbox.createdAt,
+    })
     .from(emailOutbox)
-    .where(eq(emailOutbox.purpose, "analysis_result_pdf"))
-    .orderBy(emailOutbox.createdAt)
-    .limit(Math.min(Math.max(limit, 1), 100)) as any;
+    .leftJoin(orders, eq(orders.id, emailOutbox.orderId))
+    .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
+    .where(and(...filters))
+    .orderBy(desc(emailOutbox.createdAt))
+    .limit(Math.min(Math.max(input.limit ?? 50, 1), 100));
+
+  return rows.map((row) => {
+    let recipientEmailMasked = "보호된 이메일";
+    try {
+      const email = decryptCommerceEmail(row.toEmailEncrypted);
+      const [local, domain] = email.split("@");
+      recipientEmailMasked = local && domain
+        ? `${local.slice(0, Math.min(2, local.length))}${"•".repeat(Math.max(1, local.length - Math.min(2, local.length)))}@${domain}`
+        : "보호된 이메일";
+    } catch {
+      // 암호문이 손상된 과거 레코드도 원장 목록은 안전하게 표시한다.
+    }
+    return {
+      id: row.id,
+      orderId: row.orderId,
+      orderNumber: row.orderNumber,
+      privateDocumentId: row.privateDocumentId,
+      productName: row.productName,
+      recipientEmailMasked,
+      status: row.status,
+      attemptCount: row.attemptCount,
+      nextAttemptAt: row.nextAttemptAt,
+      sentAt: row.sentAt,
+      lastErrorCode: row.lastErrorCode,
+      createdAt: row.createdAt,
+    };
+  }) as any;
 }
 
 export { MAX_AUTOMATIC_ATTEMPTS };

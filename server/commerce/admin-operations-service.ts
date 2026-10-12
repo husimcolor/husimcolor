@@ -135,6 +135,87 @@ export async function getAdminOrderList(limit = 50) {
 }
 
 /**
+ * 전체 이메일은 목록에 포함하지 않는다. 관리자 화면에서 주문별로 명시적으로
+ * 열람했을 때만 반환하고, 열람 사실은 PII를 남기지 않는 감사 로그로 보존한다.
+ */
+export async function revealAdminOrderEmailDetails(input: {
+  orderId: number;
+  adminUserId: number | null;
+  auditActor: AdminAuditActor;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+
+  const orderRows = await db
+    .select({
+      id: orders.id,
+      orderNumber: orders.orderNumber,
+      productName: orderItems.productNameSnapshot,
+      customerEmailEncrypted: customers.emailEncrypted,
+    })
+    .from(orders)
+    .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+    .leftJoin(customers, eq(customers.id, orders.customerId))
+    .where(eq(orders.id, input.orderId))
+    .limit(1);
+  const order = orderRows[0];
+  if (!order) throw new Error("ADMIN_ORDER_NOT_FOUND");
+
+  const reportRows = await db
+    .select({
+      outboxId: emailOutbox.id,
+      toEmailEncrypted: emailOutbox.toEmailEncrypted,
+      status: emailOutbox.status,
+      sentAt: emailOutbox.sentAt,
+    })
+    .from(emailOutbox)
+    .where(and(eq(emailOutbox.orderId, input.orderId), eq(emailOutbox.purpose, "analysis_result_pdf")))
+    .orderBy(desc(emailOutbox.createdAt));
+
+  let buyerEmail: string | null = null;
+  try {
+    buyerEmail = order.customerEmailEncrypted ? decryptCommerceEmail(order.customerEmailEncrypted) : null;
+  } catch {
+    // 복호화 불가 레코드는 목록을 숨기고, 열람 자체는 실패하지 않게 한다.
+  }
+
+  const reportRecipients = reportRows.flatMap((row) => {
+    try {
+      return [{
+        outboxId: row.outboxId,
+        email: decryptCommerceEmail(row.toEmailEncrypted),
+        status: row.status,
+        sentAt: row.sentAt,
+      }];
+    } catch {
+      return [];
+    }
+  });
+
+  await db.insert(adminAuditLogs).values({
+    adminUserId: input.adminUserId,
+    action: "order_email_details_revealed",
+    entityType: "order",
+    entityId: String(input.orderId),
+    beforeJson: JSON.stringify({ auditActor: input.auditActor.subject }),
+    afterJson: JSON.stringify({
+      auditActor: input.auditActor.subject,
+      buyerEmailAvailable: Boolean(buyerEmail),
+      reportRecipientCount: reportRecipients.length,
+      reportOutboxIds: reportRecipients.map((recipient) => recipient.outboxId),
+    }),
+  });
+
+  return {
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+    productName: order.productName,
+    buyerEmail,
+    reportRecipients,
+  };
+}
+
+/**
  * Preview 원장 확인에 필요한 최소 메타데이터만 반환한다. 이메일·문의·PDF·분석·공유
  * 원문과 결제 provider payload는 절대로 선택하지 않는다.
  */

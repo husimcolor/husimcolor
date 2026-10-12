@@ -67,6 +67,7 @@ import {
   getAdminReviews,
   getAdminSupportTicketList,
   getAdminCouponOverview,
+  revealAdminOrderEmailDetails,
   updateAdminLegacyPaymentStatus,
   updateAdminSupportTicketStatus,
 } from "./commerce/admin-operations-service";
@@ -186,8 +187,11 @@ export const appRouter = router({
     }),
     adminDelivery: router({
       list: adminProcedure
-        .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
-        .query(({ input }) => getPrivatePdfOutboxSnapshot(input.limit)),
+        .input(z.object({
+          limit: z.number().int().min(1).max(100).default(50),
+          search: z.string().max(320).optional(),
+        }))
+        .query(({ input }) => getPrivatePdfOutboxSnapshot(input)),
       retry: adminProcedure
         .input(z.object({ outboxId: z.number().int().positive() }))
         .mutation(async ({ input }) => {
@@ -457,6 +461,12 @@ export const appRouter = router({
     orders: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminOrderList(input.limit)),
+    revealOrderEmailDetails: adminProcedure
+      .input(z.object({ orderId: z.number().int().positive() }))
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return revealAdminOrderEmailDetails({ ...input, ...auditActor, auditActor });
+      }),
     previewVerification: adminProcedure.query(() => getPreviewReadOnlyVerificationSnapshot()),
     supportTicketSchemaAudit: adminProcedure.query(() => getSupportTicketSchemaAudit()),
     customers: adminProcedure

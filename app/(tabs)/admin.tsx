@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
+import * as Clipboard from "expo-clipboard";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { getApiBaseUrl } from "@/constants/oauth";
@@ -19,6 +20,11 @@ import { trpc } from "@/lib/trpc";
 
 type Tab = "운영 홈" | "고객·회원" | "주문·결제" | "검사·결과" | "PDF·이메일" | "상품·쿠폰" | "코칭예약" | "문의" | "레거시" | "통계·리뷰" | "Preview 검증";
 type LegacyStatus = "pending" | "confirmed" | "rejected";
+type RevealedOrderEmails = {
+  orderNumber: string;
+  buyerEmail: string | null;
+  reportRecipients: Array<{ outboxId: number; email: string; status: string; sentAt: Date | string | null }>;
+};
 
 const tabs: Tab[] = ["운영 홈", "고객·회원", "주문·결제", "검사·결과", "PDF·이메일", "상품·쿠폰", "코칭예약", "문의", "레거시", "통계·리뷰", "Preview 검증"];
 const bookingLabels: Record<string, string> = {
@@ -81,6 +87,8 @@ export default function AdminScreen() {
   const [relationshipRecoverySessionId, setRelationshipRecoverySessionId] = useState("");
   const [relationshipRecoveryUrls, setRelationshipRecoveryUrls] = useState<{ owner: string; partner: string } | null>(null);
   const [relationshipRecoveryStatus, setRelationshipRecoveryStatus] = useState<string | null>(null);
+  const [deliverySearch, setDeliverySearch] = useState("");
+  const [revealedOrderEmails, setRevealedOrderEmails] = useState<Record<number, RevealedOrderEmails>>({});
   const apiBaseUrl = getApiBaseUrl();
 
   const refreshLegacySession = async () => {
@@ -117,7 +125,7 @@ export default function AdminScreen() {
   const previewVerification = trpc.admin.previewVerification.useQuery(undefined, secured);
   const customers = trpc.admin.customers.useQuery({ limit: 50 }, secured);
   const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: hasAdminAccess && customerId !== null });
-  const delivery = trpc.commerce.adminDelivery.list.useQuery({ limit: 50 }, secured);
+  const delivery = trpc.commerce.adminDelivery.list.useQuery({ limit: 50, search: deliverySearch.trim() || undefined }, secured);
   const bookings = trpc.admin.coachingBookings.useQuery({ limit: 50 }, secured);
   const blackoutDates = trpc.admin.coachingBlackoutDates.useQuery(undefined, secured);
   const supportTickets = trpc.admin.supportTickets.useQuery({ limit: 100 }, secured);
@@ -130,6 +138,12 @@ export default function AdminScreen() {
   const logout = trpc.auth.logout.useMutation({ onSuccess: () => router.replace("/(tabs)") });
   const updateLegacy = trpc.admin.updateLegacyPayment.useMutation({ onSuccess: () => { legacy.refetch(); dailyOperations.refetch(); } });
   const retryMail = trpc.commerce.adminDelivery.retry.useMutation({ onSuccess: () => delivery.refetch() });
+  const revealOrderEmailDetails = trpc.admin.revealOrderEmailDetails.useMutation({
+    onSuccess: (result) => {
+      setRevealedOrderEmails((previous) => ({ ...previous, [result.orderId]: result }));
+    },
+    onError: () => Alert.alert("이메일 열람 불가", "주문 이메일을 불러오지 못했습니다. 관리자 로그인을 확인해 주세요."),
+  });
   const updateBooking = trpc.admin.updateCoachingBooking.useMutation({ onSuccess: () => { bookings.refetch(); dailyOperations.refetch(); } });
   const createBlackoutDate = trpc.admin.createCoachingBlackoutDate.useMutation({
     onSuccess: (result) => {
@@ -257,6 +271,10 @@ export default function AdminScreen() {
     Alert.alert("예약 상태 변경", `“${bookingLabels[status]}” 상태로 변경하시겠습니까?`, [
       { text: "취소", style: "cancel" }, { text: "변경", onPress: () => updateBooking.mutate({ bookingId, status }) },
     ]);
+  };
+  const copyAdminEmail = async (email: string) => {
+    await Clipboard.setStringAsync(email);
+    Alert.alert("이메일 복사", "관리자 기기의 클립보드에 복사했습니다.");
   };
   const createBlackout = () => {
     const date = blackoutDate.trim();
@@ -401,7 +419,26 @@ export default function AdminScreen() {
           <Panel><Text style={styles.noticeTitle}>공개 운영 상태</Text><Text style={styles.noticeText}>유료 심화분석은 Toss 라이브 결제로 운영 중입니다. 승인된 실제 결제에만 이용권이 연결되며, 테스트 주문과 무료 이용권은 실결제·매출 집계에서 분리됩니다.</Text></Panel>
         </>}
 
-        {tab === "주문·결제" && <><Text style={[styles.section, { color: colors.foreground }]}>주문·결제</Text><Text style={[styles.helper, { color: colors.muted }]}>고객 → 주문 → 결제 → 이용권 흐름의 공통 원장을 표시합니다. 이메일은 마스킹됩니다.</Text>{orders.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {dateText(item.createdAt)}</Text><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · 결제 {item.finalAmountKrw.toLocaleString()}원 · 할인 {item.discountAmountKrw.toLocaleString()}원 · {item.provider ?? "결제 대기"} · {item.channel === "web" ? "홈페이지 유입" : "앱 유입"}{item.isTest ? " · 테스트 주문(매출 제외)" : ""}</Text><Text style={[styles.meta, { color: colors.muted }]}>결제 상태 {item.paymentStatus ?? "—"} · 이용권 {item.entitlementStatus ?? "—"}</Text></Panel>)}</>}
+        {tab === "주문·결제" && <>
+          <Text style={[styles.section, { color: colors.foreground }]}>주문·결제</Text>
+          <Text style={[styles.helper, { color: colors.muted }]}>고객 → 주문 → 결제 → 이용권 흐름의 공통 원장을 표시합니다. 목록 이메일은 마스킹되며, 주문별 ‘이메일 보기’에서만 전체 주소를 열람·복사할 수 있습니다. 열람은 감사 로그에 남습니다.</Text>
+          {orders.data?.map((item) => {
+            const revealed = revealedOrderEmails[item.id];
+            return <Panel key={item.id}>
+              <View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View>
+              <Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {dateText(item.createdAt)}</Text>
+              <Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · 결제 {item.finalAmountKrw.toLocaleString()}원 · 할인 {item.discountAmountKrw.toLocaleString()}원 · {item.provider ?? "결제 대기"} · {item.channel === "web" ? "홈페이지 유입" : "앱 유입"}{item.isTest ? " · 테스트 주문(매출 제외)" : ""}</Text>
+              <Text style={[styles.meta, { color: colors.muted }]}>결제 상태 {item.paymentStatus ?? "—"} · 이용권 {item.entitlementStatus ?? "—"}</Text>
+              <TouchableOpacity style={styles.smallAction} disabled={revealOrderEmailDetails.isPending} onPress={() => revealOrderEmailDetails.mutate({ orderId: item.id })}><Text style={styles.smallActionText}>{revealOrderEmailDetails.isPending ? "불러오는 중…" : "이메일 보기·복사"}</Text></TouchableOpacity>
+              {revealed && <View style={styles.expanded}>
+                <Text style={[styles.meta, { color: colors.muted }]}>결제자 이메일</Text>
+                {revealed.buyerEmail ? <><Text style={[styles.emailValue, { color: colors.foreground }]}>{revealed.buyerEmail}</Text><TouchableOpacity style={styles.smallAction} onPress={() => void copyAdminEmail(revealed.buyerEmail!)}><Text style={styles.smallActionText}>결제자 이메일 복사</Text></TouchableOpacity></> : <Text style={[styles.noticeText, { color: colors.muted }]}>결제자 이메일을 복호화할 수 없습니다.</Text>}
+                <Text style={[styles.meta, { color: colors.muted }]}>실제 리포트 수신 이메일</Text>
+                {revealed.reportRecipients.length ? revealed.reportRecipients.map((recipient) => <View key={recipient.outboxId} style={styles.emailDetail}><Text style={[styles.emailValue, { color: colors.foreground }]}>{recipient.email}</Text><Text style={[styles.meta, { color: colors.muted }]}>발송 상태 {recipient.status} · 실제 발송 {dateText(recipient.sentAt)}</Text><TouchableOpacity style={styles.smallAction} onPress={() => void copyAdminEmail(recipient.email)}><Text style={styles.smallActionText}>수신 이메일 복사</Text></TouchableOpacity></View>) : <Text style={[styles.noticeText, { color: colors.muted }]}>연결된 리포트 이메일 Outbox가 없습니다.</Text>}
+              </View>}
+            </Panel>;
+          })}
+        </>}
 
         {tab === "Preview 검증" && <><Text style={[styles.section, { color: colors.foreground }]}>Preview 원장 검증</Text><Text style={[styles.helper, { color: colors.muted }]}>Preview·관리자 역할에서만 테스트 주문과 인증·문의 Outbox 상태를 마스킹하여 조회합니다. 이 화면에는 수정·재발송·다운로드 기능이 없습니다.</Text>{previewVerification.data?.available === false && <Panel><Text style={styles.noticeTitle}>Preview 환경에서만 사용할 수 있습니다</Text><Text style={styles.noticeText}>Production에서는 검증 데이터가 반환되지 않습니다.</Text></Panel>}{previewVerification.data?.available && <><Panel><Text style={styles.noticeTitle}>제출 완료 관계검사 결과 링크 복구</Text><Text style={styles.noticeText}>Preview 테스트에서 A·B 모두 제출·PDF 생성까지 끝난 세션만 대상으로 합니다. 답변·통합 결과·PDF·이메일 outbox는 변경하지 않고, 새 A/B 접근 링크만 발급합니다. 기존 A/B 링크는 무효화됩니다.</Text><TextInput value={relationshipRecoverySessionId} onChangeText={(value) => { setRelationshipRecoverySessionId(value); setRelationshipRecoveryUrls(null); setRelationshipRecoveryStatus(null); }} keyboardType="number-pad" placeholder="관계 세션 번호" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><TouchableOpacity style={styles.action} disabled={reissuePreviewRelationshipResults.isPending} onPress={reissueRelationshipResults}><Text style={styles.actionText}>{reissuePreviewRelationshipResults.isPending ? "재발급 중…" : "A/B 결과 링크 재발급"}</Text></TouchableOpacity>{relationshipRecoveryStatus && <Text style={[styles.noticeText, { color: relationshipRecoveryUrls ? "#3f7b52" : "#b5584f" }]}>{relationshipRecoveryStatus}</Text>}{relationshipRecoveryUrls && <><Text style={[styles.meta, { color: "#9a6a12" }]}>A 결과 링크</Text><TextInput value={relationshipRecoveryUrls.owner} editable={false} multiline selectTextOnFocus style={[styles.input, styles.trialUrl, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><Text style={[styles.meta, { color: "#9a6a12" }]}>B 결과 링크</Text><TextInput value={relationshipRecoveryUrls.partner} editable={false} multiline selectTextOnFocus style={[styles.input, styles.trialUrl, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /></>}</Panel><Text style={[styles.section, { color: colors.foreground }]}>테스트 주문</Text>{previewVerification.data.testOrders.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={item.status} tone={item.status === "paid" ? "good" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {item.customerEmailMasked} · {item.channel === "web" ? "홈페이지 유입" : "앱 유입"}</Text><Text style={[styles.meta, { color: colors.muted }]}>결제 {item.paymentStatus ?? "—"} · 이용권 {item.entitlementStatus ?? "—"} · {dateText(item.createdAt)}</Text></Panel>)}{previewVerification.data.testOrders.length === 0 && <Panel><Text style={styles.noticeText}>표시할 테스트 주문이 없습니다.</Text></Panel>}<Text style={[styles.section, { color: colors.foreground }]}>인증·문의 Outbox</Text>{previewVerification.data.outbox.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.purpose === "account_link" ? "이력 연결 인증" : "고객 문의 알림"}</Text><Badge text={item.status} tone={item.status === "sent" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.recipientEmailMasked} · 시도 {item.attemptCount}회 · {dateText(item.sentAt ?? item.createdAt)}</Text>{item.lastErrorCode && <Text style={[styles.meta, { color: "#b5584f" }]}>오류 코드 {item.lastErrorCode}</Text>}</Panel>)}{previewVerification.data.outbox.length === 0 && <Panel><Text style={styles.noticeText}>표시할 인증·문의 Outbox가 없습니다.</Text></Panel>}</>}</>}
 
@@ -409,7 +446,21 @@ export default function AdminScreen() {
 
         {tab === "검사·결과" && <><Text style={[styles.section, { color: colors.foreground }]}>검사·결과</Text><Text style={[styles.helper, { color: colors.muted }]}>기존 검사 결과 원문과 공유 스냅샷은 수정하지 않습니다. 고객 행을 선택하면 검사·PDF 보관 건수를 확인할 수 있습니다.</Text>{customers.data?.map((item) => <TouchableOpacity key={`analysis-${item.id}`} onPress={() => setCustomerId(item.id)}><Panel><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.emailMasked}</Text><Text style={[styles.meta, { color: colors.muted }]}>주문 {item.orderCount}건 · 검사·결과·PDF 이력은 고객 흐름에서 확인</Text></Panel></TouchableOpacity>)}{customer.data && <Panel><Text style={styles.noticeTitle}>선택 고객의 검사·결과 보관 현황</Text><Text style={styles.noticeText}>검사 {customer.data.analysisRuns.length} · PDF {customer.data.privateDocuments.length} · 발송 기록 {customer.data.emailOutbox.length}</Text></Panel>}</>}
 
-        {tab === "PDF·이메일" && <><Text style={[styles.section, { color: colors.foreground }]}>Private PDF·이메일 Outbox</Text><Text style={[styles.helper, { color: colors.muted }]}>실패 건만 재시도하며, PDF 본문·분석 결과·공유 스냅샷은 수정하지 않습니다.</Text>{delivery.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>주문 #{item.orderId ?? "—"} · 문서 #{item.privateDocumentId ?? "—"}</Text><Badge text={item.status} tone={item.status === "sent" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>시도 {item.attemptCount}회 · 다음 시도 {dateText(item.nextAttemptAt)}</Text>{item.status === "failed" && <TouchableOpacity style={styles.action} onPress={() => retryMail.mutate({ outboxId: item.id })}><Text style={styles.actionText}>발송 재시도</Text></TouchableOpacity>}</Panel>)}</>}
+        {tab === "PDF·이메일" && <>
+          <Text style={[styles.section, { color: colors.foreground }]}>PDF·이메일 발송 원장</Text>
+          <Text style={[styles.helper, { color: colors.muted }]}>최근 내역부터 표시합니다. ‘발송 성공’은 발송 서비스의 성공 응답이며, 고객의 실제 수신·열람 여부는 확인할 수 없습니다. 재시도는 실패 건에만 수행합니다.</Text>
+          <TextInput value={deliverySearch} onChangeText={setDeliverySearch} autoCapitalize="none" placeholder="주문번호 또는 수신 이메일로 검색" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} />
+          {delivery.isLoading && <ActivityIndicator color="#3f7b52" />}
+          {delivery.data?.map((item) => <Panel key={item.id}>
+            <View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName ?? "상품 정보 없음"}</Text><Badge text={item.status === "sent" ? "발송 성공" : item.status === "failed" ? "발송 실패" : item.status} tone={item.status === "sent" ? "good" : item.status === "failed" ? "bad" : "warn"} /></View>
+            <Text style={[styles.meta, { color: colors.muted }]}>주문번호 {item.orderNumber ?? "—"} · 수신 이메일 {item.recipientEmailMasked}</Text>
+            <Text style={[styles.meta, { color: colors.muted }]}>실제 발송 시각 {item.sentAt ? dateText(item.sentAt) : "아직 발송되지 않음"} · 시도 {item.attemptCount}회</Text>
+            {item.status !== "sent" && <Text style={[styles.meta, { color: colors.muted }]}>다음 자동 시도 {dateText(item.nextAttemptAt)}</Text>}
+            {item.lastErrorCode && <Text style={[styles.meta, { color: "#b5584f" }]}>실패 사유 코드 {item.lastErrorCode}</Text>}
+            {item.status === "failed" && <TouchableOpacity style={styles.action} disabled={retryMail.isPending} onPress={() => retryMail.mutate({ outboxId: item.id })}><Text style={styles.actionText}>{retryMail.isPending ? "재시도 요청 중…" : "발송 재시도"}</Text></TouchableOpacity>}
+          </Panel>)}
+          {delivery.data?.length === 0 && !delivery.isLoading && <Panel><Text style={styles.noticeText}>검색 조건에 맞는 PDF·이메일 발송 기록이 없습니다.</Text></Panel>}
+        </>}
 
         {tab === "상품·쿠폰" && <>
           <Text style={[styles.section, { color: colors.foreground }]}>홍보 담당자 테스트 이용권</Text>
@@ -474,5 +525,5 @@ const styles = StyleSheet.create({
   panel: { borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 15, padding: 14, gap: 7 }, row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }, cardTitle: { fontSize: 14, fontWeight: "800", flexShrink: 1 }, meta: { fontSize: 11, lineHeight: 17 },
   badge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }, badgeText: { fontSize: 10, fontWeight: "800" }, noticeTitle: { color: "#3f7b52", fontSize: 14, fontWeight: "800" }, revenueValue: { fontSize: 27, fontWeight: "800" }, noticeText: { color: "#55705a", fontSize: 12, lineHeight: 19 },
   action: { alignSelf: "flex-start", backgroundColor: "#3f7b52", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }, actionText: { color: "#fff", fontSize: 12, fontWeight: "800" }, input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, fontSize: 12 }, passwordInput: { width: "100%", maxWidth: 320 }, passwordError: { color: "#b5584f", fontSize: 12, textAlign: "center" }, actions: { flexDirection: "row", flexWrap: "wrap", gap: 7 }, smallAction: { borderWidth: 1, borderColor: "#a9c8ae", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, smallActionText: { color: "#3f7b52", fontSize: 11, fontWeight: "800" }, dangerAction: { borderWidth: 1, borderColor: "#e3aaa3", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, dangerActionText: { color: "#b5584f", fontSize: 11, fontWeight: "800" },
-  expanded: { borderTopWidth: 1, borderTopColor: "#ded9ce", paddingTop: 10, gap: 8 }, delete: { color: "#b5584f", fontSize: 11, fontWeight: "800" }, review: { fontSize: 12, lineHeight: 18 }, trialUrl: { minHeight: 84, textAlignVertical: "top", fontSize: 10, lineHeight: 15 }, compactInput: { width: 96 },
+  expanded: { borderTopWidth: 1, borderTopColor: "#ded9ce", paddingTop: 10, gap: 8 }, emailValue: { fontSize: 12, fontWeight: "700", lineHeight: 18 }, emailDetail: { gap: 5, paddingTop: 6 }, delete: { color: "#b5584f", fontSize: 11, fontWeight: "800" }, review: { fontSize: 12, lineHeight: 18 }, trialUrl: { minHeight: 84, textAlignVertical: "top", fontSize: 10, lineHeight: 15 }, compactInput: { width: 96 },
 });
