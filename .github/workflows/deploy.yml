@@ -139,6 +139,10 @@ jobs:
               { "src": "/sample-reports/(.*)\\.pdf", "headers": { "Cache-Control": "public, max-age=300" }, "continue": true },
               { "src": "/index.html", "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }, "continue": true },
               { "src": "/commerce-checkout", "dest": "/commerce-checkout.html" },
+              { "src": "/zh-cn-pilot", "dest": "/zh-cn-pilot.html" },
+              { "src": "/zh-cn-pilot/colors", "dest": "/zh-cn-pilot-colors.html" },
+              { "src": "/zh-cn-pilot/cards", "dest": "/zh-cn-pilot-cards.html" },
+              { "src": "/zh-cn-pilot/recovery", "dest": "/zh-cn-pilot-recovery.html" },
               { "handle": "filesystem" },
               { "src": "/((?!_expo/|assets/).*)", "dest": "/index.html" }
             ]

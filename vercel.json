@@ -25,6 +25,10 @@
     { "source": "/api/pdf-report", "destination": "/api/pdf-report" },
     { "source": "/api/zh-cn-pilot-personal-pdf", "destination": "/api/zh-cn-pilot-personal-pdf" },
     { "source": "/api/couple-pdf-report", "destination": "/api/couple-pdf-report" },
+    { "source": "/zh-cn-pilot", "destination": "/zh-cn-pilot.html" },
+    { "source": "/zh-cn-pilot/colors", "destination": "/zh-cn-pilot-colors.html" },
+    { "source": "/zh-cn-pilot/cards", "destination": "/zh-cn-pilot-cards.html" },
+    { "source": "/zh-cn-pilot/recovery", "destination": "/zh-cn-pilot-recovery.html" },
     { "source": "/((?!_expo/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
