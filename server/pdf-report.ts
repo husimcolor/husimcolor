@@ -248,7 +248,9 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
   }
   document.y = payload.sampleNotice ? 318 : 315;
   payload.selectedColors.slice(0, 3).forEach((color) => writeCoverColorChip(document, color));
-  document.fillColor("#75695D").fontSize(12).text(localizedPdfText(document, `${payload.profileLine}\n리포트 생성일 · ${payload.generatedAt}`), PAGE_LEFT, 736, { width: CONTENT_WIDTH, lineGap: 5 });
+  const localizedProfileLine = localizedPdfText(document, payload.profileLine);
+  const localizedGeneratedAt = localizedPdfText(document, `리포트 생성일 · ${payload.generatedAt}`);
+  document.fillColor("#75695D").fontSize(12).text(`${localizedProfileLine}\n${localizedGeneratedAt}`, PAGE_LEFT, 736, { width: CONTENT_WIDTH, lineGap: 5 });
 
   addPage(document);
   if (payload.stage1?.colors.length) {
