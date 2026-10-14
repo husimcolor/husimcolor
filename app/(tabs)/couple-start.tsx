@@ -19,8 +19,8 @@ import {
   type VisibleRelationProduct,
 } from '@/constants/relationProducts';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
-import { isOpeningCampaignActive } from '@/shared/opening-campaign';
-import { getSampleReportUrl, SAMPLE_REPORT_LINK_LABEL, type SampleReportProduct } from '@/shared/sample-reports';
+import { isOpeningCampaignActive, OPENING_CAMPAIGN_DISPLAY_PRICES } from '@/shared/opening-campaign';
+import { getSampleReportButtonLabel, getSampleReportUrl, type SampleReportProduct } from '@/shared/sample-reports';
 
 const ROMANTIC_RELATION_TYPES: { value: Extract<RelationType, '연인' | '부부'>; label: string; emoji: string }[] = [
   { value: '연인', label: '연인', emoji: '💑' },
@@ -239,8 +239,10 @@ export default function CoupleStartScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: '#2D2420' }]}>관계 분석 상품 선택</Text>
             {openingCampaignActive && <View style={styles.openingCampaign}>
-              <Text style={styles.openingCampaignTitle}>유료 심화분석 오픈 기념 20% 할인</Text>
-              <Text style={styles.openingCampaignText}>10월 30일까지 · 회원가입 없이 이용 가능 · 오프라인 코칭 제외</Text>
+              <Text style={styles.openingCampaignTitle}>오픈 기념 20% 할인</Text>
+              <Text style={styles.openingCampaignDeadline}>10월 30일까지</Text>
+              <Text style={styles.openingCampaignText}>회원·비회원 동일 · 결제 시 자동 적용</Text>
+              <Text style={styles.openingCampaignNote}>오프라인 코칭 제외</Text>
               {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled && !tossLiveEnabled ? <Text style={styles.openingCampaignText}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text> : null}
             </View>}
             <View style={styles.productList}>
@@ -250,6 +252,7 @@ export default function CoupleStartScreen() {
                   : product.id === 'parent-child'
                     ? 'parent_child_deep'
                     : null;
+                const campaignPrice = sampleProduct ? OPENING_CAMPAIGN_DISPLAY_PRICES[sampleProduct] : null;
                 return (
                   <View key={product.id} style={styles.productCardGroup}>
                     <Pressable
@@ -266,10 +269,12 @@ export default function CoupleStartScreen() {
                       <Text style={[styles.productTitle, { color: selectedProductId === product.id ? '#FFF9F0' : '#2D2420' }]}>
                         {product.title}
                       </Text>
-                      <Text style={[styles.productPrice, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>
-                        {product.price}
-                      </Text>
-                      {openingCampaignActive && product.id !== 'friend' ? <Text style={[styles.productCampaignPrice, { color: selectedProductId === product.id ? '#FFF0CA' : '#775B26' }]}>{product.id === 'romantic' ? '20% 적용 시 47,200원' : '20% 적용 시 31,200원'}</Text> : null}
+                      <View style={styles.productPriceGroup}>
+                        {openingCampaignActive && campaignPrice ? <>
+                          <Text style={[styles.productRegularPrice, { color: selectedProductId === product.id ? '#E8D4AA' : '#8B5D2E' }]}>정가 {campaignPrice.listAmountKrw.toLocaleString()}원</Text>
+                          <Text style={[styles.productDiscountPrice, { color: selectedProductId === product.id ? '#FFF3CE' : '#725019' }]}>→ {campaignPrice.finalAmountKrw.toLocaleString()}원</Text>
+                        </> : <Text style={[styles.productPrice, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>{product.price}</Text>}
+                      </View>
                       {product.id !== 'friend' && !paidAnalysisPublicEnabled && !tossCardReviewEnabled ? (
                         <Text style={[styles.productPreparing, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>정식 오픈 준비중</Text>
                       ) : null}
@@ -277,11 +282,11 @@ export default function CoupleStartScreen() {
                     {sampleProduct ? (
                       <Pressable
                         onPress={() => handleOpenSamplePdf(sampleProduct)}
-                        style={({ pressed }) => [styles.productSampleLink, pressed && styles.productSampleLinkPressed]}
+                        style={({ pressed }) => [styles.productSampleButton, pressed && styles.productSampleButtonPressed]}
                         accessibilityRole="link"
-                        accessibilityLabel={`${product.title} ${SAMPLE_REPORT_LINK_LABEL}`}
+                        accessibilityLabel={getSampleReportButtonLabel(sampleProduct)}
                       >
-                        <Text style={styles.productSampleLinkText}>{SAMPLE_REPORT_LINK_LABEL}</Text>
+                        <Text style={styles.productSampleButtonText}>{getSampleReportButtonLabel(sampleProduct)}</Text>
                       </Pressable>
                     ) : null}
                   </View>
@@ -359,27 +364,32 @@ const styles = StyleSheet.create({
   section: { marginBottom: 24 },
   openingCampaign: { marginBottom: 10, borderRadius: 11, borderWidth: 1, borderColor: '#E4C978', backgroundColor: '#FFF7DA', padding: 11, gap: 3 },
   openingCampaignTitle: { color: '#75561B', fontSize: 13, fontWeight: '800' },
-  openingCampaignText: { color: '#8D6B25', fontSize: 11, lineHeight: 16 },
+  openingCampaignDeadline: { color: '#5E4512', fontSize: 21, lineHeight: 27, fontWeight: '900' },
+  openingCampaignText: { color: '#8D6B25', fontSize: 11, lineHeight: 16, fontWeight: '800' },
+  openingCampaignNote: { color: '#806F50', fontSize: 11, lineHeight: 16 },
   productList: { gap: 10 },
   productCardGroup: { gap: 3 },
   productCard: {
-    minHeight: 70,
+    minHeight: 92,
     borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingTop: 14,
+    paddingBottom: 30,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 12,
   },
   productTitle: { flex: 1, fontSize: 16, lineHeight: 23, fontWeight: '700' },
   productPrice: { fontSize: 16, fontWeight: '800', letterSpacing: 0.2 },
-  productCampaignPrice: { position: 'absolute', right: 16, top: 43, fontSize: 10, fontWeight: '800' },
-  productPreparing: { fontSize: 11, fontWeight: '700', position: 'absolute', right: 16, bottom: 10 },
-  productSampleLink: { alignSelf: 'flex-start', minHeight: 28, justifyContent: 'center', paddingHorizontal: 4 },
-  productSampleLinkText: { color: '#6C5A49', fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
-  productSampleLinkPressed: { opacity: 0.65 },
+  productPriceGroup: { alignItems: 'flex-end', gap: 1 },
+  productRegularPrice: { fontSize: 11, fontWeight: '700', textDecorationLine: 'line-through' },
+  productDiscountPrice: { fontSize: 17, lineHeight: 22, fontWeight: '900' },
+  productPreparing: { position: 'absolute', right: 16, bottom: 10, fontSize: 11, fontWeight: '700' },
+  productSampleButton: { minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: '#9CB797', backgroundColor: '#EDF4E9', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
+  productSampleButtonText: { color: '#3E6A3A', fontSize: 16, fontWeight: '800' },
+  productSampleButtonPressed: { opacity: 0.78, transform: [{ scale: 0.985 }] },
   subSection: {
     borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 20, marginTop: -12,
   },

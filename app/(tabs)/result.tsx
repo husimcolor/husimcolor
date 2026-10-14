@@ -24,6 +24,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import { generateInterpretation, COLOR_DATA, COLOR_PERSONALITY_TRAITS } from '@/constants/colorData';
+import { getSampleReportButtonLabel, getSampleReportUrl } from '@/shared/sample-reports';
 // 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
 function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -267,6 +268,18 @@ export default function ResultScreen() {
     }
   };
 
+  // 무료 결과와 결제 경로를 분리한다. 공개 샘플은 가상 데이터 PDF만 새 창/외부 브라우저로 연다.
+  const handleOpenPersonalSamplePdf = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://husimcolor.vercel.app';
+    const url = getSampleReportUrl('personal_deep', origin);
+    if (!url) return;
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    void Linking.openURL(url);
+  };
+
   return (
     <ScreenContainer containerClassName="bg-background" edges={['top', 'left', 'right']}>
       {/* 헤더 */}
@@ -497,6 +510,31 @@ export default function ResultScreen() {
         </View>
         </ViewShot>{/* ViewShot 캡처 영역 끝 */}
 
+        {/* 무료 결과와 별도인 유료 개인 심화분석 공개 샘플 안내 */}
+        <View style={styles.upsellBanner}>
+          <Text style={styles.upsellTitle}>내 마음을 조금 더 깊이 알아보고 싶다면</Text>
+          <Text style={styles.upsellDesc}>
+            컬러 3개와 심리카드 3장으로 살펴보는 유료 개인 심화분석 PDF를 미리 확인해 보세요.
+          </Text>
+          <Pressable
+            style={({ pressed }) => [styles.upsellSampleButton, pressed && styles.upsellSampleButtonPressed]}
+            onPress={handleOpenPersonalSamplePdf}
+            accessibilityRole="link"
+            accessibilityLabel={getSampleReportButtonLabel('personal_deep')}
+          >
+            <Text style={styles.upsellSampleButtonText}>{getSampleReportButtonLabel('personal_deep')}</Text>
+          </Pressable>
+          <Text style={styles.upsellSampleNotice}>샘플은 가상 데이터로 만든 공개 리포트이며, 무료 체험에는 유료 PDF가 포함되지 않습니다.</Text>
+          <Pressable
+            style={({ pressed }) => [styles.upsellInfoLink, pressed && styles.upsellInfoLinkPressed]}
+            onPress={() => router.push('/(tabs)/commerce-checkout?product=personal_deep' as any)}
+            accessibilityRole="link"
+            accessibilityLabel="개인 심화분석 상품 안내 보기"
+          >
+            <Text style={styles.upsellInfoLinkText}>개인 심화분석 알아보기 →</Text>
+          </Pressable>
+        </View>
+
         {/* 저장·인스타 스토리용 9:16 결과 요약카드 */}
         <View style={styles.shareCardPreviewSection}>
           <Text style={[styles.shareCardPreviewLabel, { color: '#6B5D52' }]}>스토리용 결과 요약카드</Text>
@@ -632,25 +670,6 @@ export default function ResultScreen() {
           </View>
         </View>
 
-        {/* 개인 심화분석 안내 — 결제는 다음 화면에서 고객이 별도로 선택한다. */}
-        <View style={styles.upsellBanner}>
-          <Text style={styles.upsellTitle}>
-            🌿 더 깊은 내면의 흐름이 궁금하신가요?
-          </Text>
-          <Text style={styles.upsellDesc}>
-            63장 컬러+도형 카드로 무의식 · 현재흐름 · 회복방향을{"\n"}
-            심층 분석해 드립니다
-          </Text>
-          <TouchableOpacity
-            style={styles.upsellCtaButton}
-            onPress={() => router.push('/(tabs)/commerce-checkout?product=personal_deep' as any)}
-            activeOpacity={0.85}
-            accessibilityRole="link"
-            accessibilityLabel="개인 심화분석 상품 안내 보기"
-          >
-            <Text style={styles.upsellCtaButtonText}>개인 심화분석 알아보기 →</Text>
-          </TouchableOpacity>
-        </View>
         {/* 후기 남기기 버튼 */}
         <View style={styles.reviewButtonSection}>
           <TouchableOpacity
@@ -1477,18 +1496,40 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 14,
   },
-  upsellCtaButton: {
+  upsellSampleButton: {
+    minHeight: 48,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: '#769D72',
     backgroundColor: '#3A6B3A',
-    borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignItems: 'center' as const,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
-  upsellCtaButtonText: {
+  upsellSampleButtonText: {
     color: '#fff',
-    fontWeight: '700',
-    fontSize: 15,
+    fontWeight: '800',
+    fontSize: 16,
   },
+  upsellSampleButtonPressed: { opacity: 0.82, transform: [{ scale: 0.985 }] },
+  upsellSampleNotice: {
+    color: '#6B8068',
+    fontSize: 11,
+    lineHeight: 17,
+    textAlign: 'center',
+  },
+  upsellInfoLink: {
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upsellInfoLinkText: {
+    color: '#3A6B3A',
+    fontSize: 14,
+    fontWeight: '800',
+    textDecorationLine: 'underline',
+  },
+  upsellInfoLinkPressed: { opacity: 0.65 },
   reviewButtonSection: {
     marginHorizontal: 16,
     marginTop: 8,

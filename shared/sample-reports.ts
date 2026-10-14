@@ -3,6 +3,13 @@ export type SampleReportProduct = "personal_deep" | "couple_love_deep" | "parent
 /** 모든 상품 진입 화면에서 동일하게 쓰는 공개 PDF 링크 문구. */
 export const SAMPLE_REPORT_LINK_LABEL = "PDF 리포트 샘플 보기";
 
+/** 상품 카드와 무료 결과 안내에서 사용하는 명확한 공개 PDF 버튼 문구다. */
+export const SAMPLE_REPORT_BUTTON_LABELS: Record<SampleReportProduct, string> = {
+  personal_deep: "개인 심화 PDF 샘플 보기",
+  couple_love_deep: "부부·연인 PDF 샘플 보기",
+  parent_child_deep: "부모·자녀 PDF 샘플 보기",
+};
+
 export type SampleReport = {
   product: SampleReportProduct;
   title: string;
@@ -19,7 +26,7 @@ export const SAMPLE_REPORTS: Record<SampleReportProduct, SampleReport> = {
     product: "personal_deep",
     title: "개인 심화분석",
     fileName: "husimcolor-personal-deep-sample.pdf",
-    pageCount: 8,
+    pageCount: 12,
   },
   couple_love_deep: {
     product: "couple_love_deep",
@@ -41,6 +48,10 @@ export function isSampleReportProduct(value: string | undefined): value is Sampl
 
 export function getSampleReport(value: string | undefined): SampleReport | null {
   return isSampleReportProduct(value) ? SAMPLE_REPORTS[value] : null;
+}
+
+export function getSampleReportButtonLabel(value: SampleReportProduct): string {
+  return SAMPLE_REPORT_BUTTON_LABELS[value];
 }
 
 /** 운영·개발 모두에서 동일한 정적 PDF 자산으로 연결한다. */

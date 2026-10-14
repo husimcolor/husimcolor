@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   OPENING_CAMPAIGN_COUPON_CODE,
+  OPENING_CAMPAIGN_DISPLAY_PRICES,
   isOpeningCampaignActive,
   isOpeningCampaignAvailable,
 } from "../shared/opening-campaign";
@@ -22,5 +23,13 @@ describe("opening campaign", () => {
 
   it("uses one public event code only through the campaign control", () => {
     expect(OPENING_CAMPAIGN_COUPON_CODE).toBe("OCT20OPEN2026");
+  });
+
+  it("shows the three coupon-matched list and 20% discounted amounts", () => {
+    expect(OPENING_CAMPAIGN_DISPLAY_PRICES).toEqual({
+      personal_deep: { listAmountKrw: 29_000, finalAmountKrw: 23_200 },
+      couple_love_deep: { listAmountKrw: 59_000, finalAmountKrw: 47_200 },
+      parent_child_deep: { listAmountKrw: 39_000, finalAmountKrw: 31_200 },
+    });
   });
 });

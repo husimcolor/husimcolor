@@ -6,7 +6,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { getCommerceProduct, isPaidAnalysisProduct, type CommerceProductCode } from "@/shared/commerce";
 import { saveCommerceStartGrant } from "@/lib/commerce-access";
 import { trpc } from "@/lib/trpc";
-import { OPENING_CAMPAIGN_COUPON_CODE, isOpeningCampaignAvailable } from "@/shared/opening-campaign";
+import { OPENING_CAMPAIGN_COUPON_CODE, OPENING_CAMPAIGN_DISPLAY_PRICES, isOpeningCampaignAvailable } from "@/shared/opening-campaign";
 
 type TossPaymentsInstance = {
   payment(input: { customerKey: "ANONYMOUS" }): {
@@ -160,6 +160,9 @@ export default function CommerceCheckoutScreen() {
   );
   const cardReviewServicePeriod = getCardReviewServicePeriod(productCode);
   const openingCampaignAvailable = isOpeningCampaignAvailable(productCode);
+  const openingCampaignPrice = isPaidAnalysisCode(productCode) && openingCampaignAvailable
+    ? OPENING_CAMPAIGN_DISPLAY_PRICES[productCode]
+    : null;
   const productGuide = isPaidAnalysisCode(productCode) ? ANALYSIS_PRODUCT_GUIDES[productCode] : undefined;
   useEffect(() => {
     if (openingCampaignAvailable) {
@@ -370,7 +373,10 @@ export default function CommerceCheckoutScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.eyebrow}>{tossLiveEnabled ? "휴심컬러 안전 결제" : "휴심컬러 테스트 결제"}</Text>
         <Text style={styles.title}>{product.name}</Text>
-        <Text style={styles.price}>{product.amountKrw?.toLocaleString()}원</Text>
+        {openingCampaignPrice ? <View style={styles.priceGroup}>
+          <Text style={styles.regularPrice}>정가 {openingCampaignPrice.listAmountKrw.toLocaleString()}원</Text>
+          <Text style={styles.discountPrice}>→ {openingCampaignPrice.finalAmountKrw.toLocaleString()}원</Text>
+        </View> : <Text style={styles.price}>{product.amountKrw?.toLocaleString()}원</Text>}
         <Text style={styles.notice}>{tossLiveEnabled
           ? "토스페이먼츠 라이브 결제입니다. 결제 승인 시 실제 청구가 발생하며, 승인된 주문에만 검사 이용권이 발급됩니다."
           : "현재 테스트 운영 중입니다. Toss 테스트키로만 동작하며 실제 청구는 발생하지 않습니다."}</Text>
@@ -389,9 +395,10 @@ export default function CommerceCheckoutScreen() {
         <TextInput style={styles.input} value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" placeholder="name@example.com" placeholderTextColor="#94887C" />
         <Text style={styles.label}>쿠폰 코드 <Text style={styles.optional}>(선택)</Text></Text>
         {openingCampaignAvailable && <View style={styles.openingCampaignCard}>
-          <Text style={styles.openingCampaignTitle}>휴심컬러 유료 심화분석 오픈 기념 20% 할인</Text>
-          <Text style={styles.openingCampaignText}>10월 30일까지 · 회원가입 없이 이용 가능 · 오프라인 코칭 제외</Text>
-          <Text style={styles.openingCampaignPrompt}>오픈 기념 할인 코드가 자동 적용되어 정가와 할인가를 바로 확인할 수 있습니다.</Text>
+          <Text style={styles.openingCampaignTitle}>오픈 기념 20% 할인</Text>
+          <Text style={styles.openingCampaignDeadline}>10월 30일까지</Text>
+          <Text style={styles.openingCampaignText}>회원·비회원 동일 · 결제 시 자동 적용</Text>
+          <Text style={styles.openingCampaignPrompt}>오프라인 코칭 제외</Text>
         </View>}
         <TextInput style={styles.input} value={couponCode} onChangeText={(value) => { setCouponCode(value); setMessage(null); }} autoCapitalize="characters" placeholder="쿠폰 코드를 입력하세요" placeholderTextColor="#94887C" />
         {couponQuote.isSuccess && couponQuote.data && <View style={styles.couponQuote}>
@@ -415,6 +422,9 @@ const styles = StyleSheet.create({
   eyebrow: { color: "#8B6B4A", fontSize: 13, fontWeight: "800", letterSpacing: 0.8, marginTop: 16 },
   title: { color: "#2D2420", fontSize: 25, fontWeight: "800", marginTop: 10, textAlign: "center" },
   price: { color: "#7D5E38", fontSize: 20, fontWeight: "800", marginTop: 8, textAlign: "center" },
+  priceGroup: { alignItems: "center", marginTop: 8, gap: 1 },
+  regularPrice: { color: "#8B7054", fontSize: 13, fontWeight: "700", textDecorationLine: "line-through" },
+  discountPrice: { color: "#7D5E38", fontSize: 22, lineHeight: 29, fontWeight: "900" },
   notice: { color: "#6D6258", fontSize: 14, lineHeight: 22, marginTop: 18, marginBottom: 28 },
   reviewNotice: { color: "#5C4B3E", fontSize: 14, lineHeight: 22, marginTop: 18, marginBottom: 28, textAlign: "center" },
   productGuideCard: { backgroundColor: "#F7F1E8", borderColor: "#D9C7AE", borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 4, gap: 5 },
@@ -429,8 +439,9 @@ const styles = StyleSheet.create({
   input: { backgroundColor: "#FFFDF9", borderColor: "#D9CDBF", borderWidth: 1, borderRadius: 12, color: "#2D2420", fontSize: 16, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 20 },
   openingCampaignCard: { backgroundColor: "#FFF7DA", borderColor: "#E4C978", borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 13, gap: 6 },
   openingCampaignTitle: { color: "#75561B", fontSize: 14, fontWeight: "800" },
-  openingCampaignText: { color: "#8D6B25", fontSize: 12, lineHeight: 18 },
-  openingCampaignPrompt: { color: "#765B27", fontSize: 12, fontWeight: "700", marginTop: 2 },
+  openingCampaignDeadline: { color: "#5E4512", fontSize: 22, lineHeight: 28, fontWeight: "900" },
+  openingCampaignText: { color: "#8D6B25", fontSize: 12, lineHeight: 18, fontWeight: "800" },
+  openingCampaignPrompt: { color: "#806F50", fontSize: 12, lineHeight: 18 },
   couponQuote: { backgroundColor: "#EFF6EE", borderColor: "#B4CCB3", borderWidth: 1, borderRadius: 12, padding: 12, marginTop: -8, marginBottom: 16, gap: 4 },
   couponQuoteTitle: { color: "#3D6645", fontSize: 13, fontWeight: "800" },
   couponQuoteText: { color: "#4D594D", fontSize: 12, lineHeight: 18 },

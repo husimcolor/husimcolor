@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   SAMPLE_REPORTS,
   SAMPLE_REPORT_LINK_LABEL,
+  SAMPLE_REPORT_BUTTON_LABELS,
+  getSampleReportButtonLabel,
   getSampleReport,
   getSampleReportUrl,
   isSampleReportProduct,
@@ -13,6 +15,15 @@ describe("homepage sample report references", () => {
     expect(SAMPLE_REPORT_LINK_LABEL).toBe("PDF 리포트 샘플 보기");
   });
 
+  it("uses a product-specific, mobile-friendly PDF sample button label", () => {
+    expect(SAMPLE_REPORT_BUTTON_LABELS).toEqual({
+      personal_deep: "개인 심화 PDF 샘플 보기",
+      couple_love_deep: "부부·연인 PDF 샘플 보기",
+      parent_child_deep: "부모·자녀 PDF 샘플 보기",
+    });
+    expect(getSampleReportButtonLabel("personal_deep")).toBe("개인 심화 PDF 샘플 보기");
+  });
+
   it("keeps one complete public PDF for each paid analysis product", () => {
     expect(Object.keys(SAMPLE_REPORTS).sort()).toEqual([
       "couple_love_deep",
@@ -20,7 +31,7 @@ describe("homepage sample report references", () => {
       "personal_deep",
     ]);
 
-    expect(SAMPLE_REPORTS.personal_deep.pageCount).toBe(8);
+    expect(SAMPLE_REPORTS.personal_deep.pageCount).toBe(12);
     expect(SAMPLE_REPORTS.couple_love_deep.pageCount).toBe(18);
     expect(SAMPLE_REPORTS.parent_child_deep.pageCount).toBe(17);
 

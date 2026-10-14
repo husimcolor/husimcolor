@@ -9,6 +9,16 @@ export const OPENING_CAMPAIGN_COUPON_CODE = "OCT20OPEN2026";
 export const OPENING_CAMPAIGN_ENDS_AT_KST = "2026-10-30T23:59:59+09:00";
 export const OPENING_CAMPAIGN_DISCOUNT_PERCENT = 20;
 
+/**
+ * 공개 카드용 정가·행사가. 실제 결제 시에는 서버가 활성 쿠폰을 다시 검증한다.
+ * 이 값은 OCT20OPEN2026의 20% 적용 결과와 함께 회귀 테스트로 고정한다.
+ */
+export const OPENING_CAMPAIGN_DISPLAY_PRICES = {
+  personal_deep: { listAmountKrw: 29_000, finalAmountKrw: 23_200 },
+  couple_love_deep: { listAmountKrw: 59_000, finalAmountKrw: 47_200 },
+  parent_child_deep: { listAmountKrw: 39_000, finalAmountKrw: 31_200 },
+} as const;
+
 export function isOpeningCampaignActive(now: Date = new Date()): boolean {
   return now.getTime() <= new Date(OPENING_CAMPAIGN_ENDS_AT_KST).getTime();
 }

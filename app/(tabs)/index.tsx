@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
 import { isOpeningCampaignActive } from '@/shared/opening-campaign';
-import { getSampleReportUrl, SAMPLE_REPORT_LINK_LABEL, type SampleReportProduct } from '@/shared/sample-reports';
+import { getSampleReportButtonLabel, getSampleReportUrl, type SampleReportProduct } from '@/shared/sample-reports';
 import { startKakaoLogin } from '@/constants/oauth';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -232,8 +232,9 @@ export default function HomeScreen() {
             원하는 방식으로 천천히 살펴보세요.
           </Text>
           {openingCampaignActive && <View style={styles.openingCampaign}>
-            <Text style={styles.openingCampaignTitle}>휴심컬러 유료 심화분석 오픈 기념 20% 할인</Text>
-            <Text style={styles.openingCampaignText}>10월 30일까지 · 회원가입 없이 이용 가능</Text>
+            <Text style={styles.openingCampaignTitle}>오픈 기념 20% 할인</Text>
+            <Text style={styles.openingCampaignDeadline}>10월 30일까지</Text>
+            <Text style={styles.openingCampaignText}>회원·비회원 동일 · 결제 시 자동 적용</Text>
             <Text style={styles.openingCampaignNote}>개인·부부/연인·부모/자녀 심화분석 대상 · 오프라인 코칭 제외</Text>
           </View>}
         </Animated.View>
@@ -277,12 +278,18 @@ export default function HomeScreen() {
               onPress={handlePersonalDeepEntry}
               disabled={!paidAnalysisPublicEnabled && !tossCardReviewEnabled}
             >
-              <View style={styles.serviceHeadingRow}>
-                <Text style={styles.serviceTitle}>🎨 컬러 + 심리카드 개인 심화분석</Text>
-                <Text style={styles.servicePrice}>29,000원</Text>
-              </View>
-              <Text style={styles.serviceSummary}>컬러 3개와 심리카드 3장으로 나를 깊이 살펴봅니다.</Text>
-              <Text style={[styles.serviceCta, !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCta]}>
+                <View style={styles.serviceHeadingRow}>
+                  <Text style={styles.serviceTitle}>🎨 컬러 + 심리카드 개인 심화분석</Text>
+                  <View style={styles.servicePriceGroup}>
+                    {openingCampaignActive ? <>
+                      <Text style={styles.serviceRegularPrice}>정가 29,000원</Text>
+                      <Text style={styles.serviceDiscountPrice}>→ 23,200원</Text>
+                    </> : <Text style={styles.servicePrice}>29,000원</Text>}
+                  </View>
+                </View>
+                <Text style={styles.serviceSummary}>컬러 3개와 심리카드 3장으로 나를 깊이 살펴봅니다.</Text>
+                {openingCampaignActive ? <Text style={styles.serviceCampaignCaption}>20% 할인 결제금액 · 자동 적용</Text> : null}
+                <Text style={[styles.serviceCta, !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCta]}>
                 {paidAnalysisPublicEnabled ? '나를 깊이 알아보기 →' : tossCardReviewEnabled ? '심사용 Toss 테스트 결제 열기 →' : '정식 오픈 준비중'}
               </Text>
               {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled && !tossLiveEnabled ? (
@@ -291,11 +298,11 @@ export default function HomeScreen() {
             </Pressable>
             <Pressable
               onPress={() => handleOpenSamplePdf('personal_deep')}
-              style={({ pressed }) => [styles.sampleReportLink, pressed && styles.sampleReportLinkPressed]}
+              style={({ pressed }) => [styles.sampleReportButton, pressed && styles.sampleReportButtonPressed]}
               accessibilityRole="link"
-              accessibilityLabel={`개인 심화분석 ${SAMPLE_REPORT_LINK_LABEL}`}
+              accessibilityLabel={getSampleReportButtonLabel('personal_deep')}
             >
-              <Text style={styles.sampleReportLinkText}>{SAMPLE_REPORT_LINK_LABEL}</Text>
+              <Text style={styles.sampleReportButtonText}>{getSampleReportButtonLabel('personal_deep')}</Text>
             </Pressable>
           </View>
 
@@ -375,7 +382,8 @@ const styles = StyleSheet.create({
   },
   openingCampaign: { width: '100%', marginTop: 16, borderRadius: 14, borderWidth: 1, borderColor: '#E4C978', backgroundColor: '#FFF7DA', padding: 14, gap: 4 },
   openingCampaignTitle: { color: '#75561B', fontSize: 14, fontWeight: '800', textAlign: 'center' },
-  openingCampaignText: { color: '#8D6B25', fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  openingCampaignDeadline: { color: '#5E4512', fontSize: 22, lineHeight: 28, fontWeight: '900', textAlign: 'center', letterSpacing: -0.3 },
+  openingCampaignText: { color: '#8D6B25', fontSize: 12, fontWeight: '800', textAlign: 'center' },
   openingCampaignNote: { color: '#806F50', fontSize: 11, lineHeight: 16, textAlign: 'center' },
   logoContainer: {
     width: 122,
@@ -498,6 +506,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
+  servicePriceGroup: { alignItems: 'flex-end', gap: 1 },
+  serviceRegularPrice: { color: '#8B5D2E', fontSize: 11, fontWeight: '700', textDecorationLine: 'line-through' },
+  serviceDiscountPrice: { color: '#7A5420', fontSize: 17, lineHeight: 22, fontWeight: '900' },
+  serviceCampaignCaption: { color: '#8A6826', fontSize: 11, lineHeight: 16, fontWeight: '700' },
   relationshipServiceTag: {
     color: '#577351',
     fontSize: 12,
@@ -534,20 +546,25 @@ const styles = StyleSheet.create({
   preparingServiceCta: {
     color: '#8B5D2E',
   },
-  sampleReportLink: {
-    alignSelf: 'flex-start',
-    minHeight: 32,
+  sampleReportButton: {
+    width: '100%',
+    minHeight: 48,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: '#9CB797',
+    backgroundColor: '#EDF4E9',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
-  sampleReportLinkText: {
-    color: '#6C5A49',
-    fontSize: 12,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
+  sampleReportButtonText: {
+    color: '#3E6A3A',
+    fontSize: 16,
+    fontWeight: '800',
   },
-  sampleReportLinkPressed: {
-    opacity: 0.65,
+  sampleReportButtonPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.985 }],
   },
   adminLink: {
     alignSelf: 'center',
