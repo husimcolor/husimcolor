@@ -43,4 +43,13 @@ describe('첫 진입 화면의 서비스 선택 UX', () => {
     expect(homeScreen).not.toContain('정식 오픈 준비중');
     expect(relationshipStartScreen).not.toContain('정식 오픈 준비중');
   });
+
+  it('기존 심볼과 소개 문구를 깨진 문자 없이 표시한다', () => {
+    expect(homeScreen).toContain("createElement('img'");
+    expect(homeScreen).toContain("src: '/husimcolor-home-symbol.png'");
+    expect(homeScreen).toContain("require('../../assets/images/icon.png')");
+    expect(homeScreen).toContain("alt: '휴심컬러 심볼'");
+    expect(homeScreen).toContain('지금의 나와 두 사람의 관계를 원하는 방식으로 천천히 살펴보세요.');
+    expect(homeScreen).not.toContain("{'\x1c'}");
+  });
 });

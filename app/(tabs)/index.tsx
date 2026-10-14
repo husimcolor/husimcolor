@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { createElement, useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Linking, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -205,11 +205,24 @@ export default function HomeScreen() {
             activeOpacity={0.9}
             style={styles.logoContainer}
           >
-            <Image
-              source={require('@/assets/images/husimcolor-home-symbol.jpg')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
+            {Platform.OS === 'web'
+              ? createElement('img', {
+                  src: '/husimcolor-home-symbol.png',
+                  alt: '휴심컬러 심볼',
+                  style: {
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    borderRadius: 20,
+                  },
+                })
+              : <Image
+                  source={require('../../assets/images/icon.png')}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                  accessibilityLabel="휴심컬러 심볼"
+                />}
+
           </TouchableOpacity>
         </Animated.View>
 
@@ -229,8 +242,7 @@ export default function HomeScreen() {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <Text style={[styles.description, { color: colors.muted }]}>
-            지금의 나와 두 사람의 관계를{''}
-            원하는 방식으로 천천히 살펴보세요.
+            지금의 나와 두 사람의 관계를 원하는 방식으로 천천히 살펴보세요.
           </Text>
           {openingCampaignActive && <View style={styles.openingCampaign}>
             <Text style={styles.openingCampaignTitle}>오픈 기념 20% 할인</Text>
