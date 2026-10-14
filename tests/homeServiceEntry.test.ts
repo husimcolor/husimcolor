@@ -34,4 +34,13 @@ describe('첫 진입 화면의 서비스 선택 UX', () => {
     expect(homeScreen).not.toContain('router.push(\'/(tabs)/sample-report?product=personal_deep');
     expect(relationshipStartScreen).not.toContain("pathname: '/(tabs)/sample-report'");
   });
+
+  it('결제 설정을 불러오는 중에도 유료 상품 진입을 준비중 상태로 숨기지 않는다', () => {
+    expect(homeScreen).toContain("const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? true;");
+    expect(relationshipStartScreen).toContain("const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? true;");
+    expect(homeScreen).toContain('나를 깊이 알아보기 →');
+    expect(relationshipStartScreen).toContain('다음 · 두 사람 정보 입력하기 →');
+    expect(homeScreen).not.toContain('정식 오픈 준비중');
+    expect(relationshipStartScreen).not.toContain('정식 오픈 준비중');
+  });
 });

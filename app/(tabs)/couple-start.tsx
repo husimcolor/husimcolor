@@ -59,7 +59,9 @@ export default function CoupleStartScreen() {
   // 커플 테스트 시작 추적
   const logVisitor = trpc.visitors.log.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
-  const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
+  // 설정 조회 중에도 상품 선택과 정보 입력 안내를 막지 않는다. 결제 실행 여부는
+  // 서버가 최종 판정하며, 운영에서 공개가 꺼져도 안내 화면은 볼 수 있다.
+  const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? true;
   const tossCardReviewEnabled = commerceTestMode.data?.tossCardReviewEnabled ?? false;
   const tossLiveEnabled = commerceTestMode.data?.tossLiveEnabled === true;
   const tossPaymentEnabled = tossLiveEnabled || commerceTestMode.data?.tossTestEnabled === true;
@@ -113,12 +115,10 @@ export default function CoupleStartScreen() {
     : selectedProductId === 'parent-child'
       ? 'parent_child_deep'
       : null;
-  const paidProductPreparing = Boolean(paidProductCode && !paidAnalysisPublicEnabled && !tossCardReviewEnabled);
-  const canProceed = Boolean(effectiveRelationType) && !paidProductPreparing;
+  const canProceed = Boolean(effectiveRelationType);
 
   const handleStart = () => {
     if (!effectiveRelationType) return;
-    if (paidProductCode && !paidAnalysisPublicEnabled && !tossCardReviewEnabled) return;
     // 공개 runtime이 열려 있으면 심사용 review-only보다 persistent 결제 lifecycle을 우선한다.
     if (paidProductCode && paidAnalysisPublicEnabled && tossPaymentEnabled) {
       router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}${tossLiveEnabled ? '' : '&testLifecycle=toss-test-lifecycle'}` as any);
@@ -275,9 +275,6 @@ export default function CoupleStartScreen() {
                           <Text style={[styles.productDiscountPrice, { color: selectedProductId === product.id ? '#FFF3CE' : '#725019' }]}>→ {campaignPrice.finalAmountKrw.toLocaleString()}원</Text>
                         </> : <Text style={[styles.productPrice, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>{product.price}</Text>}
                       </View>
-                      {product.id !== 'friend' && !paidAnalysisPublicEnabled && !tossCardReviewEnabled ? (
-                        <Text style={[styles.productPreparing, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>정식 오픈 준비중</Text>
-                      ) : null}
                     </Pressable>
                     {sampleProduct ? (
                       <Pressable
@@ -337,7 +334,7 @@ export default function CoupleStartScreen() {
             disabled={!canProceed}
           >
             <Text style={[styles.startBtnText, { color: canProceed ? '#fff' : colors.muted }]}>
-              {paidProductPreparing ? '정식 오픈 준비중' : paidProductCode && tossCardReviewEnabled && !paidAnalysisPublicEnabled ? '심사용 Toss 테스트 결제 열기 →' : '다음 · 두 사람 정보 입력하기 →'}
+              {paidProductCode && tossCardReviewEnabled && !paidAnalysisPublicEnabled ? '심사용 Toss 테스트 결제 열기 →' : '다음 · 두 사람 정보 입력하기 →'}
             </Text>
           </Pressable>
 
@@ -386,7 +383,6 @@ const styles = StyleSheet.create({
   productPriceGroup: { alignItems: 'flex-end', gap: 1 },
   productRegularPrice: { fontSize: 11, fontWeight: '700', textDecorationLine: 'line-through' },
   productDiscountPrice: { fontSize: 17, lineHeight: 22, fontWeight: '900' },
-  productPreparing: { position: 'absolute', right: 16, bottom: 10, fontSize: 11, fontWeight: '700' },
   productSampleButton: { minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: '#9CB797', backgroundColor: '#EDF4E9', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
   productSampleButtonText: { color: '#3E6A3A', fontSize: 16, fontWeight: '800' },
   productSampleButtonPressed: { opacity: 0.78, transform: [{ scale: 0.985 }] },

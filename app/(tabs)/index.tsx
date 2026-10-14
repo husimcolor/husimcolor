@@ -69,7 +69,9 @@ export default function HomeScreen() {
   const logVisitor = trpc.visitors.log.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   const kakao = trpc.auth.kakaoStatus.useQuery();
-  const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
+  // 설정을 불러오는 동안에는 상품 안내를 열어 둔다. 서버가 결제 가능 여부를
+  // 최종 판정하며, 운영에서 공개가 꺼진 경우에도 안내 화면은 확인할 수 있다.
+  const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? true;
   const tossCardReviewEnabled = commerceTestMode.data?.tossCardReviewEnabled ?? false;
   const tossLiveEnabled = commerceTestMode.data?.tossLiveEnabled === true;
   const tossPaymentEnabled = tossLiveEnabled || commerceTestMode.data?.tossTestEnabled === true;
@@ -150,7 +152,6 @@ export default function HomeScreen() {
   };
 
   const handlePersonalDeepEntry = () => {
-    if (!paidAnalysisPublicEnabled && !tossCardReviewEnabled) return;
     // 공개 결제 runtime이 열려 있으면 심사용 review-only보다 persistent 결제
     // lifecycle을 우선한다. 라이브와 테스트 주문은 서버 provider에서 분리된다.
     if (paidAnalysisPublicEnabled && tossPaymentEnabled) {
@@ -272,11 +273,9 @@ export default function HomeScreen() {
               style={({ pressed }) => [
                 styles.serviceCard,
                 styles.individualServiceCard,
-                !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCard,
                 pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
               ]}
               onPress={handlePersonalDeepEntry}
-              disabled={!paidAnalysisPublicEnabled && !tossCardReviewEnabled}
             >
                 <View style={styles.serviceHeadingRow}>
                   <Text style={styles.serviceTitle}>🎨 컬러 + 심리카드 개인 심화분석</Text>
@@ -289,9 +288,7 @@ export default function HomeScreen() {
                 </View>
                 <Text style={styles.serviceSummary}>컬러 3개와 심리카드 3장으로 나를 깊이 살펴봅니다.</Text>
                 {openingCampaignActive ? <Text style={styles.serviceCampaignCaption}>20% 할인 결제금액 · 자동 적용</Text> : null}
-                <Text style={[styles.serviceCta, !paidAnalysisPublicEnabled && !tossCardReviewEnabled && styles.preparingServiceCta]}>
-                {paidAnalysisPublicEnabled ? '나를 깊이 알아보기 →' : tossCardReviewEnabled ? '심사용 Toss 테스트 결제 열기 →' : '정식 오픈 준비중'}
-              </Text>
+              <Text style={styles.serviceCta}>나를 깊이 알아보기 →</Text>
               {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled && !tossLiveEnabled ? (
                 <Text style={styles.openingCampaignNote}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text>
               ) : null}
@@ -468,9 +465,6 @@ const styles = StyleSheet.create({
     borderColor: '#D8C6AA',
     borderWidth: 1,
   },
-  preparingServiceCard: {
-    opacity: 0.72,
-  },
   relationshipServiceCard: {
     backgroundColor: '#F2F5EF',
     borderColor: '#B8C9B4',
@@ -542,9 +536,6 @@ const styles = StyleSheet.create({
     color: '#587050',
     fontSize: 13,
     fontWeight: '800',
-  },
-  preparingServiceCta: {
-    color: '#8B5D2E',
   },
   sampleReportButton: {
     width: '100%',
