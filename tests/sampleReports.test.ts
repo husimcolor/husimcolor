@@ -8,9 +8,11 @@ import {
   getSampleReport,
   getSampleReportDownloadUrl,
   getSampleReportFileName,
+  getSampleReportPageImageUrl,
   getSampleReportTitle,
   getSampleReportUrl,
   getSampleReportViewerUrl,
+  getSampleReportWebViewerUrl,
   isSampleReportProduct,
 } from "../shared/sample-reports";
 import { getPublicSampleReportDownload } from "../server/public-sample-report-service";
@@ -50,6 +52,13 @@ describe("homepage sample report references", () => {
       );
       expect(getSampleReportViewerUrl(report.product)).toBe(`/api/public-sample-report?product=${report.product}`);
       expect(getSampleReportDownloadUrl(report.product)).toBe(`/api/public-sample-report?product=${report.product}&download=1`);
+      expect(getSampleReportWebViewerUrl(report.product)).toBe(`/sample-report?product=${report.product}`);
+      expect(getSampleReportPageImageUrl(report.product, 1)).toBe(
+        `/sample-report-pages/${report.product}/page-001.jpg`,
+      );
+      expect(getSampleReportPageImageUrl(report.product, report.pageCount)).toBe(
+        `/sample-report-pages/${report.product}/page-${String(report.pageCount).padStart(3, "0")}.jpg`,
+      );
     }
   });
 
@@ -72,5 +81,9 @@ describe("homepage sample report references", () => {
     expect(getSampleReportUrl("friend")).toBeNull();
     expect(getSampleReportViewerUrl("friend")).toBeNull();
     expect(getSampleReportDownloadUrl("friend")).toBeNull();
+    expect(getSampleReportWebViewerUrl("friend")).toBeNull();
+    expect(getSampleReportPageImageUrl("friend", 1)).toBeNull();
+    expect(getSampleReportPageImageUrl("personal_deep", 0)).toBeNull();
+    expect(getSampleReportPageImageUrl("personal_deep", 13)).toBeNull();
   });
 });

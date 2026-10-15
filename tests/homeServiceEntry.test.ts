@@ -36,7 +36,12 @@ describe('첫 진입 화면의 서비스 선택 UX', () => {
     expect(freeResultScreen).toContain("pathname: '/(tabs)/sample-report'");
     expect(homeScreen).not.toContain("window.open(url, '_blank', 'noopener,noreferrer')");
     expect(relationshipStartScreen).not.toContain("window.open(url, '_blank', 'noopener,noreferrer')");
-    expect(sampleViewerScreen).toContain('WebBrowser.openBrowserAsync(viewerUrl');
+    expect(sampleViewerScreen).toContain('getSampleReportWebViewerUrl');
+    expect(sampleViewerScreen).toContain('WebBrowser.openBrowserAsync(webViewerUrl');
+    expect(sampleViewerScreen).toContain('/pdfjs/sample-report-canvas-viewer.html');
+    expect(sampleViewerScreen).toContain('getSampleReportPageImageUrl');
+    expect(sampleViewerScreen).toContain('createElement("iframe"');
+    expect(sampleViewerScreen).not.toContain('application/pdf"');
     expect(sampleViewerScreen).toContain('PDF 다운로드');
     expect(sampleViewerScreen).toContain('이 분석 알아보기 →');
   });
