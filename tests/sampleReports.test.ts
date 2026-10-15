@@ -4,6 +4,7 @@ import {
   SAMPLE_REPORTS,
   SAMPLE_REPORT_LINK_LABEL,
   SAMPLE_REPORT_BUTTON_LABELS,
+  ZH_CN_SAMPLE_REPORT_FILENAMES,
   getSampleReportButtonLabel,
   getSampleReport,
   getSampleReportUrl,
@@ -40,6 +41,12 @@ describe("homepage sample report references", () => {
       expect(getSampleReportUrl(report.product)).toBe(`/sample-reports/${report.fileName}`);
       expect(getSampleReportUrl(report.product, "https://husimcolor.vercel.app/")).toBe(
         `https://husimcolor.vercel.app/sample-reports/${report.fileName}`,
+      );
+      expect(getSampleReportUrl(report.product, undefined, "zh-CN")).toBe(
+        `/sample-reports/${ZH_CN_SAMPLE_REPORT_FILENAMES[report.product]}`,
+      );
+      expect(getSampleReportUrl(report.product, "https://husimcolor.vercel.app/", "zh-CN")).toBe(
+        `https://husimcolor.vercel.app/sample-reports/${ZH_CN_SAMPLE_REPORT_FILENAMES[report.product]}`,
       );
     }
   });

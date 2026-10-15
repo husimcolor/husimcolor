@@ -51,8 +51,8 @@ describe("선택 결과 역할 명칭 일관성", () => {
   });
 
   it("별도 추천 색을 선택한 세 번째 컬러와 구분해 추천 보완컬러로 표기한다", () => {
+    const freeResult = source("app/(tabs)/result.tsx");
     const sources = [
-      source("app/(tabs)/result.tsx"),
       source("app/(tabs)/premium-result.tsx"),
       source("app/(tabs)/couple-color-result.tsx"),
       source("components/premium-share-summary-card.tsx"),
@@ -61,6 +61,7 @@ describe("선택 결과 역할 명칭 일관성", () => {
       source("server/parent-child-pdf-report.ts"),
     ];
 
+    expect(freeResult).toContain('t("suggestedBalancing")');
     for (const value of sources) {
       expect(value).toContain(KoreanRoleLabels.recommendation);
     }

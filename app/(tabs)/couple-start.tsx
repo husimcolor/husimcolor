@@ -5,7 +5,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import {
-  View, Text, Pressable, ScrollView, StyleSheet, Linking,
+  View, Pressable, ScrollView, StyleSheet, Linking,
   Animated, TouchableOpacity, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,8 +19,10 @@ import {
   type VisibleRelationProduct,
 } from '@/constants/relationProducts';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { isOpeningCampaignActive, OPENING_CAMPAIGN_DISPLAY_PRICES } from '@/shared/opening-campaign';
 import { getSampleReportButtonLabel, getSampleReportUrl, type SampleReportProduct } from '@/shared/sample-reports';
+import { useLocalization } from '@/lib/localization-context';
 
 const ROMANTIC_RELATION_TYPES: { value: Extract<RelationType, '연인' | '부부'>; label: string; emoji: string }[] = [
   { value: '연인', label: '연인', emoji: '💑' },
@@ -37,6 +39,7 @@ const PARENT_CHILD_COMBOS: { value: RelationType; label: string }[] = [
 
 export default function CoupleStartScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const routeParams = useLocalSearchParams<{
     restoreProduct?: string | string[];
     restoreRelationType?: string | string[];
@@ -165,7 +168,7 @@ export default function CoupleStartScreen() {
   // 결제 흐름과 분리된 새 창/외부 브라우저로 열어 상품·관계 조합 선택을 그대로 둔다.
   const handleOpenSamplePdf = (product: SampleReportProduct) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://husimcolor.vercel.app';
-    const url = getSampleReportUrl(product, origin);
+    const url = getSampleReportUrl(product, origin, locale);
     if (!url) return;
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       window.open(url, '_blank', 'noopener,noreferrer');
@@ -271,8 +274,8 @@ export default function CoupleStartScreen() {
                       </Text>
                       <View style={styles.productPriceGroup}>
                         {openingCampaignActive && campaignPrice ? <>
-                          <Text style={[styles.productRegularPrice, { color: selectedProductId === product.id ? '#E8D4AA' : '#8B5D2E' }]}>정가 {campaignPrice.listAmountKrw.toLocaleString()}원</Text>
-                          <Text style={[styles.productDiscountPrice, { color: selectedProductId === product.id ? '#FFF3CE' : '#725019' }]}>→ {campaignPrice.finalAmountKrw.toLocaleString()}원</Text>
+                          <Text style={[styles.productRegularPrice, { color: selectedProductId === product.id ? '#E8D4AA' : '#8B5D2E' }]}>{`정가 ${campaignPrice.listAmountKrw.toLocaleString()}원`}</Text>
+                          <Text style={[styles.productDiscountPrice, { color: selectedProductId === product.id ? '#FFF3CE' : '#725019' }]}>{`→ ${campaignPrice.finalAmountKrw.toLocaleString()}원`}</Text>
                         </> : <Text style={[styles.productPrice, { color: selectedProductId === product.id ? '#F4D9A8' : '#8B5D2E' }]}>{product.price}</Text>}
                       </View>
                     </Pressable>

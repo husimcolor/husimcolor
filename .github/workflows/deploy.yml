@@ -77,6 +77,9 @@ jobs:
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/private-pdf-download.func/HusimPdfKorean.ttf"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/couple-pdf-report.func/HusimPdfKorean.ttf"
           cp "server/assets/HusimPdfKorean.ttf" ".vercel/output/functions/api/parent-child-pdf-report.func/HusimPdfKorean.ttf"
+          for function in "trpc/[...trpc]" pdf-report private-pdf-download couple-pdf-report parent-child-pdf-report; do
+            cp "server/assets/NotoSansCJKsc-Regular.otf" ".vercel/output/functions/api/${function}.func/NotoSansCJKsc-Regular.otf"
+          done
 
       - name: Include PDFKit serverless runtime
         run: |
