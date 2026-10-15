@@ -5,20 +5,21 @@ import { join } from "node:path";
 const projectRoot = join(__dirname, "..");
 const read = (relativePath: string) => readFileSync(join(projectRoot, relativePath), "utf8");
 
-describe("유료 분석 정식 오픈 준비중 UI", () => {
-  it("홈은 유료 개인 심화분석의 가격과 준비중 문구를 함께 표시한다", () => {
+describe("유료 분석 정상 진입 UI", () => {
+  it("홈은 유료 개인 심화분석의 가격과 정상 진입 문구를 표시한다", () => {
     const source = read("app/(tabs)/index.tsx");
     expect(source).toContain("29,000원");
-    expect(source).toContain("정식 오픈 준비중");
-    expect(source).toContain("disabled={!paidAnalysisPublicEnabled && !tossCardReviewEnabled}");
+    expect(source).toContain("나를 깊이 알아보기 →");
+    expect(source).not.toContain("정식 오픈 준비중");
+    expect(source).toContain("if (paidAnalysisPublicEnabled && tossPaymentEnabled)");
     expect(source).toContain("if (tossCardReviewEnabled) {");
     expect(source).toContain("product=personal_deep&review=toss-card-review");
   });
 
-  it("관계 화면은 친구 무료 경로를 보존하면서 유료 관계 시작을 준비중으로 막는다", () => {
+  it("관계 화면은 친구 무료 경로를 보존하면서 유료 관계 상품의 정상 진입을 제공한다", () => {
     const source = read("app/(tabs)/couple-start.tsx");
-    expect(source).toContain("product.id !== 'friend' && !paidAnalysisPublicEnabled");
-    expect(source).toContain("paidProductPreparing ? '정식 오픈 준비중'");
+    expect(source).toContain("다음 · 두 사람 정보 입력하기 →");
+    expect(source).toContain("if (paidProductCode && paidAnalysisPublicEnabled && tossPaymentEnabled)");
     expect(source).toContain("setRelationType('친구')");
     expect(source).toContain("if (paidProductCode && tossCardReviewEnabled) {");
     expect(source).toContain("review=toss-card-review");

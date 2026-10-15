@@ -16,5 +16,8 @@ describe("private PDF delivery policy", () => {
     expect(getPrivatePdfFilename("personal_deep")).toBe("휴심컬러_나의컬러심리해석.pdf");
     expect(getPrivatePdfFilename("couple_love_deep")).toBe("휴심컬러_부부연인_관계리포트.pdf");
     expect(getPrivatePdfFilename("parent_child_deep")).toBe("휴심컬러_부모자녀_관계리포트.pdf");
+    expect(getPrivatePdfFilename("personal_deep", "zh-CN")).toBe("HUSIM_COLOR_个人深度分析报告.pdf");
+    expect(getPrivatePdfFilename("couple_love_deep", "zh-CN")).toBe("HUSIM_COLOR_夫妻_恋人关系报告.pdf");
+    expect(getPrivatePdfFilename("parent_child_deep", "zh-CN")).toBe("HUSIM_COLOR_亲子关系报告.pdf");
   });
 });

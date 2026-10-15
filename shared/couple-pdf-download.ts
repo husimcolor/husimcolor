@@ -30,6 +30,9 @@ export type CouplePdfPerson = {
 };
 
 export type CouplePdfDownloadPayload = {
+  /** 신규 결과의 언어를 PDF와 이메일까지 고정한다. null/undefined 기존 결과는 한국어로 읽는다. */
+  locale?: "ko" | "zh-CN";
+  copyVersion?: string;
   relationType: "부부" | "연인";
   generatedAt: string;
   /** 공개용 가상 데이터 리포트에만 표지에 표시한다. 고객 PDF에는 전달하지 않는다. */

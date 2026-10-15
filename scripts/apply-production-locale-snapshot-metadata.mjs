@@ -6,9 +6,14 @@ const envPath = process.env.PRODUCTION_ENV_FILE ?? ".env.production";
 if (existsSync(envPath)) dotenv.config({ path: envPath, override: false, quiet: true });
 
 const databaseUrl = process.env.DATABASE_URL?.trim();
-if (!databaseUrl) throw new Error("PRODUCTION_DATABASE_URL_MISSING");
+if (!databaseUrl || databaseUrl.includes("[SENSITIVE]")) throw new Error("PRODUCTION_DATABASE_URL_MISSING");
 
-const parsedDatabaseUrl = new URL(databaseUrl);
+let parsedDatabaseUrl;
+try {
+  parsedDatabaseUrl = new URL(databaseUrl);
+} catch {
+  throw new Error("PRODUCTION_DATABASE_URL_INVALID");
+}
 const isLoopback = parsedDatabaseUrl.hostname === "127.0.0.1" || parsedDatabaseUrl.hostname === "localhost";
 const productionApproved = process.env.ALLOW_PRODUCTION_ZH_CN_LOCALE_MIGRATION === "true";
 const localTestApproved = process.env.ALLOW_LOCAL_ZH_CN_LOCALE_MIGRATION_TEST === "true";

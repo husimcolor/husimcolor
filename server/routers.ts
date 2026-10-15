@@ -156,6 +156,7 @@ export const appRouter = router({
           productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
           relationshipMode: z.enum(["invite_link"]).optional(),
           relationType: z.enum(["연인", "부부", "친구", "부모-자녀", "아빠-아들", "아빠-딸", "엄마-아들", "엄마-딸", "형제자매", "동료"]).optional(),
+          locale: z.enum(["ko", "zh-CN"]).optional(),
         }))
         .mutation(({ input }) => consumeEntitlementForAnalysisStart(input)),
     }),

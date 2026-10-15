@@ -38,6 +38,7 @@ export async function getPrivateAnalysisPdfDownload(input: {
     .select({
       storageKey: privateDocuments.storageKey,
       productCode: products.code,
+      locale: analysisRuns.locale,
     })
     .from(privateDocuments)
     .innerJoin(analysisRuns, eq(privateDocuments.analysisRunId, analysisRuns.id))
@@ -56,7 +57,7 @@ export async function getPrivateAnalysisPdfDownload(input: {
   }
 
   return {
-    filename: getPrivatePdfFilename(document.productCode),
+    filename: getPrivatePdfFilename(document.productCode, document.locale === "zh-CN" ? "zh-CN" : "ko"),
     content: await storageGetBuffer(document.storageKey),
   };
 }

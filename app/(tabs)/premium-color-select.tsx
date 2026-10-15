@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -12,8 +11,12 @@ import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenContainer } from "@/components/screen-container";
+import { LocalizedText as Text } from "@/components/localized-text";
 import { useColors } from "@/hooks/use-colors";
 import { COLOR_DATA, type ColorData } from "@/constants/colorData";
+import { getLocalizedColorName } from "@/lib/free-result-localization";
+import { useLocalization } from "@/lib/localization-context";
+import { localizeStaticCopy } from "@/lib/zh-cn-copy";
 import {
   buildPremiumStage1Interpretation,
   type PremiumStage1Interpretation,
@@ -59,6 +62,8 @@ function getSwatchTextShadow(hex: string): object {
 
 export default function PremiumColorSelectScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
+  const localize = (value: string) => localizeStaticCopy(value, locale);
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [selectedColors, setSelectedColors] = useState<ColorData[]>([]);
@@ -88,7 +93,10 @@ export default function PremiumColorSelectScreen() {
       const exists = prev.find(c => c.id === color.id);
       if (exists) return prev.filter(c => c.id !== color.id);
       if (prev.length >= 3) {
-        Alert.alert("3가지 컬러를 선택해 주세요", "이미 3가지 컬러를 선택하셨습니다.\n변경하려면 선택된 컬러를 먼저 해제해 주세요.");
+        Alert.alert(
+          localize("3가지 컬러를 선택해 주세요"),
+          localize("이미 3가지 컬러를 선택하셨습니다.\n변경하려면 선택된 컬러를 먼저 해제해 주세요."),
+        );
         return prev;
       }
       return [...prev, color];
@@ -97,7 +105,7 @@ export default function PremiumColorSelectScreen() {
 
   const handleAnalyze = () => {
     if (selectedColors.length < 3) {
-      Alert.alert("컬러 선택", "마음이 이끄는 컬러 3가지를 선택해 주세요.");
+      Alert.alert(localize("컬러 선택"), localize("마음이 이끄는 컬러 3가지를 선택해 주세요."));
       return;
     }
     const result = buildPremiumStage1Interpretation(selectedColors);
@@ -123,13 +131,13 @@ export default function PremiumColorSelectScreen() {
         {/* 헤더 */}
         <View style={styles.header}>
           <Text style={[styles.stepBadge, { color: "#3D6B3D", borderColor: "#8BAF8B55", backgroundColor: "#8BAF8B11" }]}>
-            1단계 · 컬러 에너지 흐름
+            {localize("1단계 · 컬러 에너지 흐름")}
           </Text>
           <Text style={[styles.title, { color: '#3D3530' }]}>
-            마음이 이끄는 컬러를{"\n"}3가지 선택해 주세요
+            {localize("마음이 이끄는 컬러를")} {"\n"}{localize("3가지 선택해 주세요")}
           </Text>
           <Text style={[styles.subtitle, { color: '#5F4B3B' }]}>
-            지금 이 순간 눈길이 가는 컬러를{"\n"}직관적으로 선택해 주세요
+            {localize("지금 이 순간 눈길이 가는 컬러를")} {"\n"}{localize("직관적으로 선택해 주세요")}
           </Text>
         </View>
 
@@ -148,9 +156,11 @@ export default function PremiumColorSelectScreen() {
               ]}
             >
               {selectedColors[i] ? (
-                <Text style={styles.selectedSlotText}>{selectedColors[i].korName}</Text>
+                <Text style={styles.selectedSlotText}>{getLocalizedColorName(selectedColors[i], locale)}</Text>
               ) : (
-                <Text style={[styles.selectedSlotEmpty, { color: '#8A7A68' }]}>{i + 1}번</Text>
+                <Text style={[styles.selectedSlotEmpty, { color: '#8A7A68' }]}>
+                  {locale === "zh-CN" ? `${i + 1}号` : `${i + 1}번`}
+                </Text>
               )}
             </View>
           ))}
@@ -180,7 +190,7 @@ export default function PremiumColorSelectScreen() {
                     </View>
                   )}
                   <Text style={[styles.swatchLabel, { color: getSwatchTextColor(color.hex), ...getSwatchTextShadow(color.hex) }]}>
-                    {color.korName}
+                    {getLocalizedColorName(color, locale)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -206,8 +216,10 @@ export default function PremiumColorSelectScreen() {
               { color: selectedColors.length === 3 ? "#fff" : '#8A7A68' }
             ]}>
               {selectedColors.length === 3
-                ? "🌿 컬러 흐름 해석 보기"
-                : `${selectedColors.length}/3 컬러 선택 중`}
+                ? localize("🌿 컬러 흐름 해석 보기")
+                : locale === "zh-CN"
+                  ? `${selectedColors.length}/3 色选择中`
+                  : `${selectedColors.length}/3 컬러 선택 중`}
             </Text>
           </TouchableOpacity>
         )}
@@ -218,22 +230,22 @@ export default function PremiumColorSelectScreen() {
             {/* 1단계 역할 안내 문구 */}
             <View style={[styles.stageGuide, { backgroundColor: "#8BAF8B0D", borderColor: "#8BAF8B33" }]}>
               <Text style={[styles.stageGuideText, { color: '#8A7A68' }]}>
-                1단계는 현재 스스로 인식하고 있는 성향과 관계 흐름을 살펴보는 단계입니다.
+                {localize("1단계는 현재 스스로 인식하고 있는 성향과 관계 흐름을 살펴보는 단계입니다.")}
               </Text>
             </View>
 
             {/* 선택 컬러 요약 */}
             <View style={[styles.colorSummary, { backgroundColor: '#F2EFE7', borderColor: '#DDD8CE' }]}>
               <Text style={[styles.colorSummaryTitle, { color: '#3D3530' }]}>
-                선택한 컬러 흐름
+                {localize("선택한 컬러 흐름")}
               </Text>
               <View style={styles.colorSummaryRow}>
                 {selectedColors.map((c, i) => (
                   <View key={c.id} style={styles.colorSummaryItem}>
                     <View style={[styles.colorDot, { backgroundColor: c.hex }, getLightColorBorder(c.hex)]} />
-                    <Text style={[styles.colorSummaryName, { color: '#3D3530' }]}>{c.korName}</Text>
+                    <Text style={[styles.colorSummaryName, { color: '#3D3530' }]}>{getLocalizedColorName(c, locale)}</Text>
                     <Text style={[styles.colorSummaryKeyword, { color: '#8A7A68' }]} numberOfLines={2}>
-                      {c.keywords.slice(0, 3).join(" · ")}
+                      {c.keywords.slice(0, 3).map(localize).join(" · ")}
                     </Text>
                   </View>
                 ))}
@@ -242,24 +254,28 @@ export default function PremiumColorSelectScreen() {
 
             {/* 선택 컬러 미니 해석 */}
             <View style={[styles.miniInterpretations, { backgroundColor: '#F8F6F0', borderColor: '#DDD8CE' }]}>
-              <Text style={[styles.miniInterpretationsTitle, { color: '#3D3530' }]}>선택한 컬러 미니 해석</Text>
+              <Text style={[styles.miniInterpretationsTitle, { color: '#3D3530' }]}>
+                {localize("선택한 컬러 미니 해석")}
+              </Text>
               {interpretation.miniInterpretations.map((item) => (
                 <View key={item.colorId} style={[styles.miniColorCard, { borderColor: '#DDD8CE' }]}>
                   <View style={styles.miniColorHeader}>
                     <View style={[styles.miniColorDot, { backgroundColor: item.hex }, getLightColorBorder(item.hex)]} />
                     <View style={styles.miniColorHeading}>
-                      <Text style={[styles.miniColorName, { color: '#3D3530' }]}>{item.colorName}</Text>
-                      <Text style={[styles.miniColorKeywords, { color: '#8A7A68' }]}>{item.keywords.join(" · ")}</Text>
+                      <Text style={[styles.miniColorName, { color: '#3D3530' }]}>{localize(item.colorName)}</Text>
+                      <Text style={[styles.miniColorKeywords, { color: '#8A7A68' }]}>
+                        {item.keywords.map(localize).join(" · ")}
+                      </Text>
                     </View>
                   </View>
-                  <Text style={[styles.miniColorDescription, { color: '#4B4037' }]}>{item.description}</Text>
+                  <Text style={[styles.miniColorDescription, { color: '#4B4037' }]}>{localize(item.description)}</Text>
                   <View style={styles.miniMetaRow}>
-                    <Text style={[styles.miniMetaLabel, { color: '#7A4A10' }]}>강점</Text>
-                    <Text style={[styles.miniMetaText, { color: '#5F4B3B' }]}>{item.strengths.join(" · ")}</Text>
+                    <Text style={[styles.miniMetaLabel, { color: '#7A4A10' }]}>{localize("강점")}</Text>
+                    <Text style={[styles.miniMetaText, { color: '#5F4B3B' }]}>{item.strengths.map(localize).join(" · ")}</Text>
                   </View>
                   <View style={styles.miniMetaRow}>
-                    <Text style={[styles.miniMetaLabel, { color: '#2A5A80' }]}>마음이 지칠 때</Text>
-                    <Text style={[styles.miniMetaText, { color: '#5F4B3B' }]}>{item.tiredStates.join(" · ")}</Text>
+                    <Text style={[styles.miniMetaLabel, { color: '#2A5A80' }]}>{localize("마음이 지칠 때")}</Text>
+                    <Text style={[styles.miniMetaText, { color: '#5F4B3B' }]}>{item.tiredStates.map(localize).join(" · ")}</Text>
                   </View>
                 </View>
               ))}
@@ -267,18 +283,18 @@ export default function PremiumColorSelectScreen() {
 
             {/* 세 컬러 연결 문구 */}
             <View style={[styles.integrationBridge, { backgroundColor: '#8BAF8B12', borderColor: '#8BAF8B44' }]}>
-              <Text style={[styles.integrationBridgeTitle, { color: '#3D6B3D' }]}>세 컬러가 함께 나타날 때</Text>
-              <Text style={[styles.integrationBridgeText, { color: '#4B4037' }]}>{interpretation.integrationBridge}</Text>
+              <Text style={[styles.integrationBridgeTitle, { color: '#3D6B3D' }]}>{localize("세 컬러가 함께 나타날 때")}</Text>
+              <Text style={[styles.integrationBridgeText, { color: '#4B4037' }]}>{localize(interpretation.integrationBridge)}</Text>
             </View>
 
             {/* 심리 성향 */}
             <View style={[styles.sectionCard, { backgroundColor: '#F2EFE7', borderColor: "#8BAF8B44" }]}>
               <View style={styles.sectionHeader}>
                 <View style={[styles.sectionDot, { backgroundColor: "#3D6B3D" }]} />
-                <Text style={[styles.sectionLabel, { color: "#3D6B3D" }]}>심리 성향</Text>
+                <Text style={[styles.sectionLabel, { color: "#3D6B3D" }]}>{localize("심리 성향")}</Text>
               </View>
               <Text style={[styles.sectionText, { color: '#3D3530' }]}>
-                {interpretation.psychologyTendency}
+                {localize(interpretation.psychologyTendency)}
               </Text>
             </View>
 
@@ -286,10 +302,10 @@ export default function PremiumColorSelectScreen() {
             <View style={[styles.sectionCard, { backgroundColor: '#F2EFE7', borderColor: "#B5A0C844" }]}>
               <View style={styles.sectionHeader}>
                 <View style={[styles.sectionDot, { backgroundColor: "#6B4A9A" }]} />
-                <Text style={[styles.sectionLabel, { color: "#6B4A9A" }]}>성격 경향</Text>
+                <Text style={[styles.sectionLabel, { color: "#6B4A9A" }]}>{localize("성격 경향")}</Text>
               </View>
               <Text style={[styles.sectionText, { color: '#3D3530' }]}>
-                {interpretation.personalityTendency}
+                {localize(interpretation.personalityTendency)}
               </Text>
             </View>
 
@@ -297,12 +313,12 @@ export default function PremiumColorSelectScreen() {
             <View style={[styles.sectionCard, { backgroundColor: '#F2EFE7', borderColor: "#C4956A44" }]}>
               <View style={styles.sectionHeader}>
                 <View style={[styles.sectionDot, { backgroundColor: "#7A4A10" }]} />
-                <Text style={[styles.sectionLabel, { color: "#7A4A10" }]}>주요 장점</Text>
+                <Text style={[styles.sectionLabel, { color: "#7A4A10" }]}>{localize("주요 장점")}</Text>
               </View>
               <View style={styles.tagRow}>
                 {interpretation.strengths.map(s => (
                   <View key={s} style={[styles.tag, { backgroundColor: "#C4956A18", borderColor: "#C4956A44" }]}>
-                    <Text style={[styles.tagText, { color: "#7A4A10" }]}>{s}</Text>
+                    <Text style={[styles.tagText, { color: "#7A4A10" }]}>{localize(s)}</Text>
                   </View>
                 ))}
               </View>
@@ -312,12 +328,12 @@ export default function PremiumColorSelectScreen() {
             <View style={[styles.sectionCard, { backgroundColor: '#F2EFE7', borderColor: "#7B9FBF44" }]}>
               <View style={styles.sectionHeader}>
                 <View style={[styles.sectionDot, { backgroundColor: "#2A5A80" }]} />
-                <Text style={[styles.sectionLabel, { color: "#2A5A80" }]}>성장 가능성</Text>
+                <Text style={[styles.sectionLabel, { color: "#2A5A80" }]}>{localize("성장 가능성")}</Text>
               </View>
               <View style={styles.tagRow}>
                 {interpretation.growthPossibility.map((pattern) => (
                   <View key={pattern} style={[styles.tag, { backgroundColor: "#7B9FBF18", borderColor: "#7B9FBF44" }]}>
-                    <Text style={[styles.tagText, { color: "#2A5A80" }]}>{pattern}</Text>
+                    <Text style={[styles.tagText, { color: "#2A5A80" }]}>{localize(pattern)}</Text>
                   </View>
                 ))}
               </View>
@@ -327,21 +343,21 @@ export default function PremiumColorSelectScreen() {
             <View style={[styles.sectionCard, { backgroundColor: '#F2EFE7', borderColor: "#A0845C44" }]}>
               <View style={styles.sectionHeader}>
                 <View style={[styles.sectionDot, { backgroundColor: "#6B4A10" }]} />
-                <Text style={[styles.sectionLabel, { color: "#6B4A10" }]}>관계 성향</Text>
+                <Text style={[styles.sectionLabel, { color: "#6B4A10" }]}>{localize("관계 성향")}</Text>
               </View>
               <Text style={[styles.sectionText, { color: '#3D3530' }]}>
-                {interpretation.relationshipTendency}
+                {localize(interpretation.relationshipTendency)}
               </Text>
             </View>
 
             {/* 다음 단계 안내 */}
             <View style={[styles.nextStepBanner, { backgroundColor: "#8BAF8B11", borderColor: "#8BAF8B44" }]}>
               <Text style={[styles.nextStepTitle, { color: "#3D6B3D" }]}>
-                🌿 2단계 · 심리카드 흐름
+                {localize("🌿 2단계 · 심리카드 흐름")}
               </Text>
               <Text style={[styles.nextStepDesc, { color: '#8A7A68' }]}>
-                이제 보지 않고 직관으로 카드 3장을 선택합니다.{"\n"}
-                무의식 · 현재흐름 · 회복방향의 에너지를 확인해 보세요.
+                {localize("이제 보지 않고 직관으로 카드 3장을 선택합니다.")}{"\n"}
+                {localize("무의식 · 현재흐름 · 회복방향의 에너지를 확인해 보세요.")}
               </Text>
             </View>
 
@@ -352,7 +368,7 @@ export default function PremiumColorSelectScreen() {
               activeOpacity={0.8}
             >
               <Text style={styles.continueBtnText}>
-                심리카드 3장 선택하기 →
+                {localize("심리카드 3장 선택하기 →")}
               </Text>
             </TouchableOpacity>
 
@@ -367,7 +383,7 @@ export default function PremiumColorSelectScreen() {
               activeOpacity={0.7}
             >
               <Text style={[styles.resetBtnText, { color: '#8A7A68' }]}>
-                컬러 다시 선택하기
+                {localize("컬러 다시 선택하기")}
               </Text>
             </TouchableOpacity>
           </View>

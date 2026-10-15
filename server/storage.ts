@@ -2,12 +2,15 @@
 // Uploads via Forge Server presigned URL to S3 (PUT direct).
 // Downloads return /manus-storage/{key} paths served via 307 redirect.
 
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+
 import { ENV } from "./_core/env";
 import { getCurrentVercelOidcToken } from "./vercel-request-context";
 
 type StorageEnvironment = Record<string, string | undefined>;
 
-export type StorageBackend = "vercel_blob" | "manus_forge" | "unconfigured";
+export type StorageBackend = "vercel_blob" | "manus_forge" | "local_test" | "unconfigured";
 
 /**
  * Vercel deployments do not receive Manus WebDev's Forge credentials. A private
@@ -15,6 +18,9 @@ export type StorageBackend = "vercel_blob" | "manus_forge" | "unconfigured";
  * are present; local WebDev continues to use the existing Forge storage path.
  */
 export function resolveStorageBackend(env: StorageEnvironment = process.env): StorageBackend {
+  // An explicit non-production local directory wins over ambient development
+  // credentials so isolated E2E cannot accidentally write to Forge storage.
+  if (env.NODE_ENV !== "production" && env.HUSIM_LOCAL_TEST_STORAGE_DIR) return "local_test";
   // A Vercel Blob connection supplies BLOB_STORE_ID. The request-scoped OIDC
   // header is passed directly to the SDK by this module when it is available.
   const hasVercelOidc = Boolean(env.BLOB_STORE_ID);
@@ -57,6 +63,24 @@ function appendHashSuffix(relKey: string): string {
   return `${relKey.slice(0, lastDot)}_${hash}${relKey.slice(lastDot)}`;
 }
 
+function getLocalTestStorageDir(): string {
+  const dir = process.env.HUSIM_LOCAL_TEST_STORAGE_DIR;
+  if (!dir || resolveStorageBackend() !== "local_test") {
+    throw new Error("Local test storage is not configured");
+  }
+  return path.resolve(dir);
+}
+
+function localTestPath(storageKey: string): string {
+  const normalized = storageKey.replace(/^local-test:/, "");
+  const root = getLocalTestStorageDir();
+  const target = path.resolve(root, normalized);
+  if (target !== root && !target.startsWith(`${root}${path.sep}`)) {
+    throw new Error("INVALID_LOCAL_TEST_STORAGE_KEY");
+  }
+  return target;
+}
+
 function getVercelBlobRequestAuth(): { oidcToken?: string; storeId?: string } {
   const oidcToken = getCurrentVercelOidcToken();
   const storeId = process.env.BLOB_STORE_ID;
@@ -76,6 +100,13 @@ export async function storagePut(
   contentType = "application/octet-stream",
 ): Promise<{ key: string; url: string }> {
   const key = appendHashSuffix(normalizeKey(relKey));
+
+  if (resolveStorageBackend() === "local_test") {
+    const target = localTestPath(key);
+    mkdirSync(path.dirname(target), { recursive: true });
+    writeFileSync(target, typeof data === "string" ? data : Buffer.from(data));
+    return { key: `local-test:${key}`, url: `local-test:${key}` };
+  }
 
   if (resolveStorageBackend() === "vercel_blob") {
     const { put } = await import("@vercel/blob");
@@ -134,6 +165,9 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
 }
 
 export async function storageGetSignedUrl(relKey: string): Promise<string> {
+  if (relKey.startsWith("local-test:")) {
+    return `file://${localTestPath(relKey)}`;
+  }
   if (isVercelBlobKey(relKey)) {
     if (resolveStorageBackend() !== "vercel_blob") {
       throw new Error("Private Blob storage is not configured for this runtime");
@@ -176,6 +210,9 @@ export async function storageGetSignedUrl(relKey: string): Promise<string> {
 
 /** Reads either private Blob content or the existing Forge-backed object. */
 export async function storageGetBuffer(relKey: string): Promise<Buffer> {
+  if (relKey.startsWith("local-test:")) {
+    return readFileSync(localTestPath(relKey));
+  }
   if (isVercelBlobKey(relKey)) {
     if (resolveStorageBackend() !== "vercel_blob") {
       throw new Error("Private Blob storage is not configured for this runtime");

@@ -2,6 +2,7 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import type { CouplePdfPerson, CouplePdfShape } from "../shared/couple-pdf-download";
 import type { ParentChildPdfDownloadPayload } from "../shared/parent-child-pdf-download";
+import { localizeStaticCopy } from "../lib/zh-cn-copy";
 import { PDFDocument } from "./pdfkit-runtime";
 
 const PAGE_LEFT = 43;
@@ -12,6 +13,10 @@ const BUNDLED_FONT_PATH = path.join(__dirname, "HusimPdfKorean.ttf");
 const FONT_PATH = existsSync(BUNDLED_FONT_PATH)
   ? BUNDLED_FONT_PATH
   : path.join(process.cwd(), "server", "assets", "HusimPdfKorean.ttf");
+const BUNDLED_ZH_FONT_PATH = path.join(__dirname, "NotoSansCJKsc-Regular.otf");
+const ZH_FONT_PATH = existsSync(BUNDLED_ZH_FONT_PATH)
+  ? BUNDLED_ZH_FONT_PATH
+  : path.join(process.cwd(), "server", "assets", "NotoSansCJKsc-Regular.otf");
 const BODY_SIZE = 15.2;
 const BODY_LINE_GAP = 5.5;
 const SECTION_BAR_GAP = 10;
@@ -23,6 +28,19 @@ const CARD_PARAGRAPH_GAP = 20;
 
 type PdfWriter = InstanceType<typeof PDFDocument>;
 type CardParagraph = { label?: string; text?: string; bullets?: string[] };
+
+function localizedPdfText(document: PdfWriter, value: string) {
+  return localizeStaticCopy(value, ((document as any).__locale ?? "ko") as "ko" | "zh-CN");
+}
+
+function displayRole(document: PdfWriter, value: string) {
+  if ((document as any).__locale !== "zh-CN") return value;
+  const roles = { "엄마": "妈妈", "아빠": "爸爸", "딸": "女儿", "아들": "儿子", "부모": "父母", "자녀": "孩子" } as Record<string, string>;
+  const exact = roles[value];
+  if (exact) return exact;
+  const prefix = Object.keys(roles).find((role) => value.startsWith(`${role} · `));
+  return prefix ? `${roles[prefix]} · ${localizedPdfText(document, value.slice(prefix.length + 3))}` : localizedPdfText(document, value);
+}
 
 function clean(value: string) {
   return value
@@ -48,12 +66,12 @@ function ensureSpace(document: PdfWriter, height: number) {
 
 function heightOf(document: PdfWriter, text: string, width = CONTENT_WIDTH, size = BODY_SIZE) {
   document.fontSize(size);
-  return document.heightOfString(clean(text) || " ", { width, lineGap: BODY_LINE_GAP });
+  return document.heightOfString(clean(localizedPdfText(document, text)) || " ", { width, lineGap: BODY_LINE_GAP });
 }
 
 function subtitleHeight(document: PdfWriter, text: string, width: number, size: number) {
   document.fontSize(size);
-  return document.heightOfString(clean(text) || " ", { width, lineGap: 3 });
+  return document.heightOfString(clean(localizedPdfText(document, text)) || " ", { width, lineGap: 3 });
 }
 
 function writeSubtitle(document: PdfWriter, text: string, x: number, y: number, width: number, size: number) {
@@ -62,7 +80,7 @@ function writeSubtitle(document: PdfWriter, text: string, x: number, y: number, 
     .strokeColor("#2F2019")
     .lineWidth(0.45)
     .fontSize(size)
-    .text(clean(text), x, y, { width, lineGap: 3, fill: true, stroke: true });
+    .text(clean(localizedPdfText(document, text)), x, y, { width, lineGap: 3, fill: true, stroke: true });
 }
 
 function bulletListHeight(document: PdfWriter, bullets: string[], width: number) {
@@ -73,7 +91,7 @@ function writeBulletList(document: PdfWriter, bullets: string[], textX: number, 
   bullets.forEach((bullet) => {
     const top = document.y;
     document.fillColor("#8A6B4D").fontSize(BODY_SIZE).text("•", bulletX, top, { width: 14, lineGap: BODY_LINE_GAP });
-    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(bullet), textX, top, { width, lineGap: BODY_LINE_GAP });
+    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(localizedPdfText(document, bullet)), textX, top, { width, lineGap: BODY_LINE_GAP });
     document.moveDown(0.34);
   });
 }
@@ -85,7 +103,7 @@ function writeSectionTitle(document: PdfWriter, title: string, tone = "#5C7F68",
   else if (needsGap) document.y += SECTION_BAR_GAP;
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, 30, 7).fill().restore();
-  document.fillColor("#FFFFFF").fontSize(14).text(clean(title), PAGE_LEFT + 13, top + 8, { width: CONTENT_WIDTH - 26, lineBreak: false });
+  document.fillColor("#FFFFFF").fontSize(14).text(clean(localizedPdfText(document, title)), PAGE_LEFT + 13, top + 8, { width: CONTENT_WIDTH - 26, lineBreak: false });
   document.y = top + 39;
 }
 
@@ -101,16 +119,16 @@ function writeCard(document: PdfWriter, title: string, paragraphs: CardParagraph
   ensureSpace(document, contentHeight + 19);
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 19, 9).fill().restore();
-  writeSubtitle(document, title, PAGE_LEFT + 15, top + 12, innerWidth, SUBTITLE_SIZE);
+  writeSubtitle(document, localizedPdfText(document, title), PAGE_LEFT + 15, top + 12, innerWidth, SUBTITLE_SIZE);
   document.y = top + CARD_TITLE_BLOCK_HEIGHT;
   paragraphs.forEach((paragraph) => {
     if (paragraph.label) {
       const labelTop = document.y;
-      writeSubtitle(document, paragraph.label, PAGE_LEFT + 15, labelTop, innerWidth, SUBTITLE_LABEL_SIZE);
+      writeSubtitle(document, localizedPdfText(document, paragraph.label), PAGE_LEFT + 15, labelTop, innerWidth, SUBTITLE_LABEL_SIZE);
       document.y = labelTop + subtitleHeight(document, paragraph.label, innerWidth, SUBTITLE_LABEL_SIZE) + 12;
     }
     if (paragraph.text) {
-      document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(paragraph.text), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
+      document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(localizedPdfText(document, paragraph.text)), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
     }
     if (paragraph.bullets?.length) {
       if (paragraph.text) document.moveDown(0.25);
@@ -152,9 +170,9 @@ function writeColorCards(document: PdfWriter, colors: CouplePdfPerson["colors"])
     const top = document.y;
     document.save().fillColor("#FFFDF9").roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, height, 9).fill().restore();
     document.save().fillColor(color.hex).strokeColor("#CBBEAC").lineWidth(1).circle(PAGE_LEFT + 31, top + 31, 17).fillAndStroke().restore();
-    document.fillColor("#4A3A2A").fontSize(12.5).text(clean(`${color.role} · ${color.name}`), PAGE_LEFT + 61, top + 12, { width: CONTENT_WIDTH - 76 });
-    document.fillColor("#75695D").fontSize(11.5).text(clean(color.keywords), PAGE_LEFT + 61, top + 31, { width: CONTENT_WIDTH - 76 });
-    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(color.interpretation), PAGE_LEFT + 15, top + 53, { width: CONTENT_WIDTH - 30, lineGap: BODY_LINE_GAP });
+    document.fillColor("#4A3A2A").fontSize(12.5).text(clean(localizedPdfText(document, `${color.role} · ${color.name}`)), PAGE_LEFT + 61, top + 12, { width: CONTENT_WIDTH - 76 });
+    document.fillColor("#75695D").fontSize(11.5).text(clean(localizedPdfText(document, color.keywords)), PAGE_LEFT + 61, top + 31, { width: CONTENT_WIDTH - 76 });
+    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(localizedPdfText(document, color.interpretation)), PAGE_LEFT + 15, top + 53, { width: CONTENT_WIDTH - 30, lineGap: BODY_LINE_GAP });
     document.y = top + height + 8;
   });
 }
@@ -169,21 +187,23 @@ function writeCards(document: PdfWriter, cards: CouplePdfPerson["cards"]) {
     const top = document.y;
     document.save().fillColor(card.colorHex).roundedRect(PAGE_LEFT, top, 36, 36, 7).fill().restore();
     drawShape(document, card.shape, PAGE_LEFT + 18, top + 18, 9, "#FFFDF9", "#FFFDF9");
-    document.fillColor("#4A3A2A").fontSize(13.5).text(clean(`${card.position} · ${card.colorName} ${card.shapeName}`), PAGE_LEFT + 47, top + 10, { width: CONTENT_WIDTH - 47 });
+    document.fillColor("#4A3A2A").fontSize(13.5).text(clean(localizedPdfText(document, `${card.position} · ${card.colorName} ${card.shapeName}`)), PAGE_LEFT + 47, top + 10, { width: CONTENT_WIDTH - 47 });
     document.y = top + 43;
     writeCard(document, card.title, [{ text: card.narrative }], "#FCF8F1");
   });
 }
 
 function writePerson(document: PdfWriter, person: CouplePdfPerson, tone: string) {
-  writeSectionTitle(document, `${person.label}의 컬러·심리카드 결과`, tone, 120);
+  const isZh = (document as any).__locale === "zh-CN";
+  const label = displayRole(document, person.label);
+  writeSectionTitle(document, isZh ? `${label}的色彩与心理卡结果` : `${person.label}의 컬러·심리카드 결과`, tone, 120);
   writeCard(document, "선택한 3컬러", [{ text: "선택한 컬러는 현재의 마음과 관계 안에서 중요하게 느끼는 방향을 함께 보여줍니다." }], "#F7F4EE");
   writeColorCards(document, person.colors);
   const firstCard = person.cards[0];
   const firstCardHeight = firstCard
     ? 43 + CARD_TITLE_BLOCK_HEIGHT + heightOf(document, firstCard.narrative, CONTENT_WIDTH - 30) + CARD_PARAGRAPH_GAP + 27
     : 155;
-  writeSectionTitle(document, `${person.label}의 심리카드 해석`, tone, Math.max(155, firstCardHeight));
+  writeSectionTitle(document, isZh ? `${label}的心理卡解读` : `${person.label}의 심리카드 해석`, tone, Math.max(155, firstCardHeight));
   writeCards(document, person.cards);
   writeCard(document, "컬러 × 심리카드 통합 분석", person.integratedAnalysis.split(/\n\n+/).filter(Boolean).map((text) => ({ text })), "#F2F7F3");
   writeCard(document, "관계 성향과 회복 방향", [
@@ -196,6 +216,8 @@ function writePerson(document: PdfWriter, person: CouplePdfPerson, tone: string)
 
 function writeRelationship(document: PdfWriter, payload: ParentChildPdfDownloadPayload) {
   const relation = payload.relationship;
+  const parentLabel = displayRole(document, relation.labels.parent);
+  const childLabel = displayRole(document, relation.labels.child);
   const currentFlowSections = relation.cardFlowSummary
     .split(/\n{2,}/)
     .map((section) => section.trim())
@@ -214,16 +236,16 @@ function writeRelationship(document: PdfWriter, payload: ParentChildPdfDownloadP
   writeCard(document, "관계 유형", [{ label: relation.typeName, text: relation.coreSummary }], "#EFF7F0");
   writeSectionTitle(document, "부모와 자녀로 만나는 두 역할", "#5F8069", 285);
   writeCard(document, "각자의 사회적 역할", [
-    { label: `${relation.labels.parent}의 사회적 역할 · ${relation.socialRoles.parent.title}`, text: relation.socialRoles.parent.description },
-    { label: `${relation.labels.child}의 사회적 역할 · ${relation.socialRoles.child.title}`, text: relation.socialRoles.child.description },
+    { label: (document as any).__locale === "zh-CN" ? `${parentLabel}的社会角色 · ${relation.socialRoles.parent.title}` : `${relation.labels.parent}의 사회적 역할 · ${relation.socialRoles.parent.title}`, text: relation.socialRoles.parent.description },
+    { label: (document as any).__locale === "zh-CN" ? `${childLabel}的社会角色 · ${relation.socialRoles.child.title}` : `${relation.labels.child}의 사회적 역할 · ${relation.socialRoles.child.title}`, text: relation.socialRoles.child.description },
   ], "#F2F7F3");
   writeCard(document, "우리 관계의 역할 에너지", [
-    { label: `${relation.labels.parent} · ${relation.relationshipRoles.parent.title}`, text: relation.relationshipRoles.parent.description },
-    { label: `${relation.labels.child} · ${relation.relationshipRoles.child.title}`, text: relation.relationshipRoles.child.description },
+    { label: `${parentLabel} · ${relation.relationshipRoles.parent.title}`, text: relation.relationshipRoles.parent.description },
+    { label: `${childLabel} · ${relation.relationshipRoles.child.title}`, text: relation.relationshipRoles.child.description },
     { label: "두 역할이 만났을 때", text: relation.relationshipRoles.together },
   ], "#F2F7F3");
   writeSectionTitle(document, "자녀 기질 맞춤 소통", "#B16A75", 235);
-  writeCard(document, `${relation.labels.child}의 마음을 이해하는 방법`, [
+  writeCard(document, (document as any).__locale === "zh-CN" ? `理解${childLabel}内心的方法` : `${relation.labels.child}의 마음을 이해하는 방법`, [
     { label: "마음이 닫히기 쉬운 순간", text: relation.childCommunication.closesWhen },
     { label: "자신감을 얻는 순간", text: relation.childCommunication.gainsConfidenceWhen },
   ], "#FFF3F3");
@@ -237,13 +259,13 @@ function writeRelationship(document: PdfWriter, payload: ParentChildPdfDownloadP
     }
   }
   writeSectionTitle(document, "부모의 대화 DO & DON'T", "#A86773", 255);
-  writeCard(document, `${relation.labels.child}에게 힘이 되는 말 · DO`, [{ bullets: relation.dialogue.doMessages }], "#FFF4F7");
-  writeCard(document, `${subjectLabel(relation.labels.child)} 부담을 느끼는 말 · DON'T`, [{ bullets: relation.dialogue.dontMessages }], "#FFF3F3");
+  writeCard(document, (document as any).__locale === "zh-CN" ? `给${childLabel}力量的话 · DO` : `${relation.labels.child}에게 힘이 되는 말 · DO`, [{ bullets: relation.dialogue.doMessages }], "#FFF4F7");
+  writeCard(document, (document as any).__locale === "zh-CN" ? `让${childLabel}感到负担的话 · DON'T` : `${subjectLabel(relation.labels.child)} 부담을 느끼는 말 · DON'T`, [{ bullets: relation.dialogue.dontMessages }], "#FFF3F3");
   writeSectionTitle(document, "갈등이 생기는 이유와 다시 연결되는 순서", "#B87B91", 255);
   writeCard(document, "갈등이 시작되는 지점", [
     { text: relation.conflictRecovery.conflictStart },
-    { label: `${relation.labels.parent}의 의도`, text: relation.conflictRecovery.parentIntent },
-    { label: `${subjectLabel(relation.labels.child)} 받아들이는 방식`, text: relation.conflictRecovery.childReception },
+    { label: (document as any).__locale === "zh-CN" ? `${parentLabel}的用意` : `${relation.labels.parent}의 의도`, text: relation.conflictRecovery.parentIntent },
+    { label: (document as any).__locale === "zh-CN" ? `${childLabel}的理解方式` : `${subjectLabel(relation.labels.child)} 받아들이는 방식`, text: relation.conflictRecovery.childReception },
   ], "#FFF3F3");
   writeCard(document, "관계가 어긋나는 지점", [{ text: relation.conflictRecovery.mismatch }], "#FFF3F3");
   writeCard(document, "회복에 필요한 순서", [{ text: relation.conflictRecovery.recoveryOrder }], "#F0F6F1");
@@ -269,11 +291,13 @@ export function validateParentChildPdfPayload(value: unknown): ParentChildPdfDow
 
 /** 현재 웹 결과의 부모·자녀 종합 분석과 각 개인 분석을 새 해석 없이 A4 리포트 순서로 재배치한다. */
 export async function createParentChildPdfBuffer(payload: ParentChildPdfDownloadPayload): Promise<Buffer> {
+  const locale = payload.locale === "zh-CN" ? "zh-CN" : "ko";
+  const fontPath = locale === "zh-CN" ? ZH_FONT_PATH : FONT_PATH;
   const document = new PDFDocument({
     size: "A4",
     margins: { top: PAGE_TOP, bottom: PAGE_TOP, left: PAGE_LEFT, right: PAGE_LEFT },
-    font: FONT_PATH,
-    info: { Title: "휴심컬러 부모·자녀 감성 심리코칭 리포트" },
+    font: fontPath,
+    info: { Title: locale === "zh-CN" ? "HUSIM COLOR 亲子色彩心理辅导报告" : "휴심컬러 부모·자녀 감성 심리코칭 리포트" },
   });
   const chunks: Buffer[] = [];
   document.on("data", (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
@@ -281,19 +305,20 @@ export async function createParentChildPdfBuffer(payload: ParentChildPdfDownload
     document.on("end", () => resolve(Buffer.concat(chunks)));
     document.on("error", reject);
   });
-  document.registerFont("NotoSansKR", FONT_PATH);
-  document.font("NotoSansKR");
+  document.registerFont("HusimReportFont", fontPath);
+  document.font("HusimReportFont");
+  (document as any).__locale = locale;
 
   document.rect(0, 0, 595, 842).fill("#F8F4EE");
-  document.fillColor("#5F8069").fontSize(12).text("HUSIM COLOR · PARENT & CHILD RELATIONSHIP REPORT", PAGE_LEFT, 160, { width: CONTENT_WIDTH });
-  document.fillColor("#3D3530").fontSize(25).text("휴심컬러 부모·자녀\n감성 심리코칭 리포트", PAGE_LEFT, 198, { width: CONTENT_WIDTH, lineGap: 7 });
+  document.fillColor("#5F8069").fontSize(12).text(locale === "zh-CN" ? "HUSIM COLOR · 父母/子女关系报告" : "HUSIM COLOR · PARENT & CHILD RELATIONSHIP REPORT", PAGE_LEFT, 160, { width: CONTENT_WIDTH });
+  document.fillColor("#3D3530").fontSize(25).text(locale === "zh-CN" ? "HUSIM COLOR 亲子\n色彩心理辅导报告" : "휴심컬러 부모·자녀\n감성 심리코칭 리포트", PAGE_LEFT, 198, { width: CONTENT_WIDTH, lineGap: 7 });
   if (payload.sampleNotice) {
-    document.fillColor("#80649B").fontSize(10.5).text(clean(payload.sampleNotice), PAGE_LEFT, 280, { width: CONTENT_WIDTH });
+    document.fillColor("#80649B").fontSize(10.5).text(clean(localizedPdfText(document, payload.sampleNotice)), PAGE_LEFT, 280, { width: CONTENT_WIDTH });
   }
-  document.fillColor("#80649B").fontSize(17).text(`${payload.relationship.labels.parent}–${payload.relationship.labels.child}`, PAGE_LEFT, 302, { width: CONTENT_WIDTH });
+  document.fillColor("#80649B").fontSize(17).text(locale === "zh-CN" ? `${displayRole(document, payload.relationship.labels.parent)}–${displayRole(document, payload.relationship.labels.child)}` : `${payload.relationship.labels.parent}–${payload.relationship.labels.child}`, PAGE_LEFT, 302, { width: CONTENT_WIDTH });
   document.fillColor("#4A3A2A").fontSize(17).text(clean(payload.relationship.typeName), PAGE_LEFT, 338, { width: CONTENT_WIDTH });
   document.fillColor("#685C51").fontSize(12.5).text(clean(payload.relationship.coreSummary), PAGE_LEFT, 376, { width: CONTENT_WIDTH, lineGap: 6 });
-  document.fillColor("#75695D").fontSize(11).text(`리포트 생성일 · ${payload.generatedAt}`, PAGE_LEFT, 740, { width: CONTENT_WIDTH });
+  document.fillColor("#75695D").fontSize(11).text(locale === "zh-CN" ? `报告生成日期 · ${payload.generatedAt.replace(/년\s*/g, "年").replace(/월\s*/g, "月").replace(/일/g, "日")}` : `리포트 생성일 · ${payload.generatedAt}`, PAGE_LEFT, 740, { width: CONTENT_WIDTH });
 
   writeRelationship(document, payload);
   addPage(document);

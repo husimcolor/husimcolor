@@ -17,6 +17,9 @@ export type CommerceAnalysisDelivery = {
   analysisRunId: number;
   accessToken: string;
   expiresAt: string;
+  /** 기존 저장 레코드에는 없을 수 있으며 이 경우 한국어로 읽는다. */
+  locale?: "ko" | "zh-CN";
+  copyVersion?: string;
 };
 
 async function readGrants(): Promise<CommerceStartGrant[]> {

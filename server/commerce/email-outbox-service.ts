@@ -35,12 +35,34 @@ export function getSupportNotificationIdempotencyKey(outboxId: number): string {
   return `husim-support-outbox-${outboxId}`;
 }
 
-function resultEmailHtml() {
-  return [
-    "<p>안녕하세요. 휴심컬러입니다.</p>",
-    "<p>완료된 결과 리포트를 PDF로 첨부합니다. 이 메일에는 공개 결과 링크를 포함하지 않습니다.</p>",
-    "<p>본 리포트에는 개인 심리정보가 포함될 수 있으니, 본인만 접근할 수 있는 메일함에서 보관해 주세요.</p>",
-  ].join("");
+/**
+ * E2E/QA runtime only: keep a newly queued outbox record intact while explicitly
+ * preventing any provider call. Production remains unchanged unless this exact
+ * opt-in flag is supplied.
+ */
+export function isEmailDeliveryDisabledForRuntime(): boolean {
+  return process.env.HUSIM_DISABLE_EMAIL_DELIVERY === "true";
+}
+
+export function getAnalysisResultEmailPayload(locale: "ko" | "zh-CN" = "ko"): { subject: string; html: string } {
+  if (locale === "zh-CN") {
+    return {
+      subject: "[HUSIM COLOR] 您的分析报告（PDF）",
+      html: [
+        "<p>您好，这里是 HUSIM COLOR。</p>",
+        "<p>我们已将完成的结果报告作为 PDF 附上。本邮件不包含公开结果链接。</p>",
+        "<p>该报告可能包含个人心理信息。请仅保存在只有本人可以访问的安全邮箱中。</p>",
+      ].join(""),
+    };
+  }
+  return {
+    subject: "[휴심컬러] 완료된 결과 리포트 PDF",
+    html: [
+      "<p>안녕하세요. 휴심컬러입니다.</p>",
+      "<p>완료된 결과 리포트를 PDF로 첨부합니다. 이 메일에는 공개 결과 링크를 포함하지 않습니다.</p>",
+      "<p>본 리포트에는 개인 심리정보가 포함될 수 있으니, 본인만 접근할 수 있는 메일함에 보관해 주세요.</p>",
+    ].join(""),
+  };
 }
 
 function accountLinkEmailHtml(code: string, expiresAt: Date) {
@@ -92,6 +114,7 @@ async function claimPrivatePdfOutboxItem(outboxId: number) {
       storageKey: privateDocuments.storageKey,
       retentionExpiresAt: privateDocuments.retentionExpiresAt,
       productCode: products.code,
+      locale: emailOutbox.locale,
     })
     .from(emailOutbox)
     .innerJoin(privateDocuments, eq(emailOutbox.privateDocumentId, privateDocuments.id))
@@ -106,6 +129,7 @@ export async function deliverPrivatePdfOutboxItem(outboxId: number): Promise<{
   status: "sent" | "retry_scheduled" | "not_claimed";
   attemptCount?: number;
 }> {
+  if (isEmailDeliveryDisabledForRuntime()) return { status: "not_claimed" };
   const claimed = await claimPrivatePdfOutboxItem(outboxId);
   if (!claimed) return { status: "not_claimed" };
   const db = await getDb();
@@ -117,11 +141,13 @@ export async function deliverPrivatePdfOutboxItem(outboxId: number): Promise<{
     if (!["personal_deep", "couple_love_deep", "parent_child_deep"].includes(claimed.productCode)) {
       throw new Error("PRIVATE_PDF_PRODUCT_UNSUPPORTED");
     }
+    const locale = claimed.locale === "zh-CN" ? "zh-CN" : "ko";
+    const emailPayload = getAnalysisResultEmailPayload(locale);
     const result = await sendResendPdfEmail({
       to: decryptCommerceEmail(claimed.toEmailEncrypted),
-      subject: "[휴심컬러] 완료된 결과 리포트 PDF",
-      html: resultEmailHtml(),
-      filename: getPrivatePdfFilename(claimed.productCode as "personal_deep" | "couple_love_deep" | "parent_child_deep"),
+      subject: emailPayload.subject,
+      html: emailPayload.html,
+      filename: getPrivatePdfFilename(claimed.productCode as "personal_deep" | "couple_love_deep" | "parent_child_deep", locale),
       pdf: await readPrivatePdf(claimed.storageKey),
       idempotencyKey: getOutboxEmailIdempotencyKey(claimed.id),
     });
