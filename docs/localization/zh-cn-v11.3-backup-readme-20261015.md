@@ -3,7 +3,7 @@
 - **기준 문안 버전:** `zh-CN-2026-10-15-v11.1`
 - **보관·검증 버전:** v11.3
 - **검토 브랜치:** `feat/zh-cn-full-localization-v11.3`
-- **기준 커밋:** 커밋 생성 후 이 문서에 확정 SHA를 기록한다.
+- **기준 커밋:** `27d7f9202fa4e8981b02124f820bd79a9a2ac1cc`
 - **상태:** 검토용. `main` 병합, Production 배포, Production DB migration, 실제 이메일 발송을 수행하지 않았다.
 
 ## 포함 자료
