@@ -4,6 +4,7 @@
 - **보관 버전:** v11.4
 - **검토 브랜치:** `feat/zh-cn-full-localization-v11.3`
 - **기준 소스 커밋:** `5ac1d993fe45874822f0d7ca2bb593b28b9baf6b` (`feat: finalize zh-CN locale release validation`)
+- **schema backup 보완 커밋:** `a399d62ef2e300fa2b2b776e1dbae2361626bc5e` (`chore: back up locale migration schema before apply`)
 - **언어 범위:** 한국어 기본 + zh-CN 선택 경로. 영어 v4.2는 별도 보관이며 이번 배포 변경 범위에서 제외.
 
 ## 포함 자료
