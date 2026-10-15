@@ -6,7 +6,7 @@ export type AppLocale = (typeof APP_LOCALES)[number];
  * 신규 결과에 기록할 번역본 식별자입니다.
  * 기존 결과의 문구나 보관 PDF에는 적용하지 않습니다.
  */
-export const ZH_CN_COPY_VERSION = "zh-CN-2026-10-12-v1";
+export const ZH_CN_COPY_VERSION = "zh-CN-2026-10-15-v11.1";
 
 export const LOCALE_STORAGE_KEY = "husimcolor.locale.v1";
 

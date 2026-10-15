@@ -280,16 +280,22 @@ const inlineTerms: ReadonlyArray<readonly [RegExp, string]> = [
 
 /** 한국어 조사가 붙은 역할·색상 값도 template 안에서는 중국어 명사로만 삽입한다. */
 function localizeTemplateVariable(source: string): string {
-  const baseSource = stripKoreanVariableParticle(source);
+  // 긴 template의 변수에는 구두점 뒤 공백이 함께 포획될 수 있다. 그대로 두면
+  // 검수된 완결 문안의 exact key를 놓치고 fragment 치환으로 되돌아간다.
+  const normalizedSource = source.trim();
+  const baseSource = stripKoreanVariableParticle(normalizedSource);
   const relationBase = baseSource.replace(/ 관계$/u, "");
   const methodBase = baseSource.replace(/ 방식$/u, "");
-  const exactValue = reviewedOverrides[source]
-    ?? exact.get(source)
+  // `회복을 지키는`처럼 명사구에 홀로 삽입되는 경우에는 중국어에서 소유 대상을
+  // 밝혀야 자연스럽다. 문장 전체의 회복 역할명과 혼동하지 않는다.
+  if (baseSource === "회복") return "自己的恢复";
+  const exactValue = reviewedOverrides[normalizedSource]
+    ?? exact.get(normalizedSource)
     ?? reviewedOverrides[baseSource]
     ?? exact.get(baseSource)
     ?? (relationBase !== baseSource ? (reviewedOverrides[relationBase] ?? exact.get(relationBase)) : undefined)
     ?? (methodBase !== baseSource ? (reviewedOverrides[methodBase] ?? exact.get(methodBase)) : undefined);
-  let localized = exactValue ?? source;
+  let localized = exactValue ?? normalizedSource;
   // 한국어 변수의 ‘관계/방식’은 완결 중국어 변수로 다시 조립한다.
   // 원문 catalog 값이 이미 ‘的’로 끝나면 그대로 접미사를 더할 경우 ‘的的’가 된다.
   if (exactValue && relationBase !== baseSource && !/关系$/u.test(localized)) localized = `${localized.replace(/的$/u, "")}的关系`;
