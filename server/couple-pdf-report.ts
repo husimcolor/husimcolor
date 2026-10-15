@@ -457,7 +457,12 @@ export async function createCouplePdfBuffer(payload: CouplePdfDownloadPayload): 
   (document as any).__locale = locale;
 
   document.rect(0, 0, 595, 842).fill("#F8F4EE");
-  const zhRelationshipTitle = payload.relationType === "연인" ? "恋人关系报告" : "夫妻关系报告";
+  // 공개 샘플은 locale 적용 후 `恋人`으로 전달될 수 있고, 실제 저장 payload는
+  // canonical Korean `연인`을 유지한다. 두 경로 모두 관계 유형 제목을 보존한다.
+  const relationTypeForTitle = payload.relationType as string;
+  const zhRelationshipTitle = relationTypeForTitle === "연인" || relationTypeForTitle === "恋人"
+    ? "恋人关系报告"
+    : "夫妻关系报告";
   document.fillColor("#5F8069").fontSize(12).text(locale === "zh-CN" ? `HUSIM COLOR · ${zhRelationshipTitle}` : "HUSIM COLOR · COUPLE RELATIONSHIP REPORT", PAGE_LEFT, 160, { width: CONTENT_WIDTH });
   document.fillColor("#3D3530").fontSize(25).text(locale === "zh-CN" ? zhRelationshipTitle : `${payload.relationType} 관계 리포트`, PAGE_LEFT, 198, { width: CONTENT_WIDTH });
   document.fillColor("#685C51").fontSize(12).text(locale === "zh-CN" ? "从两人的色彩与心理卡变化，理解关系中的连接与恢复方向" : "두 사람의 컬러와 심리카드 흐름으로 읽는 관계의 연결과 회복", PAGE_LEFT, 240, { width: CONTENT_WIDTH });
