@@ -76,7 +76,9 @@ function writeParagraphBlocks(document: PdfWriter, value: string, options: { wid
 }
 
 function writeSectionTitle(document: PdfWriter, title: string, tone = "#2D6A4F", followingHeight = 0) {
-  const safeTitle = normalizePdfText(localizedPdfText(document, title)).replace(/^[^가-힣A-Za-z0-9]+/, "");
+  // Preserve titles in every supported script. The prior Korean/Latin-only
+  // whitelist accidentally removed zh-CN titles such as “推荐调和色”.
+  const safeTitle = normalizePdfText(localizedPdfText(document, title)).replace(/^[^\p{L}\p{N}]+/u, "");
   ensureSpace(document, 44 + followingHeight);
   const top = document.y;
   document.fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, 31, 7).fill();
@@ -289,8 +291,10 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
     { label: "도형", text: card.shapeKeywords },
     { label: card.roleLabel, text: card.narrative },
   ]));
-  writeSectionTitle(document, "추천 보완컬러", "#8B6914", 94);
-  writeParagraph(document, "현재 흐름에서 과해지기 쉬운 결을 누그러뜨리고, 회복 방향을 돕는 컬러입니다.", { size: DETAIL_TEXT_SIZE, color: "#75695D" });
+  const complementDescription = "현재 흐름에서 과해지기 쉬운 결을 누그러뜨리고, 회복 방향을 돕는 컬러입니다.";
+  // 제목만 이전 쪽에 남지 않도록 설명과 컬러칩의 최소 높이를 함께 확보한다.
+  writeSectionTitle(document, "추천 보완컬러", "#8B6914", textHeight(document, complementDescription, CONTENT_WIDTH, DETAIL_TEXT_SIZE, BODY_LINE_GAP) + PILL_ROW_HEIGHT + 28);
+  writeParagraph(document, complementDescription, { size: DETAIL_TEXT_SIZE, color: "#75695D" });
   document.moveDown(0.3);
   writePills(document, payload.complementColors.map((color) => `${color.name} · ${color.meaning}`));
   writeSectionTitle(document, "나의 컬러 성향", "#2D6A4F", textHeight(document, payload.colorFlowDescription));

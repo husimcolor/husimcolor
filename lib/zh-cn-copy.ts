@@ -318,7 +318,71 @@ function localizeDelimitedTerms(value: string): string | null {
   return changed ? localized : null;
 }
 
+/** 카드 제목에 붙는 한국어 조사를 제외하고, 이미 검수한 용어 catalog의 값만 사용한다. */
+function localizeRelationshipTerm(source: string): string {
+  const base = stripKoreanVariableParticle(source.trim());
+  return reviewedOverrides[base] ?? exact.get(base) ?? base;
+}
+
+/**
+ * 관계 분석기는 카드 제목과 조사를 먼저 결합한 뒤 문장을 만든다.
+ * 그 상태에서 조각 catalog를 적용하면 한국어 어순이 남기 쉬우므로, 역할·카드 단계별
+ * 전체 문장을 먼저 중국어 어순으로 다시 만든다.
+ */
+function localizeRelationshipSentence(value: string): string | null {
+  let match = value.match(/^무의식의 바탕에서 (.+?)는 (.+?)(?:을|를) 내면에서 중요하게 여기는 마음을, (.+?)는 (.+?)(?:을|를) 내면에서 중요하게 여기는 마음을 가질 수 있습니다\.$/u);
+  if (match) {
+    return `在潜意识层面，${localizeRelationshipTerm(match[1]!)}可能会重视${localizeRelationshipTerm(match[2]!)}；${localizeRelationshipTerm(match[3]!)}可能会重视${localizeRelationshipTerm(match[4]!)}。`;
+  }
+  match = value.match(/^현재 대화에서는 (.+?)는 (.+?)(?:을|를) 바탕으로 현재 상황을 살피는 편이고, (.+?)는 (.+?)(?:을|를) 바탕으로 현재 상황을 살피는 편입니다\.$/u);
+  if (match) {
+    return `在当前的对话中，${localizeRelationshipTerm(match[1]!)}可能更倾向于以${localizeRelationshipTerm(match[2]!)}为基础来观察当前状况；${localizeRelationshipTerm(match[3]!)}也可能更倾向于以${localizeRelationshipTerm(match[4]!)}为基础来观察当前状况。`;
+  }
+  match = value.match(/^갈등이나 피로 뒤에는 (.+?)는 (.+?)(?:을|를) 작은 실천으로 이어가려는 쪽으로, (.+?)는 (.+?)(?:을|를) 작은 실천으로 이어가려는 쪽으로 회복을 선택해볼 수 있습니다\.$/u);
+  if (match) {
+    return `在冲突或疲惫之后，${localizeRelationshipTerm(match[1]!)}可以尝试把${localizeRelationshipTerm(match[2]!)}落实到小小的行动中；${localizeRelationshipTerm(match[3]!)}则可以尝试把${localizeRelationshipTerm(match[4]!)}落实到小小的行动中，作为恢复的方向。`;
+  }
+
+  const stagePatterns: ReadonlyArray<readonly [RegExp, string]> = [
+    [/^무의식 카드에서 (.+?)는 (.+?)(?:을|를) 내면에서 중요하게 여기는 흐름을 보이고, (.+?)는 (.+?)(?:을|를) 내면에서 중요하게 여기는 흐름을 보입니다\.$/u, "在潜意识卡所呈现的内容中，{{a}}可能重视{{b}}；{{c}}可能重视{{d}}。"],
+    [/^현재 흐름 카드에서 (.+?)는 (.+?)(?:을|를) 바탕으로 현재 상황을 살피는 흐름을 보이고, (.+?)는 (.+?)(?:을|를) 바탕으로 현재 상황을 살피는 흐름을 보입니다\.$/u, "在当前状态卡所呈现的内容中，{{a}}可能倾向于以{{b}}为基础来观察当前状况；{{c}}也可能倾向于以{{d}}为基础来观察当前状况。"],
+    [/^회복 방향 카드에서 (.+?)는 (.+?)(?:을|를) 작은 실천으로 이어가려는 흐름을 보이고, (.+?)는 (.+?)(?:을|를) 작은 실천으로 이어가려는 흐름을 보입니다\.$/u, "在恢复方向卡所呈现的内容中，{{a}}可能想把{{b}}落实到小小的行动中；{{c}}也可能想把{{d}}落实到小小的行动中。"],
+  ];
+  for (const [expression, target] of stagePatterns) {
+    match = value.match(expression);
+    if (!match) continue;
+    return target
+      .replace("{{a}}", localizeRelationshipTerm(match[1]!))
+      .replace("{{b}}", localizeRelationshipTerm(match[2]!))
+      .replace("{{c}}", localizeRelationshipTerm(match[3]!))
+      .replace("{{d}}", localizeRelationshipTerm(match[4]!));
+  }
+
+  match = value.match(/^현재에는 (.+?)(?:이|가) 더해질 수 있습니다\. 지출은 필요한 기준과 마음의 바람을 나누어 살펴보세요\.$/u);
+  if (match) {
+    return `在当前状态下，${localizeRelationshipCue(match[1]!)}可能也会发挥作用。支出时，可以分别想一想必要的标准和内心真正想要的是什么。`;
+  }
+  match = value.match(/^회복에는 (.+?)(?:이|가) 도움이 될 수 있습니다\.$/u);
+  if (match) return `在恢复时，${localizeRelationshipCue(match[1]!)}或许能提供参考。`;
+  return null;
+}
+
+/** 관계·생활 문장에 삽입되는 카드 제목 조합을 자연스러운 중국어 구로 바꾼다. */
+function localizeRelationshipCue(source: string): string {
+  let match = source.match(/^(.+?)(?:을|를) 바탕으로 현재 상황을 살피려는 흐름$/u);
+  if (match) return `以${localizeRelationshipTerm(match[1]!)}为基础来观察当前状况的倾向`;
+  match = source.match(/^(.+?)(?:을|를) 바탕으로 현재 상황을 살피는 흐름$/u);
+  if (match) return `以${localizeRelationshipTerm(match[1]!)}为基础来观察当前状况的倾向`;
+  match = source.match(/^(.+?)(?:을|를) 작은 실천으로 이어가는 방향$/u);
+  if (match) return `把${localizeRelationshipTerm(match[1]!)}落实到小小行动中的恢复方向`;
+  match = source.match(/^(.+?)(?:을|를) 작은 실천으로 이어가려는$/u);
+  if (match) return `把${localizeRelationshipTerm(match[1]!)}落实到小小行动中`;
+  return localizeRelationshipTerm(source);
+}
+
 function localizeSingleCopy(value: string): string | null {
+  const relationshipSentence = localizeRelationshipSentence(value);
+  if (relationshipSentence) return relationshipSentence;
   const reviewedValue = reviewedOverrides[value];
   if (reviewedValue) return reviewedValue;
   const exactValue = exact.get(value);
@@ -386,6 +450,8 @@ function finalizeLocalizedCopy(value: string): string {
   return stripKoreanParticlesAfterChinese(localized)
     .replace(/的的/g, "的")
     .replace(/蒂尔色|蒂尔/g, "蓝绿色")
+    // 한국어의 `블루 마름모`처럼 색상과 도형 사이에 있던 공백은 중국어 카드명에서는 쓰지 않는다.
+    .replace(/([\u3400-\u9fff])\s+(圆形|三角形|倒三角形|方形|菱形|五边形|六边形)/g, "$1$2")
     .replace(/\\\\n/g, "\n");
 }
 

@@ -120,6 +120,36 @@ describe("zh-CN static localization catalog", () => {
     expect(localizeStaticCopy("蒂尔色", "zh-CN")).toBe("蓝绿色");
   });
 
+  it("keeps the reviewed personal report wording natural in both exact and reusable card-flow paths", () => {
+    expect(localizeStaticCopy(
+      "서로의 생각을 분명히 나누며 방향을 맞추고 싶어 합니다. 상대의 이야기를 듣고 신중하게 답합니다. 약속과 역할이 분명할 때 신뢰가 생깁니다.",
+      "zh-CN",
+    )).toBe("希望把彼此的想法说清楚，一起找到双方都能接受的方向。听完对方的讲述后再谨慎作答。约定和角色越清晰，越容易产生信任。");
+    expect(localizeStaticCopy("깊이 생각할 시간이 보장되는 환경", "zh-CN")).toBe("能留出充分时间深入思考的环境");
+    expect(localizeStaticCopy(
+      "2번 블루 마름모는 지금 할 일을 순서대로 풀어 가며 흐름을 더합니다. 그래서 다른 선택지도 비교해 보는 선택이 자연스러울 수 있습니다.",
+      "zh-CN",
+    )).toBe("第2张蓝色菱形心理卡呈现出当前状态下的一种倾向：你可能会按顺序解决待办事项。此时，也会比较其他选项，再决定怎样做更合适。");
+    expect(localizeStaticCopy(
+      "3번 화이트 네모는 회복할 때 불필요한 부담을 덜고 하루의 틀을 정돈하는 방향을 제안합니다. 손에 잡히는 일부터 해내며 하루의 구조를 다시 세우는 작은 실천부터 시작해 보세요.",
+      "zh-CN",
+    )).toBe("第3张白色方形心理卡提示，恢复时不妨减轻不必要的负担，整理好一天的结构。从手边做得到的小事开始，一点点重新安排一天的节奏。");
+    expect(localizeStaticCopy(
+      "1번 레드 삼각형은 평소 스스로 정한 목표를 향해 직접 움직이고 싶은 마음을 바탕에 둡니다. 스스로 정한 목표가 보일 때 그 바탕이 더 또렷해질 수 있습니다.\n\n2번 블루 마름모는 지금 할 일을 순서대로 풀어 가며 흐름을 더합니다. 그래서 다른 선택지도 비교해 보는 선택이 자연스러울 수 있습니다.\n\n3번 화이트 네모는 회복할 때 불필요한 부담을 덜고 하루의 틀을 정돈하는 방향을 제안합니다. 손에 잡히는 일부터 해내며 하루의 구조를 다시 세우는 작은 실천부터 시작해 보세요.",
+      "zh-CN",
+    )).toContain("第2张蓝色菱形心理卡呈现出当前状态下的一种倾向");
+    expect(localizeStaticCopy(
+      "현재 대화에서는 남자친구는 명료한 사고와 현실 연결을 바탕으로 현재 상황을 살피는 편이고, 여자친구는 깊은 안정과 강인함을 바탕으로 현재 상황을 살피는 편입니다.",
+      "zh-CN",
+    )).toBe("在当前的对话中，男朋友可能更倾向于以清晰的思考与现实的连接为基础来观察当前状况；女朋友也可能更倾向于以深沉的安定与坚韧为基础来观察当前状况。");
+    expect(localizeStaticCopy(
+      "갈등이나 피로 뒤에는 남자친구는 순수한 새 시작을 작은 실천으로 이어가려는 쪽으로, 여자친구는 함께 성장하고 나누는 성향을 작은 실천으로 이어가려는 쪽으로 회복을 선택해볼 수 있습니다.",
+      "zh-CN",
+    )).toBe("在冲突或疲惫之后，男朋友可以尝试把纯粹的新开始落实到小小的行动中；女朋友则可以尝试把倾向于共同成长与分享落实到小小的行动中，作为恢复的方向。");
+    expect(localizeStaticCopy("활기를 더하느라 내 피로를 늦게 알아차리는 편", "zh-CN")).toBe("为了让气氛更有活力，往往会较晚察觉自己的疲惫");
+    expect(localizeStaticCopy("부담 없는 한 가지 실천으로 이어가 보세요.", "zh-CN")).toBe("不妨从一件不造成负担的小事开始试一试。");
+  });
+
   it("translates nested payload copy without changing Korean fallback behavior", () => {
     const value = { title: "주기질", nested: ["추천 보완컬러", { copy: "회복방향" }] };
     expect(localizePayload(value, "zh-CN")).toEqual({
