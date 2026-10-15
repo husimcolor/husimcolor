@@ -1,7 +1,10 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { BUSINESS_INFO } from '@/lib/business-info';
+import { LocalizedText as Text } from '@/components/localized-text';
+import { useLocalization } from '@/lib/localization-context';
+import { localizeStaticCopy } from '@/lib/zh-cn-copy';
 
 type BusinessInfoFooterProps = {
   compact?: boolean;
@@ -10,6 +13,8 @@ type BusinessInfoFooterProps = {
 /** 공개 서비스 화면에서 사업자정보를 동일하게 안내하는 공통 푸터입니다. */
 export function BusinessInfoFooter({ compact = false }: BusinessInfoFooterProps) {
   const router = useRouter();
+  const { locale } = useLocalization();
+  const detailLabel = localizeStaticCopy('사업자정보 상세 보기', locale);
 
   return (
     <View style={[styles.container, compact && styles.compactContainer]}>
@@ -25,7 +30,7 @@ export function BusinessInfoFooter({ compact = false }: BusinessInfoFooterProps)
       ) : null}
       <Pressable
         accessibilityRole="link"
-        accessibilityLabel="사업자정보 상세 보기"
+        accessibilityLabel={detailLabel}
         onPress={() => router.push('/(tabs)/business-info' as any)}
         style={({ pressed }) => [styles.detailLink, pressed && styles.pressed]}
       >

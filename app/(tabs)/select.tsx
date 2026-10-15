@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
 import {
   View,
-  Text,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,9 +15,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenContainer } from '@/components/screen-container';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { useColorContext } from '@/lib/colorContext';
 import { COLOR_DATA, ColorData } from '@/constants/colorData';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
+import { useLocalization } from '@/lib/localization-context';
+import { getLocalizedColorName } from '@/lib/free-result-localization';
 
 const { width } = Dimensions.get('window');
 
@@ -229,6 +231,7 @@ interface CardItemProps {
 }
 
 function CardItem({ item, isSelected, onPress }: CardItemProps) {
+  const { locale } = useLocalization();
   const circleSize = CIRCLE_SIZE - 4;
   const borderRadius = circleSize / 2;
 
@@ -277,7 +280,7 @@ function CardItem({ item, isSelected, onPress }: CardItemProps) {
         ]}
         numberOfLines={1}
       >
-        {item.korName}
+        {getLocalizedColorName(item, locale)}
       </Text>
     </Pressable>
   );
@@ -286,6 +289,7 @@ function CardItem({ item, isSelected, onPress }: CardItemProps) {
 // ─── 메인 화면 ──────────────────────────────────────────────────────────────
 export default function SelectScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const params = useLocalSearchParams<{ step?: string }>();
   const step = parseInt(params.step ?? '0', 10);
   const { selectedColors, setSelectedColor } = useColorContext();
@@ -404,7 +408,7 @@ export default function SelectScreen() {
           >
             <View style={[styles.cardBadgeDot, { backgroundColor: cardInfo.accentColor }]} />
             <Text style={[styles.cardBadgeText, { color: cardInfo.accentColor }]}>
-              {cardInfo.number}번 카드
+              {`${cardInfo.number}번 카드`}
             </Text>
           </View>
           <Text style={[styles.cardTitle, { color: '#3D3530' }]}>{cardInfo.title}</Text>
@@ -446,7 +450,7 @@ export default function SelectScreen() {
 
               <View style={styles.selectedInfo}>
                 <Text style={[styles.selectedName, { color: '#3D3530' }]}>
-                  {currentSelected.korName}
+                  {getLocalizedColorName(currentSelected, locale)}
                 </Text>
                 <Text style={[styles.selectedKeywords, { color: '#8A7A68' }]}>
                   {currentSelected.keywords.join(' · ')}
@@ -482,11 +486,13 @@ export default function SelectScreen() {
       >
         {currentSelected ? (
           <View style={styles.bottomBarContent}>
-            <View style={styles.selectedSummary}>
-              <View style={[styles.summaryDot, { backgroundColor: currentSelected.hex }]} />
-              <Text style={[styles.summaryText, { color: '#8A7A68' }]}>
-                {currentSelected.korName} 선택됨
-              </Text>
+              <View style={styles.selectedSummary}>
+                <View style={[styles.summaryDot, { backgroundColor: currentSelected.hex }]} />
+                <Text style={[styles.summaryText, { color: '#8A7A68' }]}>
+                  {locale === 'zh-CN'
+                    ? `${getLocalizedColorName(currentSelected, locale)} 已选择`
+                    : `${currentSelected.korName} 선택됨`}
+                </Text>
             </View>
             <Pressable
               style={({ pressed }) => [
@@ -503,7 +509,7 @@ export default function SelectScreen() {
           </View>
         ) : (
           <Text style={[styles.selectHint, { color: '#8A7A68' }]}>
-            끌리는 색을 선택해 주세요
+            직관적으로 끌리는 색을 선택해 주세요
           </Text>
         )}
       </View>

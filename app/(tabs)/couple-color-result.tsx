@@ -7,14 +7,17 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet,
+  View, ScrollView, StyleSheet,
   TouchableOpacity, Animated,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLOR_DATA } from '@/constants/colorData';
+import { useLocalization } from '@/lib/localization-context';
+import { localizeStaticCopy } from '@/lib/zh-cn-copy';
 import {
   generatePersonAnalysis,
   type CoupleSessionData,
@@ -66,6 +69,7 @@ function one(value: string | string[] | undefined) {
 
 export default function CoupleColorResultScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const insets = useSafeAreaInsets();
   const { person, relationshipToken, inviteToken, resultToken } = useLocalSearchParams<{
     person: 'A' | 'B';
@@ -196,8 +200,8 @@ export default function CoupleColorResultScreen() {
             {selectedColors.map((c, i) => (
               <View key={c.id} style={styles.colorItem}>
                 <View style={[styles.colorCircle, { backgroundColor: c.hex }]} />
-                <Text style={styles.colorName}>{c.korName}</Text>
-                <Text style={[styles.colorOrder, { color: accentColor }]}>{i + 1}번</Text>
+                <Text style={styles.colorName}>{localizeStaticCopy(c.korName, locale)}</Text>
+                <Text style={[styles.colorOrder, { color: accentColor }]}>{`${i + 1}번`}</Text>
               </View>
             ))}
           </View>
@@ -229,7 +233,7 @@ export default function CoupleColorResultScreen() {
                 <View style={[styles.complementRow, { backgroundColor: '#FBF7F2', borderColor: analysis.complementColor.hex + '60' }]}>
                   <View style={[styles.complementDot, { backgroundColor: analysis.complementColor.hex, shadowColor: analysis.complementColor.hex }, isLightHex(analysis.complementColor.hex) && styles.lightComplementDot]} />
                   <View style={styles.complementText}>
-                    <Text style={[styles.complementName, { color: isLightHex(analysis.complementColor.hex) ? '#4A3728' : analysis.complementColor.hex }]}>{analysis.complementColor.korName}</Text>
+                    <Text style={[styles.complementName, { color: isLightHex(analysis.complementColor.hex) ? '#4A3728' : analysis.complementColor.hex }]}>{localizeStaticCopy(analysis.complementColor.korName, locale)}</Text>
                     <ReadableParagraphs text={analysis.complementColor.meaning} textStyle={styles.complementMeaning} />
                   </View>
                 </View>

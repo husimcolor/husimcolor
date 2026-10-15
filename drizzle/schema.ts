@@ -469,6 +469,9 @@ export const analysisRuns = mysqlTable(
       .notNull()
       .default("started"),
     resultReference: varchar("resultReference", { length: 160 }),
+    /** 새로 시작하는 결과에만 언어와 문안 버전을 기록한다. 기존 행의 null은 한국어 원문으로 해석한다. */
+    locale: varchar("locale", { length: 12 }),
+    copyVersion: varchar("copyVersion", { length: 80 }),
     startedAt: timestamp("startedAt").defaultNow().notNull(),
     completedAt: timestamp("completedAt"),
     expiresAt: timestamp("expiresAt"),
@@ -512,6 +515,9 @@ export const relationshipSessions = mysqlTable(
     resultTokenHash: varchar("resultTokenHash", { length: 128 }).notNull(),
     /** 기존 결과·PDF 생성기에서 만든 고정 결과 스냅샷의 암호문이다. */
     resultSnapshotEncrypted: text("resultSnapshotEncrypted"),
+    /** 초대 링크의 두 기기 결과도 생성 시점의 locale을 고정한다. */
+    locale: varchar("locale", { length: 12 }),
+    copyVersion: varchar("copyVersion", { length: 80 }),
     reportErrorCode: varchar("reportErrorCode", { length: 160 }),
     reportGeneratedAt: timestamp("reportGeneratedAt"),
     emailDeliveredAt: timestamp("emailDeliveredAt"),
@@ -613,6 +619,9 @@ export const emailOutbox = mysqlTable(
     providerMessageId: varchar("providerMessageId", { length: 200 }),
     attemptCount: int("attemptCount").notNull().default(0),
     nextAttemptAt: timestamp("nextAttemptAt").notNull(),
+    /** 저장된 PDF의 언어와 제목·본문 언어를 동일하게 재사용하기 위한 메타데이터다. */
+    locale: varchar("locale", { length: 12 }),
+    copyVersion: varchar("copyVersion", { length: 80 }),
     lastErrorCode: varchar("lastErrorCode", { length: 160 }),
     sentAt: timestamp("sentAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),

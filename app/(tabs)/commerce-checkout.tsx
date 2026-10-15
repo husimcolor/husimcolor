@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
+import { LocalizedText as Text } from "@/components/localized-text";
 import { getCommerceProduct, isPaidAnalysisProduct, type CommerceProductCode } from "@/shared/commerce";
 import { saveCommerceStartGrant } from "@/lib/commerce-access";
 import { trpc } from "@/lib/trpc";
@@ -374,9 +375,9 @@ export default function CommerceCheckoutScreen() {
         <Text style={styles.eyebrow}>{tossLiveEnabled ? "휴심컬러 안전 결제" : "휴심컬러 테스트 결제"}</Text>
         <Text style={styles.title}>{product.name}</Text>
         {openingCampaignPrice ? <View style={styles.priceGroup}>
-          <Text style={styles.regularPrice}>정가 {openingCampaignPrice.listAmountKrw.toLocaleString()}원</Text>
-          <Text style={styles.discountPrice}>→ {openingCampaignPrice.finalAmountKrw.toLocaleString()}원</Text>
-        </View> : <Text style={styles.price}>{product.amountKrw?.toLocaleString()}원</Text>}
+          <Text style={styles.regularPrice}>{`정가 ${openingCampaignPrice.listAmountKrw.toLocaleString()}원`}</Text>
+          <Text style={styles.discountPrice}>{`→ ${openingCampaignPrice.finalAmountKrw.toLocaleString()}원`}</Text>
+        </View> : <Text style={styles.price}>{`${product.amountKrw?.toLocaleString()}원`}</Text>}
         <Text style={styles.notice}>{tossLiveEnabled
           ? "토스페이먼츠 라이브 결제입니다. 결제 승인 시 실제 청구가 발생하며, 승인된 주문에만 검사 이용권이 발급됩니다."
           : "현재 테스트 운영 중입니다. Toss 테스트키로만 동작하며 실제 청구는 발생하지 않습니다."}</Text>
@@ -403,7 +404,7 @@ export default function CommerceCheckoutScreen() {
         <TextInput style={styles.input} value={couponCode} onChangeText={(value) => { setCouponCode(value); setMessage(null); }} autoCapitalize="characters" placeholder="쿠폰 코드를 입력하세요" placeholderTextColor="#94887C" />
         {couponQuote.isSuccess && couponQuote.data && <View style={styles.couponQuote}>
           <Text style={styles.couponQuoteTitle}>쿠폰이 적용되었습니다</Text>
-          <Text style={styles.couponQuoteText}>정가 {product.amountKrw?.toLocaleString()}원 → 할인 {couponQuote.data.discountAmountKrw.toLocaleString()}원 → 결제 예정 {couponQuote.data.finalAmountKrw.toLocaleString()}원</Text>
+          <Text style={styles.couponQuoteText}>{`정가 ${product.amountKrw?.toLocaleString()}원 → 할인 ${couponQuote.data.discountAmountKrw.toLocaleString()}원 → 결제 예정 ${couponQuote.data.finalAmountKrw.toLocaleString()}원`}</Text>
         </View>}
         {couponQuote.isError && couponCode.trim() ? <Text style={styles.couponError}>쿠폰을 적용할 수 없습니다. 코드와 조건을 확인해 주세요.</Text> : null}
         {message ? <Text style={styles.error}>{message}</Text> : null}

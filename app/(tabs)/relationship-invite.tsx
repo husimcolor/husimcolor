@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
+import { LocalizedText as Text } from "@/components/localized-text";
 import { getRelationshipRoleOptions, type FaithType, type GenderType, type RelationshipRole } from "@/constants/coupleData";
 import { trpc } from "@/lib/trpc";
+import { useLocalization } from "@/lib/localization-context";
+import { localizeStaticCopy } from "@/lib/zh-cn-copy";
 
 type DraftInfo = { gender?: GenderType; faith?: FaithType; relationshipRole?: RelationshipRole };
 type Draft = { info?: DraftInfo; colors?: string[]; cards?: string[] };
@@ -23,6 +26,7 @@ function roleParticipationParticle(role: RelationshipRole) {
 }
 export default function RelationshipInviteScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const params = useLocalSearchParams<{ token?: string | string[]; inviteToken?: string | string[]; resultToken?: string | string[]; initialGender?: string | string[]; initialRole?: string | string[]; initialFaith?: string | string[]; consent?: string | string[] }>();
   const token = one(params.token) ?? "";
   const inviteToken = one(params.inviteToken);
@@ -250,7 +254,11 @@ export default function RelationshipInviteScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>1. 기본 정보 및 참여 동의</Text>
           <Text style={styles.label}>성별</Text><View style={styles.chips}>{(["남성", "여성"] as GenderType[]).map((value) => <Pressable key={value} style={[styles.chip, draft.info?.gender === value && styles.chipOn]} onPress={() => void selectInfo("gender", value)}><Text style={[styles.chipText, draft.info?.gender === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View>
-          <Text style={[styles.label, styles.labelGap]}>관계 역할</Text><Text style={styles.roleHelp}>{current.partnerRole ? `상대방이 ‘${current.partnerRole}’${roleParticipationParticle(current.partnerRole)} 참여하고 있습니다. 본인의 정보를 선택한 후 검사를 시작해 주세요.` : "결제 또는 검사 순서와 관계없이 실제 역할을 선택해 주세요."}</Text><View style={styles.chips}>{roleOptions.map((value) => <Pressable key={value} style={[styles.chip, draft.info?.relationshipRole === value && styles.chipOn]} onPress={() => void selectInfo("relationshipRole", value)}><Text style={[styles.chipText, draft.info?.relationshipRole === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View>
+          <Text style={[styles.label, styles.labelGap]}>관계 역할</Text><Text style={styles.roleHelp}>{current.partnerRole
+            ? locale === "zh-CN"
+              ? `对方将以“${localizeStaticCopy(current.partnerRole, locale)}”的身份参与。请选择自己的信息后开始测试。`
+              : `상대방이 ‘${current.partnerRole}’${roleParticipationParticle(current.partnerRole)} 참여하고 있습니다. 본인의 정보를 선택한 후 검사를 시작해 주세요.`
+            : "결제 또는 검사 순서와 관계없이 실제 역할을 선택해 주세요."}</Text><View style={styles.chips}>{roleOptions.map((value) => <Pressable key={value} style={[styles.chip, draft.info?.relationshipRole === value && styles.chipOn]} onPress={() => void selectInfo("relationshipRole", value)}><Text style={[styles.chipText, draft.info?.relationshipRole === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View>
           <Text style={[styles.label, styles.labelGap]}>종교</Text><View style={styles.chips}>{(["기독교", "무교", "기타"] as FaithType[]).map((value) => <Pressable key={value} style={[styles.chip, draft.info?.faith === value && styles.chipOn]} onPress={() => void selectInfo("faith", value)}><Text style={[styles.chipText, draft.info?.faith === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View>
           <Pressable style={[styles.consent, consent && styles.consentOn]} onPress={() => { const next = !consent; setConsent(next); if (savedInfoKey && basicInfoSaveKey(draft.info, next) !== savedInfoKey) setMessage("정보를 변경하면 ‘기본 정보 저장’을 다시 눌러 주세요."); }}><Text style={styles.check}>{consent ? "✓" : ""}</Text><Text style={styles.consentText}>관계 검사 결과 생성을 위해 선택 정보와 검사 답변을 안전하게 처리하는 데 동의합니다.</Text></Pressable>
           <Text style={styles.saveGuide}>정보를 선택한 뒤 ‘기본 정보 저장’을 눌러 주세요. 저장된 정보가 관계 분석과 리포트에 반영됩니다.</Text>

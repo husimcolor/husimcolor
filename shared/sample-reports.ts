@@ -1,3 +1,5 @@
+import type { AppLocale } from "./localization";
+
 export type SampleReportProduct = "personal_deep" | "couple_love_deep" | "parent_child_deep";
 
 /** 모든 상품 진입 화면에서 동일하게 쓰는 공개 PDF 링크 문구. */
@@ -8,6 +10,13 @@ export const SAMPLE_REPORT_BUTTON_LABELS: Record<SampleReportProduct, string> = 
   personal_deep: "개인 심화 PDF 샘플 보기",
   couple_love_deep: "부부·연인 PDF 샘플 보기",
   parent_child_deep: "부모·자녀 PDF 샘플 보기",
+};
+
+/** 중국어 선택 시 한국어 공개 샘플을 열지 않도록 분리된 동일 상품 샘플을 사용한다. */
+export const ZH_CN_SAMPLE_REPORT_FILENAMES: Record<SampleReportProduct, string> = {
+  personal_deep: "husimcolor-personal-deep-zh-CN-sample.pdf",
+  couple_love_deep: "husimcolor-couple-love-zh-CN-sample.pdf",
+  parent_child_deep: "husimcolor-parent-child-zh-CN-sample.pdf",
 };
 
 export type SampleReport = {
@@ -55,10 +64,11 @@ export function getSampleReportButtonLabel(value: SampleReportProduct): string {
 }
 
 /** 운영·개발 모두에서 동일한 정적 PDF 자산으로 연결한다. */
-export function getSampleReportUrl(value: string | undefined, origin?: string): string | null {
+export function getSampleReportUrl(value: string | undefined, origin?: string, locale: AppLocale = "ko"): string | null {
   const report = getSampleReport(value);
   if (!report) return null;
-  const pathname = `/sample-reports/${report.fileName}`;
+  const fileName = locale === "zh-CN" ? ZH_CN_SAMPLE_REPORT_FILENAMES[report.product] : report.fileName;
+  const pathname = `/sample-reports/${fileName}`;
   if (!origin) return pathname;
   return `${origin.replace(/\/$/, "")}${pathname}`;
 }

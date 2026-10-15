@@ -4,14 +4,17 @@
  */
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet,
+  View, ScrollView, StyleSheet,
   Dimensions, TouchableOpacity, Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLOR_DATA, type ColorData } from '@/constants/colorData';
+import { getLocalizedColorName } from '@/lib/free-result-localization';
+import { useLocalization } from '@/lib/localization-context';
 import type { CoupleSessionData } from '@/constants/coupleData';
 import { hasCommerceAnalysisStarted } from '@/lib/commerce-access';
 import { trpc } from '@/lib/trpc';
@@ -52,6 +55,7 @@ function one(value: string | string[] | undefined) {
 
 export default function CoupleSelectScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const insets = useSafeAreaInsets();
   const { person, relationshipToken, inviteToken, resultToken } = useLocalSearchParams<{
     person: 'A' | 'B';
@@ -221,9 +225,9 @@ export default function CoupleSelectScreen() {
               ]}
             >
               {selectedColors[i] ? (
-                <Text style={styles.selectedSlotText}>{selectedColors[i].korName}</Text>
+                <Text style={styles.selectedSlotText}>{getLocalizedColorName(selectedColors[i], locale)}</Text>
               ) : (
-                <Text style={styles.selectedSlotEmpty}>{i + 1}번</Text>
+                <Text style={styles.selectedSlotEmpty}>{`${i + 1}번`}</Text>
               )}
             </View>
           ))}
@@ -256,7 +260,7 @@ export default function CoupleSelectScreen() {
                     styles.swatchLabel,
                     { color: getSwatchTextColor(color.hex), ...getSwatchTextShadow(color.hex) },
                   ]}>
-                    {color.korName}
+                    {getLocalizedColorName(color, locale)}
                   </Text>
                 </TouchableOpacity>
               );

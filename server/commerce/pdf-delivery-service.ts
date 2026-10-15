@@ -11,6 +11,7 @@ import type { CommerceProductCode } from "../../shared/commerce";
 import type { CouplePdfDownloadPayload } from "../../shared/couple-pdf-download";
 import type { ParentChildPdfDownloadPayload } from "../../shared/parent-child-pdf-download";
 import type { PremiumPdfDownloadPayload } from "../../shared/premium-pdf-download";
+import { localizePayload } from "../../lib/zh-cn-copy";
 import { createCouplePdfBuffer, validateCouplePdfPayload } from "../couple-pdf-report";
 import { getDb } from "../db";
 import { createParentChildPdfBuffer, validateParentChildPdfPayload } from "../parent-child-pdf-report";
@@ -30,10 +31,10 @@ export {
 
 type AnalysisPdfPayload = PremiumPdfDownloadPayload | CouplePdfDownloadPayload | ParentChildPdfDownloadPayload;
 
-async function buildExistingPdf(kind: AnalysisPdfKind, value: unknown): Promise<Buffer> {
-  if (kind === "personal_deep") return createPremiumPdfBuffer(validatePremiumPdfPayload(value));
-  if (kind === "couple_love_deep") return createCouplePdfBuffer(validateCouplePdfPayload(value));
-  return createParentChildPdfBuffer(validateParentChildPdfPayload(value));
+async function buildExistingPdf(kind: AnalysisPdfKind, value: unknown, locale: "ko" | "zh-CN"): Promise<Buffer> {
+  if (kind === "personal_deep") return createPremiumPdfBuffer(localizePayload(validatePremiumPdfPayload(value), locale));
+  if (kind === "couple_love_deep") return createCouplePdfBuffer(localizePayload(validateCouplePdfPayload(value), locale));
+  return createParentChildPdfBuffer(localizePayload(validateParentChildPdfPayload(value), locale));
 }
 
 function assertMatchingProduct(kind: AnalysisPdfKind, productCode: string): asserts productCode is CommerceProductCode {
@@ -64,6 +65,8 @@ export async function queuePrivateAnalysisPdfDelivery(input: {
       userId: analysisRuns.userId,
       customerId: analysisRuns.customerId,
       orderId: analysisRuns.orderId,
+      locale: analysisRuns.locale,
+      copyVersion: analysisRuns.copyVersion,
       productCode: products.code,
       emailHash: customers.emailHash,
       emailEncrypted: customers.emailEncrypted,
@@ -119,7 +122,8 @@ export async function queuePrivateAnalysisPdfDelivery(input: {
   }
 
   try {
-    const buffer = await buildExistingPdf(input.kind, input.payload);
+    const locale = run.locale === "zh-CN" ? "zh-CN" : "ko";
+    const buffer = await buildExistingPdf(input.kind, input.payload, locale);
     if (buffer.length < 512) throw new Error("PDF_BUFFER_TOO_SMALL");
     const stored = await storagePut(
       `private/analysis-results/${run.analysisRunId}/${input.kind}.pdf`,
@@ -149,6 +153,8 @@ export async function queuePrivateAnalysisPdfDelivery(input: {
         status: "queued",
         attemptCount: 0,
         nextAttemptAt: now,
+        locale: run.locale,
+        copyVersion: run.copyVersion,
       });
       await tx
         .update(analysisRuns)

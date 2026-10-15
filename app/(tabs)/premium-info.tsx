@@ -5,7 +5,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -14,10 +13,12 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { ScreenContainer } from '@/components/screen-container';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { useColors } from '@/hooks/use-colors';
 import { getTrialStatus, startTrial } from '@/lib/trialUtils';
 import { getCommerceStartGrant, markCommerceAnalysisStarted, removeCommerceStartGrant, saveCommerceAnalysisDelivery } from '@/lib/commerce-access';
 import { trpc } from '@/lib/trpc';
+import { useLocalization } from '@/lib/localization-context';
 
 const JOB_OPTIONS = [
   '생산직', '서비스직', '사역자', '주부',
@@ -32,6 +33,7 @@ const CONCERN_OPTIONS = [
 export default function PremiumInfoScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { locale } = useLocalization();
   const [profileAge, setProfileAge] = useState('');
   const [profileJob, setProfileJob] = useState('');
   const [profileFaith, setProfileFaith] = useState('');
@@ -99,7 +101,7 @@ export default function PremiumInfoScreen() {
         return;
       }
         if (grant) {
-          const consumed = await consumeEntitlement.mutateAsync({ accessToken: grant.accessToken, productCode: 'personal_deep' });
+          const consumed = await consumeEntitlement.mutateAsync({ accessToken: grant.accessToken, productCode: 'personal_deep', locale });
           await removeCommerceStartGrant('personal_deep');
           setHasStartGrant(false);
           await markCommerceAnalysisStarted('personal_deep');
@@ -134,7 +136,7 @@ export default function PremiumInfoScreen() {
             <Text style={[styles.label, { color: colors.foreground }]}>나이</Text>
             <TextInput
               style={[styles.ageInput, { backgroundColor: colors.surface, borderColor: profileAge ? '#8BAF8B' : colors.border, color: colors.foreground }]}
-              placeholder="나이를 입력하세요 (예: 35)"
+              placeholder={locale === 'zh-CN' ? '请输入年龄（例如：35）' : '나이를 입력하세요 (예: 35)'}
               placeholderTextColor={colors.muted}
               keyboardType="numeric"
               value={profileAge}

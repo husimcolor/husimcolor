@@ -1,4 +1,7 @@
 export type PremiumPdfDownloadPayload = {
+  /** 신규 결과에서는 생성 시점 locale/copy version을 함께 전달한다. 기존 payload는 한국어로 유지한다. */
+  locale?: "ko" | "zh-CN";
+  copyVersion?: string;
   profileLine: string;
   generatedAt: string;
   /** 공개용 가상 데이터 리포트에만 표지에 표시한다. 고객 PDF에는 전달하지 않는다. */

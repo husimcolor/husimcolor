@@ -1,8 +1,9 @@
 import { createElement, useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Linking, Alert } from 'react-native';
+import { View, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Linking, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,12 +13,15 @@ import { isOpeningCampaignActive } from '@/shared/opening-campaign';
 import { getSampleReportButtonLabel, getSampleReportUrl, type SampleReportProduct } from '@/shared/sample-reports';
 import { startKakaoLogin } from '@/constants/oauth';
 import { useAuth } from '@/hooks/use-auth';
+import { LanguageSelector } from '@/components/language-selector';
+import { useLocalization } from '@/lib/localization-context';
 
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const router = useRouter();
   const auth = useAuth();
+  const { locale } = useLocalization();
   const { resetColors } = useColorContext();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -172,7 +176,7 @@ export default function HomeScreen() {
   // 결제·상품 선택과 독립된 새 창/외부 브라우저로 열어 현재 화면 상태를 유지한다.
   const handleOpenSamplePdf = (product: SampleReportProduct) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://husimcolor.vercel.app';
-    const url = getSampleReportUrl(product, origin);
+    const url = getSampleReportUrl(product, origin, locale);
     if (!url) return;
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       window.open(url, '_blank', 'noopener,noreferrer');
@@ -193,6 +197,9 @@ export default function HomeScreen() {
         overScrollMode="always"
       >
       <View style={styles.container}>
+        <View style={styles.languageSelectorWrap}>
+          <LanguageSelector compact />
+        </View>
         {/* 배경 장식 원 */}
         <View style={[styles.decorCircle1, { backgroundColor: colors.sage + '20' }]} />
         <View style={[styles.decorCircle2, { backgroundColor: colors.warmgold + '15' }]} />
@@ -361,6 +368,12 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 8,
     gap: 18,
+  },
+  languageSelectorWrap: {
+    alignSelf: 'stretch',
+    alignItems: 'flex-end',
+    marginBottom: 4,
+    zIndex: 3,
   },
   decorCircle1: {
     position: 'absolute',
