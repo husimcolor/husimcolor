@@ -1997,7 +1997,7 @@ export const ZH_CN_TEMPLATE_COPY: readonly ZhCnTemplateCopy[] = [
       " 마음을 바탕에 둡니다. ",
       " 그 바탕이 더 또렷해질 수 있습니다."
     ],
-    "target": "1号{{v0}}通常以{{v1}}的心情为基础。{{v2}}这个基础可能会变得更加清晰。"
+    "target": "第1张{{v0}}心理卡呈现出一种内在倾向：平时，你可能会{{v1}}。{{v2}}，这份心意可能会更清晰。"
   },
   {
     "chunks": [
@@ -2069,7 +2069,7 @@ export const ZH_CN_TEMPLATE_COPY: readonly ZhCnTemplateCopy[] = [
       " 흐름을 더합니다. 그래서 ",
       " 선택이 자연스러울 수 있습니다."
     ],
-    "target": "2号{{v0}}为当前{{v1}}的流向增加了力量。因此，选择{{v2}}可能会显得更自然。"
+    "target": "第2张{{v0}}心理卡呈现出当前状态下的一种倾向：你可能会{{v1}}。此时，{{v2}}，再决定怎样做更合适。"
   },
   {
     "chunks": [
@@ -2078,7 +2078,7 @@ export const ZH_CN_TEMPLATE_COPY: readonly ZhCnTemplateCopy[] = [
       " 방향을 제안합니다. ",
       " 작은 실천부터 시작해 보세요."
     ],
-    "target": "3号{{v0}}在恢复时建议朝{{v1}}的方向。{{v2}}从小的实践开始试一试。"
+    "target": "第3张{{v0}}心理卡提示，恢复时不妨{{v1}}。{{v2}}。"
   },
   {
     "chunks": [

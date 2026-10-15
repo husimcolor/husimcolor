@@ -29,6 +29,10 @@ import type { CouplePdfDownloadPayload, CouplePdfPerson } from "../shared/couple
 
 const SAMPLE_NOTICE = "공개 예시 리포트 · 가상 데이터로 생성됨 · 실제 고객 개인정보 미사용";
 const REPORT_LOCALE = process.env.SAMPLE_REPORT_LOCALE === "zh-CN" ? "zh-CN" : "ko";
+// 기본 공개 샘플은 유지한다. alternate는 실제 생성 경로의 다른 색·카드·역할 조합을
+// 검수할 때만 사용하는 무발송 QA 모드다.
+const SAMPLE_VARIANT = process.env.SAMPLE_REPORT_VARIANT === "alternate" ? "alternate" : "default";
+const IS_ALTERNATE_SAMPLE = SAMPLE_VARIANT === "alternate";
 const OUTPUT_DIR = process.env.SAMPLE_REPORT_OUTPUT_DIR
   ? path.resolve(process.env.SAMPLE_REPORT_OUTPUT_DIR)
   : path.resolve(process.cwd(), "public", "sample-reports");
@@ -124,8 +128,8 @@ function dateLabel() {
 }
 
 async function createPersonalSample() {
-  const colors = getColors(["red", "blue", "white"]);
-  const cards = getCards(["red_triangle", "blue_diamond", "white_square"]);
+  const colors = getColors(IS_ALTERNATE_SAMPLE ? ["green", "orange", "black"] : ["red", "blue", "white"]);
+  const cards = getCards(IS_ALTERNATE_SAMPLE ? ["green_circle", "orange_hexagon", "black_inverted_triangle"] : ["red_triangle", "blue_diamond", "white_square"]);
   const energy = buildLifeEnergyResult(
     colors.map((color) => color.id),
     cards.map((card) => ({ color: card.color, shape: card.shape })),
@@ -183,17 +187,20 @@ async function createPersonalSample() {
 }
 
 async function createCoupleSample() {
+  const relationType = IS_ALTERNATE_SAMPLE ? "연인" : "부부";
+  const personALabel = IS_ALTERNATE_SAMPLE ? "남자친구" : "남편";
+  const personBLabel = IS_ALTERNATE_SAMPLE ? "여자친구" : "아내";
   const session: CoupleSessionData = {
-    relationType: "부부",
+    relationType,
     personA: {
-      info: { gender: "남성", faith: "무교", relationshipRole: "남편" },
-      colors: ["magenta", "lavender", "teal"],
-      cards: ["white_pentagon", "yellow_circle", "purple_triangle"],
+      info: { gender: "남성", faith: "무교", relationshipRole: personALabel },
+      colors: IS_ALTERNATE_SAMPLE ? ["indigo", "yellow", "white"] : ["magenta", "lavender", "teal"],
+      cards: IS_ALTERNATE_SAMPLE ? ["navy_diamond", "yellow_triangle", "white_circle"] : ["white_pentagon", "yellow_circle", "purple_triangle"],
     },
     personB: {
-      info: { gender: "여성", faith: "무교", relationshipRole: "아내" },
-      colors: ["green", "blue", "orange"],
-      cards: ["purple_circle", "red_inverted_triangle", "white_hexagon"],
+      info: { gender: "여성", faith: "무교", relationshipRole: personBLabel },
+      colors: IS_ALTERNATE_SAMPLE ? ["red", "black", "green"] : ["green", "blue", "orange"],
+      cards: IS_ALTERNATE_SAMPLE ? ["red_inverted_triangle", "black_square", "green_hexagon"] : ["purple_circle", "red_inverted_triangle", "white_hexagon"],
     },
   };
   const colorsA = getColors(session.personA.colors);
@@ -213,11 +220,11 @@ async function createCoupleSample() {
     session.personB.colors,
     session.personA.cards,
     session.personB.cards,
-    "부부",
+    relationType,
   );
   const { buildRomanticCardFlowContrast, buildRomanticCardRecoveryRoutine, buildRomanticRelationTraits } = await import("../lib/couple-romantic-relation-traits");
   const { buildRomanticRelationshipRoles } = await import("../lib/couple-romantic-relationship-roles");
-  const personLabels = { personA: "남편", personB: "아내" };
+  const personLabels = { personA: personALabel, personB: personBLabel };
   const traits = buildRomanticRelationTraits({
     personA,
     personB,
@@ -227,7 +234,7 @@ async function createCoupleSample() {
     cardsB,
     expressionDescription: "",
     recoveryDescription: "",
-    relationType: "부부",
+    relationType,
     personLabels,
   });
   const roles = buildRomanticRelationshipRoles({ personA, personB, colorsA, colorsB, cardsA, cardsB });
@@ -237,7 +244,7 @@ async function createCoupleSample() {
   if (!unified) throw new Error("부부 샘플의 관계 통합 분석을 만들지 못했습니다.");
 
   const payload: CouplePdfDownloadPayload = {
-    relationType: "부부",
+    relationType,
     generatedAt: dateLabel(),
     sampleNotice: SAMPLE_NOTICE,
     couple: {
@@ -245,8 +252,8 @@ async function createCoupleSample() {
       coreSummary: archetype.coreSummary,
       tensionDescription: archetype.tensionDescription,
     },
-    personA: personPdfData("남편 · 가상 인물 A", session.personA),
-    personB: personPdfData("아내 · 가상 인물 B", session.personB),
+    personA: personPdfData(`${personALabel} · 가상 인물 A`, session.personA),
+    personB: personPdfData(`${personBLabel} · 가상 인물 B`, session.personB),
     relationship: {
       personLabels,
       attractionAnalysis: cardFlowContrast ?? coupleAnalysis.profileContrast ?? archetype.tensionDescription,
@@ -290,16 +297,20 @@ async function createCoupleSample() {
 }
 
 async function createParentChildSample() {
-  const relationType = "엄마-딸" as const;
+  const relationType = IS_ALTERNATE_SAMPLE ? "아빠-아들" as const : "엄마-딸" as const;
+  const parentGender = IS_ALTERNATE_SAMPLE ? "남성" as const : "여성" as const;
+  const childGender = IS_ALTERNATE_SAMPLE ? "남성" as const : "여성" as const;
+  const parentLabel = IS_ALTERNATE_SAMPLE ? "아빠" : "엄마";
+  const childLabel = IS_ALTERNATE_SAMPLE ? "아들" : "딸";
   const parentSession: PersonSession = {
-    info: { gender: "여성", faith: "무교", relationshipRole: "엄마" },
-    colors: ["green", "blue", "lavender"],
-    cards: ["green_circle", "blue_square", "purple_hexagon"],
+    info: { gender: parentGender, faith: "무교", relationshipRole: parentLabel },
+    colors: IS_ALTERNATE_SAMPLE ? ["indigo", "green", "orange"] : ["green", "blue", "lavender"],
+    cards: IS_ALTERNATE_SAMPLE ? ["navy_square", "green_diamond", "orange_triangle"] : ["green_circle", "blue_square", "purple_hexagon"],
   };
   const childSession: PersonSession = {
-    info: { gender: "여성", faith: "무교", relationshipRole: "딸" },
-    colors: ["yellow", "pink", "coral"],
-    cards: ["yellow_circle", "purple_diamond", "orange_pentagon"],
+    info: { gender: childGender, faith: "무교", relationshipRole: childLabel },
+    colors: IS_ALTERNATE_SAMPLE ? ["red", "yellow", "blue"] : ["yellow", "pink", "coral"],
+    cards: IS_ALTERNATE_SAMPLE ? ["red_circle", "yellow_pentagon", "blue_inverted_triangle"] : ["yellow_circle", "purple_diamond", "orange_pentagon"],
   };
   const parentCards = getCards(parentSession.cards);
   const childCards = getCards(childSession.cards);
@@ -307,8 +318,8 @@ async function createParentChildSample() {
   const childAnalysis = generatePersonAnalysis(childSession, "B");
   const parentChildAnalysis = buildParentChildRelationshipAnalysis({
     relationType,
-    parentGender: "여성",
-    childGender: "여성",
+    parentGender,
+    childGender,
     parent: { colors: parentSession.colors, cards: parentCards },
     child: { colors: childSession.colors, cards: childCards },
   });
@@ -320,8 +331,8 @@ async function createParentChildSample() {
   if (!lightArchetype) throw new Error("부모·자녀 샘플의 관계 유형을 만들지 못했습니다.");
   const coaching = buildParentChildCoaching({
     relationType,
-    parentGender: "여성",
-    childGender: "여성",
+    parentGender,
+    childGender,
     parent: { colors: parentSession.colors, cards: parentCards, analysis: parentAnalysis },
     child: { colors: childSession.colors, cards: childCards, analysis: childAnalysis },
     lightArchetype,
@@ -330,8 +341,8 @@ async function createParentChildSample() {
   const payload = buildParentChildPdfDownloadPayload({
     relationType,
     sampleNotice: SAMPLE_NOTICE,
-    personA: personPdfData("엄마 · 가상 인물 A", parentSession),
-    personB: personPdfData("딸 · 가상 인물 B", childSession),
+    personA: personPdfData(`${parentLabel} · 가상 인물 A`, parentSession),
+    personB: personPdfData(`${childLabel} · 가상 인물 B`, childSession),
     relationship: {
       labels: coaching.labels,
       typeName: summary.typeName,
@@ -372,7 +383,7 @@ async function main() {
     "husimcolor-parent-child-sample.pdf",
   ];
   results.forEach((pdf, index) => writeFileSync(path.join(OUTPUT_DIR, files[index]), pdf));
-  console.log(JSON.stringify({ outputDir: OUTPUT_DIR, files: files.map((file, index) => ({ file, bytes: results[index].length })), noDatabase: true, noEmail: true }, null, 2));
+  console.log(JSON.stringify({ outputDir: OUTPUT_DIR, sampleVariant: SAMPLE_VARIANT, files: files.map((file, index) => ({ file, bytes: results[index].length })), noDatabase: true, noEmail: true }, null, 2));
 }
 
 main().catch((error) => {

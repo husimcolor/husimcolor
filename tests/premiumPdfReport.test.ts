@@ -195,6 +195,10 @@ describe("유료 결과 PDF 리포트", () => {
     expect(source).toContain("BODY_TEXT_SIZE = 18.5");
     expect(source).toContain("BODY_LABEL_SIZE = 16");
     expect(source).toContain("BODY_LINE_GAP = 7.5");
+    expect(source).toContain('const complementDescription = "현재 흐름에서 과해지기 쉬운 결을 누그러뜨리고, 회복 방향을 돕는 컬러입니다."');
+    expect(source).toContain('writeSectionTitle(document, "추천 보완컬러", "#8B6914", textHeight(document, complementDescription');
+    expect(source).toContain('replace(/^[^\\p{L}\\p{N}]+/u, "")');
+    expect(source).not.toContain('replace(/^[^가-힣A-Za-z0-9]+/, "")');
     const nativeHtmlSource = readFileSync(resolve(process.cwd(), "lib/premium-pdf-report.ts"), "utf8");
     expect(nativeHtmlSource).toContain("font-size: 18.5pt; line-height: 1.9");
     expect(source).not.toContain("`• ${value}`");
