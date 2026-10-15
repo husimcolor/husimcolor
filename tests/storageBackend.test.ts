@@ -12,6 +12,24 @@ describe("private report storage backend", () => {
     expect(resolveStorageBackend({ BUILT_IN_FORGE_API_URL: "https://forge.example", BUILT_IN_FORGE_API_KEY: "key" })).toBe("manus_forge");
   });
 
+  it("uses explicit local E2E storage ahead of ambient development Forge credentials", () => {
+    expect(resolveStorageBackend({
+      NODE_ENV: "development",
+      HUSIM_LOCAL_TEST_STORAGE_DIR: "/tmp/husim-e2e-storage",
+      BUILT_IN_FORGE_API_URL: "https://forge.example",
+      BUILT_IN_FORGE_API_KEY: "key",
+    })).toBe("local_test");
+  });
+
+  it("never enables local E2E storage in production", () => {
+    expect(resolveStorageBackend({
+      NODE_ENV: "production",
+      HUSIM_LOCAL_TEST_STORAGE_DIR: "/tmp/husim-e2e-storage",
+      BUILT_IN_FORGE_API_URL: "https://forge.example",
+      BUILT_IN_FORGE_API_KEY: "key",
+    })).toBe("manus_forge");
+  });
+
   it("does not silently choose a storage backend without credentials", () => {
     expect(resolveStorageBackend({})).toBe("unconfigured");
   });

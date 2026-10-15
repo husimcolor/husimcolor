@@ -39,14 +39,19 @@ describe("카카오톡 PDF 다운로드 호환성", () => {
   it("개인·관계 결과가 재생성 없이 private GET 다운로드와 외부 브라우저 대안을 제공한다", () => {
     const premium = readFileSync(resolve(process.cwd(), "app/(tabs)/premium-result.tsx"), "utf8");
     const couple = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+    const developmentServer = readFileSync(resolve(process.cwd(), "server/_core/index.ts"), "utf8");
 
     expect(premium).toContain("isKakaoTalkInAppBrowser()");
     expect(premium).toContain("requestWebPdfDownload(privatePdfUrl)");
+    expect(premium).toContain("getApiBaseUrl() || window.location.origin");
     expect(premium).toContain("외부 Chrome에서 PDF 열기");
     expect(couple).toContain("getStoredRelationshipPdfUrl");
+    expect(couple).toContain("getApiBaseUrl() || window.location.origin");
     expect(couple).toContain("requestWebPdfDownload(storedPdfUrl)");
     expect(couple).toContain("외부 Chrome에서 PDF 열기");
     expect(couple).toContain("B의 초대 접근 토큰도 A와 같은 이미 생성된 private PDF의 읽기만 허용한다");
+    expect(developmentServer).toContain('app.all("/api/private-pdf-download"');
+    expect(developmentServer).toContain("getPrivateAnalysisPdfDownload");
   });
 
   it("private endpoint와 기존 POST endpoint가 카카오 권장 다운로드 헤더를 유지한다", () => {

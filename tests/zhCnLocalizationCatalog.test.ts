@@ -43,7 +43,9 @@ describe("zh-CN static localization catalog", () => {
       .toBe("通过三种颜色和三张心理卡，更深入地了解自己。");
     expect(localizeStaticCopy("부부·연인 · 부모·자녀 · 친구 관계를 선택할 수 있습니다.", "zh-CN"))
       .toBe("可选择夫妻/恋人、父母/子女或朋友关系。");
-    expect(localizeStaticCopy("개인 심화 PDF 샘플 보기", "zh-CN")).toBe("查看个人深度分析 PDF 示例");
+    expect(localizeStaticCopy("개인 심화 PDF 샘플 보기", "zh-CN")).toBe("查看个人深度分析报告示例");
+    expect(localizeStaticCopy("부부·연인 PDF 샘플 보기", "zh-CN")).toBe("查看夫妻／恋人关系报告示例");
+    expect(localizeStaticCopy("부모·자녀 PDF 샘플 보기", "zh-CN")).toBe("查看亲子关系报告示例");
     expect(localizeStaticCopy("회원 상태를 확인하고 있습니다.", "zh-CN")).toBe("正在确认会员状态。");
     expect(localizeStaticCopy("전체 12쪽 · 가상 데이터", "zh-CN")).toBe("共 12 页 · 虚拟数据");
     expect(localizeStaticCopy("PDF 리포트 샘플 보기", "zh-CN")).toBe("查看 PDF 报告示例");
@@ -51,6 +53,32 @@ describe("zh-CN static localization catalog", () => {
     expect(localizeStaticCopy("→ 47,200원", "zh-CN")).toBe("→ 47,200韩元");
     expect(localizeStaticCopy("1번 카드", "zh-CN")).toBe("第1张心理卡");
     expect(localizeStaticCopy("2번 카드 선택 →", "zh-CN")).toBe("选择第2张心理卡 →");
+  });
+
+  it("renders the personal colour-stage result without Korean static residuals", () => {
+    expect(localizeStaticCopy(
+      "1단계는 현재 스스로 인식하고 있는 성향과 관계 흐름을 살펴보는 단계입니다.",
+      "zh-CN",
+    )).toBe("第1阶段用于了解你目前能够觉察到的倾向，以及你在人际关系中的互动方式。");
+    expect(localizeStaticCopy("선택한 컬러 흐름", "zh-CN")).toBe("所选颜色的整体特点");
+    expect(localizeStaticCopy("선택한 컬러 미니 해석", "zh-CN")).toBe("所选颜色的简要解读");
+    expect(localizeStaticCopy("이제 보지 않고 직관으로 카드 3장을 선택합니다.", "zh-CN"))
+      .toBe("接下来请不看卡面，凭直觉选择三张心理卡。");
+    expect(localizeStaticCopy("무의식 · 현재흐름 · 회복방향의 에너지를 확인해 보세요.", "zh-CN"))
+      .toBe("通过潜意识、当前状态与恢复方向，了解此刻的心理变化。");
+    expect(localizeStaticCopy("심리카드 3장 선택하기 →", "zh-CN")).toBe("选择三张心理卡 →");
+    expect(localizeStaticCopy("컬러 다시 선택하기", "zh-CN")).toBe("重新选择颜色");
+  });
+
+  it("renders the personal psychology-card selection flow in Chinese", () => {
+    expect(localizeStaticCopy("2단계 · 심리카드 흐름", "zh-CN")).toBe("第2阶段 · 心理卡所呈现的变化");
+    expect(localizeStaticCopy("이 컬러 흐름을 바탕으로, 직관이 이끄는 카드를 선택해 주세요", "zh-CN"))
+      .toBe("请参考这些颜色所呈现的特点，凭直觉选择心理卡。");
+    expect(localizeStaticCopy("컬러 에너지 카드 선택", "zh-CN")).toBe("选择色彩心理卡");
+    expect(localizeStaticCopy("마음이 이끄는 카드를 3장 선택해 주세요", "zh-CN"))
+      .toBe("请选择三张你内心更有感觉的心理卡。");
+    expect(localizeStaticCopy("✨ 카드를 섞는 중...", "zh-CN")).toBe("✨ 正在洗牌…");
+    expect(localizeStaticCopy("나의 컬러 심리 해석하기 →", "zh-CN")).toBe("查看我的色彩心理解读 →");
   });
 
   it("keeps every three-colour card-flow role distinct in Chinese", () => {
@@ -163,6 +191,12 @@ describe("zh-CN static localization catalog", () => {
   });
 
   it("rebuilds previously fragmented representative-combination output as complete Chinese", () => {
+    expect(localizeStaticCopy(
+      "그린의 회복 · 오렌지의 활력 · 블랙의 보호가 당신의 성향을 이루고 있습니다.",
+      "zh-CN",
+    )).toBe("绿色所呈现的恢复与平衡、橙色所呈现的活力与黑色所呈现的保护感，共同构成了你此次选择所呈现的心理倾向。");
+    expect(localizeStaticCopy("색과 도형이 보여준 오늘의 마음 흐름", "zh-CN")).toBe("色彩与图形所呈现的此刻内心变化");
+    expect(localizeStaticCopy("짧은 후기를 남겨주세요 (선택)", "zh-CN")).toBe("留下简短评价（可选）");
     expect(localizeStaticCopy(
       "일상의 조화와 안정이 중요한 경향이 있습니다. 일상에서는 주변의 입장을 고르게 살피는 편입니다.",
       "zh-CN",

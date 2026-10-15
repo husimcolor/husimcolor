@@ -397,6 +397,7 @@ function NativeCard({
 export default function PremiumSelectScreen() {
   const router = useRouter();
   const { locale } = useLocalization();
+  const localize = useCallback((copy: string) => localizeStaticCopy(copy, locale), [locale]);
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
 
   // 진입 시 체험/결제 상태 확인
@@ -539,7 +540,7 @@ export default function PremiumSelectScreen() {
               🌿 1단계 컬러 흐름
             </Text>
             <View style={styles.colorFlowRow}>
-              {prevSelectedColors.map((c: ColorData) => (
+                {prevSelectedColors.map((c: ColorData) => (
                 <View key={c.id} style={styles.colorFlowItem}>
                   <View style={[styles.colorFlowDot, { backgroundColor: c.hex }]} />
                   <Text style={[styles.colorFlowName, { color: "#3D6B3D" }]}>{getLocalizedColorName(c, locale)}</Text>
@@ -547,7 +548,7 @@ export default function PremiumSelectScreen() {
               ))}
             </View>
             <Text style={[styles.colorFlowDesc, { color: '#8A7A68' }]}>
-              이 컬러 흐름을 바탕으로, 직관이 이끄는 카드를 선택해 주세요
+              {localize("이 컬러 흐름을 바탕으로, 직관이 이끄는 카드를 선택해 주세요")}
             </Text>
           </View>
         )}
@@ -597,7 +598,7 @@ export default function PremiumSelectScreen() {
                   </>
                 ) : (
                   <Text style={[styles.slotEmpty, { color: '#8A7A68' }]}>
-                    {`${i + 1}번`}
+                    {locale === "zh-CN" ? `${i + 1}号` : `${i + 1}번`}
                   </Text>
                 )}
               </View>
@@ -605,7 +606,7 @@ export default function PremiumSelectScreen() {
                 style={[styles.slotLabel, { color: POSITION_COLORS[i] }]}
                 numberOfLines={2}
               >
-                {POSITION_LABELS[i]}
+                {localize(POSITION_LABELS[i])}
               </Text>
             </View>
           ))}
@@ -614,10 +615,12 @@ export default function PremiumSelectScreen() {
         {/* 진행 안내 */}
         <Text style={[styles.progressText, { color: '#5F4B3B' }]}>
           {isShuffling
-            ? "✨ 카드를 섞는 중..."
+            ? localize("✨ 카드를 섞는 중...")
             : selectedCount < 3
-            ? `마음이 이끄는 카드를 ${3 - selectedCount}장 선택해 주세요`
-            : "3장 선택 완료 · 아래 버튼을 눌러 해석을 확인하세요"}
+            ? locale === "zh-CN"
+              ? `请选择 ${3 - selectedCount} 张你内心更有感觉的心理卡。`
+              : `마음이 이끄는 카드를 ${3 - selectedCount}장 선택해 주세요`
+            : localize("3장 선택 완료 · 아래 버튼을 눌러 해석을 확인하세요")}
         </Text>
 
         {/* 카드 그리드 */}
@@ -670,8 +673,10 @@ export default function PremiumSelectScreen() {
         >
           <Text style={styles.confirmButtonText}>
             {selectedCount === 3
-              ? "나의 컬러 심리 해석하기 →"
-              : `${selectedCount} / 3 선택됨`}
+              ? localize("나의 컬러 심리 해석하기 →")
+              : locale === "zh-CN"
+                ? `已选择 ${selectedCount} / 3 张`
+                : `${selectedCount} / 3 선택됨`}
           </Text>
         </TouchableOpacity>
       </ScrollView>

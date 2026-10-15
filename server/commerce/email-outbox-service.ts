@@ -35,6 +35,15 @@ export function getSupportNotificationIdempotencyKey(outboxId: number): string {
   return `husim-support-outbox-${outboxId}`;
 }
 
+/**
+ * E2E/QA runtime only: keep a newly queued outbox record intact while explicitly
+ * preventing any provider call. Production remains unchanged unless this exact
+ * opt-in flag is supplied.
+ */
+export function isEmailDeliveryDisabledForRuntime(): boolean {
+  return process.env.HUSIM_DISABLE_EMAIL_DELIVERY === "true";
+}
+
 export function getAnalysisResultEmailPayload(locale: "ko" | "zh-CN" = "ko"): { subject: string; html: string } {
   if (locale === "zh-CN") {
     return {
@@ -120,6 +129,7 @@ export async function deliverPrivatePdfOutboxItem(outboxId: number): Promise<{
   status: "sent" | "retry_scheduled" | "not_claimed";
   attemptCount?: number;
 }> {
+  if (isEmailDeliveryDisabledForRuntime()) return { status: "not_claimed" };
   const claimed = await claimPrivatePdfOutboxItem(outboxId);
   if (!claimed) return { status: "not_claimed" };
   const db = await getDb();
@@ -137,7 +147,7 @@ export async function deliverPrivatePdfOutboxItem(outboxId: number): Promise<{
       to: decryptCommerceEmail(claimed.toEmailEncrypted),
       subject: emailPayload.subject,
       html: emailPayload.html,
-      filename: getPrivatePdfFilename(claimed.productCode as "personal_deep" | "couple_love_deep" | "parent_child_deep"),
+      filename: getPrivatePdfFilename(claimed.productCode as "personal_deep" | "couple_love_deep" | "parent_child_deep", locale),
       pdf: await readPrivatePdf(claimed.storageKey),
       idempotencyKey: getOutboxEmailIdempotencyKey(claimed.id),
     });

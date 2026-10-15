@@ -1116,7 +1116,7 @@ export async function getRelationshipPrivatePdfDownload(input: {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
   const rows = await db
-    .select({ storageKey: privateDocuments.storageKey, productCode: products.code })
+    .select({ storageKey: privateDocuments.storageKey, productCode: products.code, locale: analysisRuns.locale })
     .from(privateDocuments)
     .innerJoin(analysisRuns, eq(privateDocuments.analysisRunId, analysisRuns.id))
     .innerJoin(products, eq(analysisRuns.productId, products.id))
@@ -1131,7 +1131,7 @@ export async function getRelationshipPrivatePdfDownload(input: {
   if (!document?.storageKey || !validProduct) throw new Error("PRIVATE_PDF_NOT_AVAILABLE");
 
   return {
-    filename: getPrivatePdfFilename(document.productCode as AnalysisPdfKind),
+    filename: getPrivatePdfFilename(document.productCode as AnalysisPdfKind, document.locale === "zh-CN" ? "zh-CN" : "ko"),
     content: await storageGetBuffer(document.storageKey),
   };
 }

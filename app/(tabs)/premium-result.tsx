@@ -35,8 +35,9 @@ import { PremiumShareSummaryCard } from "@/components/premium-share-summary-card
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { getCommerceAnalysisDelivery } from "@/lib/commerce-access";
 import { ResultLocaleProvider, useLocalization } from "@/lib/localization-context";
-import { localizePayload } from "@/lib/zh-cn-copy";
+import { localizePayload, localizeStaticCopy } from "@/lib/zh-cn-copy";
 import { buildPrivatePdfDownloadUrl, isKakaoTalkInAppBrowser, openInExternalBrowser, requestWebPdfDownload } from "@/lib/kakao-pdf-download";
+import { getApiBaseUrl } from "@/constants/oauth";
 import { copyVersionForLocale, resolveStoredResultLocale, type AppLocale } from "@/shared/localization";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -520,6 +521,7 @@ export default function PremiumResultScreen() {
   const { locale, copyVersion } = useLocalization();
   const [resultLocale, setResultLocale] = useState<AppLocale>(locale);
   const [resultCopyVersion, setResultCopyVersion] = useState(copyVersion);
+  const localizeResultCopy = (value: string) => localizeStaticCopy(value, resultLocale);
   const [cards, setCards] = useState<CardData[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
    const [prevColors, setPrevColors] = useState<ColorData[]>([]);
@@ -786,34 +788,42 @@ export default function PremiumResultScreen() {
   const stage2Bridge = localizePayload(buildStage2ColorBridge(prevColors), resultLocale);
 
   // 삶의 역할 Archetype + 오행 기반 에너지 흐름 해석 (jobCoaching보다 먼저 계산)
-  const lifeEnergyResult: LifeEnergyResult = localizePayload(buildLifeEnergyResult(
+  const rawLifeEnergyResult = buildLifeEnergyResult(
     prevColors.length >= 3 ? prevColors.map((c) => c.id) : [card1.color, card2.color, card3.color],
     [card1, card2, card3].map((c) => ({ color: c.color, shape: c.shape })),
     card3.complementColors,
-  ), resultLocale);
-  const customRecoveryRoutine = buildCustomRecoveryRoutine(
-    lifeEnergyResult.complementaryFiveElements.elements,
-    card3.wellness,
-    lifeEnergyResult.routines,
-    lifeEnergyResult.currentRoutines,
   );
+  const lifeEnergyResult: LifeEnergyResult = localizePayload(rawLifeEnergyResult, resultLocale);
+  const customRecoveryRoutine = localizePayload(buildCustomRecoveryRoutine(
+    rawLifeEnergyResult.complementaryFiveElements.elements,
+    card3.wellness,
+    rawLifeEnergyResult.routines,
+    rawLifeEnergyResult.currentRoutines,
+  ), resultLocale);
   const lifeRoleReport = localizePayload(buildLifeRoleEnergyReport(
     prevColors.length >= 3 ? prevColors.map((color) => color.id) : [card1.color, card2.color, card3.color],
     [card1, card2, card3].map((card) => ({ color: card.color, shape: card.shape })),
     profile?.age ?? '',
   ), resultLocale);
   // 오행 흐름 유형 및 메인 Archetype 키 추출 (성경구절 매칭용)
-  const _lifeFlowType = lifeEnergyResult.flowType;
-  const _archetypeKey = lifeEnergyResult.archetypes[0]?.key ?? '';
+  const _lifeFlowType = rawLifeEnergyResult.flowType;
+  const _archetypeKey = rawLifeEnergyResult.archetypes[0]?.key ?? '';
 
   // 직업별 맞춤 문구 (3번 카드 콜러 기준 성경구절)
-  const jobCoaching = profile ? getJobCoaching(profile.job, profile.faith, card3?.color, profile.concerns, _lifeFlowType, _archetypeKey) : null;
+  const jobCoaching = profile
+    ? localizePayload(getJobCoaching(profile.job, profile.faith, card3?.color, profile.concerns, _lifeFlowType, _archetypeKey), resultLocale)
+    : null;
 
   // 3카드 조합 종합 코칭 메시지 생성 (감정 공감 중심)
-  const combinedCoaching = buildPremiumCardFlowSummary([card1, card2, card3]);
+  const combinedCoaching = localizeStaticCopy(buildPremiumCardFlowSummary([card1, card2, card3]), resultLocale);
   // 하단 여운 문장: 3번 카드(회복 방향) 기준
-  const closingLine = card3.closingLine;
+  const closingLine = localizeStaticCopy(card3.closingLine, resultLocale);
   const displayComplementColors = selectDisplayComplementColors(card1, card2, card3, lifeEnergyResult, prevColors);
+  const localizedColor = localizeResultCopy;
+  const localizedProfile = profile
+    ? `${profile.age}${resultLocale === "zh-CN" ? "岁" : "세"} · ${localizedColor(profile.job)} · ${localizedColor(profile.faith)}`
+    : "";
+  const localizedColorFlowDescription = localizeStaticCopy(buildPremiumColorFlowDescription(prevColors), resultLocale);
   const shareCardData = buildPremiumShareCardData({
     selectedColors: prevColors,
     cards: [card1, card2, card3],
@@ -863,7 +873,8 @@ export default function PremiumResultScreen() {
   const submitServerPdfDownload = (payload: ReturnType<typeof buildPremiumPdfDownloadPayload>, requestId?: string) => {
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = '/api/pdf-report';
+    const apiOrigin = getApiBaseUrl() || window.location.origin;
+    form.action = new URL('/api/pdf-report', apiOrigin).toString();
     form.style.display = 'none';
     const field = document.createElement('input');
     field.type = 'hidden';
@@ -918,17 +929,18 @@ export default function PremiumResultScreen() {
         setPdfDownloadState('requesting');
         setPdfDownloadMessage('다운로드 중입니다. 잠시만 기다려 주세요.');
         const delivery = await getCommerceAnalysisDelivery("personal_deep");
+        const apiOrigin = getApiBaseUrl() || window.location.origin;
         const privatePdfUrl = delivery
-          ? buildPrivatePdfDownloadUrl(window.location.origin, {
+          ? buildPrivatePdfDownloadUrl(apiOrigin, {
               kind: "analysis",
               analysisRunId: delivery.analysisRunId,
               productCode: "personal_deep",
               deliveryToken: delivery.accessToken,
             })
           : null;
-        // 카카오 인앱 브라우저에서는 이미 보관된 private PDF를 GET으로 받는다.
-        // 이 경로는 PDF/이메일을 새로 만들지 않고 Content-Disposition 다운로드 헤더만 반환한다.
-        if (privatePdfUrl && isKakaoTalkInAppBrowser()) {
+        // 이미 보관된 private PDF는 새 생성·이메일 재발송 없이 GET 다운로드한다.
+        // Metro 개발 환경에서는 API 원본(3000)을, Vercel에서는 현재 원본을 사용한다.
+        if (privatePdfUrl) {
           const available = await fetch(privatePdfUrl, { method: 'HEAD', cache: 'no-store' })
             .then((response) => response.ok)
             .catch(() => false);
@@ -936,7 +948,7 @@ export default function PremiumResultScreen() {
             clearPdfDownloadTimers();
             pdfDownloadLockRef.current = false;
             setPdfDownloadState('idle');
-            setPdfDownloadMessage('카카오톡 다운로드 창을 확인해 주세요. 저장이 되지 않으면 아래 외부 Chrome 버튼을 이용해 주세요.');
+            setPdfDownloadMessage(isKakaoTalkInAppBrowser() ? '카카오톡 다운로드 창을 확인해 주세요. 저장이 되지 않으면 아래 외부 Chrome 버튼을 이용해 주세요.' : 'PDF 다운로드를 시작했습니다.');
             pdfDownloadTimersRef.current.push(setTimeout(() => setPdfDownloadMessage(null), 8_000));
             return;
           }
@@ -1042,14 +1054,14 @@ export default function PremiumResultScreen() {
           </Text>
           {profile && (
             <Text style={[styles.headerProfile, { color: '#555555' }]}>
-              {profile.age}세 · {profile.job} · {profile.faith}
+              {localizedProfile}
             </Text>
           )}
           {profile?.concerns && profile.concerns.length > 0 && (
             <View style={styles.concernsRow}>
               {profile.concerns.map((c) => (
                 <View key={c} style={[styles.concernBadge, { backgroundColor: '#7B9FBF22', borderColor: '#7B9FBF55' }]}>
-                  <Text style={[styles.concernBadgeText, { color: '#5A7FA0' }]}>{c}</Text>
+                  <Text style={[styles.concernBadgeText, { color: '#5A7FA0' }]}>{localizedColor(c)}</Text>
                 </View>
               ))}
             </View>
@@ -1081,21 +1093,21 @@ export default function PremiumResultScreen() {
                   { color: POSITION_LABELS[i].color },
                 ]}
               >
-                {POSITION_LABELS[i].label}
+                {localizedColor(POSITION_LABELS[i].label)}
               </Text>
               <Text
                 style={[styles.cardSummaryName, { color: '#3D3530' }]}
               >
-                {card.colorKor}
+                {localizedColor(card.colorKor)}
               </Text>
               <Text style={[styles.cardSummaryShape, { color: '#555555' }]}>
-                {card.shapeKor}
+                {localizedColor(card.shapeKor)}
               </Text>
               <Text
                 style={[styles.cardSummaryEnergy, { color: POSITION_LABELS[i].color }]}
                 numberOfLines={2}
               >
-                {card.energyTitle}
+                {localizedColor(card.energyTitle)}
               </Text>
             </View>
           ))}
@@ -1113,7 +1125,7 @@ export default function PremiumResultScreen() {
           return (
           <SectionCard
             key={card.id}
-            title={`${POSITION_LABELS[i].label} · ${interpretation.roleTitle}`}
+            title={`${localizedColor(POSITION_LABELS[i].label)} · ${interpretation.roleTitle}`}
             accentColor={POSITION_LABELS[i].color}
             colors={colors}
           >
@@ -1121,11 +1133,11 @@ export default function PremiumResultScreen() {
               <View style={[styles.cardEvidenceBox, { borderColor: POSITION_LABELS[i].color + '44' }]}>
                 <Text style={[styles.cardEvidenceName, { color: POSITION_LABELS[i].color }]}>{interpretation.cardLabel}</Text>
                 <View style={styles.cardEvidenceRow}>
-                  <Text style={styles.cardEvidenceLabel}>컬러 키워드</Text>
+                  <Text style={styles.cardEvidenceLabel}>{localizedColor("컬러 키워드")}</Text>
                   <Text style={styles.cardEvidenceText}>{interpretation.colorKeywords.join(' · ')}</Text>
                 </View>
                 <View style={styles.cardEvidenceRow}>
-                  <Text style={styles.cardEvidenceLabel}>도형 키워드</Text>
+                  <Text style={styles.cardEvidenceLabel}>{localizedColor("도형 키워드")}</Text>
                   <Text style={styles.cardEvidenceText}>{interpretation.shapeKeywords.join(' · ')}</Text>
                 </View>
               </View>
@@ -1183,12 +1195,12 @@ export default function PremiumResultScreen() {
                         ]}
                       />
                       <Text style={{ color: chipStyle.textColor, fontSize: 13, fontWeight: '700', letterSpacing: 0.2 }}>
-                        {c.name}
+                        {localizedColor(c.name)}
                       </Text>
                     </View>
                     {/* 의미 텍스트 */}
                     <Text style={{ color: chipStyle.textColor, fontSize: 11, lineHeight: 16, opacity: 0.85 }}>
-                      {c.meaning}
+                      {localizedColor(c.meaning)}
                     </Text>
                   </View>
                 );
@@ -1210,13 +1222,13 @@ export default function PremiumResultScreen() {
               {prevColors.map((c: ColorData, i: number) => (
                 <View key={c.id} style={styles.colorFlowSectionItem}>
                   <View style={[styles.colorFlowSectionDot, { backgroundColor: c.hex }, getLightColorBorder(c.hex)]} />
-                  <Text style={[styles.colorFlowSectionName, { color: "#3D2A00" }]}>{c.korName}</Text>
-                  <Text style={[styles.colorFlowSectionKeyword, { color: "#6B5030" }]}>{c.keywords[0]}</Text>
+                  <Text style={[styles.colorFlowSectionName, { color: "#3D2A00" }]}>{localizedColor(c.korName)}</Text>
+                  <Text style={[styles.colorFlowSectionKeyword, { color: "#6B5030" }]}>{localizedColor(c.keywords[0])}</Text>
                 </View>
               ))}
             </View>
             <Text style={[styles.colorFlowSectionDesc, { color: "#4A3010" }]}>
-              {buildPremiumColorFlowDescription(prevColors)}
+              {localizedColorFlowDescription}
             </Text>
           </View>
         )}
@@ -1374,7 +1386,7 @@ export default function PremiumResultScreen() {
             <Text style={styles.wellnessIcon}>🍵</Text>
             <View style={styles.wellnessContent}>
               <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>추천 차</Text>
-            <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{card3.wellness.tea}</Text>
+              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{localizedColor(card3.wellness.tea)}</Text>
           </View>
           </View>
           <View style={styles.wellnessDivider} />
@@ -1398,7 +1410,7 @@ export default function PremiumResultScreen() {
             <Text style={styles.wellnessIcon}>🌱</Text>
             <View style={styles.wellnessContent}>
               <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>추천 움직임</Text>
-              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{sanitizeRecovery(customRecoveryRoutine.movement, profile?.faith ?? '')}</Text>
+              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{localizedColor(sanitizeRecovery(customRecoveryRoutine.movement, profile?.faith ?? ''))}</Text>
             </View>
           </View>
           <View style={styles.wellnessDivider} />
@@ -1406,7 +1418,7 @@ export default function PremiumResultScreen() {
             <Text style={styles.wellnessIcon}>🏡</Text>
             <View style={styles.wellnessContent}>
               <Text style={[styles.wellnessLabel, { color: '#8B6914' }]}>오늘의 작은 실천</Text>
-              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{sanitizeRecovery(customRecoveryRoutine.smallPractice, profile?.faith ?? '')}</Text>
+              <Text style={[styles.wellnessValue, { color: '#5C4A1E' }]}>{localizedColor(sanitizeRecovery(customRecoveryRoutine.smallPractice, profile?.faith ?? ''))}</Text>
             </View>
           </View>
           <View style={styles.wellnessDivider} />
@@ -1448,7 +1460,7 @@ export default function PremiumResultScreen() {
                 setPdfDownloadMessage('보관된 PDF를 찾지 못했습니다. 잠시 후 다시 시도해 주세요.');
                 return;
               }
-              const url = buildPrivatePdfDownloadUrl(window.location.origin, {
+              const url = buildPrivatePdfDownloadUrl(getApiBaseUrl() || window.location.origin, {
                 kind: "analysis",
                 analysisRunId: delivery.analysisRunId,
                 productCode: "personal_deep",
@@ -1470,7 +1482,7 @@ export default function PremiumResultScreen() {
         {/* 1:1 코칭 연결 섹션 */}
         <View style={styles.coachingSection}>
           <Text style={[styles.coachingSectionTitle, { color: '#3D3530' }]}>
-            지금의 마음 흐름을{"\n"}더 깊이 이해하고 싶다면
+            {localizeResultCopy("지금의 마음 흐름을\n더 깊이 이해하고 싶다면")}
           </Text>
           <Text style={[styles.coachingSectionSub, { color: '#555555' }]}>
             휴심컬러와 함께하는 1:1 컬러코칭을 만나보세요
@@ -1584,7 +1596,7 @@ export default function PremiumResultScreen() {
             /* 후기 입력 폼 */
             <View style={styles.reviewForm}>
               <Text style={[styles.reviewAskText, { color: '#3D3530' }]}>
-                짧은 후기를 남겨주시면{"\n"}휴심컬러가 더 따뜻하게 성장하는 데 큰 힘이 됩니다 😊
+                {localizeResultCopy("짧은 후기를 남겨주시면\n휴심컬러가 더 따뜻하게 성장하는 데 큰 힘이 됩니다 😊")}
               </Text>
 
               {/* 별점 */}
@@ -1627,7 +1639,7 @@ export default function PremiumResultScreen() {
                       ]}
                     >
                       <Text style={[styles.reviewTagText, { color: selected ? "#FFFFFF" : '#444444' }]}>
-                        {tag}
+                        {localizeResultCopy(tag)}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -1640,7 +1652,7 @@ export default function PremiumResultScreen() {
                   styles.reviewInput,
                   { backgroundColor: '#FAF8F3', borderColor: '#DDD8CE', color: '#3D3530' },
                 ]}
-                placeholder="짧은 후기를 남겨주세요 (선택)"
+                placeholder={localizeResultCopy("짧은 후기를 남겨주세요 (선택)")}
                 placeholderTextColor={'#9B8E85'}
                 value={reviewText}
                 onChangeText={setReviewText}

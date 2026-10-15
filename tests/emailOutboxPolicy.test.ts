@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getAccountLinkEmailIdempotencyKey, getOutboxEmailIdempotencyKey, getOutboxRetryAt, getSupportNotificationIdempotencyKey, MAX_AUTOMATIC_ATTEMPTS } from "../server/commerce/email-outbox-service";
+import { getAccountLinkEmailIdempotencyKey, getOutboxEmailIdempotencyKey, getOutboxRetryAt, getSupportNotificationIdempotencyKey, isEmailDeliveryDisabledForRuntime, MAX_AUTOMATIC_ATTEMPTS } from "../server/commerce/email-outbox-service";
 
 describe("email outbox retry policy", () => {
   it("uses bounded exponential-like retry intervals without sending an email", () => {
@@ -23,5 +23,18 @@ describe("email outbox retry policy", () => {
 
   it("uses a separate deterministic key for support notifications", () => {
     expect(getSupportNotificationIdempotencyKey(19)).toBe("husim-support-outbox-19");
+  });
+
+  it("requires an explicit QA opt-in to suppress provider delivery", () => {
+    const previous = process.env.HUSIM_DISABLE_EMAIL_DELIVERY;
+    try {
+      delete process.env.HUSIM_DISABLE_EMAIL_DELIVERY;
+      expect(isEmailDeliveryDisabledForRuntime()).toBe(false);
+      process.env.HUSIM_DISABLE_EMAIL_DELIVERY = "true";
+      expect(isEmailDeliveryDisabledForRuntime()).toBe(true);
+    } finally {
+      if (previous === undefined) delete process.env.HUSIM_DISABLE_EMAIL_DELIVERY;
+      else process.env.HUSIM_DISABLE_EMAIL_DELIVERY = previous;
+    }
   });
 });

@@ -32,6 +32,7 @@ import { buildPrivatePdfDownloadUrl, isKakaoTalkInAppBrowser, openInExternalBrow
 import { buildParentChildRelationshipAnalysis } from '@/lib/parent-child-relationship-analysis';
 import { ResultLocaleProvider, useLocalization } from '@/lib/localization-context';
 import { localizePayload } from '@/lib/zh-cn-copy';
+import { getApiBaseUrl } from '@/constants/oauth';
 import {
   PARENT_CHILD_PRIORITY_PILOT,
   PARENT_CHILD_PRIORITY_PILOT_QUERY,
@@ -932,7 +933,7 @@ export default function CoupleResultScreen() {
 
   const getStoredRelationshipPdfUrl = () => {
     if (Platform.OS !== 'web' || (!requestedRelationshipToken && !requestedResultToken)) return null;
-    return buildPrivatePdfDownloadUrl(window.location.origin, {
+    return buildPrivatePdfDownloadUrl(getApiBaseUrl() || window.location.origin, {
       kind: 'relationship',
       ...(requestedRelationshipToken ? { accessToken: requestedRelationshipToken } : {}),
       ...(requestedResultToken ? { resultToken: requestedResultToken } : {}),

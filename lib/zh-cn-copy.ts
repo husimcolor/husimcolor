@@ -638,6 +638,20 @@ function finalizeLocalizedCopy(value: string): string {
  */
 export function localizeStaticCopy(value: string, locale: AppLocale): string {
   if (locale !== "zh-CN" || !value) return value;
+  const colourFlow = value.match(/^(.+?)의 (.+?) · (.+?)의 (.+?) · (.+?)의 (.+?)(?:이|가) (당신의 성향|가상 인물의 성향 흐름)을 이루고 있습니다\.$/u);
+  if (colourFlow) {
+    const colorName = (source: string) => localizeTemplateVariable(source).replace(/색$/u, "色");
+    const keyword = (source: string) => {
+      const normalized = stripKoreanVariableParticle(source.trim());
+      // 색의 일반 키워드 `회복`은 선택 순서의 역할명 `회복방향`이 아니다.
+      if (normalized === "회복") return "恢复与平衡";
+      if (normalized === "보호") return "保护感";
+      return localizeTemplateVariable(normalized);
+    };
+    const [firstColor, firstKeyword, secondColor, secondKeyword, thirdColor, thirdKeyword, subject] = colourFlow.slice(1);
+    const owner = subject === "당신의 성향" ? "你此次选择所呈现的心理倾向" : "这位虚拟人物的心理倾向";
+    return `${colorName(firstColor!)}所呈现的${keyword(firstKeyword!)}、${colorName(secondColor!)}所呈现的${keyword(secondKeyword!)}与${colorName(thirdColor!)}所呈现的${keyword(thirdKeyword!)}，共同构成了${owner}。`;
+  }
   const colorCardFlow = value.match(/^(.+?)에서 드러난 기본 성향을 바탕으로, 세 장의 카드는 무의식 · 현재흐름 · 회복방향을 차례로 비춥니다\.$/u);
   if (colorCardFlow) {
     const colorNames = colorCardFlow[1]!.split(" · ").map((color) => localizeTemplateVariable(color.trim()));
