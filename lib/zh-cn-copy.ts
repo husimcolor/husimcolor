@@ -325,12 +325,66 @@ function localizeRelationshipTerm(source: string): string {
 }
 
 /**
+ * 관계 문장 안의 설명형 구는 끝 글자가 조사처럼 보일 수 있다(예: `지키려는`).
+ * 이때 조사 제거를 먼저 적용하면 검수된 완결 번역 키를 잃으므로, 원문 전체를 우선 찾는다.
+ */
+function localizeRelationshipPhrase(source: string): string {
+  const trimmed = source.trim();
+  return reviewedOverrides[trimmed] ?? exact.get(trimmed) ?? localizeRelationshipTerm(trimmed);
+}
+
+/**
  * 관계 분석기는 카드 제목과 조사를 먼저 결합한 뒤 문장을 만든다.
  * 그 상태에서 조각 catalog를 적용하면 한국어 어순이 남기 쉬우므로, 역할·카드 단계별
  * 전체 문장을 먼저 중국어 어순으로 다시 만든다.
  */
 function localizeRelationshipSentence(value: string): string | null {
-  let match = value.match(/^무의식의 바탕에서 (.+?)는 (.+?)(?:을|를) 내면에서 중요하게 여기는 마음을, (.+?)는 (.+?)(?:을|를) 내면에서 중요하게 여기는 마음을 가질 수 있습니다\.$/u);
+  let match = value.match(/^(.+?)의 컬러와 심리카드 흐름에서는 (.+?)의 에너지가 보입니다\. (.+?) 같은 강점이 자연스럽게 드러날 수 있습니다\. 사회와 일, 가족 안에서 필요한 방향을 살피고 사람을 돕는 모습으로도 이어질 수 있습니다\.$/u);
+  if (match) {
+    const label = localizeRelationshipTerm(match[1]!);
+    const role = localizeRelationshipTerm(match[2]!);
+    const strengths = localizeRelationshipTerm(match[3]!);
+    return `从${label}的色彩与心理卡所呈现的特点来看，${label}可能倾向于发挥${role}这一类作用。${strengths}等优势可能会自然展现，也可能在社会、工作或家庭中，体现为留意所需方向、支持他人的方式。`;
+  }
+  match = value.match(/^(.+?)의 컬러와 심리카드 흐름에서는 (.+?)의 에너지가 보입니다\. (.+?) 같은 강점이 자연스럽게 드러날 수 있습니다\. 관계와 사회 안에서 자신만의 가능성을 차분히 넓혀 가는 바탕이 될 수 있습니다\.$/u);
+  if (match) {
+    const label = localizeRelationshipTerm(match[1]!);
+    const role = localizeRelationshipTerm(match[2]!);
+    const strengths = localizeRelationshipTerm(match[3]!);
+    return `从${label}的色彩与心理卡所呈现的特点来看，${label}可能倾向于以${role}的方式理解和处理事情。${strengths}等优势可能会自然展现，也可能成为在关系与社会中稳步拓展自身可能性的基础。`;
+  }
+  match = /^(.+?)가 (.+?) 마음과 (.+?)이 (.+?) 마음이 만나 서로의 강점을 조율해 갈 수 있습니다\.$/u.exec(value);
+  if (match) {
+    const parent = localizeRelationshipTerm(match[1]!);
+    const parentFocus = localizeRelationshipPhrase(match[2]!);
+    const child = localizeRelationshipTerm(match[3]!);
+    const childFocus = localizeRelationshipPhrase(match[4]!);
+    return `${parent}希望保持${parentFocus}，${child}则更想${childFocus}。两种心意相遇后，双方可能会在关系中协调彼此的长处。`;
+  }
+  match = /^(.+?)와 (.+?)이 어떤 선택을 앞두고 각자 중요하게 보는 기준을 하나씩 말해 보면, 생각을 충분히 살피는 강점이 관계의 신뢰로 이어질 수 있습니다\. 답을 빨리 맞추기보다 이유를 비교하는 과정이 두 사람의 공통 자원이 됩니다\.$/u.exec(value);
+  if (match) {
+    const parent = localizeRelationshipTerm(match[1]!);
+    const child = localizeRelationshipTerm(match[2]!);
+    return `面对一个选择时，${parent}和${child}如果能分别说出自己最看重的一项标准，仔细思考的优势就可能转化为关系中的信任。与其急着得出答案，不如把比较理由的过程当作两人共有的资源。`;
+  }
+  match = value.match(/^(.+?)에게는 서로의 말이 바로 이어지지 않거나 분위기가 어색해지는 순간, 대화를 다시 잇고 싶은 마음이 앞설 수 있습니다\.$/u);
+  if (match) {
+    const label = localizeRelationshipTerm(match[1]!);
+    return `当彼此的话没有顺畅接上，或气氛变得尴尬时，${label}可能会更想把对话重新接起来。`;
+  }
+  match = value.match(/^(.+?)의 말과 행동은 관계가 멀어지지 않도록 대화를 다시 연결하고 싶은 마음에서 출발할 수 있습니다\.$/u);
+  if (match) {
+    const label = localizeRelationshipTerm(match[1]!);
+    return `${label}的言行，可能出于不希望关系疏远、想重新接上对话的心意。`;
+  }
+  match = value.match(/^먼저 (.+?)가 해결보다 (.+?)이 무엇을 이해받고 싶어 하는지 충분히 듣고, 다음으로 (.+?)이 자기 생각을 정리할 여지를 남기는 순서가 좋습니다\. 그다음 지금 가능한 한 가지 약속을 함께 정하면, (.+?) 흐름의 긴장이 서로를 배우는 시간으로 바뀔 수 있습니다\.$/u);
+  if (match) {
+    const parent = localizeRelationshipTerm(match[1]!);
+    const child = localizeRelationshipTerm(match[2]!);
+    const tension = localizeRelationshipTerm(match[4]!);
+    return `首先，${parent}可以先不急着给出解决办法，而是认真听听${child}最希望被理解的是什么；接着，给${child}留一点整理想法的空间。之后一起约定一件当下能做到的事，在${tension}的互动中出现的紧张感，也许能成为彼此学习的机会。`;
+  }
+  match = value.match(/^무의식의 바탕에서 (.+?)는 (.+?)(?:을|를) 내면에서 중요하게 여기는 마음을, (.+?)는 (.+?)(?:을|를) 내면에서 중요하게 여기는 마음을 가질 수 있습니다\.$/u);
   if (match) {
     return `在潜意识层面，${localizeRelationshipTerm(match[1]!)}可能会重视${localizeRelationshipTerm(match[2]!)}；${localizeRelationshipTerm(match[3]!)}可能会重视${localizeRelationshipTerm(match[4]!)}。`;
   }
@@ -452,6 +506,10 @@ function finalizeLocalizedCopy(value: string): string {
     .replace(/蒂尔色|蒂尔/g, "蓝绿色")
     // 한국어의 `블루 마름모`처럼 색상과 도형 사이에 있던 공백은 중국어 카드명에서는 쓰지 않는다.
     .replace(/([\u3400-\u9fff])\s+(圆形|三角形|倒三角形|方形|菱形|五边形|六边形)/g, "$1$2")
+    // 변수 자체가 문장 종결부호나 조건어를 포함하는 경우에도 완결 문장으로 정리한다.
+    .replace(/([。！？])\1+/g, "$1")
+    .replace(/即便即便/g, "即便")
+    .replace(/也，?如果/g, "，如果")
     .replace(/\\\\n/g, "\n");
 }
 
