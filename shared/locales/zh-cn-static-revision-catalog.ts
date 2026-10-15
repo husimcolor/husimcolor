@@ -304,4 +304,4 @@ export const ZH_CN_STATIC_REVISED_COPY: Readonly<Record<string, string>> = Objec
   "생각으로 정리하기 어려운 감정을 말이나 글로 가볍게 꺼내보세요": "有些情绪光靠想很难理清，不妨用说出来或写下来的方式慢慢表达",
   "생각으로 정리하기 어려운 감정은 말이나 글로 가볍게 꺼내보세요. 논리와 마음을 함께 살피는 시간이 도움이 될 수 있습니다.": "有些情绪光靠想很难理清，不妨用说出来或写下来的方式慢慢表达。给自己一点时间，兼顾理性的思考和内心的感受，也许会有所帮助。"
 });
-export const ZH_CN_STATIC_REVISED_COPY_STATS = Object.freeze({ entries: 300, usage: {"prompt_tokens":10620,"completion_tokens":36084,"calls":16} });
+export const ZH_CN_STATIC_REVISED_COPY_STATS = Object.freeze({ entries: 303, usage: {"prompt_tokens":10620,"completion_tokens":36084,"calls":16} });
