@@ -58,7 +58,7 @@ export const ZH_CN_TEMPLATE_COPY: readonly ZhCnTemplateCopy[] = [
       "</div>\n    <p class=\"small-title\" style=\"margin-top:12px\">성장 가능성</p><div class=\"tag-grid\">",
       "</div>\n  "
     ],
-    "target": "\\n    <article class=\"report-card\"><h3>当三种颜色同时出现时</h3><p>{{v0}}</p></article>\\n    <article class=\"report-card\"><p class=\"small-title\">心理倾向</p><p>{{v1}}</p><p class=\"small-title\">性格趋向</p><p>{{v2}}</p><p class=\"small-title\">关系倾向</p><p>{{v3}}</p></article>\\n    <p class=\"small-title\">主要优点</p><div class=\"tag-grid\">{{v4}}</div>\\n    <p class=\"small-title\" style=\"margin-top:12px\">成长可能性</p><div class=\"tag-grid\">{{v5}}</div>\\n  "
+    "target": "\\n    <article class=\"report-card\"><h3>当三种颜色同时出现时</h3><p>{{v0}}</p></article>\\n    <article class=\"report-card\"><p class=\"small-title\">心理倾向</p><p>{{v1}}</p><p class=\"small-title\">性格趋向</p><p>{{v2}}</p><p class=\"small-title\">关系倾向</p><p>{{v3}}</p></article>\\n    <p class=\"small-title\">主要优点</p><div class=\"tag-grid\">{{v4}}</div>\\n    <p class=\"small-title\" style=\"margin-top:12px\">需要留意的倾向</p><div class=\"tag-grid\">{{v5}}</div>\\n  "
   },
   {
     "chunks": [
@@ -1370,7 +1370,7 @@ export const ZH_CN_TEMPLATE_COPY: readonly ZhCnTemplateCopy[] = [
       " 말 대신 ‘지금은 잠깐 쉬고 싶어’라는 표시를 남기고, ",
       " 그 신호 뒤에 20분 동안 기다려 주기"
     ],
-    "target": "当气氛变得尴尬时，不对{{v0}}多说话，留下一句‘我现在想休息一下’的信号，{{v1}}在那信号之后等待20分钟。"
+    "target": "在气氛变得尴尬时，{{v0}}可以先说一句“我现在想休息一下”；{{v1}}收到这个信号后，可以先给{{v0}}20分钟的空间。"
   },
   {
     "chunks": [

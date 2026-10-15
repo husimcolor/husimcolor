@@ -75,7 +75,7 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
     complementDescription: "这种颜色能在当前状态中缓和容易走向过度的倾向，并帮助指引恢复方向。", colourTendency: "我的色彩倾向",
     currentFlow: "当下的内心变化", lifeRole: "我的社会角色与优势", coreRole: "我的核心角色", roleValue: "这个角色带来的价值",
     careerDirection: "社会用途 · 职业方向", workingEnvironment: "适合的工作环境", roleShadow: "需要留意的一面", smallDirection: "当前可以尝试的小方向",
-    bodyMind: "当下的身心状态", energyPerspective: "从五行能量角度", currentNeed: "当前所需", routine: "今日专属恢复练习",
+    bodyMind: "当下的身心状态", energyPerspective: "从五行能量角度", currentNeed: "当前所需", routine: "今日自我照顾建议",
     balancingEnergy: "调和能量", recommendedTea: "推荐茶", recommendedFood: "推荐食物", recommendedBreath: "推荐呼吸法", recommendedMovement: "推荐动作",
     smallPractice: "今天的小行动", recoveryMessage: "今天给自己的话", coaching: "HUSIM COLOR 一对一色彩心理辅导",
     coachingDescription: "如果想更深入地分享当前状态和适合自己的恢复方向，可以继续进行一对一色彩心理辅导。",
@@ -130,7 +130,7 @@ export function buildPremiumPdfHtml(input: PremiumPdfReportInput): string {
     <article class="report-card"><h3>세 컬러가 함께 나타날 때</h3><p>${paragraph(input.stage1Interpretation.integrationBridge)}</p></article>
     <article class="report-card"><p class="small-title">심리 성향</p><p>${paragraph(input.stage1Interpretation.psychologyTendency)}</p><p class="small-title">성격 경향</p><p>${paragraph(input.stage1Interpretation.personalityTendency)}</p><p class="small-title">관계 성향</p><p>${paragraph(input.stage1Interpretation.relationshipTendency)}</p></article>
     <p class="small-title">주요 장점</p><div class="tag-grid">${tagList(input.stage1Interpretation.strengths)}</div>
-    <p class="small-title" style="margin-top:12px">성장 가능성</p><div class="tag-grid">${tagList(input.stage1Interpretation.growthPossibility)}</div>
+    <p class="small-title" style="margin-top:12px">${isZh ? "需要留意的倾向" : "성장 가능성"}</p><div class="tag-grid">${tagList(input.stage1Interpretation.growthPossibility)}</div>
   ` : "";
   const directions = input.lifeRoleReport.directions.map((direction) => `<article class="direction-card">
     <h3>${escapeHtml(direction.title)}</h3>

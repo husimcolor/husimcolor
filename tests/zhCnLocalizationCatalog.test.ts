@@ -14,6 +14,16 @@ describe("zh-CN static localization catalog", () => {
     expect(localizeStaticCopy("추천 보완컬러", "zh-CN")).toBe("推荐调和色");
   });
 
+  it("uses the reviewed caution, self-care, and parent-child practice copy", () => {
+    expect(localizeStaticCopy("성장 가능성", "zh-CN")).toBe("需要留意的倾向");
+    expect(localizeStaticCopy("오늘의 맞춤 회복 루틴", "zh-CN")).toBe("今日自我照顾建议");
+    expect(localizeStaticCopy("🌿 오늘의 맞춤 회복 루틴", "zh-CN")).toBe("🌿 今日自我照顾建议");
+    expect(localizeStaticCopy(
+      "분위기가 어색해진 날 딸은 말 대신 ‘지금은 잠깐 쉬고 싶어’라는 표시를 남기고, 엄마는 그 신호 뒤에 20분 동안 기다려 주기",
+      "zh-CN",
+    )).toBe("在气氛变得尴尬时，女儿可以先说一句“我现在想休息一下”；妈妈收到这个信号后，可以先给她20分钟的空间。");
+  });
+
   it("contains the full extracted static-copy set", () => {
     expect(ZH_CN_STATIC_COPY_STATS.inputItems).toBe(11237);
     expect(ZH_CN_STATIC_COPY_STATS.translatedItems).toBe(11237);
