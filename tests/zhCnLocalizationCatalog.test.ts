@@ -49,8 +49,8 @@ describe("zh-CN static localization catalog", () => {
     expect(localizeStaticCopy("PDF 리포트 샘플 보기", "zh-CN")).toBe("查看 PDF 报告示例");
     expect(localizeStaticCopy("정가 59,000원", "zh-CN")).toBe("原价 59,000韩元");
     expect(localizeStaticCopy("→ 47,200원", "zh-CN")).toBe("→ 47,200韩元");
-    expect(localizeStaticCopy("1번 카드", "zh-CN")).toBe("第1种颜色");
-    expect(localizeStaticCopy("2번 카드 선택 →", "zh-CN")).toBe("选择第2种颜色 →");
+    expect(localizeStaticCopy("1번 카드", "zh-CN")).toBe("第1张心理卡");
+    expect(localizeStaticCopy("2번 카드 선택 →", "zh-CN")).toBe("选择第2张心理卡 →");
   });
 
   it("keeps every three-colour card-flow role distinct in Chinese", () => {
@@ -98,9 +98,26 @@ describe("zh-CN static localization catalog", () => {
     expect(localizeStaticCopy(
       "먼저 엄마가 해결보다 딸이 무엇을 이해받고 싶어 하는지 충분히 듣고, 다음으로 딸이 자기 생각을 정리할 여지를 남기는 순서가 좋습니다. 그다음 지금 가능한 한 가지 약속을 함께 정하면, 성장 지원형 흐름의 긴장이 서로를 배우는 시간으로 바뀔 수 있습니다.",
       "zh-CN",
-    )).toBe("首先，妈妈与其急于给出解决办法或说明，不如先认真听女儿想被理解的内容；接着，给女儿留下整理想法的空间。然后一起确定一件当下可行的约定，关系中因彼此支持成长而产生的紧张感，也可能转化为互相学习的时间。");
+    )).toBe("首先，妈妈与其急于给出解决办法或说明，不如先认真听女儿想被理解的内容；接着，给女儿留下整理想法的空间。然后一起确定一件当下可行的约定，在彼此支持成长的互动中出现的紧张感，也可能转化为互相学习的时间。");
     expect(localizeStaticCopy("“네가 스스로 해 보고 싶은 방법이 있다면, 내가 옆에서 도울게.”", "zh-CN"))
       .toBe("“如果你有想亲自尝试的方法，我会在你身边帮你。”");
+  });
+
+  it("uses clear native-reader wording for audited roles, prompts, and recovery copy", () => {
+    expect(localizeStaticCopy("자녀 기질 맞춤 소통", "zh-CN")).toBe("适合孩子心理特点的沟通方式");
+    expect(localizeStaticCopy("쉼 없는 질주", "zh-CN")).toBe("疲惫时仍不停地向前赶");
+    expect(localizeStaticCopy("1번 카드 · 무의식", "zh-CN")).toBe("第1张心理卡 · 潜意识");
+    expect(localizeStaticCopy("공개 예시 리포트 · 가상 데이터로 생성됨 · 실제 고객 개인정보 미사용", "zh-CN"))
+      .toBe("公开示例报告 · 使用虚拟数据制作 · 不含真实客户个人信息");
+    expect(localizeStaticCopy("변화를 편안하게 돕는 관계 동행가형", "zh-CN")).toBe("温和陪伴关系变化的人");
+    expect(localizeStaticCopy("함께 움직일 길을 만드는 현장 조정가형", "zh-CN")).toBe("帮助大家一起行动的协调者");
+    expect(localizeStaticCopy("성장 지원형 관계", "zh-CN")).toBe("彼此支持成长的关系");
+    expect(localizeStaticCopy("틸의 회복 방식", "zh-CN")).toBe("蓝绿色的恢复方式");
+    expect(localizeStaticCopy(
+      "마젠타의 진심이 통하는 깊은 관계를 소중히 여기는 몰입이 두드러집니다. 겉으로 드러난 말보다 마음의 결을 살피며, 관계가 놓치기 쉬운 의미를 붙잡습니다. 다만 감정을 모두 안에 담아두지 않도록 안전한 방식으로 조금씩 나누는 편이 좋습니다.",
+      "zh-CN",
+    )).toContain("细心体会内心的感受");
+    expect(localizeStaticCopy("蒂尔色", "zh-CN")).toBe("蓝绿色");
   });
 
   it("translates nested payload copy without changing Korean fallback behavior", () => {

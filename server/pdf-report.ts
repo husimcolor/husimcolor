@@ -240,7 +240,7 @@ export async function createPremiumPdfBuffer(payload: PremiumPdfDownloadPayload)
   (document as any).__locale = locale;
 
   document.rect(0, 0, 595, 842).fill("#F8F4EE");
-  document.fillColor("#4C7A58").fontSize(12).text("HUSIM COLOR · PERSONAL DEEP REPORT", PAGE_LEFT, 168, { width: CONTENT_WIDTH });
+  document.fillColor("#4C7A58").fontSize(12).text(locale === "zh-CN" ? "HUSIM COLOR · 个人深度分析报告" : "HUSIM COLOR · PERSONAL DEEP REPORT", PAGE_LEFT, 168, { width: CONTENT_WIDTH });
   document.fillColor("#3D3530").fontSize(25).text(locale === "zh-CN" ? "我的色彩心理报告" : "나의 컬러 심리 리포트", PAGE_LEFT, 204, { width: CONTENT_WIDTH });
   document.fillColor("#685C51").fontSize(12).text(locale === "zh-CN" ? "通过色彩与图形，了解当下的内心感受、社会角色与自我调节的方向" : "색과 도형으로 살펴본 현재의 마음, 삶의 역할, 회복 리듬", PAGE_LEFT, 247, { width: CONTENT_WIDTH });
   if (payload.sampleNotice) {

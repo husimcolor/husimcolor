@@ -39,7 +39,7 @@ function displayRole(document: PdfWriter, value: string) {
   const exact = roles[value];
   if (exact) return exact;
   const prefix = Object.keys(roles).find((role) => value.startsWith(`${role} · `));
-  return prefix ? `${roles[prefix]} · ${value.slice(prefix.length + 3)}` : localizedPdfText(document, value);
+  return prefix ? `${roles[prefix]} · ${localizedPdfText(document, value.slice(prefix.length + 3))}` : localizedPdfText(document, value);
 }
 
 function clean(value: string) {
@@ -310,7 +310,7 @@ export async function createParentChildPdfBuffer(payload: ParentChildPdfDownload
   (document as any).__locale = locale;
 
   document.rect(0, 0, 595, 842).fill("#F8F4EE");
-  document.fillColor("#5F8069").fontSize(12).text("HUSIM COLOR · PARENT & CHILD RELATIONSHIP REPORT", PAGE_LEFT, 160, { width: CONTENT_WIDTH });
+  document.fillColor("#5F8069").fontSize(12).text(locale === "zh-CN" ? "HUSIM COLOR · 父母/子女关系报告" : "HUSIM COLOR · PARENT & CHILD RELATIONSHIP REPORT", PAGE_LEFT, 160, { width: CONTENT_WIDTH });
   document.fillColor("#3D3530").fontSize(25).text(locale === "zh-CN" ? "HUSIM COLOR 亲子\n色彩心理辅导报告" : "휴심컬러 부모·자녀\n감성 심리코칭 리포트", PAGE_LEFT, 198, { width: CONTENT_WIDTH, lineGap: 7 });
   if (payload.sampleNotice) {
     document.fillColor("#80649B").fontSize(10.5).text(clean(localizedPdfText(document, payload.sampleNotice)), PAGE_LEFT, 280, { width: CONTENT_WIDTH });

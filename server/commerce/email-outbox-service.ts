@@ -128,7 +128,7 @@ export async function deliverPrivatePdfOutboxItem(outboxId: number): Promise<{
     const locale = claimed.locale === "zh-CN" ? "zh-CN" : "ko";
     const result = await sendResendPdfEmail({
       to: decryptCommerceEmail(claimed.toEmailEncrypted),
-      subject: locale === "zh-CN" ? "[HUSIM COLOR] 您的报告 PDF" : "[휴심컬러] 완료된 결과 리포트 PDF",
+      subject: locale === "zh-CN" ? "[HUSIM COLOR] 您的分析报告（PDF）" : "[휴심컬러] 완료된 결과 리포트 PDF",
       html: resultEmailHtml(locale),
       filename: getPrivatePdfFilename(claimed.productCode as "personal_deep" | "couple_love_deep" | "parent_child_deep"),
       pdf: await readPrivatePdf(claimed.storageKey),
