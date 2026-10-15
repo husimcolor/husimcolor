@@ -136,7 +136,7 @@ export default function PremiumInfoScreen() {
             <Text style={[styles.label, { color: colors.foreground }]}>나이</Text>
             <TextInput
               style={[styles.ageInput, { backgroundColor: colors.surface, borderColor: profileAge ? '#8BAF8B' : colors.border, color: colors.foreground }]}
-              placeholder="나이를 입력하세요 (예: 35)"
+              placeholder={locale === 'zh-CN' ? '请输入年龄（例如：35）' : '나이를 입력하세요 (예: 35)'}
               placeholderTextColor={colors.muted}
               keyboardType="numeric"
               value={profileAge}

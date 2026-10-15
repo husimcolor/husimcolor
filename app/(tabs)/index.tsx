@@ -14,12 +14,14 @@ import { getSampleReportButtonLabel, getSampleReportUrl, type SampleReportProduc
 import { startKakaoLogin } from '@/constants/oauth';
 import { useAuth } from '@/hooks/use-auth';
 import { LanguageSelector } from '@/components/language-selector';
+import { useLocalization } from '@/lib/localization-context';
 
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const router = useRouter();
   const auth = useAuth();
+  const { locale } = useLocalization();
   const { resetColors } = useColorContext();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -174,7 +176,7 @@ export default function HomeScreen() {
   // 결제·상품 선택과 독립된 새 창/외부 브라우저로 열어 현재 화면 상태를 유지한다.
   const handleOpenSamplePdf = (product: SampleReportProduct) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://husimcolor.vercel.app';
-    const url = getSampleReportUrl(product, origin);
+    const url = getSampleReportUrl(product, origin, locale);
     if (!url) return;
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       window.open(url, '_blank', 'noopener,noreferrer');

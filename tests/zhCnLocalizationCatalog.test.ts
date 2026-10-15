@@ -33,6 +33,26 @@ describe("zh-CN static localization catalog", () => {
       .toBe("你注重内心感受，会平静地整理情绪。比起外露，更会通过默默的理解与体贴表达心意。");
   });
 
+  it("uses complete Chinese sentences for the home entry and campaign cards", () => {
+    expect(localizeStaticCopy("색으로 읽는 나의 마음", "zh-CN")).toBe("用色彩读懂当下的内心");
+    expect(localizeStaticCopy("지금의 나와 두 사람의 관계를 원하는 방식으로 천천히 살펴보세요.", "zh-CN"))
+      .toBe("按照你希望的方式，慢慢了解当下的自己与两个人的关系。");
+    expect(localizeStaticCopy("3가지 컬러로 지금의 마음과 회복 방향을 살펴보세요.", "zh-CN"))
+      .toBe("通过三种颜色，了解当下的内心状态与恢复方向。");
+    expect(localizeStaticCopy("컬러 3개와 심리카드 3장으로 나를 깊이 살펴봅니다.", "zh-CN"))
+      .toBe("通过三种颜色和三张心理卡，更深入地了解自己。");
+    expect(localizeStaticCopy("부부·연인 · 부모·자녀 · 친구 관계를 선택할 수 있습니다.", "zh-CN"))
+      .toBe("可选择夫妻/恋人、父母/子女或朋友关系。");
+    expect(localizeStaticCopy("개인 심화 PDF 샘플 보기", "zh-CN")).toBe("查看个人深度分析 PDF 示例");
+    expect(localizeStaticCopy("회원 상태를 확인하고 있습니다.", "zh-CN")).toBe("正在确认会员状态。");
+    expect(localizeStaticCopy("전체 12쪽 · 가상 데이터", "zh-CN")).toBe("共 12 页 · 虚拟数据");
+    expect(localizeStaticCopy("PDF 리포트 샘플 보기", "zh-CN")).toBe("查看 PDF 报告示例");
+    expect(localizeStaticCopy("정가 59,000원", "zh-CN")).toBe("原价 59,000韩元");
+    expect(localizeStaticCopy("→ 47,200원", "zh-CN")).toBe("→ 47,200韩元");
+    expect(localizeStaticCopy("1번 카드", "zh-CN")).toBe("第1种颜色");
+    expect(localizeStaticCopy("2번 카드 선택 →", "zh-CN")).toBe("选择第2种颜色 →");
+  });
+
   it("keeps every three-colour card-flow role distinct in Chinese", () => {
     expect(localizeStaticCopy(
       "레드 · 블루 · 화이트에서 드러난 기본 성향을 바탕으로, 세 장의 카드는 무의식 · 현재흐름 · 회복방향을 차례로 비춥니다.",
@@ -59,7 +79,9 @@ describe("zh-CN static localization catalog", () => {
       "zh-CN",
     )).toBe("蓝绿色可在珊瑚色所强调的自我照顾中，支持更自然地表达情感，帮助你把恢复的节奏延续到日常。");
     expect(localizeStaticCopy("정보를 판단으로 바꾸는 전략 해석가형", "zh-CN"))
-      .toBe("从信息中梳理方向的策略思考者");
+      .toBe("善于从信息中整理方向的人");
+    expect(localizeStaticCopy("관심 주제의 자료를 출처별로 비교해 보는 습관부터 가볍게 만들어 보세요.", "zh-CN"))
+      .toBe("可以先选一个感兴趣的主题，比较不同来源的资料，逐渐养成整理和分析信息的习惯。");
     expect(localizeStaticCopy(
       "복잡한 정보에서 핵심을 찾고, 다음에 무엇을 할지 정하는 데 강점이 드러납니다. 결단을 행동으로 옮기는 방식이 바탕이 되고, 차분히 몰입하는 방식이 그 힘을 사회에서 드러내는 데 보탬이 됩니다. 지금까지 해 온 일을 다음 가능성과 연결하는 과정에서 특히 잘 쓸 수 있는 자원입니다.",
       "zh-CN",
@@ -76,7 +98,7 @@ describe("zh-CN static localization catalog", () => {
     expect(localizeStaticCopy(
       "먼저 엄마가 해결보다 딸이 무엇을 이해받고 싶어 하는지 충분히 듣고, 다음으로 딸이 자기 생각을 정리할 여지를 남기는 순서가 좋습니다. 그다음 지금 가능한 한 가지 약속을 함께 정하면, 성장 지원형 흐름의 긴장이 서로를 배우는 시간으로 바뀔 수 있습니다.",
       "zh-CN",
-    )).toBe("首先，妈妈与其急于给出解决或说明，不如先充分倾听女儿想被理解的内容；接着，给女儿留下整理想法的余地。然后一起确定一件当下可行的约定，成长支持型的紧张也可能转化为彼此学习的时间。");
+    )).toBe("首先，妈妈与其急于给出解决办法或说明，不如先认真听女儿想被理解的内容；接着，给女儿留下整理想法的空间。然后一起确定一件当下可行的约定，关系中因彼此支持成长而产生的紧张感，也可能转化为互相学习的时间。");
     expect(localizeStaticCopy("“네가 스스로 해 보고 싶은 방법이 있다면, 내가 옆에서 도울게.”", "zh-CN"))
       .toBe("“如果你有想亲自尝试的方法，我会在你身边帮你。”");
   });

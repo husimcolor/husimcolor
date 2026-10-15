@@ -8,14 +8,18 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Alert, View, Text, ScrollView, StyleSheet,
+  Alert, View, ScrollView, StyleSheet,
   Dimensions, TouchableOpacity, Animated, Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CARD_DATA, type CardData } from '@/constants/cardData';
+import { getLocalizedColorName } from '@/lib/free-result-localization';
+import { useLocalization } from '@/lib/localization-context';
+import { localizeStaticCopy } from '@/lib/zh-cn-copy';
 import type { CoupleSessionData } from '@/constants/coupleData';
 import { trpc } from '@/lib/trpc';
 
@@ -102,6 +106,7 @@ interface WebCardProps {
 }
 
 function WebCard({ card, isFlipped, isSelected, onPress, entryDelay, isShuffle }: WebCardProps) {
+  const { locale } = useLocalization();
   const wrapperRef = useRef<any>(null);
   const flipRef = useRef<any>(null);
   const prevFlipped = useRef(isFlipped);
@@ -192,7 +197,7 @@ function WebCard({ card, isFlipped, isSelected, onPress, entryDelay, isShuffle }
               fontSize: 8,
               color: isLightCard(card) ? '#4A3728' : 'rgba(255,255,255,0.95)',
               fontWeight: '700', letterSpacing: 0.2,
-            }}>{card.colorKor}</span>
+            }}>{localizeStaticCopy(card.colorKor, locale)}</span>
           </div>
         ) : (
           <div style={{
@@ -240,6 +245,7 @@ function NativeCard({
   revealDelay: number;
   onPress: () => void;
 }) {
+  const { locale } = useLocalization();
   const revealAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -316,7 +322,7 @@ function NativeCard({
             }]}>{card.shapeSymbol}</Text>
             <Text style={[styles.cardFrontColorName, {
               color: isLightCard(card) ? '#4A3728' : 'rgba(255,255,255,0.95)',
-            }]}>{card.colorKor}</Text>
+            }]}>{localizeStaticCopy(card.colorKor, locale)}</Text>
           </Animated.View>
         </View>
       </TouchableOpacity>
@@ -327,6 +333,7 @@ function NativeCard({
 // ─── 메인 화면 ───────────────────────────────────────────────────────────────
 export default function CoupleCardSelectScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const insets = useSafeAreaInsets();
   const { person, relationshipToken, inviteToken, resultToken } = useLocalSearchParams<{
     person: 'A' | 'B';
@@ -528,7 +535,7 @@ export default function CoupleCardSelectScreen() {
               {prevColors.map((c: any) => (
                 <View key={c.id} style={styles.colorFlowItem}>
                   <View style={[styles.colorFlowDot, { backgroundColor: c.hex }]} />
-                  <Text style={[styles.colorFlowName, { color: accentColor }]}>{c.korName}</Text>
+                  <Text style={[styles.colorFlowName, { color: accentColor }]}>{getLocalizedColorName(c, locale)}</Text>
                 </View>
               ))}
             </View>
@@ -557,11 +564,11 @@ export default function CoupleCardSelectScreen() {
                 {selectedCards[i] ? (
                   <>
                     <View style={[styles.slotColorDot, { backgroundColor: selectedCards[i]!.colorHex }]} />
-                    <Text style={styles.slotCardName}>{selectedCards[i]!.colorKor}</Text>
-                    <Text style={styles.slotShapeName}>{selectedCards[i]!.shapeKor}</Text>
+                    <Text style={styles.slotCardName}>{localizeStaticCopy(selectedCards[i]!.colorKor, locale)}</Text>
+                    <Text style={styles.slotShapeName}>{localizeStaticCopy(selectedCards[i]!.shapeKor, locale)}</Text>
                   </>
                 ) : (
-                  <Text style={styles.slotEmpty}>{i + 1}번</Text>
+                  <Text style={styles.slotEmpty}>{`${i + 1}번`}</Text>
                 )}
               </View>
               <Text style={[styles.slotLabel, { color: POSITION_COLORS[i] }]} numberOfLines={2}>

@@ -86,6 +86,8 @@ type CompiledTemplate = Readonly<{
 
 const shortTemplateCopy: readonly ZhCnTemplateCopy[] = [
   { chunks: ["", "% 할인"], target: "优惠 {{v0}}%" },
+  { chunks: ["정가 ", "원 → 할인 ", "원 → 결제 예정 ", "원"], target: "原价 {{v0}}韩元 → 优惠 {{v1}}韩元 → 应付 {{v2}}韩元" },
+  { chunks: ["정가 ", "원"], target: "原价 {{v0}}韩元" },
   { chunks: ["", "원 할인"], target: "立减 {{v0}}韩元" },
   { chunks: ["", "원"], target: "{{v0}}韩元" },
   { chunks: ["", " 결제하기"], target: "支付 {{v0}}" },
@@ -105,11 +107,13 @@ const shortTemplateCopy: readonly ZhCnTemplateCopy[] = [
   { chunks: ["", " 탐색자"], target: "{{v0}}探索者" },
   { chunks: ["", "세"], target: "{{v0}}岁" },
   { chunks: ["", "번 카드"], target: "第{{v0}}张心理卡" },
+  { chunks: ["", "번 카드 선택 →"], target: "选择第{{v0}}张心理卡 →" },
   { chunks: ["", "시간 ", "분"], target: "{{v0}}小时{{v1}}分钟" },
   { chunks: ["", "분"], target: "{{v0}}分钟" },
   { chunks: ["", " · 계속"], target: "{{v0}} · 续" },
   { chunks: ["", "의 의도"], target: "{{v0}}的意图" },
   { chunks: ["닉네임 ", ""], target: "昵称 {{v0}}" },
+  { chunks: ["전체 ", "쪽 · 가상 데이터"], target: "共 {{v0}} 页 · 虚拟数据" },
 ];
 
 /**

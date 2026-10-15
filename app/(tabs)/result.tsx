@@ -231,10 +231,7 @@ export default function ResultScreen() {
 
   const logVisitor = trpc.visitors.log.useMutation();
   useEffect(() => {
-    if (!card1 || !card2 || !card3) {
-      router.replace('/(tabs)');
-      return;
-    }
+    if (!card1 || !card2 || !card3) return;
     // 무료 결과 도달 추적
     const track = async () => {
       try {
@@ -249,9 +246,25 @@ export default function ResultScreen() {
       } catch (_) {}
     };
     track();
-  }, []);
+  }, [card1, card2, card3]);
 
-  if (!card1 || !card2 || !card3) return null;
+  if (!card1 || !card2 || !card3) {
+    return (
+      <ScreenContainer containerClassName="bg-background" edges={['top', 'left', 'right']}>
+        <View style={styles.emptyResultState}>
+          <Text style={styles.emptyResultTitle}>선택한 색상 결과가 없습니다.</Text>
+          <Text style={styles.emptyResultBody}>무료 컬러 체험에서 세 가지 색을 선택하면 결과를 확인할 수 있습니다.</Text>
+          <Pressable
+            style={({ pressed }) => [styles.emptyResultButton, pressed && styles.emptyResultButtonPressed]}
+            onPress={() => router.replace('/(tabs)/select?step=0' as any)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.emptyResultButtonText}>무료 컬러 체험 시작하기 →</Text>
+          </Pressable>
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   const interpretation = localizeFreeResult(
     locale,
@@ -286,7 +299,7 @@ export default function ResultScreen() {
   // 무료 결과와 결제 경로를 분리한다. 공개 샘플은 가상 데이터 PDF만 새 창/외부 브라우저로 연다.
   const handleOpenPersonalSamplePdf = () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://husimcolor.vercel.app';
-    const url = getSampleReportUrl('personal_deep', origin);
+    const url = getSampleReportUrl('personal_deep', origin, locale);
     if (!url) return;
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       window.open(url, '_blank', 'noopener,noreferrer');
@@ -497,7 +510,7 @@ export default function ResultScreen() {
             />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               <View style={[styles.recoveryBadge, { backgroundColor: '#B8D8C0', borderColor: '#8ABF9A' }]}>
-                <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{locale === "zh-CN" ? `${displayColorName(card3)}色` : `${card3.korName} 컬러`}</Text>
+                <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{locale === "zh-CN" ? displayColorName(card3) : `${card3.korName} 컬러`}</Text>
               </View>
               <View style={[styles.recoveryBadge, { backgroundColor: '#D8EED8', borderColor: '#A8CEB0' }]}>
                 <Text style={[styles.recoveryBadgeText, { color: '#1A5A2A' }]}>{getLocalizedColorRecovery(card3, locale)}</Text>
@@ -607,7 +620,7 @@ export default function ResultScreen() {
           >
             <Text style={styles.friendShareIcon}>🌿</Text>
             <View style={styles.friendShareTextBox}>
-              <Text style={[styles.friendShareTitle, { color: '#456544' }]}> 
+              <Text style={[styles.friendShareTitle, { color: '#456544' }]}>
                 {isAppSharing ? '공유 준비 중...' : '휴심컬러 친구에게 공유하기'}
               </Text>
               <Text style={[styles.friendShareDescription, { color: '#6A8067' }]}>25가지 컬러로 마음을 읽어보세요</Text>
@@ -891,6 +904,42 @@ function summarizeForShareCard(text: string, maxLength = 54): string {
 }
 
 const styles = StyleSheet.create({
+  emptyResultState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+    gap: 12,
+  },
+  emptyResultTitle: {
+    color: '#3D3530',
+    fontSize: 19,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  emptyResultBody: {
+    color: '#6E6257',
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  emptyResultButton: {
+    marginTop: 6,
+    minHeight: 48,
+    justifyContent: 'center',
+    borderRadius: 13,
+    backgroundColor: '#557A59',
+    paddingHorizontal: 18,
+  },
+  emptyResultButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  emptyResultButtonPressed: {
+    opacity: 0.84,
+    transform: [{ scale: 0.98 }],
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

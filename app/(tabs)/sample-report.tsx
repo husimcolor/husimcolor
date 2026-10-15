@@ -1,7 +1,9 @@
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
+import { LocalizedText as Text } from "@/components/localized-text";
+import { useLocalization } from "@/lib/localization-context";
 import { getSampleReport, getSampleReportUrl, SAMPLE_REPORT_LINK_LABEL } from "@/shared/sample-reports";
 
 function getSingleParam(value: string | string[] | undefined): string | undefined {
@@ -10,6 +12,7 @@ function getSingleParam(value: string | string[] | undefined): string | undefine
 
 export default function SampleReportScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const params = useLocalSearchParams<{
     product?: string | string[];
     returnTo?: string | string[];
@@ -46,7 +49,7 @@ export default function SampleReportScreen() {
 
   const handleOpenPdf = () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://husimcolor.vercel.app";
-    const url = getSampleReportUrl(product, origin);
+    const url = getSampleReportUrl(product, origin, locale);
     if (!url) return;
     if (Platform.OS === "web" && typeof window !== "undefined") {
       window.open(url, "_blank", "noopener,noreferrer");
@@ -77,7 +80,7 @@ export default function SampleReportScreen() {
         <View style={styles.content}>
           <Text style={styles.eyebrow}>휴심컬러 공개 샘플</Text>
           <Text style={styles.title}>{sampleReport.title}</Text>
-          <Text style={styles.pageCount}>전체 {sampleReport.pageCount}쪽 · 가상 데이터</Text>
+          <Text style={styles.pageCount}>{`전체 ${sampleReport.pageCount}쪽 · 가상 데이터`}</Text>
           <Pressable onPress={handleOpenPdf} style={({ pressed }) => [styles.pdfButton, pressed && styles.pressed]} accessibilityRole="link" accessibilityLabel={`${sampleReport.title} ${SAMPLE_REPORT_LINK_LABEL}`}>
             <Text style={styles.pdfButtonText}>{SAMPLE_REPORT_LINK_LABEL}</Text>
           </Pressable>

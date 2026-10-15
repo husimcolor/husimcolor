@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
+import { LocalizedText as Text } from "@/components/localized-text";
 import { getRelationshipRoleOptions, type FaithType, type GenderType, type RelationType, type RelationshipRole } from "@/constants/coupleData";
 import { getCommerceStartGrant, markCommerceAnalysisStarted, removeCommerceStartGrant } from "@/lib/commerce-access";
 import { trpc } from "@/lib/trpc";
