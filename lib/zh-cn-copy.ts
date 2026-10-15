@@ -280,16 +280,22 @@ const inlineTerms: ReadonlyArray<readonly [RegExp, string]> = [
 
 /** 한국어 조사가 붙은 역할·색상 값도 template 안에서는 중국어 명사로만 삽입한다. */
 function localizeTemplateVariable(source: string): string {
-  const baseSource = stripKoreanVariableParticle(source);
+  // 긴 template의 변수에는 구두점 뒤 공백이 함께 포획될 수 있다. 그대로 두면
+  // 검수된 완결 문안의 exact key를 놓치고 fragment 치환으로 되돌아간다.
+  const normalizedSource = source.trim();
+  const baseSource = stripKoreanVariableParticle(normalizedSource);
   const relationBase = baseSource.replace(/ 관계$/u, "");
   const methodBase = baseSource.replace(/ 방식$/u, "");
-  const exactValue = reviewedOverrides[source]
-    ?? exact.get(source)
+  // `회복을 지키는`처럼 명사구에 홀로 삽입되는 경우에는 중국어에서 소유 대상을
+  // 밝혀야 자연스럽다. 문장 전체의 회복 역할명과 혼동하지 않는다.
+  if (baseSource === "회복") return "自己的恢复";
+  const exactValue = reviewedOverrides[normalizedSource]
+    ?? exact.get(normalizedSource)
     ?? reviewedOverrides[baseSource]
     ?? exact.get(baseSource)
     ?? (relationBase !== baseSource ? (reviewedOverrides[relationBase] ?? exact.get(relationBase)) : undefined)
     ?? (methodBase !== baseSource ? (reviewedOverrides[methodBase] ?? exact.get(methodBase)) : undefined);
-  let localized = exactValue ?? source;
+  let localized = exactValue ?? normalizedSource;
   // 한국어 변수의 ‘관계/방식’은 완결 중국어 변수로 다시 조립한다.
   // 원문 catalog 값이 이미 ‘的’로 끝나면 그대로 접미사를 더할 경우 ‘的的’가 된다.
   if (exactValue && relationBase !== baseSource && !/关系$/u.test(localized)) localized = `${localized.replace(/的$/u, "")}的关系`;
@@ -320,7 +326,12 @@ function localizeDelimitedTerms(value: string): string | null {
 
 /** 카드 제목에 붙는 한국어 조사를 제외하고, 이미 검수한 용어 catalog의 값만 사용한다. */
 function localizeRelationshipTerm(source: string): string {
-  const base = stripKoreanVariableParticle(source.trim());
+  const trimmed = source.trim();
+  // `대화에서`, `관계에`처럼 조사가 포함된 완결 key를 먼저 찾아야
+  // 관계 장면이 한국어 조각으로 되돌아가지 않는다.
+  const direct = reviewedOverrides[trimmed] ?? exact.get(trimmed);
+  if (direct) return direct;
+  const base = stripKoreanVariableParticle(trimmed);
   return reviewedOverrides[base] ?? exact.get(base) ?? base;
 }
 
@@ -331,6 +342,39 @@ function localizeRelationshipTerm(source: string): string {
 function localizeRelationshipPhrase(source: string): string {
   const trimmed = source.trim();
   return reviewedOverrides[trimmed] ?? exact.get(trimmed) ?? localizeRelationshipTerm(trimmed);
+}
+
+/** 관계 요약의 `A, B`형 색상 근거는 완결 키가 없을 때도 항목별로 번역한다. */
+function localizeRelationshipComposite(source: string): string {
+  const full = localizeRelationshipPhrase(source);
+  if (full !== source.trim()) return full;
+  return source.split(/,\s*/u).map((part) => localizeRelationshipPhrase(part)).join("、");
+}
+
+/** `인디고 A, 그린 B`처럼 색과 특성이 함께 조립된 관계 요약에서 특성만 완결화한다. */
+function localizeColorEvidence(source: string): string {
+  return source.split(/,\s*/u).map((part) => {
+    const trimmed = part.trim();
+    const match = trimmed.match(/^(레드|오렌지|옐로우|그린|블루|인디고|퍼플|핑크|마젠타|라벤더|화이트|블랙|틸|코랄|피치|올리브)(?:의)?\s*(.+)$/u);
+    if (!match) return localizeRelationshipPhrase(trimmed);
+    const trait = localizeRelationshipPhrase(match[2]!).replace(/[。.!]+$/u, "");
+    return trait;
+  }).join("、");
+}
+
+/**
+ * 부모·자녀 관계 요약의 `~하려는 마음`은 한국어에서 주체 뒤에 바로 붙지만,
+ * 중국어에서는 번역된 구의 동사 성격에 맞춰 문장을 완결해야 한다.
+ * 이 과정을 생략하면 `希望保持重视…`처럼 동사가 겹치거나 조각 번역이 남는다.
+ */
+function renderRelationshipIntent(label: string, koreanFocus: string): string {
+  const focus = localizeRelationshipPhrase(koreanFocus);
+  if (/^(重视|珍视|看重)/u.test(focus)) return `${label}${focus}`;
+  if (/^(充分|细致|深入)/u.test(focus)) return `${label}更倾向于${focus}`;
+  if (/^(自己的|自我|个人)/u.test(focus)) return `${label}希望守住${focus}`;
+  if (/^(开始|尝试|付诸)/u.test(focus)) return `${label}更想${focus}`;
+  if (/^(连接|表达|照顾|建立)/u.test(focus)) return `${label}更想${focus}`;
+  return `${label}更倾向于${focus}`;
 }
 
 /**
@@ -356,10 +400,23 @@ function localizeRelationshipSentence(value: string): string | null {
   match = /^(.+?)가 (.+?) 마음과 (.+?)이 (.+?) 마음이 만나 서로의 강점을 조율해 갈 수 있습니다\.$/u.exec(value);
   if (match) {
     const parent = localizeRelationshipTerm(match[1]!);
-    const parentFocus = localizeRelationshipPhrase(match[2]!);
     const child = localizeRelationshipTerm(match[3]!);
-    const childFocus = localizeRelationshipPhrase(match[4]!);
-    return `${parent}希望保持${parentFocus}，${child}则更想${childFocus}。两种心意相遇后，双方可能会在关系中协调彼此的长处。`;
+    const parentIntent = renderRelationshipIntent(parent, match[2]!);
+    const childIntent = renderRelationshipIntent(child, match[4]!);
+    return `${parentIntent}；${childIntent}。两种心意相遇后，双方可以在关系中慢慢发挥各自的长处。`;
+  }
+  // 순위 색상은 `인디고·그린은`처럼 색상 목록 직후의 조사로 끊어야 한다.
+  // 느슨한 `(.+?)는` 패턴은 `지키는`의 `는`에서 멈춰 조립 문장을 깨뜨린다.
+  match = /^(.+?)의 1·2순위 ([가-힣·]+)(?:은|는) (.+?) 관계의 중심에 둡니다\. (.+?)의 1·2순위 ([가-힣·]+)(?:은|는) (.+?) 더합니다\. 그래서 두 사람은 (.+?)처럼 서로 다른 지점이 생길 수 있지만, 그 차이를 확인하는 방식 자체가 관계의 신뢰를 키우는 자원이 될 수 있습니다\.$/u.exec(value);
+  if (match) {
+    const parent = localizeRelationshipTerm(match[1]!);
+    const parentColors = localizeRelationshipComposite(match[2]!);
+    const parentStrength = localizeColorEvidence(match[3]!);
+    const child = localizeRelationshipTerm(match[4]!);
+    const childColors = localizeRelationshipComposite(match[5]!);
+    const childStrength = localizeColorEvidence(match[6]!);
+    const tension = localizeRelationshipTerm(match[7]!);
+    return `${parent}的第1、2顺位选择为${parentColors}。从这些颜色所呈现的特点来看，${parent}可能更看重${parentStrength}。${child}的第1、2顺位选择为${childColors}；${child}可能更看重${childStrength}。两人对${tension}可能有不同偏好；不过，把这些差异说清楚并一起确认，本身就可能成为累积信任的资源。`;
   }
   match = /^(.+?)와 (.+?)이 어떤 선택을 앞두고 각자 중요하게 보는 기준을 하나씩 말해 보면, 생각을 충분히 살피는 강점이 관계의 신뢰로 이어질 수 있습니다\. 답을 빨리 맞추기보다 이유를 비교하는 과정이 두 사람의 공통 자원이 됩니다\.$/u.exec(value);
   if (match) {
@@ -376,6 +433,65 @@ function localizeRelationshipSentence(value: string): string | null {
   if (match) {
     const label = localizeRelationshipTerm(match[1]!);
     return `${label}的言行，可能出于不希望关系疏远、想重新接上对话的心意。`;
+  }
+  match = value.match(/^(.+?)(?:은|는) (.+?)에서 드러난 (.+?)으로 마음을 표현하려 하고, (.+?)(?:은|는) (.+?)에서 드러난 (.+?)으로 연결을 확인하려 할 수 있습니다(?:\. (.+?) 필요한 반응을 한 문장으로 알려주면 짐작이 줄어듭니다)?\.$/u);
+  if (match) {
+    const personA = localizeRelationshipTerm(match[1]!);
+    const colorA = localizeRelationshipTerm(match[2]!);
+    const strengthA = localizeRelationshipPhrase(match[3]!).replace(/[。.!]+$/u, "");
+    const personB = localizeRelationshipTerm(match[4]!);
+    const colorB = localizeRelationshipTerm(match[5]!);
+    const strengthB = localizeRelationshipPhrase(match[6]!).replace(/[。.!]+$/u, "");
+    const scene = match[7] ? localizeRelationshipTerm(match[7]!) : undefined;
+    const response = scene ? `${scene}，如果能用一句话告诉对方自己需要怎样的回应，彼此猜测的空间可能会减少。` : "";
+    return `${personA}可能会参考${colorA}所呈现的${strengthA}来表达心意；${personB}则可能会参考${colorB}所呈现的${strengthB}来确认彼此的连接。${response}`;
+  }
+  match = value.match(/^(.+?)(?:은|는) (.+?)에서 드러난 (.+?)(?:을|를) 바탕으로, (.+?)(?:은|는) (.+?)에서 드러난 (.+?)(?:을|를) 바탕으로 말할 수 있습니다(?:\. (.+?) 바로 답하고 싶은지, 생각을 정리한 뒤 말하고 싶은지를 구분해두면 서로의 속도가 존중됩니다)?\.$/u);
+  if (match) {
+    const personA = localizeRelationshipTerm(match[1]!);
+    const colorA = localizeRelationshipTerm(match[2]!);
+    const strengthA = localizeRelationshipPhrase(match[3]!).replace(/[。.!]+$/u, "");
+    const personB = localizeRelationshipTerm(match[4]!);
+    const colorB = localizeRelationshipTerm(match[5]!);
+    const strengthB = localizeRelationshipPhrase(match[6]!).replace(/[。.!]+$/u, "");
+    const scene = match[7] ? localizeRelationshipTerm(match[7]!) : undefined;
+    const pace = scene ? `${scene}，先区分是想立刻回应，还是想整理好想法后再说，有助于尊重彼此不同的表达节奏。` : "";
+    return `${personA}可能会以${colorA}所呈现的${strengthA}为参考来表达；${personB}则可能会以${colorB}所呈现的${strengthB}为参考来表达。${pace}`;
+  }
+  match = value.match(/^(.+?) 다시 이야기할 시점을 함께 정해두면 각자의 회복 방식이 관계를 지키는 힘이 됩니다\.$/u);
+  if (match) {
+    const scene = localizeRelationshipTerm(match[1]!);
+    return `${scene}，可以一起约定再次交谈的时间，让各自的恢复方式成为支持这段关系的力量。`;
+  }
+  match = value.match(/^(.+?) 쪽에서는 (.+)$/u);
+  if (match) {
+    const color = localizeRelationshipTerm(match[1]!);
+    const guidance = localizeRelationshipPhrase(match[2]!).replace(/[。.!]+$/u, "");
+    return `从${color}所呈现的方向来看，${guidance}。`;
+  }
+  match = value.match(/^(.+?) 필요한 반응을 한 문장으로 알려주면 짐작이 줄어듭니다\.$/u);
+  if (match) {
+    const scene = localizeRelationshipTerm(match[1]!);
+    return `${scene}，如果能用一句话告诉对方自己需要怎样的回应，彼此猜测的空间可能会减少。`;
+  }
+  match = value.match(/^(.+?) 바로 답하고 싶은지, 생각을 정리한 뒤 말하고 싶은지를 구분해두면 서로의 속도가 존중됩니다\.$/u);
+  if (match) {
+    const scene = localizeRelationshipTerm(match[1]!);
+    return `${scene}，先区分是想立刻回应，还是想整理好想法后再说，有助于尊重彼此不同的表达节奏。`;
+  }
+  match = value.match(/^(.+?)가 (.+?) 역할로 마음을 전할 때, (.+?)은 그 마음을 방향과 관심으로 받아들일 수 있습니다\. 다만 (.+?)의 (.+?) 역할 에너지가 충분히 표현되지 못하면, 같은 마음도 압박이나 통제로 느껴질 수 있습니다\. (.+?)의 조용함이나 빠른 반응을 단정하기보다 무엇이 부담스러운지 먼저 묻고, 한 번에 하나의 약속을 함께 정해 보세요\. (.+?) 흐름에서는 이런 작은 대화의 순서가 서로를 더 편안하게 만듭니다\.$/u);
+  if (match) {
+    const parent = localizeRelationshipTerm(match[1]!);
+    const parentRole = localizeRelationshipPhrase(`${match[2]!} 역할`);
+    const child = localizeRelationshipTerm(match[3]!);
+    const pattern = localizeRelationshipTerm(match[7]!);
+    return `当${parent}以${parentRole}传达心意时，${child}可能会把这份心意理解为方向与关怀。不过，如果${child}想要自主整理思路的需要没有得到充分表达，同样的关心也可能被感受为压力或控制。与其急着判断${child}的沉默或反应，不如先问一问什么让${child}感到负担，并一起约定一次只做一件事。在${pattern}的互动中，这样的对话顺序或许能让双方更自在一些。`;
+  }
+  match = value.match(/^(.+?)의 관심이 빠른 해결이나 설명으로 전달되면, (.+?)에게는 자신의 속도와 생각이 충분히 존중되지 않는 느낌으로 닿을 수 있습니다\. 이때 두 사람 모두 ‘내 마음을 알아주지 않는다’고 느끼며 대화가 어긋나기 쉽습니다\.$/u);
+  if (match) {
+    const parent = localizeRelationshipTerm(match[1]!);
+    const child = localizeRelationshipTerm(match[2]!);
+    return `当${parent}的关心以快速解决或解释的方式传达时，${child}可能会觉得自己的节奏和想法没有被充分尊重。这时双方都容易觉得“没有人理解我的心意”，对话也更容易出现偏差。`;
   }
   match = value.match(/^먼저 (.+?)가 해결보다 (.+?)이 무엇을 이해받고 싶어 하는지 충분히 듣고, 다음으로 (.+?)이 자기 생각을 정리할 여지를 남기는 순서가 좋습니다\. 그다음 지금 가능한 한 가지 약속을 함께 정하면, (.+?) 흐름의 긴장이 서로를 배우는 시간으로 바뀔 수 있습니다\.$/u);
   if (match) {
@@ -510,6 +626,9 @@ function finalizeLocalizedCopy(value: string): string {
     .replace(/([。！？])\1+/g, "$1")
     .replace(/即便即便/g, "即便")
     .replace(/也，?如果/g, "，如果")
+    // 조각 카탈로그를 이어 붙인 뒤 남는 중국어 단어 사이의 공백과 역할 소유격 공백을 제거한다.
+    .replace(/([\u3400-\u9fff])(?:[ \t]+)(?=[\u3400-\u9fff])/g, "$1")
+    .replace(/(?<=[\u3400-\u9fff])\.(?!\d)/g, "。")
     .replace(/\\\\n/g, "\n");
 }
 
@@ -526,6 +645,17 @@ export function localizeStaticCopy(value: string, locale: AppLocale): string {
       ? `${colorNames[0]}、${colorNames[1]}与${colorNames[2]}`
       : colorNames.join("、");
     return `${colors}所呈现的基本心理特征，会通过三张心理卡依次展现为潜意识、当前状态与恢复方向。`;
+  }
+  // 실제 결과에서 문단 단위로 검수한 override는 관계 카드의 자동 분할보다 우선한다.
+  // 그래야 검수된 완결 문장이 다시 조각 template 경로로 돌아가지 않는다.
+  const reviewedWhole = reviewedOverrides[value];
+  if (reviewedWhole) return finalizeLocalizedCopy(reviewedWhole);
+  // 관계 특성은 `카드 근거. 색상 근거. 생활 장면.`의 세 문장으로 생성된다.
+  // 넓은 catalog template이 세 문장을 한꺼번에 가로채면 한국어 조각이 남으므로,
+  // 카드 근거로 시작하는 경우에는 반드시 문장 단위로 완결 변환한다.
+  if (/^(무의식 카드에서|현재 흐름 카드에서|회복 방향 카드에서)/u.test(value)) {
+    const sentences = value.split(/(?<=[.!?])\s+/u).filter(Boolean);
+    return finalizeLocalizedCopy(sentences.map((sentence) => localizeSingleCopy(sentence) ?? sentence).join(" "));
   }
   const direct = localizeSingleCopy(value);
   if (direct) return finalizeLocalizedCopy(direct);

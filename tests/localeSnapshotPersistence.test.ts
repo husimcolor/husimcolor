@@ -36,7 +36,7 @@ describe("저장 결과 locale 고정", () => {
     const parsedLegacy = parseCoupleShareSnapshot(JSON.stringify(legacyKoreanSnapshot));
 
     expect(parsedZh?.locale).toBe("zh-CN");
-    expect(parsedZh?.copyVersion).toBe("zh-CN-2026-10-12-v1");
+    expect(parsedZh?.copyVersion).toBe("zh-CN-2026-10-15-v11.1");
     expect(resolveStoredResultLocale(parsedZh?.locale)).toBe("zh-CN");
     expect(parsedLegacy?.locale).toBeUndefined();
     expect(resolveStoredResultLocale(parsedLegacy?.locale)).toBe("ko");
@@ -57,5 +57,22 @@ describe("저장 결과 locale 고정", () => {
     expect(personalScreen).toContain("resolveStoredResultLocale(delivery.locale)");
     expect(personalScreen).toContain("payload.locale = delivery.locale ?? resultLocale");
     expect(personalScreen).toContain("<ResultLocaleProvider locale={resultLocale}");
+  });
+
+  it("새 zh-CN 결과의 PDF와 발송 대기 이메일은 같은 저장 locale을 사용하고, 기존 null locale은 한국어로 유지한다", () => {
+    const deliveryService = readFileSync(resolve(process.cwd(), "server/commerce/pdf-delivery-service.ts"), "utf8");
+    const outboxService = readFileSync(resolve(process.cwd(), "server/commerce/email-outbox-service.ts"), "utf8");
+
+    expect(copyVersionForLocale("zh-CN")).toBe("zh-CN-2026-10-15-v11.1");
+    expect(copyVersionForLocale("ko")).toBe("ko-canonical");
+    expect(resolveStoredResultLocale(undefined)).toBe("ko");
+    expect(deliveryService).toContain("locale: analysisRuns.locale");
+    expect(deliveryService).toContain("copyVersion: analysisRuns.copyVersion");
+    expect(deliveryService).toContain('const locale = run.locale === "zh-CN" ? "zh-CN" : "ko"');
+    expect(deliveryService).toContain("locale: run.locale");
+    expect(deliveryService).toContain("copyVersion: run.copyVersion");
+    expect(outboxService).toContain("locale: emailOutbox.locale");
+    expect(outboxService).toContain('const locale = claimed.locale === "zh-CN" ? "zh-CN" : "ko"');
+    expect(outboxService).toContain('subject: locale === "zh-CN" ? "[HUSIM COLOR] 您的分析报告（PDF）"');
   });
 });
