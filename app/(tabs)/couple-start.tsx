@@ -5,7 +5,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import {
-  View, Text, Pressable, ScrollView, StyleSheet, Linking,
+  View, Text, Pressable, ScrollView, StyleSheet,
   Animated, TouchableOpacity, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,7 +20,7 @@ import {
 } from '@/constants/relationProducts';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
 import { isOpeningCampaignActive, OPENING_CAMPAIGN_DISPLAY_PRICES } from '@/shared/opening-campaign';
-import { getSampleReportButtonLabel, getSampleReportUrl, type SampleReportProduct } from '@/shared/sample-reports';
+import { getSampleReportButtonLabel, type SampleReportProduct } from '@/shared/sample-reports';
 
 const ROMANTIC_RELATION_TYPES: { value: Extract<RelationType, '연인' | '부부'>; label: string; emoji: string }[] = [
   { value: '연인', label: '연인', emoji: '💑' },
@@ -162,16 +162,19 @@ export default function CoupleStartScreen() {
     setParentChildCombo(null);
   };
 
-  // 결제 흐름과 분리된 새 창/외부 브라우저로 열어 상품·관계 조합 선택을 그대로 둔다.
+  // 공개 샘플은 고객 PDF 접근과 분리된 앱 내 열람 화면으로 연다.
+  // 돌아올 때 현재 상품·관계 조합 선택을 그대로 복원한다.
   const handleOpenSamplePdf = (product: SampleReportProduct) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://husimcolor.vercel.app';
-    const url = getSampleReportUrl(product, origin);
-    if (!url) return;
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.open(url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    void Linking.openURL(url);
+    router.push({
+      pathname: '/(tabs)/sample-report',
+      params: {
+        product,
+        returnTo: 'couple-start',
+        restoreProduct: selectedProductId ?? '',
+        restoreRelationType: relationType ?? '',
+        restoreParentChildCombo: parentChildCombo ?? '',
+      },
+    } as any);
   };
 
   const renderChip = (

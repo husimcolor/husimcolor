@@ -54,11 +54,37 @@ export function getSampleReportButtonLabel(value: SampleReportProduct): string {
   return SAMPLE_REPORT_BUTTON_LABELS[value];
 }
 
-/** 운영·개발 모두에서 동일한 정적 PDF 자산으로 연결한다. */
+export function getSampleReportTitle(value: SampleReportProduct): string {
+  return SAMPLE_REPORTS[value].title;
+}
+
+/** 서버가 읽을 public PDF allow-list 파일명을 반환한다. */
+export function getSampleReportFileName(value: SampleReportProduct): string {
+  return SAMPLE_REPORTS[value].fileName;
+}
+
+/** 기존 공개 정적 PDF 링크. 이미 공유된 주소의 호환성을 유지한다. */
 export function getSampleReportUrl(value: string | undefined, origin?: string): string | null {
   const report = getSampleReport(value);
   if (!report) return null;
   const pathname = `/sample-reports/${report.fileName}`;
   if (!origin) return pathname;
   return `${origin.replace(/\/$/, "")}${pathname}`;
+}
+
+/**
+ * 앱 내 열람용 읽기 전용 endpoint. 고객 PDF endpoint와 분리되어 있으며,
+ * product allow-list 외의 파일에는 접근할 수 없다.
+ */
+export function getSampleReportViewerUrl(value: string | undefined, origin?: string): string | null {
+  if (!isSampleReportProduct(value)) return null;
+  const pathname = `/api/public-sample-report?product=${encodeURIComponent(value)}`;
+  if (!origin) return pathname;
+  return `${origin.replace(/\/$/, "")}${pathname}`;
+}
+
+/** 열람 화면의 명시적 다운로드 버튼 전용 URL. */
+export function getSampleReportDownloadUrl(value: string | undefined, origin?: string): string | null {
+  const viewerUrl = getSampleReportViewerUrl(value, origin);
+  return viewerUrl ? `${viewerUrl}&download=1` : null;
 }

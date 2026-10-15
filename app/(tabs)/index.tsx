@@ -1,5 +1,5 @@
 import { createElement, useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Linking, Alert } from 'react-native';
+import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
 import { isOpeningCampaignActive } from '@/shared/opening-campaign';
-import { getSampleReportButtonLabel, getSampleReportUrl, type SampleReportProduct } from '@/shared/sample-reports';
+import { getSampleReportButtonLabel, type SampleReportProduct } from '@/shared/sample-reports';
 import { startKakaoLogin } from '@/constants/oauth';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -169,16 +169,12 @@ export default function HomeScreen() {
     router.push('/(tabs)/premium-info' as any);
   };
 
-  // 결제·상품 선택과 독립된 새 창/외부 브라우저로 열어 현재 화면 상태를 유지한다.
+  // 공개 샘플은 고객 PDF 접근과 분리된 앱 내 열람 화면으로 연다.
   const handleOpenSamplePdf = (product: SampleReportProduct) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://husimcolor.vercel.app';
-    const url = getSampleReportUrl(product, origin);
-    if (!url) return;
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.open(url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    void Linking.openURL(url);
+    router.push({
+      pathname: '/(tabs)/sample-report',
+      params: { product, returnTo: 'home' },
+    } as any);
   };
 
   return (

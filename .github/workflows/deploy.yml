@@ -45,6 +45,7 @@ jobs:
           mkdir -p ".vercel/output/functions/api/private-pdf-download.func"
           mkdir -p ".vercel/output/functions/api/couple-pdf-report.func"
           mkdir -p ".vercel/output/functions/api/parent-child-pdf-report.func"
+          mkdir -p ".vercel/output/functions/api/public-sample-report.func"
           mkdir -p ".vercel/output/functions/api/auth/kakao/login.func"
           mkdir -p ".vercel/output/functions/api/auth/kakao/callback.func"
           mkdir -p ".vercel/output/functions/api/auth/legacy-admin-login.func"
@@ -59,6 +60,14 @@ jobs:
         run: |
           npx esbuild "api/auth/kakao/login.ts" --bundle --platform=node --target=node20 --format=cjs --outfile=".vercel/output/functions/api/auth/kakao/login.func/index.js"
           npx esbuild "api/auth/kakao/callback.ts" --bundle --platform=node --target=node20 --format=cjs --outfile=".vercel/output/functions/api/auth/kakao/callback.func/index.js"
+
+      - name: Build public Korean sample viewer API
+        run: |
+          npx esbuild "api/public-sample-report.ts" --bundle --platform=node --target=node20 --format=cjs --outfile=".vercel/output/functions/api/public-sample-report.func/index.js"
+          mkdir -p ".vercel/output/functions/api/public-sample-report.func/public/sample-reports"
+          cp "public/sample-reports/husimcolor-personal-deep-sample.pdf" ".vercel/output/functions/api/public-sample-report.func/public/sample-reports/"
+          cp "public/sample-reports/husimcolor-couple-love-sample.pdf" ".vercel/output/functions/api/public-sample-report.func/public/sample-reports/"
+          cp "public/sample-reports/husimcolor-parent-child-sample.pdf" ".vercel/output/functions/api/public-sample-report.func/public/sample-reports/"
 
       - name: Build existing legacy-admin API functions
         run: |
@@ -106,6 +115,7 @@ jobs:
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/private-pdf-download.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/couple-pdf-report.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/parent-child-pdf-report.func/.vc-config.json"
+          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/public-sample-report.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/kakao/login.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/kakao/callback.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/legacy-admin-login.func/.vc-config.json"
@@ -126,6 +136,7 @@ jobs:
               { "src": "/api/private-pdf-download", "dest": "/api/private-pdf-download" },
               { "src": "/api/couple-pdf-report", "dest": "/api/couple-pdf-report" },
               { "src": "/api/parent-child-pdf-report", "dest": "/api/parent-child-pdf-report" },
+              { "src": "/api/public-sample-report", "dest": "/api/public-sample-report" },
               { "src": "/site.webmanifest", "headers": { "Content-Type": "application/manifest+json; charset=utf-8", "Cache-Control": "no-cache" }, "continue": true },
               { "src": "/_expo/static/js/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/_expo/static/css/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },

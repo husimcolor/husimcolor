@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 const root = process.cwd();
 const homeScreen = readFileSync(`${root}/app/(tabs)/index.tsx`, 'utf8');
 const relationshipStartScreen = readFileSync(`${root}/app/(tabs)/couple-start.tsx`, 'utf8');
+const freeResultScreen = readFileSync(`${root}/app/(tabs)/result.tsx`, 'utf8');
+const sampleViewerScreen = readFileSync(`${root}/app/(tabs)/sample-report.tsx`, 'utf8');
 
 describe('첫 진입 화면의 서비스 선택 UX', () => {
   it('컬러 역할 미리보기 없이 세 가지 서비스 목적만 표시한다', () => {
@@ -26,13 +28,17 @@ describe('첫 진입 화면의 서비스 선택 UX', () => {
     expect(relationshipStartScreen).toContain('const ROMANTIC_RELATION_TYPES');
   });
 
-  it('상품별 전체 샘플 PDF 링크가 결제·상품 선택과 분리된 새 창으로 열린다', () => {
+  it('세 한국어 샘플은 결제·상품 선택과 분리된 앱 내 열람 화면으로 열린다', () => {
     expect(homeScreen).toContain("handleOpenSamplePdf('personal_deep')");
     expect(relationshipStartScreen).toContain('handleOpenSamplePdf(sampleProduct)');
-    expect(homeScreen).toContain("window.open(url, '_blank', 'noopener,noreferrer')");
-    expect(relationshipStartScreen).toContain("window.open(url, '_blank', 'noopener,noreferrer')");
-    expect(homeScreen).not.toContain('router.push(\'/(tabs)/sample-report?product=personal_deep');
-    expect(relationshipStartScreen).not.toContain("pathname: '/(tabs)/sample-report'");
+    expect(homeScreen).toContain("pathname: '/(tabs)/sample-report'");
+    expect(relationshipStartScreen).toContain("pathname: '/(tabs)/sample-report'");
+    expect(freeResultScreen).toContain("pathname: '/(tabs)/sample-report'");
+    expect(homeScreen).not.toContain("window.open(url, '_blank', 'noopener,noreferrer')");
+    expect(relationshipStartScreen).not.toContain("window.open(url, '_blank', 'noopener,noreferrer')");
+    expect(sampleViewerScreen).toContain('WebBrowser.openBrowserAsync(viewerUrl');
+    expect(sampleViewerScreen).toContain('PDF 다운로드');
+    expect(sampleViewerScreen).toContain('이 분석 알아보기 →');
   });
 
   it('결제 설정을 불러오는 중에도 유료 상품 진입을 준비중 상태로 숨기지 않는다', () => {
