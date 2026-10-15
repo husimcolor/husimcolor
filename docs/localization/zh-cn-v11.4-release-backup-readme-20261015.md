@@ -3,7 +3,7 @@
 - **문안 버전:** `zh-CN-2026-10-15-v11.1`
 - **보관 버전:** v11.4
 - **검토 브랜치:** `feat/zh-cn-full-localization-v11.3`
-- **기준 커밋:** 배포 준비 커밋 후 갱신
+- **기준 소스 커밋:** `5ac1d993fe45874822f0d7ca2bb593b28b9baf6b` (`feat: finalize zh-CN locale release validation`)
 - **언어 범위:** 한국어 기본 + zh-CN 선택 경로. 영어 v4.2는 별도 보관이며 이번 배포 변경 범위에서 제외.
 
 ## 포함 자료
