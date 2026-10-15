@@ -24,7 +24,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 9.12.0
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Pull Production environment privately
@@ -36,13 +36,19 @@ jobs:
           PRODUCTION_ENV_FILE: .env.production
           ZH_CN_LOCALE_SCHEMA_BACKUP_FILE: zh-cn-locale-schema-before.sql
           ALLOW_PRODUCTION_ZH_CN_LOCALE_MIGRATION: 'true'
-        run: node scripts/backup-production-locale-schema.mjs | tee schema-backup-report.json
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/backup-production-locale-schema.mjs | tee schema-backup-report.json
       - name: Apply additive locale metadata migration
         env:
           PRODUCTION_ENV_FILE: .env.production
           REMOVE_PRODUCTION_ENV_FILE: 'true'
           ALLOW_PRODUCTION_ZH_CN_LOCALE_MIGRATION: 'true'
-        run: node scripts/apply-production-locale-snapshot-metadata.mjs | tee migration-report.json
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/apply-production-locale-snapshot-metadata.mjs | tee migration-report.json
       - name: Upload migration report
         if: always()
         uses: actions/upload-artifact@v4
