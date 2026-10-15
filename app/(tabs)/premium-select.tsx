@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from '@/lib/trpc';
 import {
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -13,8 +12,12 @@ import {
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenContainer } from "@/components/screen-container";
+import { LocalizedText as Text } from "@/components/localized-text";
 import { CARD_DATA, type CardData } from "@/constants/cardData";
 import { COLOR_DATA, type ColorData } from "@/constants/colorData";
+import { getLocalizedColorName } from "@/lib/free-result-localization";
+import { useLocalization } from "@/lib/localization-context";
+import { localizeStaticCopy } from "@/lib/zh-cn-copy";
 import { isPremiumActive } from "@/lib/trialUtils";
 import { hasCommerceAnalysisStarted } from "@/lib/commerce-access";
 import Svg, { Path, Circle } from "react-native-svg";
@@ -109,6 +112,7 @@ interface WebCardProps {
 }
 
 function WebCard({ card, index, isFlipped, isSelected, onPress, entryDelay }: WebCardProps) {
+  const { locale } = useLocalization();
   const wrapperRef = useRef<any>(null);
   const flipRef = useRef<any>(null);
   const prevFlipped = useRef(isFlipped);
@@ -218,7 +222,7 @@ function WebCard({ card, index, isFlipped, isSelected, onPress, entryDelay }: We
               color: card.colorKor === "화이트" ? "#D4AF37" : "rgba(255,255,255,0.95)",
               fontWeight: "700",
               letterSpacing: 0.2,
-            }}>{card.colorKor}</span>
+            }}>{localizeStaticCopy(card.colorKor, locale)}</span>
           </div>
         ) : (
           // 뒷면: 베이지 + 물결 패턴
@@ -277,6 +281,7 @@ function NativeCard({
   revealDelay: number;
   onPress: () => void;
 }) {
+  const { locale } = useLocalization();
   const revealAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -380,7 +385,7 @@ function NativeCard({
             style={[styles.cardFrontColorName, card.colorKor === "화이트" && { color: "#D4AF37" }]}
             numberOfLines={1}
           >
-            {card.colorKor}
+            {localizeStaticCopy(card.colorKor, locale)}
           </Text>
         </Animated.View>
       </TouchableOpacity>
@@ -391,6 +396,7 @@ function NativeCard({
 // ─── 메인 화면 ──────────────────────────────────────────────────────────────
 export default function PremiumSelectScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
 
   // 진입 시 체험/결제 상태 확인
@@ -536,7 +542,7 @@ export default function PremiumSelectScreen() {
               {prevSelectedColors.map((c: ColorData) => (
                 <View key={c.id} style={styles.colorFlowItem}>
                   <View style={[styles.colorFlowDot, { backgroundColor: c.hex }]} />
-                  <Text style={[styles.colorFlowName, { color: "#3D6B3D" }]}>{c.korName}</Text>
+                  <Text style={[styles.colorFlowName, { color: "#3D6B3D" }]}>{getLocalizedColorName(c, locale)}</Text>
                 </View>
               ))}
             </View>
@@ -583,15 +589,15 @@ export default function PremiumSelectScreen() {
                       ]}
                     />
                     <Text style={[styles.slotCardName, { color: '#3D3530' }]}>
-                      {selectedCards[i]!.colorKor}
+                      {localizeStaticCopy(selectedCards[i]!.colorKor, locale)}
                     </Text>
                     <Text style={[styles.slotShapeName, { color: '#5F4B3B' }]}>
-                      {selectedCards[i]!.shapeKor}
+                      {localizeStaticCopy(selectedCards[i]!.shapeKor, locale)}
                     </Text>
                   </>
                 ) : (
                   <Text style={[styles.slotEmpty, { color: '#8A7A68' }]}>
-                    {i + 1}번
+                    {`${i + 1}번`}
                   </Text>
                 )}
               </View>

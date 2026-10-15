@@ -41,6 +41,7 @@ import {
 import { buildRomanticRelationshipRoles } from "../../lib/couple-romantic-relationship-roles";
 import { parseCoupleShareSnapshot, type CoupleShareSnapshot } from "../../shared/couple-share";
 import type { CommerceProductCode } from "../../shared/commerce";
+import { copyVersionForLocale, resolveStoredResultLocale, type AppLocale } from "../../shared/localization";
 import { getDb } from "../db";
 import { storageGetBuffer } from "../storage";
 import type { AdminAuditActor } from "./admin-audit-actor";
@@ -172,8 +173,8 @@ function calculateArchetype(sessionData: CoupleSessionData) {
   };
 }
 
-/** 기존 결과 화면과 동일한 분석 모듈을 재사용해 고정 결과를 만든다. */
-function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapshot {
+/** 기존 결과 화면과 동일한 분석 모듈을 재사용해 생성 시점 언어까지 고정한다. */
+function buildResultSnapshot(sessionData: CoupleSessionData, locale: AppLocale, copyVersion: string): CoupleShareSnapshot {
   const personAAnalysis = generatePersonAnalysis(sessionData.personA, "A");
   const personBAnalysis = generatePersonAnalysis(sessionData.personB, "B");
   const coupleAnalysis = generateCoupleAnalysis(sessionData, personAAnalysis, personBAnalysis);
@@ -226,6 +227,8 @@ function buildResultSnapshot(sessionData: CoupleSessionData): CoupleShareSnapsho
 
   return {
     schemaVersion: 1,
+    locale,
+    copyVersion,
     sessionData,
     personAAnalysis,
     personBAnalysis,
@@ -436,6 +439,8 @@ export async function createRelationshipInviteSession(tx: any, input: {
   productId: number;
   productCode: CommerceProductCode;
   relationType: RelationType;
+  locale: "ko" | "zh-CN";
+  copyVersion: string;
 }): Promise<RelationshipInviteStart> {
   const productAndRelationTypeMatch = input.productCode === "couple_love_deep"
     ? input.relationType === "연인" || input.relationType === "부부"
@@ -454,6 +459,8 @@ export async function createRelationshipInviteSession(tx: any, input: {
     productId: input.productId,
     relationType: input.relationType,
     mode: "invite_link",
+    locale: input.locale,
+    copyVersion: input.copyVersion,
     ownerTokenHash: hashCommerceValue(ownerAccessToken),
     inviteTokenHash: hashCommerceValue(inviteToken),
     resultTokenHash: hashCommerceValue(resultToken),
@@ -989,6 +996,8 @@ export async function generateAndQueueRelationshipReport(relationshipSessionId: 
       status: relationshipSessions.status,
       relationType: relationshipSessions.relationType,
       analysisRunId: relationshipSessions.analysisRunId,
+      locale: relationshipSessions.locale,
+      copyVersion: relationshipSessions.copyVersion,
       productCode: products.code,
     })
     .from(relationshipSessions)
@@ -1011,7 +1020,12 @@ export async function generateAndQueueRelationshipReport(relationshipSessionId: 
     stage = "build_snapshot";
     const personA = parseSubmittedPayload(participants.find((row) => row.participant === "A")?.submittedEncrypted ?? null);
     const personB = parseSubmittedPayload(participants.find((row) => row.participant === "B")?.submittedEncrypted ?? null);
-    const snapshot = buildResultSnapshot(asSessionData(session.relationType as RelationType, personA, personB));
+    const resultLocale = resolveStoredResultLocale(session.locale);
+    const snapshot = buildResultSnapshot(
+      asSessionData(session.relationType as RelationType, personA, personB),
+      resultLocale,
+      session.copyVersion ?? copyVersionForLocale(resultLocale),
+    );
     stage = "build_delivery_payload";
     const payload = await buildDeliveryPayload(snapshot, session.productCode);
     stage = "save_result_snapshot";

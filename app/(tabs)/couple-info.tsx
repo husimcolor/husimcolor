@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScreenContainer } from '@/components/screen-container';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { useColors } from '@/hooks/use-colors';
 import type { CoupleSessionData, FaithType, GenderType, RelationType } from '@/constants/coupleData';
 import { getCommerceStartGrant, markCommerceAnalysisStarted, removeCommerceStartGrant, saveCommerceAnalysisDelivery } from '@/lib/commerce-access';
 import { trpc } from '@/lib/trpc';
 import type { CommerceProductCode } from '@/shared/commerce';
+import { useLocalization } from '@/lib/localization-context';
 
 const GENDERS: { value: GenderType; label: string }[] = [
   { value: '남성', label: '남성' },
@@ -48,6 +50,7 @@ function getPaidProductCode(
 export default function CoupleInfoScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { locale } = useLocalization();
   const { relationType: relationTypeParam } = useLocalSearchParams<{ relationType?: string | string[] }>();
   const relationType = getSingleParam(relationTypeParam) as RelationType | undefined;
   const relationLabel = relationType ? RELATION_LABELS[relationType] : undefined;
@@ -109,7 +112,7 @@ export default function CoupleInfoScreen() {
           return;
         }
         if (grant) {
-          const consumed = await consumeEntitlement.mutateAsync({ accessToken: grant.accessToken, productCode: paidProductCode });
+          const consumed = await consumeEntitlement.mutateAsync({ accessToken: grant.accessToken, productCode: paidProductCode, locale });
           await removeCommerceStartGrant(paidProductCode);
           setHasStartGrant(false);
           await markCommerceAnalysisStarted(paidProductCode);

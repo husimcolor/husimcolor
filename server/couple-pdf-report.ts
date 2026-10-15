@@ -2,6 +2,7 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import PDFDocument from "pdfkit";
 import type { CouplePdfDownloadPayload, CouplePdfShape } from "../shared/couple-pdf-download";
+import { localizeStaticCopy } from "../lib/zh-cn-copy";
 
 const PAGE_LEFT = 43;
 const PAGE_TOP = 43;
@@ -11,6 +12,10 @@ const BUNDLED_FONT_PATH = path.join(__dirname, "HusimPdfKorean.ttf");
 const FONT_PATH = existsSync(BUNDLED_FONT_PATH)
   ? BUNDLED_FONT_PATH
   : path.join(process.cwd(), "server", "assets", "HusimPdfKorean.ttf");
+const BUNDLED_ZH_FONT_PATH = path.join(__dirname, "NotoSansCJKsc-Regular.otf");
+const ZH_FONT_PATH = existsSync(BUNDLED_ZH_FONT_PATH)
+  ? BUNDLED_ZH_FONT_PATH
+  : path.join(process.cwd(), "server", "assets", "NotoSansCJKsc-Regular.otf");
 const BODY_SIZE = 15.5;
 const LABEL_SIZE = 12.6;
 const BODY_LINE_GAP = 5.8;
@@ -32,6 +37,19 @@ type CardParagraph = {
   text?: string;
   bullets?: string[];
 };
+
+function localizedPdfText(document: PdfWriter, value: string) {
+  return localizeStaticCopy(value, ((document as any).__locale ?? "ko") as "ko" | "zh-CN");
+}
+
+function displayRole(document: PdfWriter, value: string) {
+  if ((document as any).__locale !== "zh-CN") return value;
+  const roles = { "남편": "丈夫", "아내": "妻子", "남자친구": "男朋友", "여자친구": "女朋友" } as Record<string, string>;
+  const exact = roles[value];
+  if (exact) return exact;
+  const prefix = Object.keys(roles).find((role) => value.startsWith(`${role} · `));
+  return prefix ? `${roles[prefix]} · ${localizedPdfText(document, value.slice(prefix.length + 3))}` : localizedPdfText(document, value);
+}
 
 function correctPdfText(value: string) {
   return value
@@ -71,12 +89,12 @@ function ensureSpace(document: PdfWriter, height: number) {
 
 function heightOf(document: PdfWriter, text: string, width = CONTENT_WIDTH, size = BODY_SIZE) {
   document.fontSize(size);
-  return document.heightOfString(clean(text) || " ", { width, lineGap: BODY_LINE_GAP });
+  return document.heightOfString(clean(localizedPdfText(document, text)) || " ", { width, lineGap: BODY_LINE_GAP });
 }
 
 function subtitleHeight(document: PdfWriter, text: string, width: number, size: number) {
   document.fontSize(size);
-  return document.heightOfString(clean(text) || " ", { width, lineGap: SUBTITLE_LINE_GAP });
+  return document.heightOfString(clean(localizedPdfText(document, text)) || " ", { width, lineGap: SUBTITLE_LINE_GAP });
 }
 
 /** 얇은 한글 폰트에서도 카드 소제목이 본문과 분명히 구분되도록 절제된 stroke로 Semi-bold처럼 표시한다. */
@@ -86,7 +104,7 @@ function writeSubtitle(document: PdfWriter, text: string, x: number, y: number, 
     .strokeColor("#2F2019")
     .lineWidth(0.5)
     .fontSize(size)
-    .text(clean(text), x, y, { width, lineGap: SUBTITLE_LINE_GAP, fill: true, stroke: true });
+    .text(clean(localizedPdfText(document, text)), x, y, { width, lineGap: SUBTITLE_LINE_GAP, fill: true, stroke: true });
 }
 
 function bulletListHeight(document: PdfWriter, bullets: string[], width: number) {
@@ -97,7 +115,7 @@ function writeBulletList(document: PdfWriter, bullets: string[], textX: number, 
   bullets.forEach((bullet) => {
     const top = document.y;
     document.fillColor("#8A6B4D").fontSize(BODY_SIZE).text("•", bulletX, top, { width: 14, lineGap: BODY_LINE_GAP });
-    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(bullet), textX, top, { width, lineGap: BODY_LINE_GAP });
+    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(localizedPdfText(document, bullet)), textX, top, { width, lineGap: BODY_LINE_GAP });
     document.moveDown(0.15);
   });
 }
@@ -112,7 +130,7 @@ function writeSectionTitle(document: PdfWriter, title: string, tone = "#5C7F68",
   else if (needsGap) document.y += SECTION_BAR_GAP;
   const top = document.y;
   document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, 30, 7).fill().restore();
-  document.fillColor("#FFFFFF").fontSize(14).text(clean(title), PAGE_LEFT + 13, top + 8, { width: CONTENT_WIDTH - 26, lineBreak: false });
+  document.fillColor("#FFFFFF").fontSize(14).text(clean(localizedPdfText(document, title)), PAGE_LEFT + 13, top + 8, { width: CONTENT_WIDTH - 26, lineBreak: false });
   document.y = top + 39;
 }
 
@@ -172,16 +190,16 @@ function writeCard(
     const contentHeight = cardParagraphs.reduce((sum, paragraph) => sum + paragraphHeight(paragraph), titleHeight);
     const top = document.y;
     document.save().fillColor(tone).roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, contentHeight + 19, 9).fill().restore();
-    if (showTitle) writeSubtitle(document, cardTitle, PAGE_LEFT + 15, top + 12, innerWidth, SUBTITLE_SIZE);
+    if (showTitle) writeSubtitle(document, localizedPdfText(document, cardTitle), PAGE_LEFT + 15, top + 12, innerWidth, SUBTITLE_SIZE);
     document.y = top + titleHeight;
     cardParagraphs.forEach((paragraph) => {
       if (paragraph.label) {
         const labelTop = document.y;
-        writeSubtitle(document, paragraph.label, PAGE_LEFT + 15, labelTop, innerWidth, SUBTITLE_LABEL_SIZE);
+        writeSubtitle(document, localizedPdfText(document, paragraph.label), PAGE_LEFT + 15, labelTop, innerWidth, SUBTITLE_LABEL_SIZE);
         document.y = labelTop + subtitleHeight(document, paragraph.label, innerWidth, SUBTITLE_LABEL_SIZE) + 8;
       }
       if (paragraph.text) {
-        document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(paragraph.text), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
+        document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(localizedPdfText(document, paragraph.text)), PAGE_LEFT + 15, document.y, { width: innerWidth, lineGap: BODY_LINE_GAP });
       }
       if (paragraph.bullets?.length) {
         if (paragraph.text) document.moveDown(0.28);
@@ -280,9 +298,9 @@ function writeColorCards(document: PdfWriter, colors: CouplePdfDownloadPayload["
     const top = document.y;
     document.save().fillColor("#FFFDF9").roundedRect(PAGE_LEFT, top, CONTENT_WIDTH, height, 9).fill().restore();
     document.save().fillColor(color.hex).strokeColor("#CBBEAC").lineWidth(1).circle(PAGE_LEFT + 31, top + 31, 17).fillAndStroke().restore();
-    document.fillColor("#4A3A2A").fontSize(12.5).text(clean(`${color.role} · ${color.name}`), PAGE_LEFT + 61, top + 12, { width: CONTENT_WIDTH - 76 });
-    document.fillColor("#75695D").fontSize(11.5).text(clean(color.keywords), PAGE_LEFT + 61, top + 31, { width: CONTENT_WIDTH - 76 });
-    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(color.interpretation), PAGE_LEFT + 15, top + 50, { width: CONTENT_WIDTH - 30, lineGap: BODY_LINE_GAP });
+    document.fillColor("#4A3A2A").fontSize(12.5).text(clean(localizedPdfText(document, `${color.role} · ${color.name}`)), PAGE_LEFT + 61, top + 12, { width: CONTENT_WIDTH - 76 });
+    document.fillColor("#75695D").fontSize(11.5).text(clean(localizedPdfText(document, color.keywords)), PAGE_LEFT + 61, top + 31, { width: CONTENT_WIDTH - 76 });
+    document.fillColor("#302B27").fontSize(BODY_SIZE).text(clean(localizedPdfText(document, color.interpretation)), PAGE_LEFT + 15, top + 50, { width: CONTENT_WIDTH - 30, lineGap: BODY_LINE_GAP });
     document.y = top + height + 8;
   });
 }
@@ -299,7 +317,7 @@ function writeCards(document: PdfWriter, cards: CouplePdfDownloadPayload["person
     const top = document.y;
     document.save().fillColor(card.colorHex).roundedRect(PAGE_LEFT, top, 30, 30, 7).fill().restore();
     drawShape(document, card.shape, PAGE_LEFT + 15, top + 15, 8, "#FFFDF9", "#FFFDF9");
-    document.fillColor("#4A3A2A").fontSize(13.2).text(clean(`${card.position} · ${card.colorName} ${card.shapeName}`), PAGE_LEFT + 41, top + 7, { width: CONTENT_WIDTH - 41 });
+    document.fillColor("#4A3A2A").fontSize(13.2).text(clean(localizedPdfText(document, `${card.position} · ${card.colorName} ${card.shapeName}`)), PAGE_LEFT + 41, top + 7, { width: CONTENT_WIDTH - 41 });
     document.y = top + 33;
     if (narrative.actions.length > 0) {
       writeCardWithActions(document, card.title, narrative.summary, narrative.actions, "#FCF8F1");
@@ -311,11 +329,13 @@ function writeCards(document: PdfWriter, cards: CouplePdfDownloadPayload["person
 
 function writePerson(document: PdfWriter, person: CouplePdfDownloadPayload["personA"], tone: string, startsOnNewPage = false) {
   if (startsOnNewPage) addPage(document);
-  writeSectionTitle(document, `${person.label}의 개인 해석`, tone, 210);
+  const isZh = (document as any).__locale === "zh-CN";
+  const label = displayRole(document, person.label);
+  writeSectionTitle(document, isZh ? `${label}的个人解读` : `${person.label}의 개인 해석`, tone, 210);
   writeColorCards(document, person.colors);
   // 개인 컬러 3개와 심리카드 3장을 섞지 않는다. 심리카드는 항상 새 페이지에서 시작한다.
   addPage(document);
-  writeSectionTitle(document, `${person.label}의 심리카드 3장`, tone, 210);
+  writeSectionTitle(document, isZh ? `${label}的三张心理卡` : `${person.label}의 심리카드 3장`, tone, 210);
   writeCards(document, person.cards);
   writeCard(document, "컬러 × 심리카드 통합 분석", person.integratedAnalysis.split(/\n\n+/).filter(Boolean).map((text) => ({ text })), "#F2F7F3");
   writeCard(document, "관계 성향과 회복 방향", [
@@ -330,6 +350,8 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
   const relation = payload.relationship;
   const personA = relation.personLabels?.personA ?? "첫 번째 사람";
   const personB = relation.personLabels?.personB ?? "두 번째 사람";
+  const displayPersonA = displayRole(document, personA);
+  const displayPersonB = displayRole(document, personB);
   addPage(document);
   writeSectionTitle(document, "두 사람의 관계 통합 분석", "#80649B", 230);
   writeCard(document, "왜 끌리는데 왜 힘든지", relation.attractionAnalysis
@@ -337,8 +359,8 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
     .filter(Boolean)
     .map((text) => ({ text })), "#F6F1FA");
   writeCard(document, "두 사람의 관계 속 역할 분석", [
-    { label: `${personA} · ${relation.roles.personATitle}`, text: relation.roles.personADescription },
-    { label: `${personB} · ${relation.roles.personBTitle}`, text: relation.roles.personBDescription },
+    { label: `${displayPersonA} · ${relation.roles.personATitle}`, text: relation.roles.personADescription },
+    { label: `${displayPersonB} · ${relation.roles.personBTitle}`, text: relation.roles.personBDescription },
     { label: "두 역할이 만났을 때", text: relation.roles.together },
   ], "#F6F1FA");
   if (relation.traits?.length) {
@@ -359,8 +381,8 @@ function writeRelationship(document: PdfWriter, payload: CouplePdfDownloadPayloa
   ], "#EFF7F0", { continueFromCurrentPage: true });
   writeSectionTitle(document, "생활 속 관계 패턴", "#8B7259", 260);
   writeCard(document, relation.lifePattern.headline, relation.lifePattern.items.flatMap((item) => [
-    { label: `${item.label} · ${personA}`, text: item.personA },
-    { label: personB, text: item.personB },
+    { label: `${item.label} · ${displayPersonA}`, text: item.personA },
+    { label: displayPersonB, text: item.personB },
     { label: "조율 포인트", text: item.tension },
   ]), "#FBF6EF", { continueFromCurrentPage: true });
   // 갈등 카드는 제목과 첫 설명을 함께 두고, 남은 문단만 자연스럽게 이어 준다.
@@ -416,10 +438,12 @@ export function validateCouplePdfPayload(value: unknown): CouplePdfDownloadPaylo
 
 /** 현재 웹 결과의 최종 데이터를 읽기 편한 A4 리포트로 재배치한다. */
 export async function createCouplePdfBuffer(payload: CouplePdfDownloadPayload): Promise<Buffer> {
+  const locale = payload.locale === "zh-CN" ? "zh-CN" : "ko";
+  const fontPath = locale === "zh-CN" ? ZH_FONT_PATH : FONT_PATH;
   const document = new PDFDocument({
     size: "A4",
     margins: { top: PAGE_TOP, bottom: PAGE_TOP, left: PAGE_LEFT, right: PAGE_LEFT },
-    font: FONT_PATH,
+    font: fontPath,
     info: { Title: "휴심컬러 부부·연인 관계 리포트" },
   });
   const chunks: Buffer[] = [];
@@ -428,20 +452,27 @@ export async function createCouplePdfBuffer(payload: CouplePdfDownloadPayload): 
     document.on("end", () => resolve(Buffer.concat(chunks)));
     document.on("error", reject);
   });
-  document.registerFont("NotoSansKR", FONT_PATH);
-  document.font("NotoSansKR");
+  document.registerFont("HusimReportFont", fontPath);
+  document.font("HusimReportFont");
+  (document as any).__locale = locale;
 
   document.rect(0, 0, 595, 842).fill("#F8F4EE");
-  document.fillColor("#5F8069").fontSize(12).text("HUSIM COLOR · COUPLE RELATIONSHIP REPORT", PAGE_LEFT, 160, { width: CONTENT_WIDTH });
-  document.fillColor("#3D3530").fontSize(25).text(`${payload.relationType} 관계 리포트`, PAGE_LEFT, 198, { width: CONTENT_WIDTH });
-  document.fillColor("#685C51").fontSize(12).text("두 사람의 컬러와 심리카드 흐름으로 읽는 관계의 연결과 회복", PAGE_LEFT, 240, { width: CONTENT_WIDTH });
+  // 공개 샘플은 locale 적용 후 `恋人`으로 전달될 수 있고, 실제 저장 payload는
+  // canonical Korean `연인`을 유지한다. 두 경로 모두 관계 유형 제목을 보존한다.
+  const relationTypeForTitle = payload.relationType as string;
+  const zhRelationshipTitle = relationTypeForTitle === "연인" || relationTypeForTitle === "恋人"
+    ? "恋人关系报告"
+    : "夫妻关系报告";
+  document.fillColor("#5F8069").fontSize(12).text(locale === "zh-CN" ? `HUSIM COLOR · ${zhRelationshipTitle}` : "HUSIM COLOR · COUPLE RELATIONSHIP REPORT", PAGE_LEFT, 160, { width: CONTENT_WIDTH });
+  document.fillColor("#3D3530").fontSize(25).text(locale === "zh-CN" ? zhRelationshipTitle : `${payload.relationType} 관계 리포트`, PAGE_LEFT, 198, { width: CONTENT_WIDTH });
+  document.fillColor("#685C51").fontSize(12).text(locale === "zh-CN" ? "从两人的色彩与心理卡变化，理解关系中的连接与恢复方向" : "두 사람의 컬러와 심리카드 흐름으로 읽는 관계의 연결과 회복", PAGE_LEFT, 240, { width: CONTENT_WIDTH });
   if (payload.sampleNotice) {
-    document.fillColor("#80649B").fontSize(10.5).text(clean(payload.sampleNotice), PAGE_LEFT, 270, { width: CONTENT_WIDTH });
+    document.fillColor("#80649B").fontSize(10.5).text(clean(localizedPdfText(document, payload.sampleNotice)), PAGE_LEFT, 270, { width: CONTENT_WIDTH });
   }
   document.fillColor("#80649B").fontSize(16).text(clean(payload.couple.typeName), PAGE_LEFT, 316, { width: CONTENT_WIDTH });
   document.fillColor("#4A3A2A").fontSize(16).text(clean(payload.couple.coreSummary), PAGE_LEFT, 348, { width: CONTENT_WIDTH, lineGap: 6 });
   document.fillColor("#75695D").fontSize(13).text(clean(payload.couple.tensionDescription), PAGE_LEFT, 408, { width: CONTENT_WIDTH, lineGap: 5 });
-  document.fillColor("#75695D").fontSize(11).text(`리포트 생성일 · ${payload.generatedAt}`, PAGE_LEFT, 740, { width: CONTENT_WIDTH });
+  document.fillColor("#75695D").fontSize(11).text(locale === "zh-CN" ? `报告生成日期 · ${payload.generatedAt.replace(/년\s*/g, "年").replace(/월\s*/g, "月").replace(/일/g, "日")}` : `리포트 생성일 · ${payload.generatedAt}`, PAGE_LEFT, 740, { width: CONTENT_WIDTH });
 
   writeRelationship(document, payload);
   writePerson(document, payload.personA, "#A86773", true);
