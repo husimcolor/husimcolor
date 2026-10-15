@@ -3,7 +3,7 @@
 ## 기준
 
 - 브랜치: `fix/ko-sample-pdfjs-viewer`
-- 기준 소스 커밋: 커밋 후 이 파일의 `SOURCE_COMMIT` 표기를 갱신한다.
+- 기준 소스 커밋: `71748c217e9516280a728b273ca9b1ab09482528` (`fix: render Korean public samples with PDF.js`)
 - 범위: 한국어 공개 샘플 3종만. 중국어 locale source, locale DB migration, 고객 리포트, 고객 PDF, 주문·이메일, 로그인, 결제·쿠폰 변경은 제외한다.
 
 ## 포함 자료
