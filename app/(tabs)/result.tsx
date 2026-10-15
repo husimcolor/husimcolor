@@ -24,7 +24,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import { generateInterpretation, COLOR_DATA, COLOR_PERSONALITY_TRAITS } from '@/constants/colorData';
-import { getSampleReportButtonLabel, getSampleReportUrl } from '@/shared/sample-reports';
+import { getSampleReportButtonLabel } from '@/shared/sample-reports';
 // 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
 function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -268,16 +268,12 @@ export default function ResultScreen() {
     }
   };
 
-  // 무료 결과와 결제 경로를 분리한다. 공개 샘플은 가상 데이터 PDF만 새 창/외부 브라우저로 연다.
+  // 무료 결과와 결제 경로를 분리한다. 공개 샘플은 가상 데이터 전용 앱 내 열람 화면으로 연다.
   const handleOpenPersonalSamplePdf = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://husimcolor.vercel.app';
-    const url = getSampleReportUrl('personal_deep', origin);
-    if (!url) return;
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.open(url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    void Linking.openURL(url);
+    router.push({
+      pathname: '/(tabs)/sample-report',
+      params: { product: 'personal_deep', returnTo: 'free-result' },
+    } as any);
   };
 
   return (

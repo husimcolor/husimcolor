@@ -11,6 +11,10 @@
     "api/couple-pdf-report.ts": {
       "maxDuration": 30,
       "includeFiles": "server/assets/HusimPdfKorean.ttf"
+    },
+    "api/public-sample-report.ts": {
+      "maxDuration": 30,
+      "includeFiles": "public/sample-reports/*.pdf"
     }
   },
   "rewrites": [
@@ -20,6 +24,7 @@
     { "source": "/api/trpc/:path*", "destination": "/api/trpc/[...trpc]" },
     { "source": "/api/pdf-report", "destination": "/api/pdf-report" },
     { "source": "/api/couple-pdf-report", "destination": "/api/couple-pdf-report" },
+    { "source": "/api/public-sample-report", "destination": "/api/public-sample-report" },
     { "source": "/((?!_expo/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
@@ -75,6 +80,12 @@
       "source": "/sample-reports/(.*)\\.pdf",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    },
+    {
+      "source": "/api/public-sample-report",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
       ]
     }
   ]
