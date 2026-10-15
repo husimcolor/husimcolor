@@ -88,3 +88,27 @@ export function getSampleReportDownloadUrl(value: string | undefined, origin?: s
   const viewerUrl = getSampleReportViewerUrl(value, origin);
   return viewerUrl ? `${viewerUrl}&download=1` : null;
 }
+
+/**
+ * PDF.js가 동작하지 않는 인앱 브라우저를 위한 공개 페이지 이미지 대안이다.
+ * 이미지도 공개 샘플 allow-list를 벗어나지 않는 product·page 값만 조립한다.
+ */
+export function getSampleReportPageImageUrl(
+  value: string | undefined,
+  page: number,
+  origin?: string,
+): string | null {
+  const report = getSampleReport(value);
+  if (!report || !Number.isInteger(page) || page < 1 || page > report.pageCount) return null;
+  const pathname = `/sample-report-pages/${report.product}/page-${String(page).padStart(3, "0")}.jpg`;
+  if (!origin) return pathname;
+  return `${origin.replace(/\/$/, "")}${pathname}`;
+}
+
+/** 새 창에서도 PDF 파일이 아니라 같은 HTML canvas 열람 화면을 연다. */
+export function getSampleReportWebViewerUrl(value: string | undefined, origin?: string): string | null {
+  if (!isSampleReportProduct(value)) return null;
+  const pathname = `/sample-report?product=${encodeURIComponent(value)}`;
+  if (!origin) return pathname;
+  return `${origin.replace(/\/$/, "")}${pathname}`;
+}
