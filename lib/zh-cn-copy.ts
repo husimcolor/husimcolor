@@ -3,6 +3,7 @@ import { ZH_CN_INTERPRETATION_COPY } from "../shared/locales/zh-cn-interpretatio
 import { ZH_CN_STATIC_GAP_COPY } from "../shared/locales/zh-cn-static-gap-catalog";
 import { ZH_CN_STATIC_REVISED_COPY } from "../shared/locales/zh-cn-static-revision-catalog";
 import { ZH_CN_TEMPLATE_COPY, type ZhCnTemplateCopy } from "../shared/locales/zh-cn-template-catalog";
+import { ZH_CN_REVIEWED_OUTPUT_OVERRIDES } from "../shared/locales/zh-cn-reviewed-output-overrides";
 import type { AppLocale } from "../shared/localization";
 
 /**
@@ -22,7 +23,7 @@ const fragmentEntries = [...exact.entries()]
   .sort(([left], [right]) => right.length - left.length);
 
 /** 이미 검수한 파일럿 문체는 대량 locale catalog보다 우선한다. */
-const reviewedOverrides: Readonly<Record<string, string>> = {
+const reviewedOverridesBase: Readonly<Record<string, string>> = {
   "레드 · 블루 · 화이트 드러난 기본 성향을 바탕으로, 세 장의 심리카드는 무의식 · 현재흐름 · 회복방향 차례로 비춥니다.":
     "红色、蓝色与白色所呈现的基本心理特征，会通过三张心理卡依次展现为潜意识、当前状态与恢复方向。",
   "레드 · 블루 · 화이트에서 드러난 기본 성향을 바탕으로, 세 장의 카드는 무의식 · 현재흐름 · 회복방향을 차례로 비춥니다.":
@@ -61,6 +62,16 @@ const reviewedOverrides: Readonly<Record<string, string>> = {
     "在恢复方向卡中，丈夫呈现出把对生活意义的思考连接到小小反思与实践中的倾向；妻子则呈现出减少不必要紧张、轻松整理真诚连接所需标准的倾向。就蓝绿色而言，在理性地说“没关系”之前，不妨先轻声说出内心的疲惫。就橙色而言，在顾及氛围的同时，也需要不把自己的疲惫放在最后。重新协调共同空间与日常节奏时，可以一起约定再次交谈的时间，让各自的恢复方式成为支持这段关系的力量。",
   "무의식의 바탕에서 남편은 여러 새 시작을 하나의 방향으로 묶고 싶은 마음을, 아내는 깊은 공감과 직관을 신뢰하며 의미를 살피는 마음을 가질 수 있습니다.\n\n현재 대화에서는 남편은 상황을 정리해 균형을 찾으려는 편이고, 아내는 쌓인 감정을 안전하게 꺼내며 내면을 정리하려는 편입니다.\n\n갈등이나 피로 뒤에는 남편은 삶의 의미를 작은 성찰과 실천에 연결하려는 쪽으로, 아내는 불필요한 긴장을 덜고 진실한 연결의 기준을 가볍게 정돈하려는 쪽으로 회복을 선택해볼 수 있습니다.":
     "在潜意识的底色中，丈夫可能想把多个新的开始汇成一个方向；妻子可能重视深度共情与直觉，也愿意探索其中的意义。\n\n在当前对话中，丈夫可能更倾向于整理情境来找回平衡；妻子可能更倾向于在安全的前提下说出积累的情绪、整理内心。\n\n在冲突或疲惫之后，丈夫可以尝试把对生活意义的思考连接到小小的反思与实践中；妻子则可以尝试减少不必要的紧张，轻松整理真诚连接所需的标准。",
+};
+
+/**
+ * 상품별 실제 output을 한국어 원문과 대조해 완결 문장으로 교정한 사전이다.
+ * 조합형 catalog 또는 짧은 fragment 변환보다 앞서 적용해, 역할·호칭·주체가
+ * 한국어식 조립 문장으로 남지 않도록 한다.
+ */
+const reviewedOverrides: Readonly<Record<string, string>> = {
+  ...reviewedOverridesBase,
+  ...ZH_CN_REVIEWED_OUTPUT_OVERRIDES,
 };
 
 function escapeRegExp(value: string): string {

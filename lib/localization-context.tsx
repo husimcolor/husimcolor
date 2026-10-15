@@ -5,7 +5,7 @@ import {
   DEFAULT_LOCALE,
   LOCALE_STORAGE_KEY,
   UI_MESSAGES,
-  ZH_CN_COPY_VERSION,
+  copyVersionForLocale,
   isAppLocale,
   type AppLocale,
   type UiMessageKey,
@@ -47,7 +47,7 @@ export function LocalizationProvider({ children }: { children: ReactNode }) {
   const value = useMemo<LocalizationContextValue>(() => ({
     locale,
     ready,
-    copyVersion: locale === "zh-CN" ? ZH_CN_COPY_VERSION : "ko-canonical",
+    copyVersion: copyVersionForLocale(locale),
     setLocale,
     t: (key) => UI_MESSAGES[locale][key],
   }), [locale, ready, setLocale]);
@@ -59,4 +59,23 @@ export function useLocalization() {
   const value = useContext(LocalizationContext);
   if (!value) throw new Error("LocalizationProvider is required");
   return value;
+}
+
+/**
+ * 저장된 결과의 언어를 화면·공유 카드까지 일관되게 고정한다.
+ * 상위 앱 선택 언어와 달라도, 과거 결과의 언어를 다시 변환하지 않는다.
+ */
+export function ResultLocaleProvider({ locale, copyVersion, children }: {
+  locale: AppLocale;
+  copyVersion?: string;
+  children: ReactNode;
+}) {
+  const parent = useLocalization();
+  const value = useMemo<LocalizationContextValue>(() => ({
+    ...parent,
+    locale,
+    copyVersion: copyVersion ?? copyVersionForLocale(locale),
+    t: (key) => UI_MESSAGES[locale][key],
+  }), [parent, locale, copyVersion]);
+  return <LocalizationContext.Provider value={value}>{children}</LocalizationContext.Provider>;
 }

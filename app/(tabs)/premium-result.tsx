@@ -34,9 +34,10 @@ import { COACHING_BOOKING_URL } from "@/shared/coaching-booking";
 import { PremiumShareSummaryCard } from "@/components/premium-share-summary-card";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { getCommerceAnalysisDelivery } from "@/lib/commerce-access";
-import { useLocalization } from "@/lib/localization-context";
+import { ResultLocaleProvider, useLocalization } from "@/lib/localization-context";
 import { localizePayload } from "@/lib/zh-cn-copy";
 import { buildPrivatePdfDownloadUrl, isKakaoTalkInAppBrowser, openInExternalBrowser, requestWebPdfDownload } from "@/lib/kakao-pdf-download";
+import { copyVersionForLocale, resolveStoredResultLocale, type AppLocale } from "@/shared/localization";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
@@ -517,6 +518,8 @@ export default function PremiumResultScreen() {
   const colors = useColors();
   const router = useRouter();
   const { locale, copyVersion } = useLocalization();
+  const [resultLocale, setResultLocale] = useState<AppLocale>(locale);
+  const [resultCopyVersion, setResultCopyVersion] = useState(copyVersion);
   const [cards, setCards] = useState<CardData[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
    const [prevColors, setPrevColors] = useState<ColorData[]>([]);
@@ -542,6 +545,21 @@ export default function PremiumResultScreen() {
   const updateReviewMutation = trpc.reviews.update.useMutation();
   const logVisitor = trpc.visitors.log.useMutation();
   const queueAndSendPdf = trpc.commerce.delivery.queueAndSendPdf.useMutation();
+  useEffect(() => {
+    let active = true;
+    void getCommerceAnalysisDelivery("personal_deep").then((delivery) => {
+      if (!active) return;
+      if (!delivery) {
+        setResultLocale(locale);
+        setResultCopyVersion(copyVersion);
+        return;
+      }
+      const storedLocale = resolveStoredResultLocale(delivery.locale);
+      setResultLocale(storedLocale);
+      setResultCopyVersion(delivery.copyVersion ?? copyVersionForLocale(storedLocale));
+    });
+    return () => { active = false; };
+  }, [locale, copyVersion]);
 
   const handleReviewSubmit = async () => {
     if (reviewRating === 0) {
@@ -731,8 +749,8 @@ export default function PremiumResultScreen() {
         },
         coachingUrl: COACHING_BOOKING_URL,
       });
-      payload.locale = delivery.locale ?? locale;
-      payload.copyVersion = delivery.copyVersion ?? copyVersion;
+      payload.locale = delivery.locale ?? resultLocale;
+      payload.copyVersion = delivery.copyVersion ?? resultCopyVersion;
       try {
         await queueAndSendPdf.mutateAsync({
           analysisRunId: delivery.analysisRunId,
@@ -761,17 +779,17 @@ export default function PremiumResultScreen() {
 
   const [card1, card2, card3] = cards;
   const stage1Interpretation = prevColors.length >= 3
-    ? localizePayload(buildPremiumStage1Interpretation(prevColors), locale)
+    ? localizePayload(buildPremiumStage1Interpretation(prevColors), resultLocale)
     : undefined;
-  const stage2Cards = localizePayload(buildStage2CardInterpretations([card1, card2, card3]), locale);
-  const stage2Bridge = localizePayload(buildStage2ColorBridge(prevColors), locale);
+  const stage2Cards = localizePayload(buildStage2CardInterpretations([card1, card2, card3]), resultLocale);
+  const stage2Bridge = localizePayload(buildStage2ColorBridge(prevColors), resultLocale);
 
   // 삶의 역할 Archetype + 오행 기반 에너지 흐름 해석 (jobCoaching보다 먼저 계산)
   const lifeEnergyResult: LifeEnergyResult = localizePayload(buildLifeEnergyResult(
     prevColors.length >= 3 ? prevColors.map((c) => c.id) : [card1.color, card2.color, card3.color],
     [card1, card2, card3].map((c) => ({ color: c.color, shape: c.shape })),
     card3.complementColors,
-  ), locale);
+  ), resultLocale);
   const customRecoveryRoutine = buildCustomRecoveryRoutine(
     lifeEnergyResult.complementaryFiveElements.elements,
     card3.wellness,
@@ -782,7 +800,7 @@ export default function PremiumResultScreen() {
     prevColors.length >= 3 ? prevColors.map((color) => color.id) : [card1.color, card2.color, card3.color],
     [card1, card2, card3].map((card) => ({ color: card.color, shape: card.shape })),
     profile?.age ?? '',
-  ), locale);
+  ), resultLocale);
   // 오행 흐름 유형 및 메인 Archetype 키 추출 (성경구절 매칭용)
   const _lifeFlowType = lifeEnergyResult.flowType;
   const _archetypeKey = lifeEnergyResult.archetypes[0]?.key ?? '';
@@ -932,8 +950,8 @@ export default function PremiumResultScreen() {
           pdfDownloadTimersRef.current.push(setTimeout(() => setPdfDownloadMessage(null), 3_000));
         }, 250);
         const payload = buildPremiumPdfDownloadPayload(reportInput);
-        payload.locale = delivery?.locale ?? locale;
-        payload.copyVersion = delivery?.copyVersion ?? copyVersion;
+        payload.locale = delivery?.locale ?? resultLocale;
+        payload.copyVersion = delivery?.copyVersion ?? resultCopyVersion;
         submitServerPdfDownload(payload, requestId);
         pdfDownloadTimersRef.current.push(
           setTimeout(() => {
@@ -1009,6 +1027,7 @@ export default function PremiumResultScreen() {
   };
 
   return (
+    <ResultLocaleProvider locale={resultLocale} copyVersion={resultCopyVersion}>
     <ScreenContainer>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -1660,6 +1679,7 @@ export default function PremiumResultScreen() {
         </ViewShot>
       </View>
     </ScreenContainer>
+    </ResultLocaleProvider>
   );
 }
 

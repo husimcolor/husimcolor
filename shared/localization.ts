@@ -16,6 +16,19 @@ export function isAppLocale(value: unknown): value is AppLocale {
   return typeof value === "string" && (APP_LOCALES as readonly string[]).includes(value);
 }
 
+/** 새 결과에 기록하는 문안 버전이며 기존 null/undefined 레코드는 한국어로 읽는다. */
+export function copyVersionForLocale(locale: AppLocale): string {
+  return locale === "zh-CN" ? ZH_CN_COPY_VERSION : "ko-canonical";
+}
+
+/**
+ * 결과·공유 스냅샷에 기록된 언어를 우선한다.
+ * 과거 레코드에 locale이 없으면 기존 한국어 원문을 그대로 유지한다.
+ */
+export function resolveStoredResultLocale(value: unknown): AppLocale {
+  return value === "zh-CN" ? "zh-CN" : DEFAULT_LOCALE;
+}
+
 export function isZhCn(locale: AppLocale | undefined | null): locale is "zh-CN" {
   return locale === "zh-CN";
 }

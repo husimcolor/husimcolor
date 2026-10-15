@@ -30,7 +30,7 @@ import { buildParentChildPdfDownloadPayload } from '@/lib/parent-child-pdf-downl
 import { getParentChildLabels } from '@/lib/parent-child-coaching';
 import { buildPrivatePdfDownloadUrl, isKakaoTalkInAppBrowser, openInExternalBrowser, requestWebPdfDownload } from '@/lib/kakao-pdf-download';
 import { buildParentChildRelationshipAnalysis } from '@/lib/parent-child-relationship-analysis';
-import { useLocalization } from '@/lib/localization-context';
+import { ResultLocaleProvider, useLocalization } from '@/lib/localization-context';
 import { localizePayload } from '@/lib/zh-cn-copy';
 import {
   PARENT_CHILD_PRIORITY_PILOT,
@@ -42,6 +42,7 @@ import {
   getCoupleLoverContextReviewSession,
 } from '@/lib/couple-lover-context-review';
 import { getCoupleShareSessionSignature, type CoupleShareSnapshot } from '@/shared/couple-share';
+import { copyVersionForLocale, resolveStoredResultLocale, type AppLocale } from '@/shared/localization';
 
 // ─── SectionCard ─────────────────────────────────────────────────────────────
 const sectionStyles = StyleSheet.create({
@@ -112,6 +113,8 @@ function buildCoupleShareSnapshot(
   coupleAnalysis: CoupleAnalysis,
   archetypeResult: ArchetypeResult,
   lightArchetypeResult: LightArchetypeResult | null,
+  locale: AppLocale,
+  copyVersion: string,
 ): CoupleShareSnapshot {
   const isRomanticRel = sessionData.relationType === '연인' || sessionData.relationType === '부부';
   const colorsA = sessionData.personA.colors.map((id) => COLOR_DATA.find((color) => color.id === id)).filter(Boolean);
@@ -166,6 +169,8 @@ function buildCoupleShareSnapshot(
 
   return {
     schemaVersion: 1,
+    locale,
+    copyVersion,
     // 이전 검사에서 AsyncStorage에 남아 있을 수 있는 shareId는 새 공유 스냅샷에 재사용하지 않는다.
     sessionData: immutableSessionData,
     personAAnalysis,
@@ -191,6 +196,8 @@ function buildCoupleShareSnapshot(
 export default function CoupleResultScreen() {
   const router = useRouter();
   const { locale, copyVersion } = useLocalization();
+  const [resultLocale, setResultLocale] = useState<AppLocale>(locale);
+  const [resultCopyVersion, setResultCopyVersion] = useState(copyVersion);
   const routeParams = useLocalSearchParams<{
     shareId?: string | string[];
     resultToken?: string | string[];
@@ -299,11 +306,14 @@ export default function CoupleResultScreen() {
     setSharedSnapshot(snapshot);
     setActiveShareId(requestedShareId);
     setSessionData(snapshot.sessionData);
-    setPersonAAnalysis(localizePayload(snapshot.personAAnalysis, locale));
-    setPersonBAnalysis(localizePayload(snapshot.personBAnalysis, locale));
-    setCoupleAnalysis(localizePayload(snapshot.coupleAnalysis, locale));
-    setArchetypeResult(localizePayload(snapshot.archetypeResult, locale));
-    setLightArchetypeResult(localizePayload(snapshot.lightArchetypeResult, locale));
+    const snapshotLocale = resolveStoredResultLocale(snapshot.locale);
+    setResultLocale(snapshotLocale);
+    setResultCopyVersion(snapshot.copyVersion ?? copyVersionForLocale(snapshotLocale));
+    setPersonAAnalysis(localizePayload(snapshot.personAAnalysis, snapshotLocale));
+    setPersonBAnalysis(localizePayload(snapshot.personBAnalysis, snapshotLocale));
+    setCoupleAnalysis(localizePayload(snapshot.coupleAnalysis, snapshotLocale));
+    setArchetypeResult(localizePayload(snapshot.archetypeResult, snapshotLocale));
+    setLightArchetypeResult(localizePayload(snapshot.lightArchetypeResult, snapshotLocale));
     setLoading(false);
   }, [requestedShareId, sharedResultQuery.data, sharedResultQuery.isLoading]);
 
@@ -320,11 +330,14 @@ export default function CoupleResultScreen() {
     setSharedSnapshot(snapshot);
     setActiveShareId(null);
     setSessionData(snapshot.sessionData);
-    setPersonAAnalysis(localizePayload(snapshot.personAAnalysis, locale));
-    setPersonBAnalysis(localizePayload(snapshot.personBAnalysis, locale));
-    setCoupleAnalysis(localizePayload(snapshot.coupleAnalysis, locale));
-    setArchetypeResult(localizePayload(snapshot.archetypeResult, locale));
-    setLightArchetypeResult(localizePayload(snapshot.lightArchetypeResult, locale));
+    const snapshotLocale = resolveStoredResultLocale(snapshot.locale);
+    setResultLocale(snapshotLocale);
+    setResultCopyVersion(snapshot.copyVersion ?? copyVersionForLocale(snapshotLocale));
+    setPersonAAnalysis(localizePayload(snapshot.personAAnalysis, snapshotLocale));
+    setPersonBAnalysis(localizePayload(snapshot.personBAnalysis, snapshotLocale));
+    setCoupleAnalysis(localizePayload(snapshot.coupleAnalysis, snapshotLocale));
+    setArchetypeResult(localizePayload(snapshot.archetypeResult, snapshotLocale));
+    setLightArchetypeResult(localizePayload(snapshot.lightArchetypeResult, snapshotLocale));
     setLoading(false);
   }, [requestedResultToken, requestedRelationshipToken, relationshipResultQuery.data, relationshipResultQuery.isLoading]);
 
@@ -351,6 +364,8 @@ export default function CoupleResultScreen() {
     try {
       setSharedSnapshot(null);
       setActiveShareId(null);
+      setResultLocale(locale);
+      setResultCopyVersion(copyVersion);
       coupleShareRequestRef.current = null;
       const raw = await AsyncStorage.getItem('@couple_session');
       if (!raw) { setError('세션 데이터를 찾을 수 없습니다.'); setLoading(false); return; }
@@ -777,6 +792,8 @@ export default function CoupleResultScreen() {
       coupleAnalysis,
       archetypeResult,
       lightArchetypeResult,
+      resultLocale,
+      resultCopyVersion,
     );
     const sessionSignature = getCoupleShareSessionSignature(snapshot.sessionData);
     const inFlightRequest = coupleShareRequestRef.current;
@@ -1000,8 +1017,8 @@ export default function CoupleResultScreen() {
           closingMessage: archetypeResult.closingMessage ?? coupleAnalysis.closingMessage,
         },
       });
-      payload.locale = locale;
-      payload.copyVersion = copyVersion;
+      payload.locale = resultLocale;
+      payload.copyVersion = resultCopyVersion;
       if (Platform.OS !== 'web') {
         throw new Error('부부·연인 PDF는 모바일 웹 브라우저에서 저장할 수 있습니다.');
       }
@@ -1120,8 +1137,8 @@ export default function CoupleResultScreen() {
           closingMessage: parentChildSummary.closingMessage,
         },
       });
-      payload.locale = locale;
-      payload.copyVersion = copyVersion;
+      payload.locale = resultLocale;
+      payload.copyVersion = resultCopyVersion;
       setParentChildPdfDownloadState('requesting');
       setParentChildPdfDownloadMessage('다운로드 중입니다. 잠시만 기다려 주세요.');
       const requestId = `parent_child_pdf_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
@@ -1207,6 +1224,7 @@ export default function CoupleResultScreen() {
     ? Math.max(insets.top, 16)
     : 0;
   return (
+    <ResultLocaleProvider locale={resultLocale} copyVersion={resultCopyVersion}>
     <ScreenContainer className="relation-result-webview">
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: topPad }}>
@@ -2295,6 +2313,7 @@ export default function CoupleResultScreen() {
           <View style={{ height: 60 }} />
       </ScrollView>
     </ScreenContainer>
+    </ResultLocaleProvider>
   );
 }
 
