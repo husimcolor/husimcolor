@@ -15,12 +15,17 @@ export async function getDb() {
       const rawUrl = process.env.DATABASE_URL;
       // Strip the ssl=... query param and pass ssl config explicitly
       const urlWithoutSsl = rawUrl.replace(/[?&]ssl=[^&]*/g, "").replace(/\?$/, "");
+      // Production defaults to TLS. An explicit opt-in is only for an isolated
+      // local test database that has no TLS listener; deployments never set it.
+      const disableSslForLocalTest = process.env.DATABASE_SSL_DISABLED === "true";
       const pool = mysql.createPool({
         uri: urlWithoutSsl,
-        ssl: {
-          rejectUnauthorized: false,
-          minVersion: 'TLSv1.2',
-        },
+        ...(disableSslForLocalTest ? {} : {
+          ssl: {
+            rejectUnauthorized: false,
+            minVersion: 'TLSv1.2',
+          },
+        }),
         waitForConnections: true,
         connectionLimit: 5,
         connectTimeout: 15000,
