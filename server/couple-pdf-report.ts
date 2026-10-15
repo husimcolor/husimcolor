@@ -48,7 +48,7 @@ function displayRole(document: PdfWriter, value: string) {
   const exact = roles[value];
   if (exact) return exact;
   const prefix = Object.keys(roles).find((role) => value.startsWith(`${role} · `));
-  return prefix ? `${roles[prefix]} · ${value.slice(prefix.length + 3)}` : localizedPdfText(document, value);
+  return prefix ? `${roles[prefix]} · ${localizedPdfText(document, value.slice(prefix.length + 3))}` : localizedPdfText(document, value);
 }
 
 function correctPdfText(value: string) {
@@ -457,8 +457,9 @@ export async function createCouplePdfBuffer(payload: CouplePdfDownloadPayload): 
   (document as any).__locale = locale;
 
   document.rect(0, 0, 595, 842).fill("#F8F4EE");
-  document.fillColor("#5F8069").fontSize(12).text("HUSIM COLOR · COUPLE RELATIONSHIP REPORT", PAGE_LEFT, 160, { width: CONTENT_WIDTH });
-  document.fillColor("#3D3530").fontSize(25).text(locale === "zh-CN" ? "夫妻关系报告" : `${payload.relationType} 관계 리포트`, PAGE_LEFT, 198, { width: CONTENT_WIDTH });
+  const zhRelationshipTitle = payload.relationType === "연인" ? "恋人关系报告" : "夫妻关系报告";
+  document.fillColor("#5F8069").fontSize(12).text(locale === "zh-CN" ? `HUSIM COLOR · ${zhRelationshipTitle}` : "HUSIM COLOR · COUPLE RELATIONSHIP REPORT", PAGE_LEFT, 160, { width: CONTENT_WIDTH });
+  document.fillColor("#3D3530").fontSize(25).text(locale === "zh-CN" ? zhRelationshipTitle : `${payload.relationType} 관계 리포트`, PAGE_LEFT, 198, { width: CONTENT_WIDTH });
   document.fillColor("#685C51").fontSize(12).text(locale === "zh-CN" ? "从两人的色彩与心理卡变化，理解关系中的连接与恢复方向" : "두 사람의 컬러와 심리카드 흐름으로 읽는 관계의 연결과 회복", PAGE_LEFT, 240, { width: CONTENT_WIDTH });
   if (payload.sampleNotice) {
     document.fillColor("#80649B").fontSize(10.5).text(clean(localizedPdfText(document, payload.sampleNotice)), PAGE_LEFT, 270, { width: CONTENT_WIDTH });

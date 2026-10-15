@@ -727,6 +727,7 @@ export default function PremiumResultScreen() {
       const archetypeKey = lifeEnergyResult.archetypes[0]?.key ?? "";
       const jobCoaching = getJobCoaching(profile.job, profile.faith, thirdCard?.color, profile.concerns, flowType, archetypeKey);
       const payload = buildPremiumPdfDownloadPayload({
+        locale: resultLocale,
         profile,
         selectedColors: prevColors,
         stage1Interpretation,
@@ -890,6 +891,7 @@ export default function PremiumResultScreen() {
     try {
       const colorFlowDescription = buildPremiumColorFlowDescription(prevColors);
       const reportInput = {
+        locale: resultLocale,
         profile,
         selectedColors: prevColors,
         stage1Interpretation,
