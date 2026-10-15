@@ -86,6 +86,8 @@
 
 운영에서는 GitHub Actions의 **Apply approved Production zh-CN locale metadata migration** workflow가 Vercel Production 환경을 private하게 pull한 뒤, 명시적 confirmation 문자열 없이는 실행되지 않도록 구성했다. workflow artifact에는 비밀값 없이 migration JSON 결과만 보관한다.
 
+적용 직전 workflow는 `analysis_runs`, `relationship_sessions`, `email_outbox` 세 테이블의 **DDL만** `zh-cn-locale-schema-before.sql` artifact로 보관한다. 고객 행, 주문, PDF, 이메일 본문, 암호문이나 접속 정보는 백업 artifact에 포함하지 않는다. 이 schema artifact와 migration JSON은 90일 보관한다.
+
 **복구:** 배포 직후 문제 시 Vercel을 직전 production deployment로 rollback하고 application revision만 되돌린다. 이미 생성된 zh-CN 결과가 없고 migration 직후에만 필요할 경우에 한해, artifact의 `appliedColumns`에 기재된 새 nullable 열만 별도 승인 후 제거할 수 있다. 새 결과가 생성된 뒤에는 열을 삭제하지 않고 application rollback만 사용한다. 기존 고객 데이터·PDF·주문·outbox는 어떤 복구 단계에서도 갱신·재생성·재발송하지 않는다.
 
 ## 4. 자동 검증

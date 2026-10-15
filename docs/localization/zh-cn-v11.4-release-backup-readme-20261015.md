@@ -57,6 +57,7 @@ pnpm exec tsx scripts/relationship-invite-e2e.ts
 ```
 
 운영 schema migration은 GitHub Actions의 **Apply approved Production zh-CN locale metadata migration**만 사용한다. Vercel Production environment은 workflow 내부에서만 private pull하고, `.env.production`은 완료 시 삭제한다.
+이 workflow는 적용 전에 영향 테이블 3개의 DDL만 artifact로 남기며, 고객 행·PDF·주문·outbox payload는 artifact에 저장하지 않는다.
 
 ## 기밀·고객 데이터 제외
 
