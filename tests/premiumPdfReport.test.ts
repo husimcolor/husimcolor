@@ -75,6 +75,41 @@ describe("유료 결과 PDF 리포트", () => {
     expect(html).toContain("break-inside: avoid-page");
   });
 
+  it("네이티브 PDF도 저장된 zh-CN locale에서 한국어 제목·카드 표기를 남기지 않는다", () => {
+    const zhHtml = buildPremiumPdfHtml({
+      locale: "zh-CN",
+      profile: null,
+      selectedColors: colors,
+      stage1Interpretation: stage1,
+      cards,
+      stage2Bridge: buildStage2ColorBridge(colors),
+      stage2Cards,
+      complementColors: cards[2].complementColors,
+      colorFlowDescription: "레드·블루·화이트의 현재 성향 설명입니다.",
+      combinedCoaching: "웹 화면에 표시되는 지금 마음의 흐름입니다.",
+      scripture: { label: "🌿 오늘의 위로", text: "웹 결과의 위로 문구입니다.", ref: "" },
+      lifeRoleReport: lifeRole,
+      lifeEnergyResult: energy,
+      customRecoveryRoutine: {
+        tea: cards[2].wellness.tea,
+        food: routine.food,
+        breath: routine.breath,
+        movement: routine.movement,
+        smallPractice: routine.smallPractice,
+        message: routine.message,
+      },
+      coachingUrl: "https://naver.me/ID3fxw2W",
+    });
+    expect(zhHtml).toContain('<html lang="zh-CN">');
+    expect(zhHtml).toContain("第1张心理卡");
+    expect(zhHtml).toContain("主要心理特征");
+    expect(zhHtml).toContain("Noto Sans CJK SC");
+    expect(zhHtml).toContain("HUSIM COLOR · 个人深度分析报告");
+    expect(zhHtml).not.toContain("第1种颜色");
+    expect(zhHtml).not.toContain("나의 컬러 심리 리포트");
+    expect(zhHtml).not.toContain("지금 마음의 흐름");
+  });
+
   it("결과 화면이 간단 결과 공유와 별개로 PDF 다운로드 CTA를 제공한다", () => {
     const source = readFileSync(resolve(process.cwd(), "app/(tabs)/premium-result.tsx"), "utf8");
     expect(source).toContain("결과 공유하기");
@@ -160,6 +195,10 @@ describe("유료 결과 PDF 리포트", () => {
     expect(source).toContain("BODY_TEXT_SIZE = 18.5");
     expect(source).toContain("BODY_LABEL_SIZE = 16");
     expect(source).toContain("BODY_LINE_GAP = 7.5");
+    expect(source).toContain('const complementDescription = "현재 흐름에서 과해지기 쉬운 결을 누그러뜨리고, 회복 방향을 돕는 컬러입니다."');
+    expect(source).toContain('writeSectionTitle(document, "추천 보완컬러", "#8B6914", textHeight(document, complementDescription');
+    expect(source).toContain('replace(/^[^\\p{L}\\p{N}]+/u, "")');
+    expect(source).not.toContain('replace(/^[^가-힣A-Za-z0-9]+/, "")');
     const nativeHtmlSource = readFileSync(resolve(process.cwd(), "lib/premium-pdf-report.ts"), "utf8");
     expect(nativeHtmlSource).toContain("font-size: 18.5pt; line-height: 1.9");
     expect(source).not.toContain("`• ${value}`");
@@ -226,6 +265,6 @@ describe("유료 결과 PDF 리포트", () => {
     expect(server).toContain("function writeParagraphBlocks");
     expect(server).toContain("writeParagraphBlocks(document, payload.combinedCoaching);");
     expect(nativeHtml).toContain("const cardFlowParagraphs = input.combinedCoaching");
-    expect(nativeHtml).toContain('section("지금 마음의 흐름", cardFlowParagraphs)');
+    expect(nativeHtml).toContain("section(copy.currentFlow, cardFlowParagraphs)");
   });
 });

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -12,8 +11,11 @@ import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenContainer } from "@/components/screen-container";
+import { LocalizedText as Text } from "@/components/localized-text";
 import { useColors } from "@/hooks/use-colors";
 import { COLOR_DATA, type ColorData } from "@/constants/colorData";
+import { getLocalizedColorName } from "@/lib/free-result-localization";
+import { useLocalization } from "@/lib/localization-context";
 import {
   buildPremiumStage1Interpretation,
   type PremiumStage1Interpretation,
@@ -59,6 +61,7 @@ function getSwatchTextShadow(hex: string): object {
 
 export default function PremiumColorSelectScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [selectedColors, setSelectedColors] = useState<ColorData[]>([]);
@@ -148,7 +151,7 @@ export default function PremiumColorSelectScreen() {
               ]}
             >
               {selectedColors[i] ? (
-                <Text style={styles.selectedSlotText}>{selectedColors[i].korName}</Text>
+                <Text style={styles.selectedSlotText}>{getLocalizedColorName(selectedColors[i], locale)}</Text>
               ) : (
                 <Text style={[styles.selectedSlotEmpty, { color: '#8A7A68' }]}>{i + 1}번</Text>
               )}
@@ -180,7 +183,7 @@ export default function PremiumColorSelectScreen() {
                     </View>
                   )}
                   <Text style={[styles.swatchLabel, { color: getSwatchTextColor(color.hex), ...getSwatchTextShadow(color.hex) }]}>
-                    {color.korName}
+                    {getLocalizedColorName(color, locale)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -231,7 +234,7 @@ export default function PremiumColorSelectScreen() {
                 {selectedColors.map((c, i) => (
                   <View key={c.id} style={styles.colorSummaryItem}>
                     <View style={[styles.colorDot, { backgroundColor: c.hex }, getLightColorBorder(c.hex)]} />
-                    <Text style={[styles.colorSummaryName, { color: '#3D3530' }]}>{c.korName}</Text>
+                    <Text style={[styles.colorSummaryName, { color: '#3D3530' }]}>{getLocalizedColorName(c, locale)}</Text>
                     <Text style={[styles.colorSummaryKeyword, { color: '#8A7A68' }]} numberOfLines={2}>
                       {c.keywords.slice(0, 3).join(" · ")}
                     </Text>

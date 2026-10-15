@@ -237,11 +237,12 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(submittedBranch).not.toContain("{message ? <Text style={styles.message}>{message}</Text> : null}");
   });
 
-  it("유료 공개 gate와 무료 친구 관계 경로를 변경하지 않는다", () => {
+  it("유료 공개 진입과 무료 친구 관계 경로를 함께 보존한다", () => {
     const start = read("app/(tabs)/couple-start.tsx");
     const checkout = read("app/(tabs)/commerce-checkout.tsx");
     expect(start).toContain("setRelationType('친구')");
-    expect(start).toContain("paidProductPreparing ? '정식 오픈 준비중'");
+    expect(start).toContain("다음 · 두 사람 정보 입력하기 →");
+    expect(start).toContain("if (paidProductCode && paidAnalysisPublicEnabled && tossPaymentEnabled)");
     expect(checkout).toContain("if (!paidAnalysisPublicEnabled)");
   });
 });

@@ -9,15 +9,18 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Alert,
+  View, ScrollView, StyleSheet, Alert,
   TouchableOpacity, Animated,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CARD_DATA } from '@/constants/cardData';
 import { COLOR_DATA } from '@/constants/colorData';
+import { useLocalization } from '@/lib/localization-context';
+import { localizeStaticCopy } from '@/lib/zh-cn-copy';
 import type { CoupleSessionData, PersonSession } from '@/constants/coupleData';
 import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from '@/lib/couple-color-card-analysis';
 import { splitCoupleReadableParagraphs } from '@/lib/couple-readable-text';
@@ -334,6 +337,7 @@ function one(value: string | string[] | undefined) {
 
 export default function CoupleCardResultScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const insets = useSafeAreaInsets();
   const { person, relationshipToken, inviteToken, resultToken } = useLocalSearchParams<{
     person: 'A' | 'B';
@@ -526,7 +530,7 @@ export default function CoupleCardResultScreen() {
                 {prevColors.map((c, i) => (
                   <View key={i} style={styles.prevColorItem}>
                     <View style={[styles.prevColorDot, { backgroundColor: c.hex }]} />
-                    <Text style={[styles.prevColorName, { color: accentColor }]}>{c.korName}</Text>
+                    <Text style={[styles.prevColorName, { color: accentColor }]}>{localizeStaticCopy(c.korName, locale)}</Text>
                   </View>
                 ))}
               </View>
@@ -543,13 +547,13 @@ export default function CoupleCardResultScreen() {
                   }]}>{card.shapeSymbol}</Text>
                   <Text style={[styles.cardColorName, {
                     color: isLightCard(card) ? '#4A3728' : 'rgba(255,255,255,0.95)',
-                  }]}>{card.colorKor}</Text>
+                  }]}>{localizeStaticCopy(card.colorKor, locale)}</Text>
                 </View>
                 <View style={styles.cardHeaderInfo}>
                   <Text style={[styles.positionLabel, { color: POSITION_COLORS[i] }]}>
-                    {i + 1}번 · {POSITION_LABELS[i]}
+                    {`${i + 1}번 · ${POSITION_LABELS[i]}`}
                   </Text>
-                  <Text style={styles.cardName}>{card.colorKor} · {card.shapeKor}</Text>
+                  <Text style={styles.cardName}>{localizeStaticCopy(`${card.colorKor} · ${card.shapeKor}`, locale)}</Text>
                   <Text style={styles.positionDesc}>{POSITION_DESCS[i]}</Text>
                 </View>
               </View>

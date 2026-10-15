@@ -1,8 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
-
 import type { PremiumShareCardData } from "@/lib/premium-share-card";
-
+import { useLocalization } from "@/lib/localization-context";
+import { localizeStaticCopy } from "@/lib/zh-cn-copy";
 export function PremiumShareSummaryCard({ data }: { data: PremiumShareCardData }) {
+  const { locale } = useLocalization();
+  const copy = (value: string) => localizeStaticCopy(value, locale);
   return (
     <View style={styles.card} collapsable={false}>
       <View style={styles.header}>
@@ -14,16 +16,16 @@ export function PremiumShareSummaryCard({ data }: { data: PremiumShareCardData }
           </View>
           <Text style={styles.brand}>HUSIM COLOR</Text>
         </View>
-        <Text style={styles.title}>나의 컬러 심리 해석</Text>
-        <Text style={styles.subtitle}>색과 도형이 보여준 오늘의 마음 흐름</Text>
+        <Text style={styles.title}>{copy("나의 컬러 심리 해석")}</Text>
+        <Text style={styles.subtitle}>{copy("색과 도형이 보여준 오늘의 마음 흐름")}</Text>
       </View>
 
       <View style={styles.colorRow}>
         {data.colors.map((color, index) => (
           <View key={`${color.name}-${index}`} style={styles.colorChip}>
             <View style={[styles.colorDot, { backgroundColor: color.hex }]} />
-            <Text style={styles.colorName} numberOfLines={1}>{color.name}</Text>
-            <Text style={styles.shape} numberOfLines={1}>{color.shape}</Text>
+            <Text style={styles.colorName} numberOfLines={1}>{copy(color.name)}</Text>
+            <Text style={styles.shape} numberOfLines={1}>{copy(color.shape)}</Text>
           </View>
         ))}
       </View>
@@ -33,37 +35,37 @@ export function PremiumShareSummaryCard({ data }: { data: PremiumShareCardData }
           <View key={card.index} style={styles.cardRow}>
             <View style={styles.numberBadge}><Text style={styles.numberText}>{card.index}</Text></View>
             <View style={styles.cardCopy}>
-              <Text style={styles.cardLabel}>{card.label} <Text style={styles.cardMeta}>· {card.colorShape}</Text></Text>
-              <Text style={styles.cardSummary}>{card.summary}</Text>
+              <Text style={styles.cardLabel}>{copy(card.label)} <Text style={styles.cardMeta}>· {copy(card.colorShape)}</Text></Text>
+              <Text style={styles.cardSummary}>{copy(card.summary)}</Text>
             </View>
           </View>
         ))}
       </View>
 
       <View style={[styles.section, styles.greenSection]}>
-        <Text style={styles.sectionLabel}>지금 마음의 흐름</Text>
-        <Text style={styles.highlightText}>{data.currentFlow}</Text>
+        <Text style={styles.sectionLabel}>{copy("지금 마음의 흐름")}</Text>
+        <Text style={styles.highlightText}>{copy(data.currentFlow)}</Text>
       </View>
 
       <View style={[styles.section, styles.purpleSection]}>
-        <Text style={styles.sectionLabel}>나의 역할 에너지</Text>
-        <Text style={styles.roleTitle}>{data.role.title}</Text>
-        <Text style={styles.roleDescription}>{data.role.description}</Text>
+        <Text style={styles.sectionLabel}>{copy("나의 삶의 역할 에너지")}</Text>
+        <Text style={styles.roleTitle}>{copy(data.role.title)}</Text>
+        <Text style={styles.roleDescription}>{copy(data.role.description)}</Text>
       </View>
 
       <View style={styles.energyBox}>
-        <Text style={styles.energyLine}><Text style={styles.energyLabel}>현재 주요 오행</Text> {data.currentElements.join(' · ')}</Text>
-        <Text style={styles.energyLine}><Text style={styles.energyLabel}>보완 에너지</Text> {data.complementaryElements.join(' · ')}</Text>
-        <Text style={styles.energyLine}><Text style={styles.energyLabel}>추천 보완컬러</Text> {data.complementaryColors.join(' · ') || '현재 결과의 추천 보완컬러'}</Text>
+        <Text style={styles.energyLine}><Text style={styles.energyLabel}>{copy("현재 주요 오행")}</Text> {copy(data.currentElements.join(' · '))}</Text>
+        <Text style={styles.energyLine}><Text style={styles.energyLabel}>{copy("보완 에너지")}</Text> {copy(data.complementaryElements.join(' · '))}</Text>
+        <Text style={styles.energyLine}><Text style={styles.energyLabel}>{copy("추천 보완컬러")}</Text> {copy(data.complementaryColors.join(' · ') || '현재 결과의 추천 보완컬러')}</Text>
       </View>
 
       <View style={styles.messageBox}>
-        <Text style={styles.messageLabel}>오늘의 회복 메시지</Text>
-        <Text style={styles.messageText}>{data.recoveryMessage}</Text>
+        <Text style={styles.messageLabel}>{copy("오늘의 회복 메시지")}</Text>
+        <Text style={styles.messageText}>{copy(data.recoveryMessage)}</Text>
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerBrand}>휴심컬러</Text>
+        <Text style={styles.footerBrand}>{copy("휴심컬러")}</Text>
         <Text style={styles.footerUrl}>husimcolor.vercel.app</Text>
       </View>
     </View>

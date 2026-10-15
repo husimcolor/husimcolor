@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
 import {
   View,
-  Text,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,9 +15,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenContainer } from '@/components/screen-container';
+import { LocalizedText as Text } from '@/components/localized-text';
 import { useColorContext } from '@/lib/colorContext';
 import { COLOR_DATA, ColorData } from '@/constants/colorData';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
+import { useLocalization } from '@/lib/localization-context';
+import { getLocalizedColorName, getLocalizedColorTraits } from '@/lib/free-result-localization';
 
 const { width } = Dimensions.get('window');
 
@@ -57,6 +59,24 @@ const CARD_INFO = [
     accentColor: '#8FA68E',
   },
 ];
+
+const ZH_CN_COLOR_STEP_COPY = [
+  {
+    title: '主要心理特征',
+    subtitle: '请选择最能体现你基本心理特征的颜色。',
+    hint: '请选择你直觉上最被吸引的颜色。',
+  },
+  {
+    title: '辅助心理特征',
+    subtitle: '请选择能补充并与主要心理特征一同呈现的颜色。',
+    hint: '请选择你直觉上最被吸引的颜色。',
+  },
+  {
+    title: '恢复方向',
+    subtitle: '请选择此刻有助于找回平衡的颜色。',
+    hint: '请选择你直觉上最被吸引的颜色。',
+  },
+] as const;
 
 function getGlassLayers(item: ColorData) {
   const { glowStyle, highlightColor, glowIntensity: hi } = item;
@@ -229,6 +249,7 @@ interface CardItemProps {
 }
 
 function CardItem({ item, isSelected, onPress }: CardItemProps) {
+  const { locale } = useLocalization();
   const circleSize = CIRCLE_SIZE - 4;
   const borderRadius = circleSize / 2;
 
@@ -277,7 +298,7 @@ function CardItem({ item, isSelected, onPress }: CardItemProps) {
         ]}
         numberOfLines={1}
       >
-        {item.korName}
+        {getLocalizedColorName(item, locale)}
       </Text>
     </Pressable>
   );
@@ -286,6 +307,7 @@ function CardItem({ item, isSelected, onPress }: CardItemProps) {
 // ─── 메인 화면 ──────────────────────────────────────────────────────────────
 export default function SelectScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const params = useLocalSearchParams<{ step?: string }>();
   const step = parseInt(params.step ?? '0', 10);
   const { selectedColors, setSelectedColor } = useColorContext();
@@ -293,6 +315,14 @@ export default function SelectScreen() {
 
   const cardInfo = CARD_INFO[step] ?? CARD_INFO[0];
   const currentSelected = selectedColors[step];
+  const zhStepCopy = ZH_CN_COLOR_STEP_COPY[cardInfo.step];
+  const displayedTitle = locale === 'zh-CN' ? zhStepCopy.title : cardInfo.title;
+  const displayedSubtitle = locale === 'zh-CN' ? zhStepCopy.subtitle : cardInfo.subtitle;
+  const displayedHint = locale === 'zh-CN' ? zhStepCopy.hint : '직관적으로 끌리는 색을 선택해 주세요';
+  const colorStepBadge = locale === 'zh-CN' ? `第${cardInfo.number}种颜色` : `${cardInfo.number}번 컬러`;
+  const nextButtonLabel = locale === 'zh-CN'
+    ? (step < 2 ? `选择第${step + 2}种颜色 →` : '查看结果 →')
+    : (step < 2 ? `${step + 2}번 컬러 선택 →` : '결과 보기 →');
 
   // 무료 테스트 시작 추적 (step=0일 때만)
   const logVisitor = trpc.visitors.log.useMutation();
@@ -404,13 +434,13 @@ export default function SelectScreen() {
           >
             <View style={[styles.cardBadgeDot, { backgroundColor: cardInfo.accentColor }]} />
             <Text style={[styles.cardBadgeText, { color: cardInfo.accentColor }]}>
-              {cardInfo.number}번 카드
+              {colorStepBadge}
             </Text>
           </View>
-          <Text style={[styles.cardTitle, { color: '#3D3530' }]}>{cardInfo.title}</Text>
-          <Text style={[styles.cardSubtitle, { color: '#5F4B3B' }]}>{cardInfo.subtitle}</Text>
+          <Text style={[styles.cardTitle, { color: '#3D3530' }]}>{displayedTitle}</Text>
+          <Text style={[styles.cardSubtitle, { color: '#5F4B3B' }]}>{displayedSubtitle}</Text>
           <Text style={[styles.selectHintTop, { color: '#A09080' }]}>
-            직관적으로 끌리는 색을 선택해 주세요
+            {displayedHint}
           </Text>
         </Animated.View>
 
@@ -446,13 +476,15 @@ export default function SelectScreen() {
 
               <View style={styles.selectedInfo}>
                 <Text style={[styles.selectedName, { color: '#3D3530' }]}>
-                  {currentSelected.korName}
+                  {getLocalizedColorName(currentSelected, locale)}
                 </Text>
                 <Text style={[styles.selectedKeywords, { color: '#8A7A68' }]}>
-                  {currentSelected.keywords.join(' · ')}
+                  {getLocalizedColorTraits(currentSelected, currentSelected.keywords, locale).join(' · ')}
                 </Text>
               </View>
-              <Text style={[styles.selectedCheck, { color: cardInfo.accentColor }]}>선택됨 ✓</Text>
+              <Text style={[styles.selectedCheck, { color: cardInfo.accentColor }]}>
+                {locale === 'zh-CN' ? '已选择 ✓' : '선택됨 ✓'}
+              </Text>
             </View>
           </View>
         )}
@@ -482,11 +514,13 @@ export default function SelectScreen() {
       >
         {currentSelected ? (
           <View style={styles.bottomBarContent}>
-            <View style={styles.selectedSummary}>
-              <View style={[styles.summaryDot, { backgroundColor: currentSelected.hex }]} />
-              <Text style={[styles.summaryText, { color: '#8A7A68' }]}>
-                {currentSelected.korName} 선택됨
-              </Text>
+              <View style={styles.selectedSummary}>
+                <View style={[styles.summaryDot, { backgroundColor: currentSelected.hex }]} />
+                <Text style={[styles.summaryText, { color: '#8A7A68' }]}>
+                  {locale === 'zh-CN'
+                    ? `${getLocalizedColorName(currentSelected, locale)} 已选择`
+                    : `${currentSelected.korName} 선택됨`}
+                </Text>
             </View>
             <Pressable
               style={({ pressed }) => [
@@ -497,13 +531,13 @@ export default function SelectScreen() {
               onPress={handleNext}
             >
               <Text style={styles.nextButtonText}>
-                {step < 2 ? `${step + 2}번 카드 선택 →` : '결과 보기 →'}
+                {nextButtonLabel}
               </Text>
             </Pressable>
           </View>
         ) : (
           <Text style={[styles.selectHint, { color: '#8A7A68' }]}>
-            끌리는 색을 선택해 주세요
+            {displayedHint}
           </Text>
         )}
       </View>

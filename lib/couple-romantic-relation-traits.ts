@@ -264,6 +264,7 @@ function buildColorSpecificFallback(
   colorA?: Pick<ColorData, "id" | "korName">,
   colorB?: Pick<ColorData, "id" | "korName">,
   relationType?: RomanticRelationTraitInput["relationType"],
+  personLabels?: RomanticRelationTraitInput["personLabels"],
 ) {
   const left = colorReference(colorA);
   const right = colorReference(colorB);
@@ -277,17 +278,19 @@ function buildColorSpecificFallback(
 
   const scene = relationshipScene(relationType, context);
   const sameColor = left.korName === right.korName;
+  const personA = personLabels?.personA ?? "한 사람";
+  const personB = personLabels?.personB ?? "다른 사람";
   if (context === "감정 교류") {
     if (sameColor) {
       return `두 사람 모두 ${left.korName}의 ${left.profile.relationshipStrength}으로 연결을 확인하려는 흐름이 있습니다. ${scene} 필요한 반응을 한 문장으로 알려주면 짐작이 줄어듭니다.`;
     }
-    return `${left.korName}${topicParticle(left.korName)} ${left.profile.relationshipStrength}으로 마음을 드러내고, ${right.korName}${topicParticle(right.korName)} ${right.profile.relationshipStrength}으로 연결을 확인하려 할 수 있습니다. ${scene} 필요한 반응을 한 문장으로 알려주면 짐작이 줄어듭니다.`;
+    return `${personA}${topicParticle(personA)} ${left.korName}에서 드러난 ${left.profile.relationshipStrength}으로 마음을 표현하려 하고, ${personB}${topicParticle(personB)} ${right.korName}에서 드러난 ${right.profile.relationshipStrength}으로 연결을 확인하려 할 수 있습니다. ${scene} 필요한 반응을 한 문장으로 알려주면 짐작이 줄어듭니다.`;
   }
   if (context === "표현 리듬") {
     if (sameColor) {
       return `두 사람 모두 ${left.korName}의 ${left.profile.relationshipStrength}${subjectParticle(left.profile.relationshipStrength)} 드러나는 방식으로 말할 수 있습니다. ${scene} 바로 답하고 싶은지, 생각을 정리한 뒤 말하고 싶은지를 구분해두면 서로의 속도가 존중됩니다.`;
     }
-    return `${left.korName}${topicParticle(left.korName)} ${left.profile.relationshipStrength}${subjectParticle(left.profile.relationshipStrength)} 드러나는 방식으로, ${right.korName}${topicParticle(right.korName)} ${right.profile.relationshipStrength}${subjectParticle(right.profile.relationshipStrength)} 드러나는 방식으로 말할 수 있습니다. ${scene} 바로 답하고 싶은지, 생각을 정리한 뒤 말하고 싶은지를 구분해두면 서로의 속도가 존중됩니다.`;
+    return `${personA}${topicParticle(personA)} ${left.korName}에서 드러난 ${left.profile.relationshipStrength}을 바탕으로, ${personB}${topicParticle(personB)} ${right.korName}에서 드러난 ${right.profile.relationshipStrength}을 바탕으로 말할 수 있습니다. ${scene} 바로 답하고 싶은지, 생각을 정리한 뒤 말하고 싶은지를 구분해두면 서로의 속도가 존중됩니다.`;
   }
   if (sameColor) {
     return `두 사람 모두 ${left.korName}의 흐름에서 ${left.profile.overloadCaution} ${scene} 다시 이야기할 시점을 함께 정해두면 각자의 회복 방식이 관계를 지키는 힘이 됩니다.`;
@@ -332,7 +335,7 @@ export function buildRomanticRelationTraits({
       const basis = cardBasis(context, cardsA, cardsB, personLabels);
       return lead ? `${lead} ${basis} ${template}` : `${basis} ${template}`;
     }
-    return `${cardBasis(context, cardsA, cardsB, personLabels)} ${buildColorSpecificFallback(context, colorA, colorB, relationType)}`;
+    return `${cardBasis(context, cardsA, cardsB, personLabels)} ${buildColorSpecificFallback(context, colorA, colorB, relationType, personLabels)}`;
   };
 
   return [

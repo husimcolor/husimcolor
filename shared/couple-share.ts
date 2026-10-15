@@ -7,10 +7,14 @@ import type {
 } from "../constants/coupleData";
 import type { RomanticRelationTrait } from "../lib/couple-romantic-relation-traits";
 import type { RomanticRelationshipRoles } from "../lib/couple-romantic-relationship-roles";
+import { isAppLocale, type AppLocale } from "./localization";
 
 /** 링크로 다시 열어도 공유 시점의 결과를 동일하게 보여주기 위한 불변 스냅샷입니다. */
 export type CoupleShareSnapshot = {
   schemaVersion: 1;
+  /** 새 스냅샷의 생성 언어. 기존 스냅샷은 undefined이며 한국어 원문으로 유지한다. */
+  locale?: AppLocale;
+  copyVersion?: string;
   sessionData: CoupleSessionData;
   personAAnalysis: PersonAnalysis;
   personBAnalysis: PersonAnalysis;
@@ -71,7 +75,9 @@ export function isCoupleShareSnapshot(value: unknown): value is CoupleShareSnaps
   if (!isRecord(value) || value.schemaVersion !== 1 || !isRecord(value.sessionData)) return false;
   const session = value.sessionData;
 
-  return typeof session.relationType === "string"
+  return (value.locale === undefined || isAppLocale(value.locale))
+    && (value.copyVersion === undefined || (typeof value.copyVersion === "string" && value.copyVersion.length <= 80))
+    && typeof session.relationType === "string"
     && RELATION_TYPES.has(session.relationType)
     && isPersonSession(session.personA)
     && isPersonSession(session.personB)

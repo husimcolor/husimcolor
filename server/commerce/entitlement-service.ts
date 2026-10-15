@@ -3,6 +3,7 @@ import { and, eq, gt } from "drizzle-orm";
 
 import { analysisRuns, entitlements, orderItems, products } from "../../drizzle/schema";
 import type { CommerceProductCode } from "../../shared/commerce";
+import { DEFAULT_LOCALE, ZH_CN_COPY_VERSION, isAppLocale } from "../../shared/localization";
 import { getDb } from "../db";
 import {
   createRelationshipInviteSession,
@@ -42,6 +43,8 @@ export type AnalysisDeliveryGrant = {
   productCode: CommerceProductCode;
   accessToken: string;
   expiresAt: string;
+  locale: "ko" | "zh-CN";
+  copyVersion: string;
 };
 
 function getTokenSecret(): string {
@@ -118,6 +121,8 @@ export function createAnalysisDeliveryGrant(input: {
   customerId: number;
   productCode: CommerceProductCode;
   accessMode: "member" | "guest" | "free";
+  locale?: "ko" | "zh-CN";
+  copyVersion?: string;
 }): AnalysisDeliveryGrant {
   const retentionDays = input.accessMode === "member" ? 365 : 7;
   const expiresAt = new Date(Date.now() + retentionDays * 24 * 60 * 60 * 1000);
@@ -134,6 +139,8 @@ export function createAnalysisDeliveryGrant(input: {
     productCode: input.productCode,
     accessToken: `d1.${encodedPayload}.${sign(encodedPayload)}`,
     expiresAt: expiresAt.toISOString(),
+    locale: input.locale ?? "ko",
+    copyVersion: input.copyVersion ?? "ko-canonical",
   };
 }
 
@@ -174,6 +181,8 @@ export async function consumeEntitlementForAnalysisStart(input: {
   productCode: CommerceProductCode;
   relationshipMode?: RelationshipInviteMode;
   relationType?: RelationType;
+  /** 클라이언트가 선택한 locale. 허용 목록 밖의 값은 한국어 기본값으로 고정한다. */
+  locale?: string;
 }): Promise<{
   entitlementId: number;
   analysisRunId: number;
@@ -184,6 +193,8 @@ export async function consumeEntitlementForAnalysisStart(input: {
 }> {
   const token = parse(input.accessToken);
   if (token.productCode !== input.productCode) throw new Error("ENTITLEMENT_PRODUCT_MISMATCH");
+  const locale = isAppLocale(input.locale) ? input.locale : DEFAULT_LOCALE;
+  const copyVersion = locale === "zh-CN" ? ZH_CN_COPY_VERSION : "ko-canonical";
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
 
@@ -238,6 +249,8 @@ export async function consumeEntitlementForAnalysisStart(input: {
       productId: entitlement.productId,
       accessMode,
       status: "started",
+      locale,
+      copyVersion,
     });
     const analysisRunId = Number(runInsert[0].insertId);
     const relationshipInvite = input.relationshipMode === "invite_link"
@@ -248,6 +261,8 @@ export async function consumeEntitlementForAnalysisStart(input: {
           productId: entitlement.productId,
           productCode: input.productCode,
           relationType: input.relationType ?? (() => { throw new Error("RELATIONSHIP_TYPE_REQUIRED"); })(),
+          locale,
+          copyVersion,
         })
       : null;
     return {
@@ -258,9 +273,11 @@ export async function consumeEntitlementForAnalysisStart(input: {
       deliveryGrant: createAnalysisDeliveryGrant({
         analysisRunId,
         customerId: entitlement.customerId,
-        productCode: input.productCode,
-        accessMode,
-      }),
+          productCode: input.productCode,
+          accessMode,
+          locale,
+          copyVersion,
+        }),
       relationshipInvite,
     };
   });
