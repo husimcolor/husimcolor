@@ -90,6 +90,12 @@
 
 **복구:** 배포 직후 문제 시 Vercel을 직전 production deployment로 rollback하고 application revision만 되돌린다. 이미 생성된 zh-CN 결과가 없고 migration 직후에만 필요할 경우에 한해, artifact의 `appliedColumns`에 기재된 새 nullable 열만 별도 승인 후 제거할 수 있다. 새 결과가 생성된 뒤에는 열을 삭제하지 않고 application rollback만 사용한다. 기존 고객 데이터·PDF·주문·outbox는 어떤 복구 단계에서도 갱신·재생성·재발송하지 않는다.
 
+### 3.3 운영 실행 결과 (배포 보류)
+
+2026-10-15에 위 workflow를 Production `main`에서 실행했으나, Vercel CLI가 `DATABASE_URL`을 포함한 sensitive 환경값 12개를 실제 값 대신 `[SENSITIVE]` placeholder로만 내려주었다. runner는 DB 연결 전 URL 검증에서 중단되었으므로 **운영 DB에 연결하지 않았고, DDL·기존 행·PDF·outbox·이메일에 어떠한 변경도 적용되지 않았다.**
+
+첫 실행에는 `node … | tee …` 파이프라인이 오류를 성공처럼 보이게 하는 결함이 있었고, 이를 `set -o pipefail` 보정으로 main에 반영했다. 이후 동일 오류는 반드시 workflow 실패로 표시된다. Production `DATABASE_URL`을 안전하게 workflow에 전달할 별도 GitHub Secret 또는 동등한 실행 경로가 준비되기 전까지 zh-CN 앱 PR은 병합·운영 배포하지 않는다.
+
 ## 4. 자동 검증
 
 이번 v11.4 변경 후 다음을 실행했다.

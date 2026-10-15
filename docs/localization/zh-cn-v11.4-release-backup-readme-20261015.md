@@ -33,6 +33,12 @@
 - 신규 locale/copyVersion column 6개를 추가하는 migration runner를 격리 DB에서 재실행해, 데이터 변경 0건과 nullable schema 검증을 확인했다.
 - 2026-10-15의 최종 제목/실천 문안과 공개 zh-CN 샘플 PDF 3종을 갱신했다.
 
+## 운영 migration 실행 보류
+
+Production Vercel 환경의 `DATABASE_URL`은 GitHub Actions에서 실제 값이 아닌 `[SENSITIVE]` placeholder로만 pull되어, 운영 migration runner가 DB 연결 전에 중단되었다. 이 실패는 DB 연결·DDL·고객 데이터 변경 전이므로 운영 데이터에 영향이 없다. 오류를 성공으로 숨기지 않도록 workflow에는 `pipefail` 보정이 반영되어 있다.
+
+안전한 GitHub Secret 또는 동등한 Production DB 실행 경로가 제공되기 전까지 zh-CN 앱 PR은 병합·운영 배포하지 않는다.
+
 ## 남은 구분
 
 - 중국 본토 원어민의 전 조합·전 문단 최종 문체 감수는 권장되나 미수행이다.
