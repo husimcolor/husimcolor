@@ -26,13 +26,14 @@ describe('첫 진입 화면의 서비스 선택 UX', () => {
     expect(relationshipStartScreen).toContain('const ROMANTIC_RELATION_TYPES');
   });
 
-  it('상품별 전체 샘플 PDF 링크가 결제·상품 선택과 분리된 새 창으로 열린다', () => {
-    expect(homeScreen).toContain("handleOpenSamplePdf('personal_deep')");
-    expect(relationshipStartScreen).toContain('handleOpenSamplePdf(sampleProduct)');
-    expect(homeScreen).toContain("window.open(url, '_blank', 'noopener,noreferrer')");
-    expect(relationshipStartScreen).toContain("window.open(url, '_blank', 'noopener,noreferrer')");
-    expect(homeScreen).not.toContain('router.push(\'/(tabs)/sample-report?product=personal_deep');
-    expect(relationshipStartScreen).not.toContain("pathname: '/(tabs)/sample-report'");
+  it('상품별 전체 샘플은 결제·상품 선택과 분리된 앱 내 열람 화면으로 열린다', () => {
+    expect(homeScreen).toContain("handleOpenSampleReport('personal_deep')");
+    expect(relationshipStartScreen).toContain('handleOpenSampleReport(sampleProduct)');
+    expect(homeScreen).toContain("pathname: '/(tabs)/sample-report'");
+    expect(relationshipStartScreen).toContain("pathname: '/(tabs)/sample-report'");
+    expect(homeScreen).toContain("returnTo: 'home'");
+    expect(relationshipStartScreen).toContain("returnTo: 'couple-start'");
+    expect(relationshipStartScreen).toContain('restoreProduct: selectedProductId ??');
   });
 
   it('결제 설정을 불러오는 중에도 유료 상품 진입을 준비중 상태로 숨기지 않는다', () => {

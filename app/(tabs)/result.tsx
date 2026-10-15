@@ -24,7 +24,7 @@ import { LocalizedText as Text } from '@/components/localized-text';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import { generateInterpretation, COLOR_DATA, COLOR_PERSONALITY_TRAITS } from '@/constants/colorData';
-import { getSampleReportButtonLabel, getSampleReportUrl } from '@/shared/sample-reports';
+import { getSampleReportButtonLabel } from '@/shared/sample-reports';
 import { useLocalization } from '@/lib/localization-context';
 import { ROLE_LABELS } from '@/shared/localization';
 import {
@@ -296,16 +296,9 @@ export default function ResultScreen() {
     }
   };
 
-  // 무료 결과와 결제 경로를 분리한다. 공개 샘플은 가상 데이터 PDF만 새 창/외부 브라우저로 연다.
-  const handleOpenPersonalSamplePdf = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://husimcolor.vercel.app';
-    const url = getSampleReportUrl('personal_deep', origin, locale);
-    if (!url) return;
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.open(url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    void Linking.openURL(url);
+  // 공개 샘플은 가상 데이터 전용 앱 내 뷰어로 열며, 현재 선택 언어를 그대로 사용한다.
+  const handleOpenPersonalSampleReport = () => {
+    router.push({ pathname: '/(tabs)/sample-report', params: { product: 'personal_deep', returnTo: 'free-result' } } as any);
   };
 
   return (
@@ -549,7 +542,7 @@ export default function ResultScreen() {
           </Text>
           <Pressable
             style={({ pressed }) => [styles.upsellSampleButton, pressed && styles.upsellSampleButtonPressed]}
-            onPress={handleOpenPersonalSamplePdf}
+            onPress={handleOpenPersonalSampleReport}
             accessibilityRole="link"
             accessibilityLabel={getSampleReportButtonLabel('personal_deep')}
           >

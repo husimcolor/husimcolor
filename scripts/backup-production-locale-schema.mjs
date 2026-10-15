@@ -7,9 +7,14 @@ if (existsSync(envPath)) dotenv.config({ path: envPath, override: false, quiet: 
 
 const outputPath = process.env.ZH_CN_LOCALE_SCHEMA_BACKUP_FILE ?? "zh-cn-locale-schema-before.sql";
 const databaseUrl = process.env.DATABASE_URL?.trim();
-if (!databaseUrl) throw new Error("PRODUCTION_DATABASE_URL_MISSING");
+if (!databaseUrl || databaseUrl.includes("[SENSITIVE]")) throw new Error("PRODUCTION_DATABASE_URL_MISSING");
 
-const parsedDatabaseUrl = new URL(databaseUrl);
+let parsedDatabaseUrl;
+try {
+  parsedDatabaseUrl = new URL(databaseUrl);
+} catch {
+  throw new Error("PRODUCTION_DATABASE_URL_INVALID");
+}
 const isLoopback = parsedDatabaseUrl.hostname === "127.0.0.1" || parsedDatabaseUrl.hostname === "localhost";
 const productionApproved = process.env.ALLOW_PRODUCTION_ZH_CN_LOCALE_MIGRATION === "true";
 const localTestApproved = process.env.ALLOW_LOCAL_ZH_CN_LOCALE_MIGRATION_TEST === "true";
@@ -40,7 +45,9 @@ async function main() {
       if (typeof definition !== "string") throw new Error(`ZH_CN_LOCALE_SCHEMA_BACKUP_TABLE_MISSING:${table}`);
       const [countRows] = await connection.query(`SELECT COUNT(*) AS count FROM \`${table}\``);
       tableCounts.push({ table, rows: Number(countRows?.[0]?.count ?? 0) });
-      chunks.push(`DROP TABLE IF EXISTS \`${table}\`;`);
+      // 이 artifact는 운영 스키마를 읽기 전용으로 기록한다. 복사·실행으로 고객
+      // 데이터를 지울 수 있는 table deletion statement는 어떤 형태로도 포함하지 않는다.
+      chunks.push(`-- Existing table preserved: \`${table}\``);
       chunks.push(`${definition};`, "");
     }
     writeFileSync(outputPath, chunks.join("\n"), "utf8");

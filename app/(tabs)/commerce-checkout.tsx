@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { LocalizedText as Text } from "@/components/localized-text";
 import { getCommerceProduct, isPaidAnalysisProduct, type CommerceProductCode } from "@/shared/commerce";
 import { saveCommerceStartGrant } from "@/lib/commerce-access";
+import { useLocalization } from "@/lib/localization-context";
 import { trpc } from "@/lib/trpc";
 import { OPENING_CAMPAIGN_COUPON_CODE, OPENING_CAMPAIGN_DISPLAY_PRICES, isOpeningCampaignAvailable } from "@/shared/opening-campaign";
 
@@ -76,6 +78,24 @@ function getIdempotencyKey(): string {
   return `checkout-${crypto.randomUUID()}`;
 }
 
+async function getAnonymousDeviceId() {
+  const storageKey = "husim_device_id";
+  let deviceId = await AsyncStorage.getItem(storageKey);
+  if (!deviceId && typeof window !== "undefined") {
+    try { deviceId = window.localStorage.getItem(storageKey); } catch {}
+  }
+  if (!deviceId) {
+    deviceId = typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `anonymous-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    try { await AsyncStorage.setItem(storageKey, deviceId); } catch {}
+    if (typeof window !== "undefined") {
+      try { window.localStorage.setItem(storageKey, deviceId); } catch {}
+    }
+  }
+  return deviceId;
+}
+
 async function loadTossPaymentsScript(): Promise<(clientKey: string) => TossPaymentsInstance> {
   if (window.TossPayments) return window.TossPayments;
   await new Promise<void>((resolve, reject) => {
@@ -99,6 +119,7 @@ async function loadTossPaymentsScript(): Promise<(clientKey: string) => TossPaym
 
 export default function CommerceCheckoutScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const params = useLocalSearchParams<{
     product?: string | string[];
     relationType?: string | string[];
@@ -134,6 +155,7 @@ export default function CommerceCheckoutScreen() {
   const [message, setMessage] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const processedReturn = useRef(false);
+  const recordedCommerceEvents = useRef(new Set<string>());
   const createTossTestCheckout = trpc.commerce.checkout.createTossTest.useMutation();
   const createTossLiveCheckout = trpc.commerce.checkout.createTossLive.useMutation();
   const completeTossTestCheckout = trpc.commerce.checkout.completeTossTest.useMutation();
@@ -165,6 +187,21 @@ export default function CommerceCheckoutScreen() {
     ? OPENING_CAMPAIGN_DISPLAY_PRICES[productCode]
     : null;
   const productGuide = isPaidAnalysisCode(productCode) ? ANALYSIS_PRODUCT_GUIDES[productCode] : undefined;
+  const logVisitor = trpc.visitors.log.useMutation();
+  const recordCommerceEvent = (stage: "checkout_opened" | "payment_requested" | "payment_completed" | "analysis_started", orderId?: string) => {
+    if (!isPaidAnalysisCode(productCode)) return;
+    // 상품·언어·단계만 기록한다. 이메일, 쿠폰, 결제키, 리포트 본문은 포함하지 않는다.
+    const event = `commerce_${stage}:${productCode}:${locale}${orderId ? `:${orderId}` : ""}`;
+    if (recordedCommerceEvents.current.has(event)) return;
+    recordedCommerceEvents.current.add(event);
+    void getAnonymousDeviceId().then((deviceId) => {
+      logVisitor.mutate({ deviceId, visitType: "premium", testType: event });
+    }).catch(() => undefined);
+  };
+
+  useEffect(() => {
+    recordCommerceEvent("checkout_opened");
+  }, [productCode, locale]);
   useEffect(() => {
     if (openingCampaignAvailable) {
       setCouponCode((current) => current || OPENING_CAMPAIGN_COUPON_CODE);
@@ -182,6 +219,7 @@ export default function CommerceCheckoutScreen() {
 
   const moveToAnalysis = async (grant: { productCode: CommerceProductCode; accessToken: string; expiresAt: string }) => {
     await saveCommerceStartGrant(grant);
+    recordCommerceEvent("analysis_started");
     if (productCode === "personal_deep") {
       router.replace("/(tabs)/premium-info" as any);
       return;
@@ -199,6 +237,7 @@ export default function CommerceCheckoutScreen() {
       .mutateAsync({ paymentKey, orderNumber, amountKrw: amount })
       .then(async (result) => {
         if (!result.startGrant) throw new Error("PAYMENT_GRANT_NOT_ISSUED");
+        recordCommerceEvent("payment_completed", orderNumber);
         await moveToAnalysis(result.startGrant);
       })
       .catch(() => setMessage("결제 승인 확인에 실패했습니다. 동일 결제를 다시 요청하지 말고 관리자에게 주문번호를 알려 주세요."))
@@ -234,6 +273,7 @@ export default function CommerceCheckoutScreen() {
     setProcessing(true);
     setMessage(null);
     try {
+      recordCommerceEvent("payment_requested");
       const paymentMode = tossLiveEnabled ? "live" : "test";
       const checkoutInput = {
         productCode,
@@ -247,6 +287,7 @@ export default function CommerceCheckoutScreen() {
         : await createTossTestCheckout.mutateAsync(checkoutInput);
       if (checkout.status === "paid") {
         if (!checkout.startGrant) throw new Error("COUPON_GRANT_NOT_ISSUED");
+        recordCommerceEvent("payment_completed", checkout.orderNumber);
         await moveToAnalysis(checkout.startGrant);
         return;
       }

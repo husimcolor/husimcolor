@@ -10,6 +10,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { getPrivateAnalysisPdfDownload } from "../commerce/private-pdf-download-service";
 import { getRelationshipPrivatePdfDownload } from "../commerce/relationship-invite-service";
+import { getPublicSampleReportDownload } from "../public-sample-report-service";
 
 function queryValue(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
@@ -21,6 +22,19 @@ function setPdfDownloadHeaders(res: express.Response, filename: string, length: 
   res.setHeader("Content-Disposition", `attachment; filename="husimcolor-report.pdf"; filename*=UTF-8''${encodeURIComponent(filename)}`);
   res.setHeader("Cache-Control", "no-store, max-age=0");
   res.setHeader("X-Content-Type-Options", "nosniff");
+}
+
+function setPublicSamplePdfHeaders(res: express.Response, filename: string, length: number, download: boolean) {
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Length", String(length));
+  res.setHeader(
+    "Content-Disposition",
+    `${download ? "attachment" : "inline"}; filename="husimcolor-sample-report.pdf"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+  );
+  res.setHeader("Cache-Control", "no-cache, max-age=0, must-revalidate");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("Accept-Ranges", "bytes");
 }
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -102,6 +116,54 @@ async function startServer() {
     } catch {
       // 접근 토큰 및 저장소 정보를 응답에서 노출하지 않는다.
       res.status(404).json({ error: "PDF_NOT_AVAILABLE" });
+    }
+  });
+
+  // Public synthetic samples only. This route never touches a customer result,
+  // order, entitlement, private document or email outbox.
+  app.all("/api/public-sample-report", async (req, res) => {
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      res.setHeader("Allow", "GET, HEAD");
+      res.status(405).json({ error: "Method Not Allowed" });
+      return;
+    }
+    try {
+      const sample = await getPublicSampleReportDownload({
+        product: queryValue(req.query.product),
+        locale: queryValue(req.query.locale),
+      });
+      const download = queryValue(req.query.download) === "1";
+      const range = typeof req.headers.range === "string" ? req.headers.range : undefined;
+      if (range) {
+        const match = /^bytes=(\d*)-(\d*)$/u.exec(range);
+        const start = match?.[1] ? Number(match[1]) : 0;
+        const end = match?.[2] ? Number(match[2]) : sample.content.length - 1;
+        if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end < start || start >= sample.content.length) {
+          res.setHeader("Content-Range", `bytes */${sample.content.length}`);
+          res.status(416).end();
+          return;
+        }
+        const boundedEnd = Math.min(end, sample.content.length - 1);
+        const chunk = sample.content.subarray(start, boundedEnd + 1);
+        setPublicSamplePdfHeaders(res, sample.filename, chunk.length, download);
+        res.setHeader("Content-Range", `bytes ${start}-${boundedEnd}/${sample.content.length}`);
+        res.status(206);
+        if (req.method === "HEAD") {
+          res.end();
+          return;
+        }
+        res.end(chunk);
+        return;
+      }
+      setPublicSamplePdfHeaders(res, sample.filename, sample.content.length, download);
+      res.status(200);
+      if (req.method === "HEAD") {
+        res.end();
+        return;
+      }
+      res.end(sample.content);
+    } catch {
+      res.status(404).json({ error: "PUBLIC_SAMPLE_NOT_AVAILABLE" });
     }
   });
 

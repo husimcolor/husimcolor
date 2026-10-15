@@ -444,7 +444,7 @@ export async function createCouplePdfBuffer(payload: CouplePdfDownloadPayload): 
     size: "A4",
     margins: { top: PAGE_TOP, bottom: PAGE_TOP, left: PAGE_LEFT, right: PAGE_LEFT },
     font: fontPath,
-    info: { Title: "휴심컬러 부부·연인 관계 리포트" },
+    info: { Title: locale === "zh-CN" ? "HUSIM COLOR 夫妻／恋人关系报告" : "휴심컬러 부부·연인 관계 리포트" },
   });
   const chunks: Buffer[] = [];
   document.on("data", (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
