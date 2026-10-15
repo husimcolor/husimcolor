@@ -1,0 +1,39 @@
+{
+  "environment": "isolated-local-mariadb",
+  "database": "husim_zhcn_test",
+  "productionDatabaseTouched": false,
+  "emailDispatchCalled": false,
+  "storageUploadCalled": false,
+  "testData": "synthetic identifiers and invalid.example email only",
+  "storedZhRun": {
+    "locale": "zh-CN",
+    "copyVersion": "zh-CN-2026-10-15-v11.1",
+    "resolvedScreenLocaleAfterDeviceSwitchedToKorean": "zh-CN"
+  },
+  "legacyRun": {
+    "locale": null,
+    "copyVersion": null,
+    "resolvedScreenLocale": "ko"
+  },
+  "pdf": {
+    "zhCn": "test-db-stored-zh-CN-result.pdf",
+    "legacyKorean": "test-db-legacy-ko-result.pdf",
+    "zhCnRoleLabelsVerified": [
+      "推荐调和色",
+      "主要心理特征"
+    ],
+    "legacyKoreanRoleLabelsVerified": [
+      "추천 보완컬러",
+      "주기질"
+    ]
+  },
+  "queuedOutbox": {
+    "id": 1,
+    "status": "queued",
+    "locale": "zh-CN",
+    "copyVersion": "zh-CN-2026-10-15-v11.1",
+    "emailSubject": "[HUSIM COLOR] 您的分析报告（PDF）",
+    "emailBodyLanguage": "zh-CN"
+  },
+  "cleanup": "deferred until proof files are copied into the review package"
+}

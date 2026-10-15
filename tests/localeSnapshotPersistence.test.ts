@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { getAnalysisResultEmailPayload } from "../server/commerce/email-outbox-service";
 import { parseCoupleShareSnapshot } from "../shared/couple-share";
 import { copyVersionForLocale, resolveStoredResultLocale } from "../shared/localization";
 
@@ -73,6 +74,14 @@ describe("저장 결과 locale 고정", () => {
     expect(deliveryService).toContain("copyVersion: run.copyVersion");
     expect(outboxService).toContain("locale: emailOutbox.locale");
     expect(outboxService).toContain('const locale = claimed.locale === "zh-CN" ? "zh-CN" : "ko"');
-    expect(outboxService).toContain('subject: locale === "zh-CN" ? "[HUSIM COLOR] 您的分析报告（PDF）"');
+    expect(outboxService).toContain("getAnalysisResultEmailPayload(locale)");
+    expect(getAnalysisResultEmailPayload("zh-CN")).toEqual({
+      subject: "[HUSIM COLOR] 您的分析报告（PDF）",
+      html: expect.stringContaining("完成的结果报告"),
+    });
+    expect(getAnalysisResultEmailPayload("ko")).toEqual({
+      subject: "[휴심컬러] 완료된 결과 리포트 PDF",
+      html: expect.stringContaining("완료된 결과 리포트"),
+    });
   });
 });
