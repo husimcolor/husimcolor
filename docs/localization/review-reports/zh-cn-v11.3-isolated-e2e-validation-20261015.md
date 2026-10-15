@@ -1,7 +1,7 @@
 # HUSIM COLOR 간체 중국어 v11.3 격리 E2E 검증 기록
 
 - **검증일:** 2026-10-15
-- **대상 소스 기준:** `feat/zh-cn-full-localization-v6`의 v11.2 기준 위에 반영한 미커밋 v11.3 변경
+- **대상 소스 기준:** `feat/zh-cn-full-localization-v11.3`의 기능 커밋 `27d7f9202fa4e8981b02124f820bd79a9a2ac1cc` (이 기록의 Git metadata 보완 커밋은 별도)
 - **대상 언어:** 간체 중국어(`zh-CN`), copyVersion `zh-CN-2026-10-15-v11.1`
 - **운영 영향:** 없음. Production main 병합·배포, Production DB migration, 실제 고객 데이터 변경, 실제 이메일 발송을 수행하지 않았다.
 
