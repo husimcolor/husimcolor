@@ -60,6 +60,9 @@ describe("year-end three-color experience request safety contract", () => {
     const router = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
     const admin = readFileSync(resolve(process.cwd(), "app/(tabs)/admin.tsx"), "utf8");
     expect(router).toContain("cancellationReason: z.string().trim().max(500).optional()");
+    expect(admin).toContain("예약 확정 확인");
+    expect(admin).toContain("예약 확정 저장");
+    expect(admin).toContain("setConfirmingExperienceRequest({ id: item.id, productLabel: item.productLabel })");
     expect(admin).toContain("예약 취소 확인");
     expect(admin).toContain("취소 사유 (선택 입력, 관리자용)");
     expect(admin).toContain("취소 {dateText(item.cancelledAt)}");

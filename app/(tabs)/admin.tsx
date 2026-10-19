@@ -92,6 +92,7 @@ export default function AdminScreen() {
   const [deliverySearch, setDeliverySearch] = useState("");
   const [revealedOrderEmails, setRevealedOrderEmails] = useState<Record<number, RevealedOrderEmails>>({});
   const [revealedExperienceContacts, setRevealedExperienceContacts] = useState<Record<number, { name: string; contactPhone: string }>>({});
+  const [confirmingExperienceRequest, setConfirmingExperienceRequest] = useState<{ id: number; productLabel: string } | null>(null);
   const [cancellingExperienceRequest, setCancellingExperienceRequest] = useState<{ id: number; productLabel: string } | null>(null);
   const [experienceCancellationReason, setExperienceCancellationReason] = useState("");
   const apiBaseUrl = getApiBaseUrl();
@@ -339,6 +340,18 @@ export default function AdminScreen() {
     setExperienceCancellationReason("");
     setCancellingExperienceRequest(item);
   };
+  const confirmExperienceConfirmation = () => {
+    if (!confirmingExperienceRequest) return;
+    updateExperienceRequest.mutate({
+      requestId: confirmingExperienceRequest.id,
+      status: "confirmed",
+    }, {
+      onSuccess: () => {
+        setConfirmingExperienceRequest(null);
+        void experienceRequests.refetch();
+      },
+    });
+  };
   const confirmExperienceCancellation = () => {
     if (!cancellingExperienceRequest) return;
     updateExperienceRequest.mutate({
@@ -410,6 +423,18 @@ export default function AdminScreen() {
 
   return (
     <ScreenContainer>
+      <Modal transparent visible={confirmingExperienceRequest !== null} animationType="fade" onRequestClose={() => setConfirmingExperienceRequest(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>예약 확정 확인</Text>
+            <Text style={[styles.meta, { color: colors.muted }]}>{confirmingExperienceRequest?.productLabel} 신청을 예약 확정으로 저장합니다. 같은 날짜의 다른 체험 신청은 제한하지 않으며, 현장 결제·환불은 처리하지 않습니다.</Text>
+            <View style={styles.actions}>
+              <TouchableOpacity style={styles.smallAction} disabled={updateExperienceRequest.isPending} onPress={() => setConfirmingExperienceRequest(null)}><Text style={styles.smallActionText}>돌아가기</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.action} disabled={updateExperienceRequest.isPending} onPress={confirmExperienceConfirmation}><Text style={styles.actionText}>{updateExperienceRequest.isPending ? "저장 중…" : "예약 확정 저장"}</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <Modal transparent visible={cancellingExperienceRequest !== null} animationType="fade" onRequestClose={() => setCancellingExperienceRequest(null)}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
@@ -571,7 +596,7 @@ export default function AdminScreen() {
               <View style={styles.actions}>
                 {!revealed && <TouchableOpacity style={styles.smallAction} disabled={revealExperienceContact.isPending} onPress={() => revealExperienceContact.mutate({ requestId: item.id })}><Text style={styles.smallActionText}>연락처 보기</Text></TouchableOpacity>}
                 {item.status === "received" && <TouchableOpacity style={styles.smallAction} disabled={updateExperienceRequest.isPending} onPress={() => updateExperienceRequest.mutate({ requestId: item.id, status: "reviewing" })}><Text style={styles.smallActionText}>일정 확인 중</Text></TouchableOpacity>}
-                {(item.status === "received" || item.status === "reviewing") && <TouchableOpacity style={styles.action} disabled={updateExperienceRequest.isPending} onPress={() => Alert.alert("예약 확정", "일정을 확인한 뒤 이 체험 신청을 예약 확정으로 표시하시겠습니까? 같은 날짜의 다른 체험 신청은 제한하지 않으며, 결제는 처리하지 않습니다.", [{ text: "돌아가기", style: "cancel" }, { text: "확정", onPress: () => updateExperienceRequest.mutate({ requestId: item.id, status: "confirmed" }) }])}><Text style={styles.actionText}>예약 확정</Text></TouchableOpacity>}
+                {(item.status === "received" || item.status === "reviewing") && <TouchableOpacity style={styles.action} disabled={updateExperienceRequest.isPending} onPress={() => setConfirmingExperienceRequest({ id: item.id, productLabel: item.productLabel })}><Text style={styles.actionText}>예약 확정</Text></TouchableOpacity>}
                 {item.status !== "cancelled" && <TouchableOpacity style={styles.dangerAction} disabled={updateExperienceRequest.isPending} onPress={() => openExperienceCancellation(item)}><Text style={styles.dangerActionText}>예약 취소</Text></TouchableOpacity>}
               </View>
             </Panel>;
