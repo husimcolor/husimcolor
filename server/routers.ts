@@ -606,7 +606,11 @@ export const appRouter = router({
         return revealAdminYearEndThreeColorExperienceRequestContact({ ...input, ...auditActor, auditActor });
       }),
     updateYearEndExperienceRequest: adminProcedure
-      .input(z.object({ requestId: z.number().int().positive(), status: z.enum(["received", "reviewing", "confirmed", "cancelled"]) }))
+      .input(z.object({
+        requestId: z.number().int().positive(),
+        status: z.enum(["received", "reviewing", "confirmed", "cancelled"]),
+        cancellationReason: z.string().trim().max(500).optional(),
+      }))
       .mutation(({ input, ctx }) => {
         const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
         return updateAdminYearEndThreeColorExperienceRequest({ ...input, ...auditActor, auditActor });

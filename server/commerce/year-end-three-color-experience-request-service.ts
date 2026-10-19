@@ -40,6 +40,7 @@ const ADDITIVE_SCHEMA_SQL = `
     \`requestFingerprintHash\` varchar(128) NOT NULL,
     \`confirmedAt\` timestamp NULL,
     \`cancelledAt\` timestamp NULL,
+    \`cancellationReasonEncrypted\` text NULL,
     \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT \`year_end_three_color_experience_requests_id_pk\` PRIMARY KEY(\`id\`),
@@ -50,6 +51,15 @@ const ADDITIVE_SCHEMA_SQL = `
 
 async function ensureExperienceRequestSchema(db: any): Promise<void> {
   await db.execute(sql.raw(ADDITIVE_SCHEMA_SQL));
+  const columnResult = await db.execute(sql.raw("SHOW COLUMNS FROM `year_end_three_color_experience_requests` LIKE 'cancellationReasonEncrypted'"));
+  const columnRows = Array.isArray(columnResult) && Array.isArray(columnResult[0]) ? columnResult[0] : columnResult;
+  if (!Array.isArray(columnRows) || columnRows.length === 0) {
+    try {
+      await db.execute(sql.raw("ALTER TABLE `year_end_three_color_experience_requests` ADD COLUMN `cancellationReasonEncrypted` text NULL"));
+    } catch (error: any) {
+      if (error?.code !== "ER_DUP_FIELDNAME") throw error;
+    }
+  }
 }
 
 function kstDate(now = new Date()): string {
@@ -97,6 +107,15 @@ function maskPhone(value: string): string {
 function maskedSafely(value: string, mask: (plaintext: string) => string): string {
   try {
     return mask(decryptCommerceValue(value));
+  } catch {
+    return "보호됨";
+  }
+}
+
+function decryptOptionalSafely(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    return decryptCommerceValue(value);
   } catch {
     return "보호됨";
   }
@@ -199,6 +218,7 @@ export async function getAdminYearEndThreeColorExperienceRequests(limit = 100) {
     createdAt: row.createdAt,
     confirmedAt: row.confirmedAt,
     cancelledAt: row.cancelledAt,
+    cancellationReason: decryptOptionalSafely(row.cancellationReasonEncrypted),
   }));
 }
 
@@ -219,7 +239,7 @@ export async function revealAdminYearEndThreeColorExperienceRequestContact(input
   return { requestId: request.id, name: decryptCommerceValue(request.nameEncrypted), contactPhone: decryptCommerceValue(request.contactPhoneEncrypted) };
 }
 
-export async function updateAdminYearEndThreeColorExperienceRequest(input: { requestId: number; status: ExperienceRequestStatus; adminUserId: number | null; auditActor: AdminAuditActor }) {
+export async function updateAdminYearEndThreeColorExperienceRequest(input: { requestId: number; status: ExperienceRequestStatus; cancellationReason?: string; adminUserId: number | null; auditActor: AdminAuditActor }) {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
   await ensureExperienceRequestSchema(db);
@@ -228,11 +248,17 @@ export async function updateAdminYearEndThreeColorExperienceRequest(input: { req
     if (!before) throw new Error("EXPERIENCE_REQUEST_NOT_FOUND");
     assertStatusTransition(before.status as ExperienceRequestStatus, input.status);
     if (before.status === input.status) return { success: true as const, status: input.status, changed: false as const };
+
+    const cancellationReason = input.cancellationReason?.trim() ?? "";
+    if (cancellationReason.length > 500) throw new Error("EXPERIENCE_REQUEST_CANCELLATION_REASON_INVALID");
+    if (input.status !== "cancelled" && cancellationReason) throw new Error("EXPERIENCE_REQUEST_CANCELLATION_REASON_UNEXPECTED");
+
     const now = new Date();
     const changed = await tx.update(yearEndThreeColorExperienceRequests).set({
       status: input.status,
       confirmedAt: input.status === "confirmed" ? now : before.confirmedAt,
       cancelledAt: input.status === "cancelled" ? now : before.cancelledAt,
+      cancellationReasonEncrypted: input.status === "cancelled" ? (cancellationReason ? encryptCommerceValue(cancellationReason) : null) : before.cancellationReasonEncrypted,
     }).where(and(eq(yearEndThreeColorExperienceRequests.id, input.requestId), eq(yearEndThreeColorExperienceRequests.status, before.status)));
     if (Number(changed[0]?.affectedRows ?? 0) !== 1) throw new Error("EXPERIENCE_REQUEST_STATUS_CONFLICT");
     await tx.insert(adminAuditLogs).values({
@@ -241,7 +267,7 @@ export async function updateAdminYearEndThreeColorExperienceRequest(input: { req
       entityType: "year_end_three_color_experience_request",
       entityId: String(input.requestId),
       beforeJson: JSON.stringify({ status: before.status, auditActor: input.auditActor.subject }),
-      afterJson: JSON.stringify({ status: input.status, auditActor: input.auditActor.subject }),
+      afterJson: JSON.stringify({ status: input.status, cancellationReasonProvided: input.status === "cancelled" && Boolean(cancellationReason), auditActor: input.auditActor.subject }),
     });
     return { success: true as const, status: input.status, changed: true as const };
   });

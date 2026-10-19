@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -91,6 +92,8 @@ export default function AdminScreen() {
   const [deliverySearch, setDeliverySearch] = useState("");
   const [revealedOrderEmails, setRevealedOrderEmails] = useState<Record<number, RevealedOrderEmails>>({});
   const [revealedExperienceContacts, setRevealedExperienceContacts] = useState<Record<number, { name: string; contactPhone: string }>>({});
+  const [cancellingExperienceRequest, setCancellingExperienceRequest] = useState<{ id: number; productLabel: string } | null>(null);
+  const [experienceCancellationReason, setExperienceCancellationReason] = useState("");
   const apiBaseUrl = getApiBaseUrl();
 
   const refreshLegacySession = async () => {
@@ -332,6 +335,24 @@ export default function AdminScreen() {
       { text: "회수", style: "destructive", onPress: () => revokeTestEntitlement.mutate({ email, productCode: trialProduct }) },
     ]);
   };
+  const openExperienceCancellation = (item: { id: number; productLabel: string }) => {
+    setExperienceCancellationReason("");
+    setCancellingExperienceRequest(item);
+  };
+  const confirmExperienceCancellation = () => {
+    if (!cancellingExperienceRequest) return;
+    updateExperienceRequest.mutate({
+      requestId: cancellingExperienceRequest.id,
+      status: "cancelled",
+      cancellationReason: experienceCancellationReason.trim() || undefined,
+    }, {
+      onSuccess: () => {
+        setCancellingExperienceRequest(null);
+        setExperienceCancellationReason("");
+        void experienceRequests.refetch();
+      },
+    });
+  };
   const issueCustomerCoupon = () => {
     const email = targetCouponEmail.trim();
     const discountValue = Number(targetCouponDiscountValue);
@@ -389,6 +410,19 @@ export default function AdminScreen() {
 
   return (
     <ScreenContainer>
+      <Modal transparent visible={cancellingExperienceRequest !== null} animationType="fade" onRequestClose={() => setCancellingExperienceRequest(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>예약 취소 확인</Text>
+            <Text style={[styles.meta, { color: colors.muted }]}>{cancellingExperienceRequest?.productLabel} 신청을 취소 상태로 저장합니다. 취소된 신청은 삭제하지 않으며, 결제·환불은 처리하지 않습니다.</Text>
+            <TextInput value={experienceCancellationReason} onChangeText={setExperienceCancellationReason} placeholder="취소 사유 (선택 입력, 관리자용)" placeholderTextColor={colors.muted} maxLength={500} multiline style={[styles.input, styles.reasonInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} />
+            <View style={styles.actions}>
+              <TouchableOpacity style={styles.smallAction} disabled={updateExperienceRequest.isPending} onPress={() => setCancellingExperienceRequest(null)}><Text style={styles.smallActionText}>돌아가기</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.dangerAction} disabled={updateExperienceRequest.isPending} onPress={confirmExperienceCancellation}><Text style={styles.dangerActionText}>{updateExperienceRequest.isPending ? "저장 중…" : "예약 취소 저장"}</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#3f7b52" />}>
         <View style={styles.header}>
           <View><Text style={[styles.eyebrow, { color: colors.muted }]}>HUSIMCOLOR OPERATIONS</Text><Text style={[styles.title, { color: colors.foreground }]}>통합 관리자</Text><Text style={[styles.subtitle, { color: colors.muted }]}>고객 · 주문 · 결과 · PDF · 이메일 · 예약</Text></View>
@@ -515,7 +549,35 @@ export default function AdminScreen() {
 
         {tab === "코칭예약" && <><Text style={[styles.section, { color: colors.foreground }]}>코칭 예약 운영</Text><Text style={[styles.helper, { color: colors.muted }]}>결제 완료 코칭 주문은 일정 대기로 생성되어 운영자가 확정합니다.</Text>{bookings.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={bookingLabels[item.status] ?? item.status} tone={item.status === "completed" ? "good" : item.status === "cancelled" || item.status === "no_show" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.orderNumber}</Text><Text style={[styles.meta, { color: colors.muted }]}>확정 일시 {dateText(item.scheduledAt)} · {item.sessionMode === "online" ? "온라인" : item.sessionMode === "in_person" ? "대면" : "방식 미정"}</Text>{(item.status === "pending_schedule" || item.status === "change_requested") && <><TextInput value={schedule[item.id] ?? ""} onChangeText={(value) => setSchedule((old) => ({ ...old, [item.id]: value }))} placeholder="예: 2026-10-01 14:00" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><View style={styles.actions}><TouchableOpacity style={styles.action} onPress={() => confirmSchedule(item.id)}><Text style={styles.actionText}>일정 확정</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View></>}{item.status === "scheduled" && <View style={styles.actions}><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "completed")}><Text style={styles.smallActionText}>완료</Text></TouchableOpacity><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "change_requested")}><Text style={styles.smallActionText}>변경 요청</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "no_show")}><Text style={styles.dangerActionText}>노쇼</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View>}</Panel>)}</>}
 
-        {tab === "체험 신청" && <><Text style={[styles.section, { color: colors.foreground }]}>연말 3컬러 체험 신청</Text><Text style={[styles.helper, { color: colors.muted }]}>현장 결제 체험의 희망 일정 접수입니다. 신청만으로 예약은 확정되지 않으며, 이름·연락처는 기본 마스킹됩니다. ‘연락처 보기’는 관리자 감사 기록에 남습니다.</Text>{experienceRequests.isLoading && <ActivityIndicator color="#3f7b52" />}{experienceRequests.data?.map((item) => { const revealed = revealedExperienceContacts[item.id]; const tone = item.status === "confirmed" ? "good" : item.status === "cancelled" ? "bad" : "warn"; return <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productLabel}</Text><Badge text={experienceRequestStatusLabels[item.status] ?? item.status} tone={tone} /></View><Text style={[styles.meta, { color: colors.muted }]}>희망 {item.preferredDate} {item.preferredTime} · {item.nameMasked} · {item.contactPhoneMasked}</Text><Text style={[styles.meta, { color: colors.muted }]}>접수 {dateText(item.createdAt)} · 개인정보 동의 {dateText(item.privacyConsentAcceptedAt)}</Text>{revealed && <Text style={[styles.emailValue, { color: colors.foreground }]}>연락처 확인: {revealed.name} · {revealed.contactPhone}</Text>}<View style={styles.actions}>{!revealed && <TouchableOpacity style={styles.smallAction} disabled={revealExperienceContact.isPending} onPress={() => revealExperienceContact.mutate({ requestId: item.id })}><Text style={styles.smallActionText}>연락처 보기</Text></TouchableOpacity>}{item.status === "received" && <TouchableOpacity style={styles.smallAction} disabled={updateExperienceRequest.isPending} onPress={() => updateExperienceRequest.mutate({ requestId: item.id, status: "reviewing" })}><Text style={styles.smallActionText}>일정 확인 중</Text></TouchableOpacity>}{(item.status === "received" || item.status === "reviewing") && <TouchableOpacity style={styles.action} disabled={updateExperienceRequest.isPending} onPress={() => Alert.alert("예약 확정", "일정을 확인한 뒤 이 체험 신청을 예약 확정으로 표시하시겠습니까? 결제는 처리하지 않습니다.", [{ text: "취소", style: "cancel" }, { text: "확정", onPress: () => updateExperienceRequest.mutate({ requestId: item.id, status: "confirmed" }) }])}><Text style={styles.actionText}>예약 확정</Text></TouchableOpacity>}{item.status !== "cancelled" && <TouchableOpacity style={styles.dangerAction} disabled={updateExperienceRequest.isPending} onPress={() => Alert.alert("체험 신청 취소", "이 신청을 취소로 표시하시겠습니까? 결제·주문은 변경되지 않습니다.", [{ text: "취소", style: "cancel" }, { text: "취소 처리", style: "destructive", onPress: () => updateExperienceRequest.mutate({ requestId: item.id, status: "cancelled" }) }])}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity>}</View></Panel>; })}{experienceRequests.data?.length === 0 && !experienceRequests.isLoading && <Panel><Text style={styles.noticeText}>현재 접수된 체험 신청이 없습니다.</Text></Panel>}</>}
+        {tab === "체험 신청" && <>
+          <Text style={[styles.section, { color: colors.foreground }]}>연말 3컬러 체험 신청</Text>
+          <Text style={[styles.helper, { color: colors.muted }]}>희망 일정 신청과 예약 확정은 같은 날짜에도 여러 건 진행할 수 있습니다. ‘하루 한 분·한 팀’은 안내 문구이며 자동 제한하지 않습니다. 이름·연락처는 기본 마스킹되고, ‘연락처 보기’는 관리자 감사 기록에 남습니다.</Text>
+          {experienceRequests.isLoading && <ActivityIndicator color="#3f7b52" />}
+          {experienceRequests.data?.map((item) => {
+            const revealed = revealedExperienceContacts[item.id];
+            const tone = item.status === "confirmed" ? "good" : item.status === "cancelled" ? "bad" : "warn";
+            return <Panel key={item.id}>
+              <View style={styles.row}>
+                <Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productLabel}</Text>
+                <Badge text={experienceRequestStatusLabels[item.status] ?? item.status} tone={tone} />
+              </View>
+              <Text style={[styles.meta, { color: colors.muted }]}>희망 {item.preferredDate} {item.preferredTime} · {item.nameMasked} · {item.contactPhoneMasked}</Text>
+              <Text style={[styles.meta, { color: colors.muted }]}>접수 {dateText(item.createdAt)} · 개인정보 동의 {dateText(item.privacyConsentAcceptedAt)}</Text>
+              {item.status === "cancelled" && <>
+                <Text style={[styles.meta, { color: "#b5584f" }]}>취소 {dateText(item.cancelledAt)}</Text>
+                {item.cancellationReason && <Text style={[styles.meta, { color: colors.muted }]}>취소 사유: {item.cancellationReason}</Text>}
+              </>}
+              {revealed && <Text style={[styles.emailValue, { color: colors.foreground }]}>연락처 확인: {revealed.name} · {revealed.contactPhone}</Text>}
+              <View style={styles.actions}>
+                {!revealed && <TouchableOpacity style={styles.smallAction} disabled={revealExperienceContact.isPending} onPress={() => revealExperienceContact.mutate({ requestId: item.id })}><Text style={styles.smallActionText}>연락처 보기</Text></TouchableOpacity>}
+                {item.status === "received" && <TouchableOpacity style={styles.smallAction} disabled={updateExperienceRequest.isPending} onPress={() => updateExperienceRequest.mutate({ requestId: item.id, status: "reviewing" })}><Text style={styles.smallActionText}>일정 확인 중</Text></TouchableOpacity>}
+                {(item.status === "received" || item.status === "reviewing") && <TouchableOpacity style={styles.action} disabled={updateExperienceRequest.isPending} onPress={() => Alert.alert("예약 확정", "일정을 확인한 뒤 이 체험 신청을 예약 확정으로 표시하시겠습니까? 같은 날짜의 다른 체험 신청은 제한하지 않으며, 결제는 처리하지 않습니다.", [{ text: "돌아가기", style: "cancel" }, { text: "확정", onPress: () => updateExperienceRequest.mutate({ requestId: item.id, status: "confirmed" }) }])}><Text style={styles.actionText}>예약 확정</Text></TouchableOpacity>}
+                {item.status !== "cancelled" && <TouchableOpacity style={styles.dangerAction} disabled={updateExperienceRequest.isPending} onPress={() => openExperienceCancellation(item)}><Text style={styles.dangerActionText}>예약 취소</Text></TouchableOpacity>}
+              </View>
+            </Panel>;
+          })}
+          {experienceRequests.data?.length === 0 && !experienceRequests.isLoading && <Panel><Text style={styles.noticeText}>현재 접수된 체험 신청이 없습니다.</Text></Panel>}
+        </>}
 
         {tab === "문의" && <><Text style={[styles.section, { color: colors.foreground }]}>1:1 문의</Text><Text style={[styles.helper, { color: colors.muted }]}>이름·이메일은 기본 마스킹됩니다. 내용은 서버 관리자 권한에서만 확인하며 이메일 답변은 기존 support 메일함에서 처리합니다.</Text>{supportTickets.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{inquiryTypeLabels[item.inquiryType] ?? item.inquiryType} · {item.subject}</Text><Badge text={inquiryStatusLabels[item.status] ?? item.status} tone={item.status === "answered" ? "good" : item.status === "reviewing" ? "warn" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.nameMasked} · {item.emailMasked} · {dateText(item.createdAt)}</Text><Text style={[styles.review, { color: colors.muted }]}>{item.message}</Text><View style={styles.actions}>{(["received", "reviewing", "answered"] as const).map((status) => <TouchableOpacity key={status} style={styles.smallAction} disabled={updateSupportTicket.isPending || item.status === status} onPress={() => updateSupportTicket.mutate({ id: item.id, status })}><Text style={styles.smallActionText}>{inquiryStatusLabels[status]}</Text></TouchableOpacity>)}</View></Panel>)}{!supportTickets.data?.length && <Panel><Text style={styles.noticeText}>접수된 문의가 없습니다.</Text></Panel>}</>}
 
@@ -541,5 +603,5 @@ const styles = StyleSheet.create({
   panel: { borderWidth: 1, borderColor: "#ded9ce", backgroundColor: "#fbfaf6", borderRadius: 15, padding: 14, gap: 7 }, row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }, cardTitle: { fontSize: 14, fontWeight: "800", flexShrink: 1 }, meta: { fontSize: 11, lineHeight: 17 },
   badge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }, badgeText: { fontSize: 10, fontWeight: "800" }, noticeTitle: { color: "#3f7b52", fontSize: 14, fontWeight: "800" }, revenueValue: { fontSize: 27, fontWeight: "800" }, noticeText: { color: "#55705a", fontSize: 12, lineHeight: 19 },
   action: { alignSelf: "flex-start", backgroundColor: "#3f7b52", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }, actionText: { color: "#fff", fontSize: 12, fontWeight: "800" }, input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, fontSize: 12 }, passwordInput: { width: "100%", maxWidth: 320 }, passwordError: { color: "#b5584f", fontSize: 12, textAlign: "center" }, actions: { flexDirection: "row", flexWrap: "wrap", gap: 7 }, smallAction: { borderWidth: 1, borderColor: "#a9c8ae", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, smallActionText: { color: "#3f7b52", fontSize: 11, fontWeight: "800" }, dangerAction: { borderWidth: 1, borderColor: "#e3aaa3", borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 }, dangerActionText: { color: "#b5584f", fontSize: 11, fontWeight: "800" },
-  expanded: { borderTopWidth: 1, borderTopColor: "#ded9ce", paddingTop: 10, gap: 8 }, emailValue: { fontSize: 12, fontWeight: "700", lineHeight: 18 }, emailDetail: { gap: 5, paddingTop: 6 }, delete: { color: "#b5584f", fontSize: 11, fontWeight: "800" }, review: { fontSize: 12, lineHeight: 18 }, trialUrl: { minHeight: 84, textAlignVertical: "top", fontSize: 10, lineHeight: 15 }, compactInput: { width: 96 },
+  expanded: { borderTopWidth: 1, borderTopColor: "#ded9ce", paddingTop: 10, gap: 8 }, emailValue: { fontSize: 12, fontWeight: "700", lineHeight: 18 }, emailDetail: { gap: 5, paddingTop: 6 }, delete: { color: "#b5584f", fontSize: 11, fontWeight: "800" }, review: { fontSize: 12, lineHeight: 18 }, trialUrl: { minHeight: 84, textAlignVertical: "top", fontSize: 10, lineHeight: 15 }, compactInput: { width: 96 }, modalBackdrop: { flex: 1, justifyContent: "center", padding: 22, backgroundColor: "rgba(37, 31, 27, 0.42)" }, modalCard: { borderRadius: 16, padding: 18, gap: 12, borderWidth: 1, borderColor: "#ded9ce" }, reasonInput: { minHeight: 84, textAlignVertical: "top" },
 });

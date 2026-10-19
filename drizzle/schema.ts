@@ -673,6 +673,7 @@ export const yearEndThreeColorExperienceRequests = mysqlTable(
     requestFingerprintHash: varchar("requestFingerprintHash", { length: 128 }).notNull(),
     confirmedAt: timestamp("confirmedAt"),
     cancelledAt: timestamp("cancelledAt"),
+    cancellationReasonEncrypted: text("cancellationReasonEncrypted"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
@@ -682,6 +683,7 @@ export const yearEndThreeColorExperienceRequests = mysqlTable(
     index("year_end_three_color_experience_requests_date_status_idx").on(table.preferredDate, table.status),
   ],
 );
+
 export type YearEndThreeColorExperienceRequest = typeof yearEndThreeColorExperienceRequests.$inferSelect;
 
 /** 향후 홈페이지 코칭의 전액 결제 주문을 일정·진행 상태와 같은 user_id에 연결한다. */
