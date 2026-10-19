@@ -653,6 +653,37 @@ export const supportTickets = mysqlTable(
   (table) => [index("support_tickets_user_status_idx").on(table.userId, table.status)],
 );
 
+/**
+ * 2026 연말 3컬러 체험의 희망 일정 접수 원장이다.
+ * 현장 결제 체험만 기록하며 주문·결제·이용권·PDF·이메일 원장에는 연결하지 않는다.
+ */
+export const yearEndThreeColorExperienceRequests = mysqlTable(
+  "year_end_three_color_experience_requests",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    productCode: mysqlEnum("productCode", ["personal_three_color_experience", "engaged_couple_three_color_experience"]).notNull(),
+    preferredDate: varchar("preferredDate", { length: 10 }).notNull(),
+    preferredTime: varchar("preferredTime", { length: 5 }).notNull(),
+    nameEncrypted: text("nameEncrypted").notNull(),
+    contactPhoneEncrypted: text("contactPhoneEncrypted").notNull(),
+    privacyConsentAcceptedAt: timestamp("privacyConsentAcceptedAt").notNull(),
+    privacyConsentVersion: varchar("privacyConsentVersion", { length: 80 }).notNull(),
+    status: mysqlEnum("status", ["received", "reviewing", "confirmed", "cancelled"]).notNull().default("received"),
+    idempotencyKeyHash: varchar("idempotencyKeyHash", { length: 128 }).notNull(),
+    requestFingerprintHash: varchar("requestFingerprintHash", { length: 128 }).notNull(),
+    confirmedAt: timestamp("confirmedAt"),
+    cancelledAt: timestamp("cancelledAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("year_end_three_color_experience_requests_idempotency_unique").on(table.idempotencyKeyHash),
+    index("year_end_three_color_experience_requests_status_created_idx").on(table.status, table.createdAt),
+    index("year_end_three_color_experience_requests_date_status_idx").on(table.preferredDate, table.status),
+  ],
+);
+export type YearEndThreeColorExperienceRequest = typeof yearEndThreeColorExperienceRequests.$inferSelect;
+
 /** 향후 홈페이지 코칭의 전액 결제 주문을 일정·진행 상태와 같은 user_id에 연결한다. */
 export const coachingBookings = mysqlTable(
   "coaching_bookings",

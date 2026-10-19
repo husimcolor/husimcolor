@@ -18,7 +18,7 @@ import { getApiBaseUrl } from "@/constants/oauth";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 
-type Tab = "운영 홈" | "고객·회원" | "주문·결제" | "검사·결과" | "PDF·이메일" | "상품·쿠폰" | "코칭예약" | "문의" | "레거시" | "통계·리뷰" | "Preview 검증";
+type Tab = "운영 홈" | "고객·회원" | "주문·결제" | "검사·결과" | "PDF·이메일" | "상품·쿠폰" | "코칭예약" | "체험 신청" | "문의" | "레거시" | "통계·리뷰" | "Preview 검증";
 type LegacyStatus = "pending" | "confirmed" | "rejected";
 type RevealedOrderEmails = {
   orderNumber: string;
@@ -26,7 +26,7 @@ type RevealedOrderEmails = {
   reportRecipients: Array<{ outboxId: number; email: string; status: string; sentAt: Date | string | null }>;
 };
 
-const tabs: Tab[] = ["운영 홈", "고객·회원", "주문·결제", "검사·결과", "PDF·이메일", "상품·쿠폰", "코칭예약", "문의", "레거시", "통계·리뷰", "Preview 검증"];
+const tabs: Tab[] = ["운영 홈", "고객·회원", "주문·결제", "검사·결과", "PDF·이메일", "상품·쿠폰", "코칭예약", "체험 신청", "문의", "레거시", "통계·리뷰", "Preview 검증"];
 const bookingLabels: Record<string, string> = {
   pending_schedule: "일정 대기", change_requested: "변경 요청", scheduled: "예약 확정",
   completed: "완료", cancelled: "취소", no_show: "노쇼",
@@ -34,6 +34,7 @@ const bookingLabels: Record<string, string> = {
 const legacyLabels: Record<LegacyStatus, string> = { pending: "입금 대기", confirmed: "입금 확인", rejected: "취소" };
 const inquiryTypeLabels: Record<string, string> = { payment_refund: "결제·환불", analysis_result: "검사·결과", pdf_email: "PDF·이메일", coaching_booking: "코칭예약", other: "기타" };
 const inquiryStatusLabels: Record<string, string> = { received: "접수", reviewing: "확인", answered: "답변완료" };
+const experienceRequestStatusLabels: Record<string, string> = { received: "접수", reviewing: "일정 확인 중", confirmed: "예약 확정", cancelled: "취소" };
 
 function dateText(value: Date | string | null | undefined) {
   if (!value) return "—";
@@ -89,6 +90,7 @@ export default function AdminScreen() {
   const [relationshipRecoveryStatus, setRelationshipRecoveryStatus] = useState<string | null>(null);
   const [deliverySearch, setDeliverySearch] = useState("");
   const [revealedOrderEmails, setRevealedOrderEmails] = useState<Record<number, RevealedOrderEmails>>({});
+  const [revealedExperienceContacts, setRevealedExperienceContacts] = useState<Record<number, { name: string; contactPhone: string }>>({});
   const apiBaseUrl = getApiBaseUrl();
 
   const refreshLegacySession = async () => {
@@ -100,6 +102,9 @@ export default function AdminScreen() {
   };
 
   useEffect(() => { void refreshLegacySession(); }, []);
+  useEffect(() => {
+    if (tab !== "체험 신청") setRevealedExperienceContacts({});
+  }, [tab]);
 
   const loginWithLegacyPassword = async () => {
     setPasswordError(false);
@@ -127,6 +132,7 @@ export default function AdminScreen() {
   const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: hasAdminAccess && customerId !== null });
   const delivery = trpc.commerce.adminDelivery.list.useQuery({ limit: 50, search: deliverySearch.trim() || undefined }, secured);
   const bookings = trpc.admin.coachingBookings.useQuery({ limit: 50 }, secured);
+  const experienceRequests = trpc.admin.yearEndExperienceRequests.useQuery({ limit: 100 }, secured);
   const blackoutDates = trpc.admin.coachingBlackoutDates.useQuery(undefined, secured);
   const supportTickets = trpc.admin.supportTickets.useQuery({ limit: 100 }, secured);
   const coupons = trpc.admin.coupons.useQuery({ limit: 100 }, secured);
@@ -145,6 +151,14 @@ export default function AdminScreen() {
     onError: () => Alert.alert("이메일 열람 불가", "주문 이메일을 불러오지 못했습니다. 관리자 로그인을 확인해 주세요."),
   });
   const updateBooking = trpc.admin.updateCoachingBooking.useMutation({ onSuccess: () => { bookings.refetch(); dailyOperations.refetch(); } });
+  const revealExperienceContact = trpc.admin.revealYearEndExperienceRequestContact.useMutation({
+    onSuccess: (result) => setRevealedExperienceContacts((previous) => ({ ...previous, [result.requestId]: { name: result.name, contactPhone: result.contactPhone } })),
+    onError: () => Alert.alert("연락처 열람 불가", "신청자 연락처를 불러오지 못했습니다. 관리자 로그인을 확인해 주세요."),
+  });
+  const updateExperienceRequest = trpc.admin.updateYearEndExperienceRequest.useMutation({
+    onSuccess: () => experienceRequests.refetch(),
+    onError: () => Alert.alert("상태 변경 실패", "체험 신청 상태를 변경하지 못했습니다. 다시 시도해 주세요."),
+  });
   const createBlackoutDate = trpc.admin.createCoachingBlackoutDate.useMutation({
     onSuccess: (result) => {
       if (!result.created) {
@@ -255,7 +269,7 @@ export default function AdminScreen() {
 
   const refresh = async () => {
     setRefreshing(true);
-    await Promise.all([auth.refetch(), dailyOperations.refetch(), orders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), blackoutDates.refetch(), supportTickets.refetch(), coupons.refetch(), targetedCoupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
+    await Promise.all([auth.refetch(), dailyOperations.refetch(), orders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), experienceRequests.refetch(), blackoutDates.refetch(), supportTickets.refetch(), coupons.refetch(), targetedCoupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
     setRefreshing(false);
   };
   const updatePayment = (id: number, status: LegacyStatus) => Alert.alert("과거 신청 상태", `“${legacyLabels[status]}”으로 변경하시겠습니까?`, [
@@ -500,6 +514,8 @@ export default function AdminScreen() {
           <Text style={[styles.section, { color: colors.foreground }]}>상품·쿠폰</Text><Text style={[styles.helper, { color: colors.muted }]}>공개 행사와 지정 고객 쿠폰의 사용·예약 상태를 표시합니다. 한 주문에는 쿠폰 하나만 적용됩니다.</Text>{coupons.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.code}</Text><Badge text={item.status} tone={item.status === "active" ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.discountType === "percent" ? `${item.discountValue}% 할인` : `${item.discountValue.toLocaleString()}원 할인`} · 사용 {item.redemptionCount}건 · 예약 {item.reservedCount}건</Text><Text style={[styles.meta, { color: colors.muted }]}>종료 {dateText(item.endsAt)}</Text></Panel>)}{!coupons.data?.length && <Panel><Text style={styles.noticeText}>등록된 쿠폰이 없습니다.</Text></Panel>}</>}
 
         {tab === "코칭예약" && <><Text style={[styles.section, { color: colors.foreground }]}>코칭 예약 운영</Text><Text style={[styles.helper, { color: colors.muted }]}>결제 완료 코칭 주문은 일정 대기로 생성되어 운영자가 확정합니다.</Text>{bookings.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={bookingLabels[item.status] ?? item.status} tone={item.status === "completed" ? "good" : item.status === "cancelled" || item.status === "no_show" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.orderNumber}</Text><Text style={[styles.meta, { color: colors.muted }]}>확정 일시 {dateText(item.scheduledAt)} · {item.sessionMode === "online" ? "온라인" : item.sessionMode === "in_person" ? "대면" : "방식 미정"}</Text>{(item.status === "pending_schedule" || item.status === "change_requested") && <><TextInput value={schedule[item.id] ?? ""} onChangeText={(value) => setSchedule((old) => ({ ...old, [item.id]: value }))} placeholder="예: 2026-10-01 14:00" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><View style={styles.actions}><TouchableOpacity style={styles.action} onPress={() => confirmSchedule(item.id)}><Text style={styles.actionText}>일정 확정</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View></>}{item.status === "scheduled" && <View style={styles.actions}><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "completed")}><Text style={styles.smallActionText}>완료</Text></TouchableOpacity><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "change_requested")}><Text style={styles.smallActionText}>변경 요청</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "no_show")}><Text style={styles.dangerActionText}>노쇼</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View>}</Panel>)}</>}
+
+        {tab === "체험 신청" && <><Text style={[styles.section, { color: colors.foreground }]}>연말 3컬러 체험 신청</Text><Text style={[styles.helper, { color: colors.muted }]}>현장 결제 체험의 희망 일정 접수입니다. 신청만으로 예약은 확정되지 않으며, 이름·연락처는 기본 마스킹됩니다. ‘연락처 보기’는 관리자 감사 기록에 남습니다.</Text>{experienceRequests.isLoading && <ActivityIndicator color="#3f7b52" />}{experienceRequests.data?.map((item) => { const revealed = revealedExperienceContacts[item.id]; const tone = item.status === "confirmed" ? "good" : item.status === "cancelled" ? "bad" : "warn"; return <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productLabel}</Text><Badge text={experienceRequestStatusLabels[item.status] ?? item.status} tone={tone} /></View><Text style={[styles.meta, { color: colors.muted }]}>희망 {item.preferredDate} {item.preferredTime} · {item.nameMasked} · {item.contactPhoneMasked}</Text><Text style={[styles.meta, { color: colors.muted }]}>접수 {dateText(item.createdAt)} · 개인정보 동의 {dateText(item.privacyConsentAcceptedAt)}</Text>{revealed && <Text style={[styles.emailValue, { color: colors.foreground }]}>연락처 확인: {revealed.name} · {revealed.contactPhone}</Text>}<View style={styles.actions}>{!revealed && <TouchableOpacity style={styles.smallAction} disabled={revealExperienceContact.isPending} onPress={() => revealExperienceContact.mutate({ requestId: item.id })}><Text style={styles.smallActionText}>연락처 보기</Text></TouchableOpacity>}{item.status === "received" && <TouchableOpacity style={styles.smallAction} disabled={updateExperienceRequest.isPending} onPress={() => updateExperienceRequest.mutate({ requestId: item.id, status: "reviewing" })}><Text style={styles.smallActionText}>일정 확인 중</Text></TouchableOpacity>}{(item.status === "received" || item.status === "reviewing") && <TouchableOpacity style={styles.action} disabled={updateExperienceRequest.isPending} onPress={() => Alert.alert("예약 확정", "일정을 확인한 뒤 이 체험 신청을 예약 확정으로 표시하시겠습니까? 결제는 처리하지 않습니다.", [{ text: "취소", style: "cancel" }, { text: "확정", onPress: () => updateExperienceRequest.mutate({ requestId: item.id, status: "confirmed" }) }])}><Text style={styles.actionText}>예약 확정</Text></TouchableOpacity>}{item.status !== "cancelled" && <TouchableOpacity style={styles.dangerAction} disabled={updateExperienceRequest.isPending} onPress={() => Alert.alert("체험 신청 취소", "이 신청을 취소로 표시하시겠습니까? 결제·주문은 변경되지 않습니다.", [{ text: "취소", style: "cancel" }, { text: "취소 처리", style: "destructive", onPress: () => updateExperienceRequest.mutate({ requestId: item.id, status: "cancelled" }) }])}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity>}</View></Panel>; })}{experienceRequests.data?.length === 0 && !experienceRequests.isLoading && <Panel><Text style={styles.noticeText}>현재 접수된 체험 신청이 없습니다.</Text></Panel>}</>}
 
         {tab === "문의" && <><Text style={[styles.section, { color: colors.foreground }]}>1:1 문의</Text><Text style={[styles.helper, { color: colors.muted }]}>이름·이메일은 기본 마스킹됩니다. 내용은 서버 관리자 권한에서만 확인하며 이메일 답변은 기존 support 메일함에서 처리합니다.</Text>{supportTickets.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{inquiryTypeLabels[item.inquiryType] ?? item.inquiryType} · {item.subject}</Text><Badge text={inquiryStatusLabels[item.status] ?? item.status} tone={item.status === "answered" ? "good" : item.status === "reviewing" ? "warn" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.nameMasked} · {item.emailMasked} · {dateText(item.createdAt)}</Text><Text style={[styles.review, { color: colors.muted }]}>{item.message}</Text><View style={styles.actions}>{(["received", "reviewing", "answered"] as const).map((status) => <TouchableOpacity key={status} style={styles.smallAction} disabled={updateSupportTicket.isPending || item.status === status} onPress={() => updateSupportTicket.mutate({ id: item.id, status })}><Text style={styles.smallActionText}>{inquiryStatusLabels[status]}</Text></TouchableOpacity>)}</View></Panel>)}{!supportTickets.data?.length && <Panel><Text style={styles.noticeText}>접수된 문의가 없습니다.</Text></Panel>}</>}
 

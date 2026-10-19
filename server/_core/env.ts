@@ -10,6 +10,7 @@ export const ENV = {
   appId: resolveOAuthAppId(),
   cookieSecret: process.env.JWT_SECRET ?? "",
   databaseUrl: process.env.DATABASE_URL ?? "",
+  landingExperienceRequestSecret: process.env.HUSIM_APP_LANDING_REQUEST_SECRET ?? "",
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   isProduction: process.env.NODE_ENV === "production",

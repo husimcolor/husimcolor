@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { timingSafeEqual } from "node:crypto";
+import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -79,6 +81,12 @@ import {
   removeAdminCoachingBlackoutDate,
 } from "./commerce/coaching-blackout-service";
 import {
+  createYearEndThreeColorExperienceRequest,
+  getAdminYearEndThreeColorExperienceRequests,
+  revealAdminYearEndThreeColorExperienceRequestContact,
+  updateAdminYearEndThreeColorExperienceRequest,
+} from "./commerce/year-end-three-color-experience-request-service";
+import {
   deliverPreviewRelationshipReport,
   generateAndQueueRelationshipReport,
   createPreviewFailedRelationshipRecovery,
@@ -100,6 +108,17 @@ import {
 export async function loadPrivatePdfDeliveryService() {
   return import("./commerce/pdf-delivery-service");
 }
+
+/** 홈페이지 서버만 현장 결제 체험 신청을 중계할 수 있다. 브라우저에는 이 헤더가 전달되지 않는다. */
+const landingExperienceRequestProcedure = publicProcedure.use(({ ctx, next }) => {
+  const configured = process.env.HUSIM_APP_LANDING_REQUEST_SECRET;
+  const provided = ctx.req.header("x-husim-landing-secret");
+  const expected = configured ? Buffer.from(configured, "utf8") : null;
+  const actual = provided ? Buffer.from(provided, "utf8") : null;
+  const authorized = Boolean(expected && actual && expected.length >= 32 && expected.length === actual.length && timingSafeEqual(expected, actual));
+  if (!authorized) throw new TRPCError({ code: "UNAUTHORIZED", message: "LANDING_REQUEST_UNAUTHORIZED" });
+  return next();
+});
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -454,6 +473,24 @@ export const appRouter = router({
       .query(({ input }) => getRelationshipResult(input)),
   }),
 
+  /** 홈페이지 서버만 전용 서명 헤더로 현장 결제 체험 신청을 기록한다. */
+  experienceRequests: router({
+    submit: landingExperienceRequestProcedure
+      .input(z.object({
+        productCode: z.enum(["personal_three_color_experience", "engaged_couple_three_color_experience"]),
+        preferredDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        preferredTime: z.string().regex(/^\d{2}:\d{2}$/),
+        name: z.string().min(1).max(80),
+        contactPhone: z.string().min(8).max(24),
+        privacyConsentAccepted: z.literal(true),
+        idempotencyKey: z.string().min(16).max(128),
+      }))
+      .mutation(({ ctx, input }) => createYearEndThreeColorExperienceRequest({
+        ...input,
+        landingRequestSecret: ctx.req.header("x-husim-landing-secret") ?? undefined,
+      })),
+  }),
+
   // 통합 운영 관리 API. 모든 조회·변경은 서버의 users.role=admin을 요구한다.
   admin: router({
     dashboard: adminProcedure.query(() => getAdminOperationsDashboard()),
@@ -559,6 +596,21 @@ export const appRouter = router({
     coachingBookings: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminCoachingBookingList(input.limit)),
+    yearEndExperienceRequests: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
+      .query(({ input }) => getAdminYearEndThreeColorExperienceRequests(input.limit)),
+    revealYearEndExperienceRequestContact: adminProcedure
+      .input(z.object({ requestId: z.number().int().positive() }))
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return revealAdminYearEndThreeColorExperienceRequestContact({ ...input, ...auditActor, auditActor });
+      }),
+    updateYearEndExperienceRequest: adminProcedure
+      .input(z.object({ requestId: z.number().int().positive(), status: z.enum(["received", "reviewing", "confirmed", "cancelled"]) }))
+      .mutation(({ input, ctx }) => {
+        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        return updateAdminYearEndThreeColorExperienceRequest({ ...input, ...auditActor, auditActor });
+      }),
     coachingBookingEvents: adminProcedure
       .input(z.object({ bookingId: z.number().int().positive() }))
       .query(({ input }) => getAdminCoachingBookingEvents(input.bookingId)),
