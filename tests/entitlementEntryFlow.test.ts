@@ -7,15 +7,15 @@ const read = (relativePath: string) =>
   readFileSync(path.join(projectRoot, relativePath), "utf8");
 
 describe("entitlement-based analysis entry", () => {
-  it("routes paid personal and paid relationship selections through the active payment checkout while preserving free friend entry", () => {
+  it("routes paid personal and direct paid relationship-card selections through checkout while preserving free friend entry", () => {
     const home = read("app/(tabs)/index.tsx");
     const coupleStart = read("app/(tabs)/couple-start.tsx");
     expect(home).toContain("commerce-checkout?product=personal_deep");
     expect(coupleStart).toContain(
-      "commerce-checkout?product=${paidProductCode}",
+      "commerce-checkout?product=${productCode}",
     );
-    expect(coupleStart).toContain('selectedProductId === "parent-child"');
-    expect(coupleStart).toContain("const paidProductCode");
+    expect(coupleStart).toContain('product.id === "parent-child"');
+    expect(coupleStart).toContain("const openPaidCheckout");
     expect(coupleStart).toContain('pathname: "/(tabs)/couple-info"');
   });
 

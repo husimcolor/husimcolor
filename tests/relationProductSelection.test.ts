@@ -52,11 +52,15 @@ describe("관계 분석 상품 선택 노출 구조", () => {
     expect(visibleRelationTypes).not.toContain("동료");
   });
 
-  it("관계 시작 화면은 세 상품 목록으로만 렌더링하고 개인 분석은 정보 입력 단계로 진입한다", () => {
+  it("관계 시작 화면은 세 상품 목록을 렌더링하고 유료 카드는 즉시 checkout으로 진입한다", () => {
     expect(relationStartScreen).toContain(
       "VISIBLE_RELATION_PRODUCTS.map((product) => {",
     );
-    expect(relationStartScreen).toContain("const paidProductCode");
+    expect(relationStartScreen).toContain("const paidProductCode = (product");
+    expect(relationStartScreen).toContain("const openPaidCheckout");
+    expect(relationStartScreen).toContain(
+      "commerce-checkout?product=${productCode}",
+    );
     expect(relationStartScreen).toContain('"parent_child_deep"');
     expect(homeScreen).toContain("onPress={handleStart}");
     expect(homeScreen).toContain("router.push('/(tabs)/premium-info' as any)");

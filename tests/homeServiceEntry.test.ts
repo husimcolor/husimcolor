@@ -39,6 +39,10 @@ describe("첫 진입 화면의 서비스 선택 UX", () => {
   });
 
   it("상품별 전체 샘플은 결제·상품 선택과 분리된 앱 내 열람 화면으로 열린다", () => {
+    const sampleHandler = relationshipStartScreen.slice(
+      relationshipStartScreen.indexOf("const handleOpenSampleReport"),
+      relationshipStartScreen.indexOf("return ("),
+    );
     expect(homeScreen).toContain("handleOpenSampleReport('personal_deep')");
     expect(relationshipStartScreen).toContain(
       "handleOpenSampleReport(sampleProduct)",
@@ -54,6 +58,12 @@ describe("첫 진입 화면의 서비스 선택 UX", () => {
     expect(relationshipStartScreen).not.toContain(
       "window.open(url, '_blank', 'noopener,noreferrer')",
     );
+    expect(relationshipStartScreen).toContain(
+      "<View key={product.id} style={styles.productCardGroup}>",
+    );
+    expect(sampleHandler).toContain('pathname: "/(tabs)/sample-report"');
+    expect(sampleHandler).not.toContain("openPaidCheckout");
+    expect(sampleHandler).not.toContain("commerce-checkout");
     expect(sampleViewerScreen).toContain("getSampleReportViewerUrl");
     expect(sampleViewerScreen).toContain(
       "WebBrowser.openBrowserAsync(viewerUrl",
@@ -67,7 +77,7 @@ describe("첫 진입 화면의 서비스 선택 UX", () => {
     expect(sampleViewerScreen).toContain("이 분석 알아보기 →");
   });
 
-  it("결제 설정을 불러오는 중에도 유료 상품 진입을 준비중 상태로 숨기지 않는다", () => {
+  it("결제 설정을 불러오는 중에도 유료 카드의 즉시 checkout 진입을 숨기지 않는다", () => {
     expect(homeScreen).toContain("const paidAnalysisPublicEnabled =");
     expect(homeScreen).toContain(
       "commerceTestMode.data?.paidAnalysisPublicEnabled ?? true",
@@ -79,7 +89,11 @@ describe("첫 진입 화면의 서비스 선택 UX", () => {
       "commerceTestMode.data?.paidAnalysisPublicEnabled ?? true",
     );
     expect(homeScreen).toContain("나를 깊이 알아보기 →");
-    expect(relationshipStartScreen).toContain("다음 · 결제 정보 입력하기");
+    expect(relationshipStartScreen).toContain("const openPaidCheckout");
+    expect(relationshipStartScreen).toContain(
+      "commerce-checkout?product=${productCode}",
+    );
+    expect(relationshipStartScreen).not.toContain("다음 · 결제 정보 입력하기");
     expect(homeScreen).not.toContain("정식 오픈 준비중");
     expect(relationshipStartScreen).not.toContain("정식 오픈 준비중");
   });

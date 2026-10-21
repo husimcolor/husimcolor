@@ -15,13 +15,21 @@ describe("유료 분석 공개 결제 진입 UI", () => {
     expect(source).toContain("PDF 리포트");
   });
 
-  it("관계 화면은 친구 무료 경로를 보존하면서 부부·연인 상품을 결제 후 설정으로 연결한다", () => {
+  it("관계 화면은 친구 무료 경로를 보존하면서 유료 카드를 checkout route로 즉시 연결한다", () => {
     const source = read("app/(tabs)/couple-start.tsx");
+    const paidCheckoutHandler = source.slice(
+      source.indexOf("const openPaidCheckout"),
+      source.indexOf("const handleStart"),
+    );
     expect(source).toContain('relationType: "친구"');
-    expect(source).toContain('selectedProductId === "romantic"');
-    expect(source).toContain("product=${paidProductCode}");
-    expect(source).toContain("결제 후 첫 참여자의 컬러 선택 전에");
-    expect(source).toContain("다음 · 결제 정보 입력");
+    expect(source).toContain('product.id === "romantic"');
+    expect(source).toContain('product.id === "parent-child"');
+    expect(source).toContain("onPress={() => handleProductSelect(product)}");
+    expect(source).toContain("commerce-checkout?product=${productCode}");
+    expect(paidCheckoutHandler).toContain("router.push(");
+    expect(paidCheckoutHandler).not.toContain("mutate");
+    expect(paidCheckoutHandler).not.toContain("payment");
+    expect(source).not.toContain("다음 · 결제 정보 입력");
   });
 
   it("한 휴대폰 흐름은 결제 grant와 확정 역할을 보존해 시작한다", () => {

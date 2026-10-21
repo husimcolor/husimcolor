@@ -340,12 +340,15 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     );
   });
 
-  it("부부·연인과 부모·자녀는 상품만 선택해 결제 후 설정으로 이동하고, 무료 친구 흐름은 유지한다", () => {
+  it("부부·연인과 부모·자녀 카드는 즉시 checkout으로 이동하고, 무료 친구의 다음 흐름은 유지한다", () => {
     const start = read("app/(tabs)/couple-start.tsx");
     const checkout = read("app/(tabs)/commerce-checkout.tsx");
     expect(start).toContain('relationType: "친구"');
-    expect(start).toContain("const canProceed = Boolean(selectedProductId)");
-    expect(start).toContain("product=${paidProductCode}");
+    expect(start).toContain('selectedFreeProductId === "friend"');
+    expect(start).toContain("const openPaidCheckout");
+    expect(start).toContain("commerce-checkout?product=${productCode}");
+    expect(start).toContain("다음 · 두 사람 정보 입력하기");
+    expect(start).not.toContain("다음 · 결제 정보 입력하기");
     expect(start).toContain("parent_child_deep");
     expect(start).not.toContain("PARENT_CHILD_COMBOS");
     expect(start).not.toContain("paidProductPreparing ? '정식 오픈 준비중'");

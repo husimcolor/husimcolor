@@ -23,12 +23,16 @@ describe("결제 후 관계·역할 설정 계약", () => {
     );
   });
 
-  it("상품 선택 화면은 부부·연인과 부모·자녀 모두 상품만 선택해 결제 정보로 이동한다", () => {
+  it("상품 선택 화면은 부부·연인과 부모·자녀 카드 탭을 checkout route로만 즉시 연결한다", () => {
     const start = read("app/(tabs)/couple-start.tsx");
     const checkout = read("app/(tabs)/commerce-checkout.tsx");
-    expect(start).toContain("const canProceed = Boolean(selectedProductId);");
-    expect(start).toContain("다음 · 결제 정보 입력하기");
-    expect(start).toContain("product=${paidProductCode}");
+    expect(start).toContain('product.id === "romantic"');
+    expect(start).toContain('product.id === "parent-child"');
+    expect(start).toContain("const openPaidCheckout");
+    expect(start).toContain("commerce-checkout?product=${productCode}");
+    expect(start).toContain("onPress={() => handleProductSelect(product)}");
+    expect(start).not.toContain("다음 · 결제 정보 입력하기");
+    expect(start).not.toContain("selectedProductId");
     expect(start).toContain('"parent_child_deep"');
     expect(start).not.toContain("PARENT_CHILD_COMBOS");
     expect(start).not.toContain("아빠 ↔ 아들");
