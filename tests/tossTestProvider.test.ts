@@ -57,6 +57,7 @@ describe("Toss test payment adapter", () => {
 
   it("confirms only a DONE payment with matching order and server amount", async () => {
     vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("COMMERCE_TEST_MODE", "true");
     vi.stubEnv("TOSS_TEST_CLIENT_KEY", "test_ck_sample");
     vi.stubEnv("TOSS_TEST_SECRET_KEY", "test_sk_sample");
     const fetcher = vi.fn(async (_url: string, init: RequestInit) => {
@@ -78,6 +79,7 @@ describe("Toss test payment adapter", () => {
 
   it("rejects failed or mismatched provider responses before entitlement processing", async () => {
     vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("COMMERCE_TEST_MODE", "true");
     vi.stubEnv("TOSS_TEST_CLIENT_KEY", "test_ck_sample");
     vi.stubEnv("TOSS_TEST_SECRET_KEY", "test_sk_sample");
 

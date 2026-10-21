@@ -10,33 +10,69 @@ import {
 
 describe("엄마·딸 우선순위 기반 시범 결과 UI", () => {
   it("고정 QA 입력과 1·2순위 생활기질·3순위 회복 방향·심리카드 보완 근거를 보존한다", () => {
-    expect(PARENT_CHILD_PRIORITY_PILOT_QUERY).toBe("mother-daughter-priority-pilot-20260911");
+    expect(PARENT_CHILD_PRIORITY_PILOT_QUERY).toBe(
+      "mother-daughter-priority-pilot-20260911",
+    );
     expect(PARENT_CHILD_PRIORITY_PILOT_SESSION.relationType).toBe("엄마-딸");
-    expect(PARENT_CHILD_PRIORITY_PILOT_SESSION.personA.colors).toEqual(["green", "sage", "lavender"]);
-    expect(PARENT_CHILD_PRIORITY_PILOT_SESSION.personB.colors).toEqual(["yellow", "pink", "coral"]);
-    expect(PARENT_CHILD_PRIORITY_PILOT_SESSION.personA.cards).toEqual(["red_circle", "white_square", "blue_diamond"]);
-    expect(PARENT_CHILD_PRIORITY_PILOT_SESSION.personB.cards).toEqual(["yellow_circle", "purple_diamond", "green_hexagon"]);
-    expect(PARENT_CHILD_PRIORITY_PILOT.basis.parent).toContain("그린·세이지그린");
+    expect(PARENT_CHILD_PRIORITY_PILOT_SESSION.personA.colors).toEqual([
+      "green",
+      "sage",
+      "lavender",
+    ]);
+    expect(PARENT_CHILD_PRIORITY_PILOT_SESSION.personB.colors).toEqual([
+      "yellow",
+      "pink",
+      "coral",
+    ]);
+    expect(PARENT_CHILD_PRIORITY_PILOT_SESSION.personA.cards).toEqual([
+      "red_circle",
+      "white_square",
+      "blue_diamond",
+    ]);
+    expect(PARENT_CHILD_PRIORITY_PILOT_SESSION.personB.cards).toEqual([
+      "yellow_circle",
+      "purple_diamond",
+      "green_hexagon",
+    ]);
+    expect(PARENT_CHILD_PRIORITY_PILOT.basis.parent).toContain(
+      "그린·세이지그린",
+    );
     expect(PARENT_CHILD_PRIORITY_PILOT.basis.child).toContain("옐로우·핑크");
     expect(PARENT_CHILD_PRIORITY_PILOT.basis.recovery).toContain("라벤더");
     expect(PARENT_CHILD_PRIORITY_PILOT.basis.recovery).toContain("코랄");
     expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.strengths).toHaveLength(1);
     expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.tensions).toHaveLength(1);
-    expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.strengths[0].title).toContain("하루의 경험");
-    expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.tensions[0].title).toContain("약속");
-    expect(PARENT_CHILD_PRIORITY_PILOT.relationshipSummary.typeName).toBe("신뢰와 탐색의 조율 관계");
+    expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.strengths[0].title).toContain(
+      "하루의 경험",
+    );
+    expect(PARENT_CHILD_PRIORITY_PILOT.lifeScenes.tensions[0].title).toContain(
+      "약속",
+    );
+    expect(PARENT_CHILD_PRIORITY_PILOT.relationshipSummary.typeName).toBe(
+      "신뢰와 탐색의 조율 관계",
+    );
     expect(PARENT_CHILD_PRIORITY_PILOT.sectionEvidence).toHaveLength(8);
   });
 
   it("시범 UI는 개발 환경의 고정 QA 경로에서만 부모·자녀 결과 UI에 표시한다", () => {
-    const screenSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+    const screenSource = readFileSync(
+      resolve(process.cwd(), "app/(tabs)/couple-result.tsx"),
+      "utf8",
+    );
 
-    expect(screenSource).toContain("process.env.NODE_ENV !== 'production'");
+    expect(screenSource).toContain('process.env.NODE_ENV !== "production"');
     expect(screenSource).toContain("PARENT_CHILD_PRIORITY_PILOT_QUERY");
-    expect(screenSource).toContain("로컬 시범 분석 · Production에는 적용되지 않음");
+    expect(screenSource).toContain(
+      "로컬 시범 분석 · Production에는 적용되지 않음",
+    );
     expect(screenSource).toContain("priorityPilotRelationshipAnalysis");
-    expect(screenSource).toContain("relationshipSummary: priorityPilot.relationshipSummary");
-    expect(screenSource).toContain("const parentChildSummary = parentChildRelationshipAnalysis?.relationshipSummary");
+    expect(screenSource).toContain(
+      "relationshipSummary: priorityPilot.relationshipSummary",
+    );
+    expect(screenSource).toContain("const parentChildSummary =");
+    expect(screenSource).toContain(
+      "parentChildRelationshipAnalysis?.relationshipSummary",
+    );
     expect(screenSource).toContain("QA 섹션별 근거표");
     expect(screenSource).toContain("실제 생활에서 만나는 지점");
     expect(screenSource).toContain("잘 맞는 부분과 부딪히는 부분");

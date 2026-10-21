@@ -15,12 +15,13 @@ export async function getDb() {
       const rawUrl = process.env.DATABASE_URL;
       // Strip the ssl=... query param and pass ssl config explicitly
       const urlWithoutSsl = rawUrl.replace(/[?&]ssl=[^&]*/g, "").replace(/\?$/, "");
+      const localE2eNoTls = process.env.HUSIM_E2E_LOCAL_DB === "1" && /^(mysql:\/\/[^@/]*@)?(127\.0\.0\.1|localhost)(:|\/)/.test(urlWithoutSsl);
       const pool = mysql.createPool({
         uri: urlWithoutSsl,
-        ssl: {
+        ...(localE2eNoTls ? {} : { ssl: {
           rejectUnauthorized: false,
           minVersion: 'TLSv1.2',
-        },
+        } }),
         waitForConnections: true,
         connectionLimit: 5,
         connectTimeout: 15000,
@@ -233,7 +234,7 @@ export async function setAdminPassword(newPassword: string): Promise<void> {
 }
 
 // 방문자 수 추적 DB 함수
-import { InsertVisitorLog, visitorLogs } from "../drizzle/schema";
+import { InsertCommerceFunnelEvent, InsertVisitorLog, commerceFunnelEvents, visitorLogs } from "../drizzle/schema";
 import { count, sql } from "drizzle-orm";
 
 // 공유 링크용 불변 결과 스냅샷 DB 함수
@@ -272,6 +273,43 @@ export async function logVisitor(data: InsertVisitorLog) {
   } catch (e) {
     console.warn("[DB] logVisitor failed", e);
   }
+}
+
+/** 개인정보·선택값 없이 eventKey unique로 재시도를 흡수한다. */
+export async function logCommerceFunnelEvent(data: InsertCommerceFunnelEvent): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.insert(commerceFunnelEvents).values(data).onDuplicateKeyUpdate({
+      set: { eventKey: sql`VALUES(${commerceFunnelEvents.eventKey})` },
+    });
+  } catch (error) {
+    console.warn("[DB] logCommerceFunnelEvent failed", error);
+  }
+}
+
+export async function getCommerceFunnelEventRows(input: { start: Date; end: Date }) {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  return db
+    .select({
+      eventType: commerceFunnelEvents.eventType,
+      productCode: commerceFunnelEvents.productCode,
+      locale: commerceFunnelEvents.locale,
+      channel: commerceFunnelEvents.channel,
+      isTest: commerceFunnelEvents.isTest,
+      eventCount: sql<number>`COUNT(*)`,
+      deviceCount: sql<number>`COUNT(DISTINCT ${commerceFunnelEvents.deviceId})`,
+    })
+    .from(commerceFunnelEvents)
+    .where(sql`${commerceFunnelEvents.occurredAt} >= ${input.start} AND ${commerceFunnelEvents.occurredAt} < ${input.end}`)
+    .groupBy(
+      commerceFunnelEvents.eventType,
+      commerceFunnelEvents.productCode,
+      commerceFunnelEvents.locale,
+      commerceFunnelEvents.channel,
+      commerceFunnelEvents.isTest,
+    );
 }
 
 export async function getTestSessionStats() {

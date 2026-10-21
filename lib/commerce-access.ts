@@ -1,15 +1,26 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import type { CommerceProductCode } from "@/shared/commerce";
+import type { RelationType, RelationshipRole } from "@/constants/coupleData";
 
 const COMMERCE_START_GRANTS_KEY = "@commerce_start_grants";
 const COMMERCE_STARTED_ANALYSES_KEY = "@commerce_started_analyses";
 const COMMERCE_ANALYSIS_DELIVERY_KEY = "@commerce_analysis_delivery";
+const RELATIONSHIP_SETUP_CONFIG_KEY = "@relationship_setup_config_v1";
 
 export type CommerceStartGrant = {
   productCode: CommerceProductCode;
   accessToken: string;
   expiresAt: string;
+};
+
+export type RelationshipSetupConfig = {
+  productCode: Extract<CommerceProductCode, "couple_love_deep" | "parent_child_deep">;
+  /** parent-child legacy 흐름도 재사용할 수 있도록 generic type을 유지한다. */
+  relationType: RelationType;
+  roleA: RelationshipRole;
+  roleB: RelationshipRole;
+  updatedAt: string;
 };
 
 export type CommerceAnalysisDelivery = {
@@ -95,4 +106,33 @@ export async function getCommerceAnalysisDelivery(productCode: CommerceProductCo
   } catch {
     return null;
   }
+}
+
+
+async function readRelationshipSetupConfigs(): Promise<RelationshipSetupConfig[]> {
+  const raw = await AsyncStorage.getItem(RELATIONSHIP_SETUP_CONFIG_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as RelationshipSetupConfig[];
+    return Array.isArray(parsed) ? parsed.filter((item) => Boolean(item?.productCode && item?.relationType && item?.roleA && item?.roleB)) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 결제 뒤 아직 entitlement를 소비하지 않은 관계/역할 확정 초안이다. 서버 권한 근거로 사용하지 않는다. */
+export async function saveRelationshipSetupConfig(config: Omit<RelationshipSetupConfig, "updatedAt">): Promise<void> {
+  const existing = await readRelationshipSetupConfigs();
+  const next: RelationshipSetupConfig = { ...config, updatedAt: new Date().toISOString() };
+  await AsyncStorage.setItem(RELATIONSHIP_SETUP_CONFIG_KEY, JSON.stringify([...existing.filter((item) => item.productCode !== config.productCode), next]));
+}
+
+export async function getRelationshipSetupConfig(productCode: RelationshipSetupConfig["productCode"]): Promise<RelationshipSetupConfig | null> {
+  const configs = await readRelationshipSetupConfigs();
+  return configs.find((item) => item.productCode === productCode) ?? null;
+}
+
+export async function removeRelationshipSetupConfig(productCode: RelationshipSetupConfig["productCode"]): Promise<void> {
+  const configs = await readRelationshipSetupConfigs();
+  await AsyncStorage.setItem(RELATIONSHIP_SETUP_CONFIG_KEY, JSON.stringify(configs.filter((item) => item.productCode !== productCode)));
 }
