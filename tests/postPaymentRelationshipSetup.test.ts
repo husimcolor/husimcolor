@@ -42,6 +42,7 @@ describe("결제 후 관계·역할 설정 계약", () => {
     expect(checkout).toContain('productCode === "couple_love_deep"');
     expect(checkout).toContain('productCode === "parent_child_deep"');
     expect(checkout).toContain('pathname: "/(tabs)/relationship-setup"');
+    expect(checkout).toContain("주문 확인과 완성된 PDF 리포트를 받을 이메일입니다.");
   });
 
   it("post-payment setup은 부모·자녀의 두 역할과 첫 참여자를 명시적으로 요구하고 임의 기본값을 두지 않는다", () => {

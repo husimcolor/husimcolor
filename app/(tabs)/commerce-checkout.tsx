@@ -723,7 +723,7 @@ export default function CommerceCheckoutScreen() {
         </View>
         <Text style={styles.label}>주문 확인 이메일</Text>
         <Text style={styles.emailHelp}>
-          주문 확인과 완성된 PDF 리포트를 받을 이메일입니다
+          주문 확인과 완성된 PDF 리포트를 받을 이메일입니다.
         </Text>
         <TextInput
           style={styles.input}
