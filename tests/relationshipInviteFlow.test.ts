@@ -237,11 +237,14 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     expect(submittedBranch).not.toContain("{message ? <Text style={styles.message}>{message}</Text> : null}");
   });
 
-  it("유료 공개 gate와 무료 친구 관계 경로를 변경하지 않는다", () => {
+  it("부부·연인은 상품만 선택해 결제 후 설정으로 이동하고, 무료 친구·부모자녀 흐름은 유지한다", () => {
     const start = read("app/(tabs)/couple-start.tsx");
     const checkout = read("app/(tabs)/commerce-checkout.tsx");
     expect(start).toContain("setRelationType('친구')");
-    expect(start).toContain("paidProductPreparing ? '정식 오픈 준비중'");
+    expect(start).toContain("const canProceed = selectedProductId === 'romantic' ? true");
+    expect(start).toContain("product=couple_love_deep");
+    expect(start).not.toContain("paidProductPreparing ? '정식 오픈 준비중'");
+    expect(checkout).toContain('pathname: "/(tabs)/relationship-setup"');
     expect(checkout).toContain("if (!paidAnalysisPublicEnabled)");
   });
 });

@@ -637,15 +637,7 @@ export default function PremiumResultScreen() {
         // 심화 결과 도달 추적
         try {
           const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
-          const cardIds = raw ? JSON.parse(raw).map((c: any) => c.id).join(',') : '';
-          const colorIds = colorsRaw ? JSON.parse(colorsRaw).map((c: any) => c.id).join(',') : '';
-          logVisitor.mutate({
-            deviceId,
-            visitType: 'deep_result',
-            testType: 'deep',
-            selectedCards: cardIds,
-            selectedColors: colorIds,
-          });
+          logVisitor.mutate({ deviceId, visitType: 'deep_result', testType: 'deep' });
         } catch (_) {}
         if (reviewRaw) {
           try {

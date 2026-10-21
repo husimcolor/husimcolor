@@ -141,6 +141,13 @@
       "when": 1791468000000,
       "tag": "0019_toss_live_payment_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1792584000000,
+      "tag": "0023_relationship_setup_and_conversion_funnel",
+      "breakpoints": true
     }
   ]
 }

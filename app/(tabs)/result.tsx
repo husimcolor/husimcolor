@@ -25,6 +25,7 @@ import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import { generateInterpretation, COLOR_DATA, COLOR_PERSONALITY_TRAITS } from '@/constants/colorData';
 import { getSampleReportButtonLabel } from '@/shared/sample-reports';
+import { createConversionEventInput } from '@/lib/conversion-tracking';
 // 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
 function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -221,6 +222,7 @@ export default function ResultScreen() {
   const card3 = selectedColors[2];
 
   const logVisitor = trpc.visitors.log.useMutation();
+  const funnel = trpc.conversionFunnel.track.useMutation();
   useEffect(() => {
     if (!card1 || !card2 || !card3) {
       router.replace('/(tabs)');
@@ -230,13 +232,10 @@ export default function ResultScreen() {
     const track = async () => {
       try {
         const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
-        const colorIds = [card1.id, card2.id, card3.id].join(',');
-        logVisitor.mutate({
-          deviceId,
-          visitType: 'free_result',
-          testType: 'free',
-          selectedColors: colorIds,
-        });
+        logVisitor.mutate({ deviceId, visitType: 'free_result', testType: 'free' });
+        void createConversionEventInput({ eventName: 'free_result', productCode: 'free_color_trial', scope: 'free-result' })
+          .then((event) => funnel.mutate(event))
+          .catch(() => undefined);
       } catch (_) {}
     };
     track();
@@ -270,6 +269,8 @@ export default function ResultScreen() {
 
   // 무료 결과와 결제 경로를 분리한다. 공개 샘플은 가상 데이터 전용 앱 내 열람 화면으로 연다.
   const handleOpenPersonalSamplePdf = () => {
+    void createConversionEventInput({ eventName: 'paid_guide_click', productCode: 'personal_deep', scope: 'free-result-sample' })
+      .then((event) => funnel.mutate(event)).catch(() => undefined);
     router.push({
       pathname: '/(tabs)/sample-report',
       params: { product: 'personal_deep', returnTo: 'free-result' },
@@ -510,7 +511,7 @@ export default function ResultScreen() {
         <View style={styles.upsellBanner}>
           <Text style={styles.upsellTitle}>내 마음을 조금 더 깊이 알아보고 싶다면</Text>
           <Text style={styles.upsellDesc}>
-            컬러 3개와 심리카드 3장으로 살펴보는 유료 개인 심화분석 PDF를 미리 확인해 보세요.
+            컬러 3개 + 심리카드 3장 / 순서별·통합 해석 / 맞춤 회복 루틴 / PDF 리포트
           </Text>
           <Pressable
             style={({ pressed }) => [styles.upsellSampleButton, pressed && styles.upsellSampleButtonPressed]}
@@ -523,7 +524,10 @@ export default function ResultScreen() {
           <Text style={styles.upsellSampleNotice}>샘플은 가상 데이터로 만든 공개 리포트이며, 무료 체험에는 유료 PDF가 포함되지 않습니다.</Text>
           <Pressable
             style={({ pressed }) => [styles.upsellInfoLink, pressed && styles.upsellInfoLinkPressed]}
-            onPress={() => router.push('/(tabs)/commerce-checkout?product=personal_deep' as any)}
+            onPress={() => {
+              void createConversionEventInput({ eventName: 'paid_guide_click', productCode: 'personal_deep', scope: 'free-result-checkout' }).then((event) => funnel.mutate(event)).catch(() => undefined);
+              router.push('/(tabs)/commerce-checkout?product=personal_deep' as any);
+            }}
             accessibilityRole="link"
             accessibilityLabel="개인 심화분석 상품 안내 보기"
           >

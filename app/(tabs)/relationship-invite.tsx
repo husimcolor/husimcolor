@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, 
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
-import { getRelationshipRoleOptions, type FaithType, type GenderType, type RelationshipRole } from "@/constants/coupleData";
+import { getRelationshipRoleGender, getRelationshipRoleOptions, type FaithType, type GenderType, type RelationshipRole } from "@/constants/coupleData";
 import { trpc } from "@/lib/trpc";
 
 type DraftInfo = { gender?: GenderType; faith?: FaithType; relationshipRole?: RelationshipRole };
@@ -57,11 +57,14 @@ export default function RelationshipInviteScreen() {
   };
   useEffect(() => { applyContext(context.data); }, [context.data?.draftRevision]);
   useEffect(() => {
-    if (!context.data || initialDraftSeeded.current || !initialGender || !initialRole || !initialFaith) return;
-    // A의 첫 화면도 B와 동일하게 기존 정보를 먼저 보여 주되, 사용자가
-    // 기본 정보 저장을 누르기 전에는 컬러 검사로 진행하지 않는다.
+    if (!context.data || initialDraftSeeded.current) return;
+    const assignedRole = context.data.assignedRole as RelationshipRole | null;
+    const role = assignedRole ?? initialRole;
+    const gender = assignedRole ? getRelationshipRoleGender(assignedRole) : initialGender;
+    if (!role || !gender) return;
+    // 결제 후 고정된 새 세션은 역할·성별을 서버 문맥에서만 가져온다. legacy 링크는 기존 URL 초안을 유지한다.
     initialDraftSeeded.current = true;
-    setDraft({ info: { gender: initialGender, relationshipRole: initialRole, faith: initialFaith } });
+    setDraft({ info: { gender, relationshipRole: role, ...(initialFaith ? { faith: initialFaith } : {}) } });
     setConsent(initialConsent);
     setSavedInfoKey(null);
   }, [context.data, initialGender, initialRole, initialFaith]);
@@ -187,7 +190,8 @@ export default function RelationshipInviteScreen() {
   if (!context.data) return <ScreenContainer><View style={styles.center}><Text style={styles.loading}>유효하지 않거나 만료된 검사 링크입니다.</Text></View></ScreenContainer>;
   const current = context.data;
   const isOwner = current.participant === "A";
-  const roleOptions = getRelationshipRoleOptions(current.relationType, draft.info?.gender, current.partnerRole);
+  const assignedRole = current.assignedRole as RelationshipRole | null;
+  const roleOptions = assignedRole ? [assignedRole] : getRelationshipRoleOptions(current.relationType, draft.info?.gender, current.partnerRole);
   if (current.status === "completed" || current.status === "email_pending") {
     const emailPending = current.status === "email_pending";
     return (
@@ -249,8 +253,7 @@ export default function RelationshipInviteScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>1. 기본 정보 및 참여 동의</Text>
-          <Text style={styles.label}>성별</Text><View style={styles.chips}>{(["남성", "여성"] as GenderType[]).map((value) => <Pressable key={value} style={[styles.chip, draft.info?.gender === value && styles.chipOn]} onPress={() => void selectInfo("gender", value)}><Text style={[styles.chipText, draft.info?.gender === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View>
-          <Text style={[styles.label, styles.labelGap]}>관계 역할</Text><Text style={styles.roleHelp}>{current.partnerRole ? `상대방이 ‘${current.partnerRole}’${roleParticipationParticle(current.partnerRole)} 참여하고 있습니다. 본인의 정보를 선택한 후 검사를 시작해 주세요.` : "결제 또는 검사 순서와 관계없이 실제 역할을 선택해 주세요."}</Text><View style={styles.chips}>{roleOptions.map((value) => <Pressable key={value} style={[styles.chip, draft.info?.relationshipRole === value && styles.chipOn]} onPress={() => void selectInfo("relationshipRole", value)}><Text style={[styles.chipText, draft.info?.relationshipRole === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View>
+          {assignedRole ? <><Text style={styles.label}>확정된 관계 역할</Text><View style={styles.lockedRole}><Text style={styles.lockedRoleText}>{current.relationType} · {assignedRole} (성별 {getRelationshipRoleGender(assignedRole)})</Text></View><Text style={styles.roleHelp}>결제 후 설정한 역할은 이 검사와 통합 리포트에 동일하게 반영됩니다.</Text></> : <><Text style={styles.label}>성별</Text><View style={styles.chips}>{(["남성", "여성"] as GenderType[]).map((value) => <Pressable key={value} style={[styles.chip, draft.info?.gender === value && styles.chipOn]} onPress={() => void selectInfo("gender", value)}><Text style={[styles.chipText, draft.info?.gender === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View><Text style={[styles.label, styles.labelGap]}>관계 역할</Text><Text style={styles.roleHelp}>{current.partnerRole ? `상대방이 ‘${current.partnerRole}’${roleParticipationParticle(current.partnerRole)} 참여하고 있습니다. 본인의 정보를 선택한 후 검사를 시작해 주세요.` : "결제 또는 검사 순서와 관계없이 실제 역할을 선택해 주세요."}</Text><View style={styles.chips}>{roleOptions.map((value) => <Pressable key={value} style={[styles.chip, draft.info?.relationshipRole === value && styles.chipOn]} onPress={() => void selectInfo("relationshipRole", value)}><Text style={[styles.chipText, draft.info?.relationshipRole === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View></>}
           <Text style={[styles.label, styles.labelGap]}>종교</Text><View style={styles.chips}>{(["기독교", "무교", "기타"] as FaithType[]).map((value) => <Pressable key={value} style={[styles.chip, draft.info?.faith === value && styles.chipOn]} onPress={() => void selectInfo("faith", value)}><Text style={[styles.chipText, draft.info?.faith === value && styles.chipTextOn]}>{value}</Text></Pressable>)}</View>
           <Pressable style={[styles.consent, consent && styles.consentOn]} onPress={() => { const next = !consent; setConsent(next); if (savedInfoKey && basicInfoSaveKey(draft.info, next) !== savedInfoKey) setMessage("정보를 변경하면 ‘기본 정보 저장’을 다시 눌러 주세요."); }}><Text style={styles.check}>{consent ? "✓" : ""}</Text><Text style={styles.consentText}>관계 검사 결과 생성을 위해 선택 정보와 검사 답변을 안전하게 처리하는 데 동의합니다.</Text></Pressable>
           <Text style={styles.saveGuide}>정보를 선택한 뒤 ‘기본 정보 저장’을 눌러 주세요. 저장된 정보가 관계 분석과 리포트에 반영됩니다.</Text>
@@ -279,7 +282,7 @@ export default function RelationshipInviteScreen() {
 const styles = StyleSheet.create({
   scroll: { flexGrow: 1, padding: 20, backgroundColor: "#F8F3EA" }, center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 14, padding: 24 }, loading: { color: "#5F4B3B", textAlign: "center", fontSize: 15, lineHeight: 23 }, completeTitle: { color: "#2D2420", fontSize: 22, fontWeight: "800", textAlign: "center" }, completeText: { color: "#5F4B3B", fontSize: 15, lineHeight: 24, textAlign: "center", maxWidth: 330 }, waitingGuide: { color: "#4E6C4A", fontSize: 14, lineHeight: 22, textAlign: "center", maxWidth: 330, fontWeight: "700", marginTop: -4 },
   eyebrow: { color: "#63815F", fontSize: 13, fontWeight: "800", letterSpacing: 0.8, marginTop: 8 }, title: { color: "#2D2420", fontSize: 24, lineHeight: 33, fontWeight: "800", marginTop: 8 }, subtitle: { color: "#68594C", fontSize: 14, lineHeight: 22, marginTop: 8, marginBottom: 18 },
-  section: { backgroundColor: "#FFFDF9", borderColor: "#DCCDBB", borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 14 }, sectionTitle: { color: "#3A3029", fontSize: 16, lineHeight: 24, fontWeight: "800" }, sectionSub: { color: "#75675B", fontSize: 12, lineHeight: 19, marginTop: 5, marginBottom: 12 }, label: { color: "#44382F", fontSize: 14, fontWeight: "800", marginTop: 14, marginBottom: 8 }, labelGap: { marginTop: 17 }, roleHelp: { color: "#75675B", fontSize: 12, lineHeight: 18, marginTop: -3, marginBottom: 9 }, chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 }, chip: { borderWidth: 1, borderColor: "#CDBEAE", backgroundColor: "#F7F0E6", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }, chipOn: { borderColor: "#527B52", backgroundColor: "#527B52" }, chipText: { color: "#4E4035", fontSize: 13, fontWeight: "700" }, chipTextOn: { color: "#FFFFFF" },
+  section: { backgroundColor: "#FFFDF9", borderColor: "#DCCDBB", borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 14 }, lockedRole: { backgroundColor: "#EEF7EB", borderColor: "#9CBD98", borderWidth: 1, borderRadius: 12, padding: 12 }, lockedRoleText: { color: "#3D653D", fontSize: 14, fontWeight: "800" }, sectionTitle: { color: "#3A3029", fontSize: 16, lineHeight: 24, fontWeight: "800" }, sectionSub: { color: "#75675B", fontSize: 12, lineHeight: 19, marginTop: 5, marginBottom: 12 }, label: { color: "#44382F", fontSize: 14, fontWeight: "800", marginTop: 14, marginBottom: 8 }, labelGap: { marginTop: 17 }, roleHelp: { color: "#75675B", fontSize: 12, lineHeight: 18, marginTop: -3, marginBottom: 9 }, chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 }, chip: { borderWidth: 1, borderColor: "#CDBEAE", backgroundColor: "#F7F0E6", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }, chipOn: { borderColor: "#527B52", backgroundColor: "#527B52" }, chipText: { color: "#4E4035", fontSize: 13, fontWeight: "700" }, chipTextOn: { color: "#FFFFFF" },
   consent: { flexDirection: "row", alignItems: "flex-start", gap: 9, marginTop: 16, borderWidth: 1, borderColor: "#D7CABB", borderRadius: 12, padding: 12, backgroundColor: "#FFFDF9" }, consentOn: { borderColor: "#7CA377", backgroundColor: "#F1F8EF" }, check: { width: 18, height: 18, borderWidth: 1, borderColor: "#7CA377", borderRadius: 9, textAlign: "center", lineHeight: 16, color: "#356B53", fontWeight: "900" }, consentText: { flex: 1, color: "#5F4B3B", fontSize: 12.5, lineHeight: 20 },
   saveGuide: { color: "#4E6C4A", fontSize: 13, lineHeight: 20, marginTop: 14, fontWeight: "700" }, dirtyGuide: { color: "#9A5A30", fontSize: 12.5, lineHeight: 19, marginTop: 8, fontWeight: "700" }, saveStage: { alignItems: "center", paddingVertical: 12, marginTop: 10, borderRadius: 12, backgroundColor: "#E8F1E6", borderWidth: 1, borderColor: "#92B48F" }, saveStageText: { color: "#3E653E", fontSize: 14, fontWeight: "800" }, disabled: { opacity: 0.48 },
   button: { alignItems: "center", borderRadius: 15, paddingVertical: 16, backgroundColor: "#527B52", marginTop: 16 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" }, message: { color: "#4E6C4A", fontSize: 13, lineHeight: 20, textAlign: "center", marginBottom: 10 }, inviteBox: { backgroundColor: "#EEF7EB", borderWidth: 1, borderColor: "#9FBE99", borderRadius: 16, padding: 16, marginTop: 2, marginBottom: 12 }, inviteTitle: { color: "#345C35", fontSize: 16, fontWeight: "800" }, inviteBody: { color: "#4F694D", fontSize: 13, lineHeight: 20, marginTop: 7 }, inviteButton: { backgroundColor: "#4E784E", alignItems: "center", borderRadius: 12, paddingVertical: 13, marginTop: 14 }, inviteButtonWide: { backgroundColor: "#4E784E", alignSelf: "stretch", alignItems: "center", borderRadius: 12, paddingVertical: 14, marginTop: 4 }, inviteButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" }, refreshButton: { borderWidth: 1, borderColor: "#B7A790", borderRadius: 12, paddingHorizontal: 18, paddingVertical: 11 }, refreshText: { color: "#68594C", fontSize: 14, fontWeight: "800" }, wait: { color: "#765D45", backgroundColor: "#F1E7DA", borderRadius: 12, padding: 14, fontSize: 13, lineHeight: 21, textAlign: "center", marginBottom: 24 },

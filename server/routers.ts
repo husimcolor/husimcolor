@@ -24,7 +24,7 @@ import { isTossLivePaymentEnabled } from "./commerce/toss-live-provider";
 import { getTossCardReviewConfig, isTossCardReviewEnabled } from "./commerce/toss-card-review";
 import { isPublicPaidAnalysisEnabled } from "./commerce/release-policy";
 import { previewCoupon } from "./commerce/coupon-service";
-import { consumeEntitlementForAnalysisStart, verifyAnalysisDeliveryGrant } from "./commerce/entitlement-service";
+import { configureRelationshipSetup, consumeEntitlementForAnalysisStart, getRelationshipSetupForGrant, verifyAnalysisDeliveryGrant } from "./commerce/entitlement-service";
 import {
   deliverAccountLinkOutboxItem,
   deliverPrivatePdfOutboxItem,
@@ -56,7 +56,8 @@ import {
 import { applyProductionOpeningCampaignConfiguration } from "./commerce/production-opening-campaign-config-service";
 import { applyProductionLivePaymentProviderMigration } from "./commerce/production-live-payment-migration-service";
 import { getSupportTicketSchemaAudit } from "./commerce/support-ticket-schema-audit";
-import { getAdminDailyOperationsSignals } from "./commerce/admin-daily-operations-service";
+import { getAdminDailyOperationsSignals, getAdminFunnelDaily } from "./commerce/admin-daily-operations-service";
+import { isExplicitTestPaymentRuntime } from "./commerce/test-runtime";
 import {
   deleteAdminReview,
   getAdminCoachingBookingList,
@@ -169,12 +170,20 @@ export const appRouter = router({
         .query(({ input }) => previewCoupon(input)),
     }),
     entitlement: router({
+      configureRelationshipSetup: publicProcedure
+        .input(z.object({ accessToken: z.string().min(20).max(2048), relationType: z.enum(["연인", "부부"]), roleA: z.enum(["남편", "아내", "남자친구", "여자친구"]), roleB: z.enum(["남편", "아내", "남자친구", "여자친구"]) }))
+        .mutation(({ input }) => configureRelationshipSetup(input)),
+      relationshipSetup: publicProcedure
+        .input(z.object({ accessToken: z.string().min(20).max(2048) }))
+        .query(({ input }) => getRelationshipSetupForGrant(input)),
       consumeForAnalysisStart: publicProcedure
         .input(z.object({
           accessToken: z.string().min(20).max(2048),
           productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
           relationshipMode: z.enum(["invite_link"]).optional(),
           relationType: z.enum(["연인", "부부", "친구", "부모-자녀", "아빠-아들", "아빠-딸", "엄마-아들", "엄마-딸", "형제자매", "동료"]).optional(),
+          roleA: z.enum(["남편", "아내", "남자친구", "여자친구", "아빠", "엄마", "아들", "딸"]).optional(),
+          roleB: z.enum(["남편", "아내", "남자친구", "여자친구", "아빠", "엄마", "아들", "딸"]).optional(),
         }))
         .mutation(({ input }) => consumeEntitlementForAnalysisStart(input)),
     }),
@@ -498,6 +507,9 @@ export const appRouter = router({
   admin: router({
     dashboard: adminProcedure.query(() => getAdminOperationsDashboard()),
     dailyOperationsSignals: adminProcedure.query(() => getAdminDailyOperationsSignals()),
+    funnelDaily: adminProcedure
+      .input(z.object({ fromKst: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), toKst: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(({ input }) => getAdminFunnelDaily(input)),
     orders: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminOrderList(input.limit)),
@@ -706,6 +718,20 @@ export const appRouter = router({
       }),
   }),
 
+  /** 최소 익명 전환 퍼널. 입력은 strict allow-list로 제한하며 집계 조회는 관리자 route에만 있다. */
+  conversionFunnel: router({
+    track: publicProcedure
+      .input(z.object({
+        eventKey: z.string().min(16).max(255),
+        deviceId: z.string().uuid(),
+        eventType: z.enum(["free_result", "paid_guide_click", "sample_view", "checkout_view", "toss_request", "payment_success", "payment_cancelled", "payment_failed"]),
+        productCode: z.enum(["free_color_trial", "personal_deep", "couple_love_deep", "parent_child_deep"]),
+        locale: z.enum(["ko-KR", "zh-CN"]),
+        channel: z.enum(["app", "web"]),
+      }).strict())
+      .mutation(({ input }) => db.logCommerceFunnelEvent({ ...input, isTest: isExplicitTestPaymentRuntime() })),
+  }),
+
   // 방문자 수 추적 API
   visitors: router({
     log: publicProcedure
@@ -719,8 +745,6 @@ export const appRouter = router({
         ]),
         testType: z.string().max(50).optional(),
         relationshipType: z.string().max(50).optional(),
-        selectedColors: z.string().max(255).optional(),
-        selectedCards: z.string().max(255).optional(),
       }))
       .mutation(({ input }) => {
         return db.logVisitor(input);

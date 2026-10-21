@@ -71,6 +71,15 @@ export function isRelationshipRoleForGender(role: RelationshipRole, gender: Gend
   return ROLE_GENDER[role] === gender;
 }
 
+/** 관계 역할은 성별 입력보다 우선하는 고정 값이다. 결제 후 확정된 역할과 이후 기본 정보가 어긋나지 않게 한다. */
+export function getRelationshipRoleGender(role: RelationshipRole): GenderType {
+  return ROLE_GENDER[role];
+}
+
+export function getComplementaryRelationshipRole(role: RelationshipRole): RelationshipRole {
+  return PARTNER_ROLE[role];
+}
+
 export function isParentRelationshipRole(role: RelationshipRole) {
   return role === '아빠' || role === '엄마';
 }

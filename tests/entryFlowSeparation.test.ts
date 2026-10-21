@@ -32,6 +32,7 @@ describe('서비스 진입과 정보 입력 단계 분리', () => {
     expect(relationshipInfoScreen).toContain('성별');
     expect(relationshipInfoScreen).toContain('종교');
     expect(relationshipInfoScreen).toContain('relationType,');
-    expect(relationshipInfoScreen).toContain("personA: { info: { gender: genderA, faith: faithA }, colors: [], cards: [] }");
+    expect(relationshipInfoScreen).toContain('relationshipRole: configuredRoleA');
+    expect(relationshipInfoScreen).toContain('relationshipRole: configuredRoleB');
   });
 });
