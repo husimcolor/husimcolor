@@ -1,4 +1,4 @@
-import { createElement, useEffect, useRef, useState } from 'react';
+import { createElement, useEffect, useRef } from 'react';
 import { View, Text, Pressable, Image, Animated, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,6 +16,7 @@ import { startKakaoLogin } from '@/constants/oauth';
 import { useAuth } from '@/hooks/use-auth';
 
 const { width, height } = Dimensions.get('window');
+const ADMIN_LOGO_LONG_PRESS_MS = 2000;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -29,19 +30,8 @@ export default function HomeScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
   const logoAnim = useRef(new Animated.Value(0)).current;
-  // 로고 5번 탭 관리자 진입
-  const [logoTapCount, setLogoTapCount] = useState(0);
-  const logoTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleLogoTap = () => {
-    const newCount = logoTapCount + 1;
-    setLogoTapCount(newCount);
-    if (logoTapTimer.current) clearTimeout(logoTapTimer.current);
-    if (newCount >= 5) {
-      setLogoTapCount(0);
-      router.push('/admin' as any);
-      return;
-    }
-    logoTapTimer.current = setTimeout(() => setLogoTapCount(0), 2000);
+  const handleAdminLogoLongPress = () => {
+    router.push('/admin' as any);
   };
 
   useEffect(() => {
@@ -201,10 +191,11 @@ export default function HomeScreen() {
         <View style={[styles.decorCircle2, { backgroundColor: colors.warmgold + '15' }]} />
         <View style={[styles.decorCircle3, { backgroundColor: colors.primary + '10' }]} />
 
-        {/* 로고 영역 - 5번 탭 시 관리자 진입 */}
+        {/* 로고 영역 - 일반 탭 동작 없음, 관리자 로그인은 길게 누르기만 허용 */}
         <Animated.View style={[styles.logoSection, { opacity: logoAnim }]}>
           <TouchableOpacity
-            onPress={handleLogoTap}
+            onLongPress={handleAdminLogoLongPress}
+            delayLongPress={ADMIN_LOGO_LONG_PRESS_MS}
             activeOpacity={0.9}
             style={styles.logoContainer}
           >
@@ -343,14 +334,6 @@ export default function HomeScreen() {
          </Animated.View>
       </View>
 
-      {/* 관리자 링크 - 하단 */}
-      <TouchableOpacity
-        onPress={() => router.push('/(tabs)/admin' as any)}
-        activeOpacity={0.5}
-        style={styles.adminLink}
-      >
-        <Text style={[styles.adminLinkText, { color: colors.muted }]}>관리자</Text>
-      </TouchableOpacity>
       <View style={styles.businessInfoWrap}>
         <BusinessInfoFooter />
       </View>
@@ -578,17 +561,6 @@ const styles = StyleSheet.create({
   sampleReportButtonPressed: {
     opacity: 0.78,
     transform: [{ scale: 0.985 }],
-  },
-  adminLink: {
-    alignSelf: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginBottom: 4,
-  },
-  adminLinkText: {
-    fontSize: 11,
-    opacity: 0.45,
-    letterSpacing: 0.3,
   },
   businessInfoWrap: {
     width: '100%',

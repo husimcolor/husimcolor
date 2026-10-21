@@ -416,7 +416,7 @@ export default function AdminScreen() {
   if (!hasAdminAccess) return (
     <ScreenContainer><View style={styles.center}>
       <Text style={[styles.deniedTitle, { color: colors.foreground }]}>통합 관리자 로그인</Text>
-      <Text style={[styles.deniedBody, { color: colors.muted }]}>로고 5회 터치로 열리는 기존 관리자 비밀번호를 입력해 주세요. 로그인 후에는 서버 서명된 통합 관리자 세션으로 안전하게 운영 화면에 접근합니다.</Text>
+      <Text style={[styles.deniedBody, { color: colors.muted }]}>홈 심볼을 2초 길게 눌러 연 관리자 로그인입니다. 기존 관리자 비밀번호를 입력해 주세요. 로그인 후에는 서버 서명된 통합 관리자 세션으로 안전하게 운영 화면에 접근합니다.</Text>
       <TextInput value={password} onChangeText={(value) => { setPassword(value); setPasswordError(false); }} onSubmitEditing={() => { void loginWithLegacyPassword(); }} placeholder="관리자 비밀번호" placeholderTextColor={colors.muted} secureTextEntry autoFocus style={[styles.input, styles.passwordInput, { color: colors.foreground, borderColor: passwordError ? "#b5584f" : colors.border, backgroundColor: colors.background }]} />
       {passwordError && <Text style={styles.passwordError}>비밀번호가 올바르지 않거나 관리자 세션을 만들 수 없습니다.</Text>}
       <TouchableOpacity style={styles.login} onPress={() => { void loginWithLegacyPassword(); }}><Text style={styles.loginText}>비밀번호로 로그인</Text></TouchableOpacity>
