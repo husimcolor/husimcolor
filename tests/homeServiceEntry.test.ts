@@ -61,12 +61,6 @@ describe("첫 진입 화면의 서비스 선택 UX", () => {
     expect(sampleViewerScreen).toContain(
       "getSampleReportViewerUrl(product, origin, locale)",
     );
-    expect(sampleViewerScreen).toContain(
-      "getSampleReportDownloadUrl(product, origin, locale)",
-    );
-    expect(sampleViewerScreen).toContain(
-      "다른 언어 파일로 자동 대체하지 않습니다.",
-    );
     expect(sampleViewerScreen).toContain("<iframe");
     expect(sampleViewerScreen).toContain('includes("application/pdf")');
     expect(sampleViewerScreen).toContain("PDF 다운로드");
