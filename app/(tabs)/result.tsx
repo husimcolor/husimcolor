@@ -24,7 +24,6 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import { generateInterpretation, COLOR_DATA, COLOR_PERSONALITY_TRAITS } from '@/constants/colorData';
-import { getSampleReportButtonLabel } from '@/shared/sample-reports';
 import { createConversionEventInput } from '@/lib/conversion-tracking';
 // 밝은 컬러(크림, 화이트, 아이보리 등) 자동 테두리 처리
 function getLightColorBorder(hex: string): { borderWidth: number; borderColor: string } | {} {
@@ -511,15 +510,15 @@ export default function ResultScreen() {
         <View style={styles.upsellBanner}>
           <Text style={styles.upsellTitle}>내 마음을 조금 더 깊이 알아보고 싶다면</Text>
           <Text style={styles.upsellDesc}>
-            컬러 3개 + 심리카드 3장 / 순서별·통합 해석 / 맞춤 회복 루틴 / PDF 리포트
+            {"컬러 3개 + 심리카드 3장\n선택 순서별 해석과 통합 해석\n맞춤 회복 루틴\nPDF 리포트 제공"}
           </Text>
           <Pressable
             style={({ pressed }) => [styles.upsellSampleButton, pressed && styles.upsellSampleButtonPressed]}
             onPress={handleOpenPersonalSamplePdf}
             accessibilityRole="link"
-            accessibilityLabel={getSampleReportButtonLabel('personal_deep')}
+            accessibilityLabel="개인 심화분석 리포트 샘플 보기"
           >
-            <Text style={styles.upsellSampleButtonText}>{getSampleReportButtonLabel('personal_deep')}</Text>
+            <Text style={styles.upsellSampleButtonText}>리포트 샘플 보기</Text>
           </Pressable>
           <Text style={styles.upsellSampleNotice}>샘플은 가상 데이터로 만든 공개 리포트이며, 무료 체험에는 유료 PDF가 포함되지 않습니다.</Text>
           <Pressable

@@ -10,7 +10,7 @@ import { trpc } from '@/lib/trpc';
 import { createConversionEventInput } from '@/lib/conversion-tracking';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
 import { isOpeningCampaignActive } from '@/shared/opening-campaign';
-import { getSampleReportButtonLabel, type SampleReportProduct } from '@/shared/sample-reports';
+import { type SampleReportProduct } from '@/shared/sample-reports';
 import { startKakaoLogin } from '@/constants/oauth';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -300,9 +300,9 @@ export default function HomeScreen() {
                     </> : <Text style={styles.servicePrice}>29,000원</Text>}
                   </View>
                 </View>
-                <Text style={styles.serviceSummary}>컬러 3개 + 심리카드 3장 / 순서별·통합 해석 / 맞춤 회복 루틴 / PDF 리포트</Text>
+                <Text style={styles.serviceSummary}>{"컬러 3개 + 심리카드 3장\n선택 순서별 해석과 통합 해석\n맞춤 회복 루틴\nPDF 리포트 제공"}</Text>
                 {openingCampaignActive ? <Text style={styles.serviceCampaignCaption}>20% 할인 결제금액 · 자동 적용</Text> : null}
-              <Text style={styles.serviceCta}>나를 깊이 알아보기 →</Text>
+              <Text style={styles.serviceCta}>개인 심화분석 알아보기 →</Text>
               {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled && !tossLiveEnabled ? (
                 <Text style={styles.openingCampaignNote}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text>
               ) : null}
@@ -311,9 +311,9 @@ export default function HomeScreen() {
               onPress={() => handleOpenSamplePdf('personal_deep')}
               style={({ pressed }) => [styles.sampleReportButton, pressed && styles.sampleReportButtonPressed]}
               accessibilityRole="link"
-              accessibilityLabel={getSampleReportButtonLabel('personal_deep')}
+              accessibilityLabel="개인 심화분석 리포트 샘플 보기"
             >
-              <Text style={styles.sampleReportButtonText}>{getSampleReportButtonLabel('personal_deep')}</Text>
+              <Text style={styles.sampleReportButtonText}>리포트 샘플 보기</Text>
             </Pressable>
           </View>
 

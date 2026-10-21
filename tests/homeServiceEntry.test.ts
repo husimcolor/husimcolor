@@ -79,7 +79,7 @@ describe("첫 진입 화면의 서비스 선택 UX", () => {
     expect(relationshipStartScreen).toContain(
       "commerceTestMode.data?.paidAnalysisPublicEnabled ?? true",
     );
-    expect(homeScreen).toContain("나를 깊이 알아보기 →");
+    expect(homeScreen).toContain("개인 심화분석 알아보기 →");
     expect(relationshipStartScreen).toContain("openPaidCheckout(paidProductCode)");
     expect(relationshipStartScreen).not.toContain("다음 · 결제 정보 입력하기");
     expect(homeScreen).not.toContain("정식 오픈 준비중");

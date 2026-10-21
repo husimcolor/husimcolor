@@ -1139,10 +1139,15 @@ export const appRouter = router({
           })
           .strict(),
       )
-      .mutation(({ input }) =>
+      .mutation(({ input, ctx }) =>
         db.logCommerceFunnelEvent({
           ...input,
-          isTest: isExplicitTestPaymentRuntime(),
+          // client input cannot label its own event as test. Explicit test runtime
+          // and an authenticated administrator session are the only server-side sources.
+          isTest:
+            isExplicitTestPaymentRuntime() ||
+            ctx.user?.role === "admin" ||
+            ctx.legacyAdmin === true,
         }),
       ),
   }),

@@ -9,6 +9,7 @@ export type ConversionEventName = (typeof CONVERSION_EVENT_NAMES)[number];
 export type ConversionProductCode = "free_color_trial" | "personal_deep" | "couple_love_deep" | "parent_child_deep";
 const FUNNEL_SESSION_KEY = "@conversion_funnel_session_v1";
 const DEVICE_ID_KEY = "husim_device_id";
+const PAYMENT_SCOPE_KEY_PREFIX = "@conversion_funnel_payment_scope:";
 
 function randomId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
@@ -36,6 +37,20 @@ export async function getAnonymousDeviceId(): Promise<string> {
   if (typeof window !== "undefined") {
     try { window.localStorage.setItem(DEVICE_ID_KEY, created); window.sessionStorage.setItem(DEVICE_ID_KEY, created); } catch { /* storage is optional */ }
   }
+  return created;
+}
+
+/**
+ * Toss callback은 새로고침·재진입될 수 있으므로 결제별 중복 방지 범위가 필요하다.
+ * 주문번호는 기기 내부 AsyncStorage key로만 쓰고, 서버 eventKey에는 무작위 UUID만
+ * 넣는다. 따라서 퍼널 원장에는 주문번호·이메일·결제 식별자가 저장되지 않는다.
+ */
+export async function getPaymentConversionScope(orderNumber: string): Promise<string> {
+  const storageKey = `${PAYMENT_SCOPE_KEY_PREFIX}${orderNumber}`;
+  const existing = await AsyncStorage.getItem(storageKey);
+  if (existing && /^[0-9a-f-]{16,}$/i.test(existing)) return existing;
+  const created = randomId();
+  await AsyncStorage.setItem(storageKey, created);
   return created;
 }
 
