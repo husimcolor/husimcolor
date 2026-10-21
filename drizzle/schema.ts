@@ -92,6 +92,37 @@ export const visitorLogs = mysqlTable("visitor_logs", {
 export type VisitorLog = typeof visitorLogs.$inferSelect;
 export type InsertVisitorLog = typeof visitorLogs.$inferInsert;
 
+/** 개인정보·선택값·주문과 분리된 append-only 최소 전환 이벤트 원장이다. */
+export const commerceFunnelEvents = mysqlTable(
+  "commerce_funnel_events",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    eventKey: varchar("eventKey", { length: 255 }).notNull(),
+    deviceId: varchar("deviceId", { length: 128 }).notNull(),
+    eventType: mysqlEnum("eventType", [
+      "free_result", "paid_guide_click", "sample_view", "checkout_view",
+      "toss_request", "payment_success", "payment_cancelled", "payment_failed",
+    ]).notNull(),
+    productCode: mysqlEnum("productCode", [
+      "free_color_trial", "personal_deep", "couple_love_deep", "parent_child_deep",
+    ]).notNull(),
+    locale: varchar("locale", { length: 35 }).notNull().default("ko-KR"),
+    channel: mysqlEnum("channel", ["app", "web"]).notNull(),
+    /** 서버 runtime/order 원장에서만 산정한다. 클라이언트 입력을 신뢰하지 않는다. */
+    isTest: boolean("isTest").notNull().default(false),
+    occurredAt: timestamp("occurredAt").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("commerce_funnel_events_event_key_unique").on(table.eventKey),
+    index("commerce_funnel_events_rollup_idx").on(
+      table.occurredAt, table.productCode, table.locale, table.channel, table.isTest, table.eventType, table.deviceId,
+    ),
+  ],
+);
+export type CommerceFunnelEvent = typeof commerceFunnelEvents.$inferSelect;
+export type InsertCommerceFunnelEvent = typeof commerceFunnelEvents.$inferInsert;
+
+
 // 커플 결과 공유 스냅샷 테이블
 // 공유 링크가 이후의 새 검사나 다른 브라우저의 로컬 세션에 영향을 받지 않도록 결과를 고정 저장한다.
 export const coupleSharedResults = mysqlTable("couple_shared_results", {
@@ -483,6 +514,24 @@ export const analysisRuns = mysqlTable(
 
 export type AnalysisRun = typeof analysisRuns.$inferSelect;
 
+/** 결제 권한별로 부부·연인 관계·A/B 역할을 딱 한 번 확정한다. 기존 고객 데이터는 만들거나 변경하지 않는다. */
+export const relationshipSetups = mysqlTable(
+  "relationship_setups",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    entitlementId: int("entitlementId").notNull(),
+    productCode: varchar("productCode", { length: 64 }).notNull(),
+    /** relationship type + roleA + roleB의 암호화 JSON. */
+    configurationEncrypted: text("configurationEncrypted").notNull(),
+    configuredAt: timestamp("configuredAt").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("relationship_setups_entitlement_unique").on(table.entitlementId),
+    index("relationship_setups_product_idx").on(table.productCode),
+  ],
+);
+export type RelationshipSetup = typeof relationshipSetups.$inferSelect;
+
 /**
  * 한 주문의 관계 심화검사를 두 기기에서 안전하게 이어가기 위한 서버 세션이다.
  * 기존 한 휴대폰 검사는 계속 AsyncStorage 경로를 사용하며 이 테이블을 만들지 않는다.
@@ -542,6 +591,8 @@ export const relationshipParticipants = mysqlTable(
       .default("not_started"),
     consentAccepted: boolean("consentAccepted").notNull().default(false),
     consentAcceptedAt: timestamp("consentAcceptedAt"),
+    /** 새 초대 세션의 확정 역할만 암호화한다. 기존 세션은 NULL을 유지한다. */
+    assignedRoleEncrypted: text("assignedRoleEncrypted"),
     draftEncrypted: text("draftEncrypted"),
     submittedEncrypted: text("submittedEncrypted"),
     draftRevision: int("draftRevision").notNull().default(0),

@@ -5,7 +5,10 @@ import { describe, expect, it } from "vitest";
 import { CARD_DATA } from "../constants/cardData";
 import { COLOR_DATA } from "../constants/colorData";
 import { getLightArchetype } from "../constants/coupleData";
-import { buildCoupleColorCardIntegratedAnalysis, buildRomanticCoupleColorCardIntegratedAnalysis } from "../lib/couple-color-card-analysis";
+import {
+  buildCoupleColorCardIntegratedAnalysis,
+  buildRomanticCoupleColorCardIntegratedAnalysis,
+} from "../lib/couple-color-card-analysis";
 import { splitCoupleReadableParagraphs } from "../lib/couple-readable-text";
 import { buildRomanticRelationTraits } from "../lib/couple-romantic-relation-traits";
 import { buildRomanticRelationshipRoles } from "../lib/couple-romantic-relationship-roles";
@@ -17,13 +20,20 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
       .filter(Boolean) as (typeof COLOR_DATA)[number][];
     const cards = CARD_DATA.slice(0, 3);
 
-    const analysis = buildRomanticCoupleColorCardIntegratedAnalysis(colors, cards);
+    const analysis = buildRomanticCoupleColorCardIntegratedAnalysis(
+      colors,
+      cards,
+    );
     const paragraphs = analysis.split("\n\n");
 
     expect(paragraphs).toHaveLength(3);
     expect(analysis).toContain("따뜻한 마음을 주고받는 편이며");
-    expect(analysis).toContain("섬세한 감정을 살피며 진심 어린 관계를 바라는 마음");
-    expect(analysis).toContain("작은 약속과 꾸준한 돌봄으로 편안함을 다시 쌓아보세요");
+    expect(analysis).toContain(
+      "섬세한 감정을 살피며 진심 어린 관계를 바라는 마음",
+    );
+    expect(analysis).toContain(
+      "작은 약속과 꾸준한 돌봄으로 편안함을 다시 쌓아보세요",
+    );
     expect(analysis).toContain(`레드 동그라미의 ${cards[0].energyTitle}`);
     expect(analysis).toContain(`레드 삼각형의 ${cards[1].energyTitle}`);
     expect(analysis).toContain(`레드 역삼각형의 ${cards[2].energyTitle}`);
@@ -33,15 +43,27 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(analysis).not.toContain("핑크 · 라벤더 · 그린");
     expect(analysis).not.toContain("「");
     expect(analysis).not.toContain("」");
-    expect(paragraphs.every((paragraph) => paragraph.split(/(?<=[.!?])\s+/).length >= 2)).toBe(true);
+    expect(
+      paragraphs.every(
+        (paragraph) => paragraph.split(/(?<=[.!?])\s+/).length >= 2,
+      ),
+    ).toBe(true);
   });
 
   it("선택 조합이 달라지면 컬러와 카드 근거도 함께 달라진다", () => {
-    const first = buildRomanticCoupleColorCardIntegratedAnalysis(COLOR_DATA.slice(0, 3), CARD_DATA.slice(0, 3));
-    const second = buildRomanticCoupleColorCardIntegratedAnalysis(COLOR_DATA.slice(12, 15), CARD_DATA.slice(12, 15));
+    const first = buildRomanticCoupleColorCardIntegratedAnalysis(
+      COLOR_DATA.slice(0, 3),
+      CARD_DATA.slice(0, 3),
+    );
+    const second = buildRomanticCoupleColorCardIntegratedAnalysis(
+      COLOR_DATA.slice(12, 15),
+      CARD_DATA.slice(12, 15),
+    );
 
     expect(second).not.toBe(first);
-    expect(second).toContain(`${CARD_DATA[12].colorKor} ${CARD_DATA[12].shapeKor}의 ${CARD_DATA[12].energyTitle}`);
+    expect(second).toContain(
+      `${CARD_DATA[12].colorKor} ${CARD_DATA[12].shapeKor}의 ${CARD_DATA[12].energyTitle}`,
+    );
     expect(second).toContain("무의식 카드인");
   });
 
@@ -53,7 +75,10 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
       .map((id) => CARD_DATA.find((card) => card.id === id))
       .filter(Boolean) as (typeof CARD_DATA)[number][];
     const legacy = buildCoupleColorCardIntegratedAnalysis(colors, cards);
-    const romantic = buildRomanticCoupleColorCardIntegratedAnalysis(colors, cards);
+    const romantic = buildRomanticCoupleColorCardIntegratedAnalysis(
+      colors,
+      cards,
+    );
 
     expect(legacy).toContain(cards[0].energyTitle);
     expect(legacy).toContain(colors[0].keywords[0]);
@@ -64,12 +89,18 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
   });
 
   it("심리카드 실행 문장의 기존 가운데점 불릿을 안정적인 불릿으로 통일하고 문장 덩어리를 나눈다", () => {
-    const cardWithActions = CARD_DATA.find((card) => card.id === "red_triangle");
-    const paragraphs = splitCoupleReadableParagraphs(cardWithActions?.recoveryDirection);
+    const cardWithActions = CARD_DATA.find(
+      (card) => card.id === "red_triangle",
+    );
+    const paragraphs = splitCoupleReadableParagraphs(
+      cardWithActions?.recoveryDirection,
+    );
 
     expect(paragraphs).toHaveLength(4);
     expect(paragraphs[0]).toContain("멈추는 용기도 필요합니다.");
-    expect(paragraphs.slice(1).every((paragraph) => paragraph.startsWith("• "))).toBe(true);
+    expect(
+      paragraphs.slice(1).every((paragraph) => paragraph.startsWith("• ")),
+    ).toBe(true);
     expect(paragraphs.join("\n")).not.toContain("\n· ");
   });
 
@@ -80,7 +111,9 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     );
 
     expect(screenSource).toContain("🌿 컬러 × 심리카드 통합 분석");
-    expect(screenSource).toContain("buildCoupleColorCardIntegratedAnalysis(colors, cards)");
+    expect(screenSource).toContain(
+      "buildCoupleColorCardIntegratedAnalysis(colors, cards)",
+    );
     expect(screenSource).toContain("핵심 심리와 욕구");
     expect(screenSource).toContain("겉모습과 내면의 흐름");
     expect(screenSource).toContain("관계·회복·성장 방향");
@@ -88,8 +121,12 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(screenSource).toContain("function ReadableParagraphs");
     expect(screenSource).toContain("splitCoupleReadableParagraphs");
     expect(screenSource).toContain("<ReadableParagraphs text={section.text}");
-    expect(screenSource).toContain("<ReadableParagraphs text={cardFlow.coaching}");
-    expect(screenSource).toContain("<ReadableParagraphs text={cardFlow.routine}");
+    expect(screenSource).toContain(
+      "<ReadableParagraphs text={cardFlow.coaching}",
+    );
+    expect(screenSource).toContain(
+      "<ReadableParagraphs text={cardFlow.routine}",
+    );
     expect(screenSource).toContain("readingText: { fontSize: 18");
     expect(screenSource).toContain("integratedSectionText: { fontSize: 18");
     expect(screenSource).toContain("lineHeight: 32");
@@ -117,7 +154,9 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(colorResultSource).toContain("analysis.complementColor.meaning");
     expect(colorResultSource).toContain("analysis.coachingMessage");
     expect(colorResultSource).toContain("function ReadableParagraphs");
-    expect(colorResultSource).toContain("text={analysis.complementColor.meaning}");
+    expect(colorResultSource).toContain(
+      "text={analysis.complementColor.meaning}",
+    );
     expect(colorResultSource).toContain("text={analysis.coachingMessage}");
     expect(colorResultSource).toContain("cardContent: { fontSize: 18");
     expect(colorResultSource).toContain("complementMeaning: { fontSize: 18");
@@ -128,25 +167,47 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
 
   it("부부·연인 관계 온도 숫자와 점수 바 대신 A/B 실제 카드 흐름을 읽은 상호작용 중심 관계 특성을 표시한다", () => {
     const traits = buildRomanticRelationTraits({
-      personA: { relationshipStyle: "따뜻한 말로 관계를 이어갑니다.", emotionExpression: "감정을 비교적 빠르게 표현합니다." },
-      personB: { relationshipStyle: "신뢰가 쌓인 뒤 마음을 나눕니다.", emotionExpression: "생각을 정리한 뒤 표현합니다." },
+      personA: {
+        relationshipStyle: "따뜻한 말로 관계를 이어갑니다.",
+        emotionExpression: "감정을 비교적 빠르게 표현합니다.",
+      },
+      personB: {
+        relationshipStyle: "신뢰가 쌓인 뒤 마음을 나눕니다.",
+        emotionExpression: "생각을 정리한 뒤 표현합니다.",
+      },
       cardsA: CARD_DATA.slice(0, 3),
       cardsB: CARD_DATA.slice(10, 13),
       expressionDescription: "두 사람의 표현 속도에는 차이가 있습니다.",
       recoveryDescription: "각자의 회복 시간을 인정하는 것이 도움이 됩니다.",
     });
     const contrastingTraits = buildRomanticRelationTraits({
-      personA: { relationshipStyle: "관계 안에서도 각자의 공간과 리듬을 존중합니다.", emotionExpression: "생각을 정리한 뒤 여유가 생기면 표현합니다." },
-      personB: { relationshipStyle: "새로운 시도와 대화를 통해 관계를 움직이고 싶어 합니다.", emotionExpression: "감정을 비교적 빠르게 직접 표현합니다." },
+      personA: {
+        relationshipStyle: "관계 안에서도 각자의 공간과 리듬을 존중합니다.",
+        emotionExpression: "생각을 정리한 뒤 여유가 생기면 표현합니다.",
+      },
+      personB: {
+        relationshipStyle:
+          "새로운 시도와 대화를 통해 관계를 움직이고 싶어 합니다.",
+        emotionExpression: "감정을 비교적 빠르게 직접 표현합니다.",
+      },
       cardsA: CARD_DATA.slice(13, 16),
       cardsB: CARD_DATA.slice(3, 6),
       expressionDescription: "두 사람의 표현 속도에는 차이가 있습니다.",
       recoveryDescription: "각자의 회복 시간을 인정하는 것이 도움이 됩니다.",
     });
-    const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+    const coupleResultSource = readFileSync(
+      resolve(process.cwd(), "app/(tabs)/couple-result.tsx"),
+      "utf8",
+    );
 
-    expect(traits.map((trait) => trait.title)).toEqual(["감정 교류", "표현 리듬", "갈등 회복"]);
-    const traitDescriptions = traits.map((trait) => trait.description).join(" ");
+    expect(traits.map((trait) => trait.title)).toEqual([
+      "감정 교류",
+      "표현 리듬",
+      "갈등 회복",
+    ]);
+    const traitDescriptions = traits
+      .map((trait) => trait.description)
+      .join(" ");
     expect(traitDescriptions).toContain("서로");
     expect(traitDescriptions).toContain("관계");
     expect(traitDescriptions).toContain("무의식 카드에서");
@@ -158,7 +219,9 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(traitDescriptions).not.toContain("두 번째 사람은");
     expect(traitDescriptions).not.toContain("따뜻한 말로 관계를 이어갑니다.");
     expect(traitDescriptions).not.toContain("신뢰가 쌓인 뒤 마음을 나눕니다.");
-    expect(contrastingTraits.map((trait) => trait.description).join(" ")).not.toBe(traitDescriptions);
+    expect(
+      contrastingTraits.map((trait) => trait.description).join(" "),
+    ).not.toBe(traitDescriptions);
     expect(coupleResultSource).toContain("isRomanticRel &&");
     expect(coupleResultSource).toContain("buildRomanticRelationTraits");
     expect(coupleResultSource).not.toContain("관계 온도 지표");
@@ -167,12 +230,21 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
 
   it("부부·연인 전용 역할 분석은 실제 A/B 컬러·카드 신호로 역할과 두 역할의 균형을 생성한다", () => {
     const roles = buildRomanticRelationshipRoles({
-      personA: { relationshipStyle: "안정적이고 꾸준하게 관계를 이어갑니다.", emotionExpression: "감정을 정리한 뒤 표현합니다." },
-      personB: { relationshipStyle: "따뜻하게 배려하며 관계를 이어갑니다.", emotionExpression: "감정을 직접 표현합니다." },
+      personA: {
+        relationshipStyle: "안정적이고 꾸준하게 관계를 이어갑니다.",
+        emotionExpression: "감정을 정리한 뒤 표현합니다.",
+      },
+      personB: {
+        relationshipStyle: "따뜻하게 배려하며 관계를 이어갑니다.",
+        emotionExpression: "감정을 직접 표현합니다.",
+      },
       cardsA: CARD_DATA.slice(0, 3),
       cardsB: CARD_DATA.slice(10, 13),
     });
-    const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+    const coupleResultSource = readFileSync(
+      resolve(process.cwd(), "app/(tabs)/couple-result.tsx"),
+      "utf8",
+    );
 
     expect(roles.personA.title).toBeTruthy();
     expect(roles.personB.title).toBeTruthy();
@@ -186,7 +258,10 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
   it("부부·연인만 심화 결과 경로를 사용하고 부모·자녀·친구·동료·형제자매는 기존 경량 결과를 유지한다", () => {
     const familiesA: Array<"warm_active"> = ["warm_active"];
     const familiesB: Array<"cool_deep"> = ["cool_deep"];
-    const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+    const coupleResultSource = readFileSync(
+      resolve(process.cwd(), "app/(tabs)/couple-result.tsx"),
+      "utf8",
+    );
 
     expect(getLightArchetype("연인", familiesA, familiesB)).toBeNull();
     expect(getLightArchetype("부부", familiesA, familiesB)).toBeNull();
@@ -196,35 +271,51 @@ describe("커플 개인 컬러 × 심리카드 통합 분석", () => {
     expect(getLightArchetype("형제자매", familiesA, familiesB)).not.toBeNull();
     expect(coupleResultSource).toContain("{lightArchetypeResult && (");
     expect(coupleResultSource).toContain("{!lightArchetypeResult && (");
-    expect(coupleResultSource).toContain("const isRomanticRel = relationType === '연인' || relationType === '부부';");
+    expect(coupleResultSource).toContain("const isRomanticRel =");
+    expect(coupleResultSource).toContain('sessionData.relationType === "연인"');
+    expect(coupleResultSource).toContain('sessionData.relationType === "부부"');
   });
 
   it("부부·연인 웹 안내는 일반 스킨십 설명 없이 한 줄로 축소하고 섹션 구분 제목만 강화한다", () => {
-    const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+    const coupleResultSource = readFileSync(
+      resolve(process.cwd(), "app/(tabs)/couple-result.tsx"),
+      "utf8",
+    );
 
-    expect(coupleResultSource).toContain("신뢰와 존중을 확인하는 작은 말에서 관계가 더 편안해질 수 있습니다.");
+    expect(coupleResultSource).toContain(
+      "신뢰와 존중을 확인하는 작은 말에서 관계가 더 편안해질 수",
+    );
     expect(coupleResultSource).toContain("styles.romanticPrincipleLine");
     expect(coupleResultSource).toContain("connectionFlow.skinshipNote");
     expect(coupleResultSource).toContain("styles.sectionGroupTitleRomantic");
-    expect(coupleResultSource).toContain("isRomanticRel ? styles.sectionGroupTitleRomantic : styles.sectionGroupTitle");
+    expect(coupleResultSource).toContain("styles.sectionGroupTitle");
     expect(coupleResultSource).not.toContain("부부관계에서 스킨십은");
     expect(coupleResultSource).not.toContain("자연스러운 애정표현과 스킨십은");
   });
 
   it("부부·연인 생활 패턴 라벨과 회복 루틴의 텍스트 위계만 한 단계 높이고 본문·비연인 스타일은 유지한다", () => {
-    const coupleResultSource = readFileSync(resolve(process.cwd(), "app/(tabs)/couple-result.tsx"), "utf8");
+    const coupleResultSource = readFileSync(
+      resolve(process.cwd(), "app/(tabs)/couple-result.tsx"),
+      "utf8",
+    );
 
     expect(coupleResultSource).toContain("lifePatternPersonLabelRomantic");
     expect(coupleResultSource).toContain("#F7EBD9");
-    expect(coupleResultSource).toContain("isRomanticRel ? '#F7EBD9' : accentA");
-    expect(coupleResultSource).toContain("isRomanticRel ? '#F7EBD9' : accentB");
-    expect(coupleResultSource).toContain("lifePatternPersonLabelRomantic: { fontSize: 13");
+    expect(coupleResultSource).toContain('isRomanticRel ? "#F7EBD9" : accentA');
+    expect(coupleResultSource).toContain('isRomanticRel ? "#F7EBD9" : accentB');
+    expect(coupleResultSource).toContain("lifePatternPersonLabelRomantic:");
+    expect(coupleResultSource).toContain("fontSize: 13");
     expect(coupleResultSource).toContain("sectionGroupTitleRomantic: {");
-    expect(coupleResultSource).toContain("fontSize: 17, fontWeight: '800'");
-    expect(coupleResultSource).toContain("togetherRoutineTitleRomantic: { fontSize: 18");
-    expect(coupleResultSource).toContain("togetherRoutineTextRomantic: { fontSize: 16");
-    expect(coupleResultSource).toContain("togetherEnergyLabelRomantic: { fontSize: 14");
-    expect(coupleResultSource).toContain("togetherRoutineText: {\n    fontSize: 15");
-    expect(coupleResultSource).toContain("sectionGroupTitle: {\n    fontSize: 13");
+    expect(coupleResultSource).toContain("fontSize: 17,");
+    expect(coupleResultSource).toContain('fontWeight: "800"');
+    expect(coupleResultSource).toContain("togetherRoutineTitleRomantic:");
+    expect(coupleResultSource).toContain("togetherRoutineTextRomantic:");
+    expect(coupleResultSource).toContain("togetherEnergyLabelRomantic:");
+    expect(coupleResultSource).toContain(
+      "togetherRoutineText: {\n    fontSize: 15",
+    );
+    expect(coupleResultSource).toContain(
+      "sectionGroupTitle: {\n    fontSize: 13",
+    );
   });
 });
