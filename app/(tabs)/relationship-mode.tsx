@@ -10,6 +10,8 @@ import {
   type RelationshipRole,
 } from "@/constants/coupleData";
 import { getCommerceStartGrant } from "@/lib/commerce-access";
+import { useLocalization } from "@/lib/localization-context";
+import { localizeStaticCopy } from "@/lib/zh-cn-copy";
 import { trpc } from "@/lib/trpc";
 import type { CommerceProductCode } from "@/shared/commerce";
 
@@ -19,6 +21,7 @@ function one(value: string | string[] | undefined) {
 
 export default function RelationshipModeScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const params = useLocalSearchParams<{
     product?: string | string[];
     relationType?: string | string[];
@@ -115,7 +118,7 @@ export default function RelationshipModeScreen() {
         {roleA && roleB ? (
           <View style={styles.roleSummary}>
             <Text style={styles.roleSummaryText}>
-              {relationType} · 첫 번째 참여자 {roleA} · 두 번째 참여자 {roleB}
+              {localizeStaticCopy(relationType, locale)} · 첫 번째 참여자 {localizeStaticCopy(roleA, locale)} · 두 번째 참여자 {localizeStaticCopy(roleB, locale)}
             </Text>
           </View>
         ) : null}

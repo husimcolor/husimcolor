@@ -4,12 +4,14 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
+import { LocalizedText as Text } from "@/components/localized-text";
+import { useLocalization } from "@/lib/localization-context";
+import { localizeStaticCopy } from "@/lib/zh-cn-copy";
 import {
   getComplementaryRelationshipRole,
   isParentRelationshipRole,
@@ -50,6 +52,7 @@ function one(value: string | string[] | undefined) {
 
 export default function RelationshipSetupScreen() {
   const router = useRouter();
+  const { locale } = useLocalization();
   const params = useLocalSearchParams<{ product?: string | string[] }>();
   const productCode = one(params.product) as
     | RelationshipProductCode
@@ -255,8 +258,9 @@ export default function RelationshipSetupScreen() {
             : "두 분의 관계와 역할을 확인해 주세요"}
         </Text>
         <Text style={styles.subtitle}>
-          이 설정은 초대 링크, 양쪽 결과, 통합 해석, PDF 리포트와 이메일에 같은
-          기준으로 반영됩니다. 컬러 선택 전에는 반드시 완료해야 합니다.
+          {
+            "이 설정은 초대 링크, 양쪽 결과, 통합 해석, PDF 리포트와 이메일에 같은 기준으로 반영됩니다. 컬러 선택 전에는 반드시 완료해야 합니다."
+          }
         </Text>
 
         <View style={styles.section}>
@@ -281,7 +285,7 @@ export default function RelationshipSetupScreen() {
                         parentRole === role && styles.chipTextOn,
                       ]}
                     >
-                      {role}
+                      {localizeStaticCopy(role, locale)}
                     </Text>
                   </Pressable>
                 ))}
@@ -307,7 +311,7 @@ export default function RelationshipSetupScreen() {
                         childRole === role && styles.chipTextOn,
                       ]}
                     >
-                      {role}
+                      {localizeStaticCopy(role, locale)}
                     </Text>
                   </Pressable>
                 ))}
@@ -316,8 +320,9 @@ export default function RelationshipSetupScreen() {
                 먼저 컬러를 선택할 사람
               </Text>
               <Text style={styles.help}>
-                결제자와 무관합니다. 지금 검사를 먼저 시작할 실제 역할을 선택해
-                주세요.
+                {
+                  "결제자와 무관합니다. 지금 검사를 먼저 시작할 실제 역할을 선택해 주세요."
+                }
               </Text>
               <View style={styles.row}>
                 {[parentRole, childRole]
@@ -368,7 +373,7 @@ export default function RelationshipSetupScreen() {
                         relationType === option.value && styles.chipTextOn,
                       ]}
                     >
-                      {option.label}
+                      {localizeStaticCopy(option.label, locale)}
                     </Text>
                   </Pressable>
                 ))}
@@ -377,8 +382,9 @@ export default function RelationshipSetupScreen() {
                 첫 번째 참여자의 실제 역할
               </Text>
               <Text style={styles.help}>
-                누가 먼저 컬러를 선택할지에 맞춰 실제 역할을 골라 주세요. 상대
-                역할은 짝으로 자동 확정됩니다.
+                {
+                  "누가 먼저 컬러를 선택할지에 맞춰 실제 역할을 골라 주세요. 상대 역할은 짝으로 자동 확정됩니다."
+                }
               </Text>
               <View style={styles.row}>
                 {romanticRoles.map((role) => (
@@ -398,7 +404,7 @@ export default function RelationshipSetupScreen() {
                         romanticFirstRole === role && styles.chipTextOn,
                       ]}
                     >
-                      {role}
+                      {localizeStaticCopy(role, locale)}
                     </Text>
                   </Pressable>
                 ))}
@@ -409,7 +415,11 @@ export default function RelationshipSetupScreen() {
             <View style={styles.confirmation}>
               <Text style={styles.confirmationTitle}>확정될 두 역할</Text>
               <Text style={styles.confirmationText}>
-                첫 번째 참여자: {roleA} · 두 번째 참여자: {roleB}
+                {localizeStaticCopy("첫 번째 참여자:", locale)}{" "}
+                {localizeStaticCopy(roleA, locale)}
+                {" · "}
+                {localizeStaticCopy("두 번째 참여자:", locale)}{" "}
+                {localizeStaticCopy(roleB, locale)}
               </Text>
             </View>
           ) : null}
@@ -417,8 +427,9 @@ export default function RelationshipSetupScreen() {
 
         <View style={styles.note}>
           <Text style={styles.noteText}>
-            관계와 역할은 이후 검사 화면에서 임의로 바꾸지 않습니다. 각 참여자는
-            자신의 종교와 참여 동의를 별도로 확인합니다.
+            {
+              "관계와 역할은 이후 검사 화면에서 임의로 바꾸지 않습니다. 각 참여자는 자신의 종교와 참여 동의를 별도로 확인합니다."
+            }
           </Text>
         </View>
         {message ? <Text style={styles.error}>{message}</Text> : null}

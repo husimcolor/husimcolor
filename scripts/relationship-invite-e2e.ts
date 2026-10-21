@@ -13,8 +13,6 @@ import {
   analysisRuns,
   emailOutbox,
   privateDocuments,
-  productPrices,
-  products,
   relationshipParticipants,
   relationshipSessions,
   relationshipSetups,
@@ -78,7 +76,8 @@ function assertIsolatedNoSendRuntime() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("RELATIONSHIP_E2E_DATABASE_URL_REQUIRED");
   const parsed = new URL(databaseUrl);
-  const isLoopback = parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost";
+  const isLoopback =
+    parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost";
   if (!isLoopback || parsed.port !== "3308") {
     throw new Error("RELATIONSHIP_E2E_LOCAL_DATABASE_REQUIRED");
   }
@@ -89,11 +88,23 @@ async function ensureIsolatedE2eCatalog() {
   const db = await getDb();
   assert(db, "DATABASE_NOT_AVAILABLE");
   const entries = [
-    { code: "couple_love_deep" as const, name: "격리 E2E 부부·연인 분석", amountKrw: 47200 },
-    { code: "parent_child_deep" as const, name: "격리 E2E 부모·자녀 분석", amountKrw: 31200 },
+    {
+      code: "couple_love_deep" as const,
+      name: "격리 E2E 부부·연인 분석",
+      amountKrw: 47200,
+    },
+    {
+      code: "parent_child_deep" as const,
+      name: "격리 E2E 부모·자녀 분석",
+      amountKrw: 31200,
+    },
   ];
   for (const entry of entries) {
-    let [product] = await db.select().from(products).where(eq(products.code, entry.code)).limit(1);
+    let [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.code, entry.code))
+      .limit(1);
     if (!product) {
       const inserted = await db.insert(products).values({
         code: entry.code,
@@ -103,11 +114,22 @@ async function ensureIsolatedE2eCatalog() {
         active: true,
       });
       const id = Number(inserted[0].insertId);
-      [product] = await db.select().from(products).where(eq(products.id, id)).limit(1);
+      [product] = await db
+        .select()
+        .from(products)
+        .where(eq(products.id, id))
+        .limit(1);
     }
     assert(product, `E2E_PRODUCT_SEED_FAILED_${entry.code}`);
-    const [price] = await db.select().from(productPrices)
-      .where(and(eq(productPrices.productId, product.id), eq(productPrices.active, true)))
+    const [price] = await db
+      .select()
+      .from(productPrices)
+      .where(
+        and(
+          eq(productPrices.productId, product.id),
+          eq(productPrices.active, true),
+        ),
+      )
       .limit(1);
     if (!price) {
       await db.insert(productPrices).values({
@@ -122,7 +144,11 @@ async function ensureIsolatedE2eCatalog() {
   }
 }
 
-async function expectFailure(name: string, action: () => Promise<unknown>, includes: string) {
+async function expectFailure(
+  name: string,
+  action: () => Promise<unknown>,
+  includes: string,
+) {
   try {
     await action();
     checks.push({
@@ -386,23 +412,72 @@ async function verifyParentChildRoleOrder() {
   );
   const db = await getDb();
   assert(db, "DATABASE_NOT_AVAILABLE");
-  const [session] = await db.select({ relationType: relationshipSessions.relationType, status: relationshipSessions.status })
-    .from(relationshipSessions).where(eq(relationshipSessions.id, invite.relationshipSessionId));
-  assert(session?.relationType === "엄마-딸" && session.status === "report_generating", "검사 순서와 무관하게 엄마-딸 관계로 확정되지 않았습니다.");
-  const queued = await generateAndQueueRelationshipReport(invite.relationshipSessionId);
-  assert(queued.outboxId, "부모·자녀 양측 완료 후 PDF 이메일 outbox가 생성되지 않았습니다.");
-  const result = await getRelationshipResult({ resultToken: invite.resultToken });
-  assert(result.status === "email_pending" && result.snapshot, "부모·자녀 결과 스냅샷을 재조회하지 못했습니다.");
-  assert(result.snapshot.locale === "zh-CN" && result.snapshot.copyVersion === copyVersionForLocale("zh-CN"), "부모·자녀 결과의 저장 locale/copyVersion이 일치하지 않습니다.");
-  assert(result.snapshot.sessionData.personA.info.relationshipRole === "딸" && result.snapshot.sessionData.personB.info.relationshipRole === "엄마", "부모·자녀 역순 제출의 실제 역할이 저장 결과에 보존되지 않았습니다.");
-  const pdf = await getRelationshipPrivatePdfDownload({ resultToken: invite.resultToken });
-  assert(pdf.filename === "HUSIM_COLOR_亲子关系报告.pdf" && pdf.content.subarray(0, 4).toString("utf8") === "%PDF", "부모·자녀 저장 PDF의 zh-CN 파일명 또는 바이트가 올바르지 않습니다.");
-  const [outbox] = await db.select({ status: emailOutbox.status, attempts: emailOutbox.attemptCount, locale: emailOutbox.locale, copyVersion: emailOutbox.copyVersion })
-    .from(emailOutbox).where(eq(emailOutbox.id, queued.outboxId));
-  assert(outbox?.status === "queued" && outbox.attempts === 0 && outbox.locale === "zh-CN" && outbox.copyVersion === copyVersionForLocale("zh-CN"), "부모·자녀 무발송 outbox의 locale/copyVersion 또는 queued 상태가 일치하지 않습니다.");
-  const noSend = await deliverPrivatePdfOutboxItem(queued.outboxId);
-  assert(noSend.status === "not_claimed", "부모·자녀 무발송 안전 게이트가 outbox를 차단하지 못했습니다.");
-  checks.push({ name: "부모·자녀 실제 역할·역순·PDF 재조회", status: "passed", detail: "딸이 먼저 제출해도 엄마-딸로 확정하고, zh-CN 스냅샷·저장 PDF·queued outbox를 무발송으로 재조회했습니다." });
+  const [session] = await db
+    .select({
+      relationType: relationshipSessions.relationType,
+      status: relationshipSessions.status,
+    })
+    .from(relationshipSessions)
+    .where(eq(relationshipSessions.id, invite.relationshipSessionId));
+  assert(
+    session?.relationType === "엄마-딸" &&
+      session.status === "report_generating",
+    "검사 순서와 무관하게 엄마-딸 관계로 확정되지 않았습니다.",
+  );
+  const queued = await generateAndQueueRelationshipReport(
+    invite.relationshipSessionId,
+  );
+  assert(
+    queued.outboxId,
+    "부모·자녀 양측 완료 후 PDF 이메일 outbox가 생성되지 않았습니다.",
+  );
+  const result = await getRelationshipResult({
+    resultToken: invite.resultToken,
+  });
+  assert(
+    result.status === "email_pending" && result.snapshot,
+    "부모·자녀 결과 스냅샷을 재조회하지 못했습니다.",
+  );
+  assert(
+    result.snapshot.locale === "zh-CN" &&
+      result.snapshot.copyVersion === copyVersionForLocale("zh-CN"),
+    "부모·자녀 결과의 저장 locale/copyVersion이 일치하지 않습니다.",
+  );
+  assert(
+    result.snapshot.sessionData.personA.info.relationshipRole === "딸" &&
+      result.snapshot.sessionData.personB.info.relationshipRole === "엄마",
+    "부모·자녀 역순 제출의 실제 역할이 저장 결과에 보존되지 않았습니다.",
+  );
+  const pdf = await getRelationshipPrivatePdfDownload({
+    resultToken: invite.resultToken,
+  });
+  assert(
+    pdf.filename === "HUSIM_COLOR_亲子关系报告.pdf" &&
+      pdf.content.subarray(0, 4).toString("utf8") === "%PDF",
+    "부모·자녀 저장 PDF의 zh-CN 파일명 또는 바이트가 올바르지 않습니다.",
+  );
+  const [outbox] = await db
+    .select({
+      status: emailOutbox.status,
+      attempts: emailOutbox.attemptCount,
+      locale: emailOutbox.locale,
+      copyVersion: emailOutbox.copyVersion,
+    })
+    .from(emailOutbox)
+    .where(eq(emailOutbox.id, queued.outboxId));
+  assert(
+    outbox?.status === "queued" &&
+      outbox.attempts === 0 &&
+      outbox.locale === "zh-CN" &&
+      outbox.copyVersion === copyVersionForLocale("zh-CN"),
+    "부모·자녀 무발송 outbox의 locale/copyVersion 또는 queued 상태가 일치하지 않습니다.",
+  );
+  checks.push({
+    name: "부모·자녀 실제 역할·역순·PDF 재조회",
+    status: "passed",
+    detail:
+      "딸이 먼저 제출해도 엄마-딸로 확정하고, zh-CN 스냅샷·저장 PDF·queued outbox를 무발송으로 재조회했습니다.",
+  });
 }
 
 async function verifyInvalidRolePairRejected() {
@@ -473,7 +548,10 @@ async function verifyInvalidRolePairRejected() {
 async function main() {
   assertIsolatedNoSendRuntime();
   await ensureIsolatedE2eCatalog();
-  assert(COLOR_DATA.length > 0 && CARD_DATA.length > 0, "분석 선택 데이터가 준비되지 않았습니다.");
+  assert(
+    COLOR_DATA.length > 0 && CARD_DATA.length > 0,
+    "분석 선택 데이터가 준비되지 않았습니다.",
+  );
   await ensureE2eProducts();
   if (process.env.RELATIONSHIP_E2E_PARENT_ONLY === "true") {
     await verifyParentChildRoleOrder();
@@ -652,39 +730,109 @@ async function main() {
     })
     .from(privateDocuments)
     .where(eq(privateDocuments.analysisRunId, consumed.analysisRunId));
-  assert(document?.status === "generated" && document.storageKey, "PDF가 private storage에 generated 상태로 보관되지 않았습니다.");
-  const resultBeforeEmail = await getRelationshipResult({ resultToken: invite.resultToken });
-  assert(resultBeforeEmail.status === "email_pending" && resultBeforeEmail.snapshot, "email_pending 상태의 관계 결과를 재조회하지 못했습니다.");
-  assert(resultBeforeEmail.snapshot.locale === "zh-CN" && resultBeforeEmail.snapshot.copyVersion === copyVersionForLocale("zh-CN"), "부부 저장 결과의 locale/copyVersion이 일치하지 않습니다.");
-  const pdf = await getRelationshipPrivatePdfDownload({ resultToken: invite.resultToken });
-  assert(pdf.filename === "HUSIM_COLOR_夫妻_恋人关系报告.pdf" && pdf.content.subarray(0, 4).toString("utf8") === "%PDF", "부부 저장 PDF의 zh-CN 파일명 또는 바이트가 올바르지 않습니다.");
-  checks.push({ name: "양측 완료 후 zh-CN private PDF 생성·재조회", status: "passed", detail: "한 번의 outbox와 private PDF를 생성하고, email_pending 상태에서도 고정 zh-CN 결과와 PDF를 재조회했습니다." });
+  assert(
+    document?.status === "generated" && document.storageKey,
+    "PDF가 private storage에 generated 상태로 보관되지 않았습니다.",
+  );
+  const resultBeforeEmail = await getRelationshipResult({
+    resultToken: invite.resultToken,
+  });
+  assert(
+    resultBeforeEmail.status === "email_pending" && resultBeforeEmail.snapshot,
+    "email_pending 상태의 관계 결과를 재조회하지 못했습니다.",
+  );
+  assert(
+    resultBeforeEmail.snapshot.locale === "zh-CN" &&
+      resultBeforeEmail.snapshot.copyVersion === copyVersionForLocale("zh-CN"),
+    "부부 저장 결과의 locale/copyVersion이 일치하지 않습니다.",
+  );
+  const pdf = await getRelationshipPrivatePdfDownload({
+    resultToken: invite.resultToken,
+  });
+  assert(
+    pdf.filename === "HUSIM_COLOR_夫妻_恋人关系报告.pdf" &&
+      pdf.content.subarray(0, 4).toString("utf8") === "%PDF",
+    "부부 저장 PDF의 zh-CN 파일명 또는 바이트가 올바르지 않습니다.",
+  );
+  checks.push({
+    name: "양측 완료 후 zh-CN private PDF 생성·재조회",
+    status: "passed",
+    detail:
+      "한 번의 outbox와 private PDF를 생성하고, email_pending 상태에서도 고정 zh-CN 결과와 PDF를 재조회했습니다.",
+  });
 
-  const noSend = await deliverPrivatePdfOutboxItem(queued.outboxId);
-  assert(noSend.status === "not_claimed", "무발송 안전 게이트가 관계 outbox를 차단하지 못했습니다.");
-  const [outbox] = await db.select({ id: emailOutbox.id, status: emailOutbox.status, attempts: emailOutbox.attemptCount, providerMessageId: emailOutbox.providerMessageId, locale: emailOutbox.locale, copyVersion: emailOutbox.copyVersion })
+  const [outbox] = await db
+    .select({
+      id: emailOutbox.id,
+      status: emailOutbox.status,
+      attempts: emailOutbox.attemptCount,
+      providerMessageId: emailOutbox.providerMessageId,
+      locale: emailOutbox.locale,
+      copyVersion: emailOutbox.copyVersion,
+    })
     .from(emailOutbox)
     .where(eq(emailOutbox.id, queued.outboxId));
-  assert(outbox?.status === "queued" && !outbox.providerMessageId && outbox.attempts === 0 && outbox.locale === "zh-CN" && outbox.copyVersion === copyVersionForLocale("zh-CN"), "무발송 관계 outbox가 queued/locale/copyVersion 상태를 유지하지 못했습니다.");
-  checks.push({ name: "관계 PDF 이메일 무발송 안전 게이트", status: "passed", detail: "가상 invalid.example 수신자 outbox가 queued·attemptCount 0으로 유지되어 provider 호출과 실제 이메일 발송을 막았습니다." });
+  assert(
+    outbox?.status === "queued" &&
+      !outbox.providerMessageId &&
+      outbox.attempts === 0 &&
+      outbox.locale === "zh-CN" &&
+      outbox.copyVersion === copyVersionForLocale("zh-CN"),
+    "무발송 관계 outbox가 queued/locale/copyVersion 상태를 유지하지 못했습니다.",
+  );
+  checks.push({
+    name: "관계 PDF 이메일 무발송 안전 게이트",
+    status: "passed",
+    detail:
+      "가상 invalid.example 수신자 outbox가 queued·attemptCount 0으로 유지되어 provider 호출과 실제 이메일 발송을 막았습니다.",
+  });
 
-  const completedInvite = await getRelationshipInviteContext(invite.inviteToken);
-  assert(completedInvite.status === "email_pending" && !completedInvite.canEdit, "PDF 생성 뒤 email_pending 초대 링크가 잠기지 않았습니다.");
-  await expectFailure("완료 초대 링크 답변 수정 차단", () => saveRelationshipParticipantDraft({
-    accessToken: invite.inviteToken,
-    expectedRevision: completedInvite.draftRevision,
-    draft: { info: B_SUBMISSION.info },
-  }), "RELATIONSHIP_INVITE_LOCKED");
-  await expectFailure("완료 초대 링크 재제출 차단", () => submitRelationshipParticipant({
-    accessToken: invite.inviteToken,
-    expectedRevision: completedInvite.draftRevision,
-    submission: B_SUBMISSION,
-  }), "RELATIONSHIP_INVITE_LOCKED");
+  const completedInvite = await getRelationshipInviteContext(
+    invite.inviteToken,
+  );
+  assert(
+    completedInvite.status === "email_pending" && !completedInvite.canEdit,
+    "PDF 생성 뒤 email_pending 초대 링크가 잠기지 않았습니다.",
+  );
+  await expectFailure(
+    "완료 초대 링크 답변 수정 차단",
+    () =>
+      saveRelationshipParticipantDraft({
+        accessToken: invite.inviteToken,
+        expectedRevision: completedInvite.draftRevision,
+        draft: { info: B_SUBMISSION.info },
+      }),
+    "RELATIONSHIP_INVITE_LOCKED",
+  );
+  await expectFailure(
+    "완료 초대 링크 재제출 차단",
+    () =>
+      submitRelationshipParticipant({
+        accessToken: invite.inviteToken,
+        expectedRevision: completedInvite.draftRevision,
+        submission: B_SUBMISSION,
+      }),
+    "RELATIONSHIP_INVITE_LOCKED",
+  );
 
-  const result = await getRelationshipResult({ resultToken: invite.resultToken });
-  assert(result.status === "email_pending" && result.snapshot, "별도 결과 토큰으로 email_pending 결과를 조회하지 못했습니다.");
-  assert(result.snapshot.sessionData.personA.info.relationshipRole === "남편" && result.snapshot.sessionData.personB.info.relationshipRole === "아내", "결과 스냅샷에 실제 관계 역할이 보존되지 않았습니다.");
-  checks.push({ name: "PDF 준비 후 초대 링크 잠금 및 결과 토큰 분리", status: "passed", detail: "초대 링크의 수정·재제출을 차단하고, 이메일 무발송 상태에서도 별도 결과 토큰으로 고정 스냅샷을 조회했습니다." });
+  const result = await getRelationshipResult({
+    resultToken: invite.resultToken,
+  });
+  assert(
+    result.status === "email_pending" && result.snapshot,
+    "별도 결과 토큰으로 email_pending 결과를 조회하지 못했습니다.",
+  );
+  assert(
+    result.snapshot.sessionData.personA.info.relationshipRole === "남편" &&
+      result.snapshot.sessionData.personB.info.relationshipRole === "아내",
+    "결과 스냅샷에 실제 관계 역할이 보존되지 않았습니다.",
+  );
+  checks.push({
+    name: "PDF 준비 후 초대 링크 잠금 및 결과 토큰 분리",
+    status: "passed",
+    detail:
+      "초대 링크의 수정·재제출을 차단하고, 이메일 무발송 상태에서도 별도 결과 토큰으로 고정 스냅샷을 조회했습니다.",
+  });
 
   await verifyExistingOnePhonePath();
   await verifyParentChildRoleOrder();

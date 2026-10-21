@@ -59,11 +59,16 @@ describe("첫 진입 화면의 서비스 선택 UX", () => {
       "WebBrowser.openBrowserAsync(viewerUrl",
     );
     expect(sampleViewerScreen).toContain(
-      "/pdfjs/sample-report-canvas-viewer.html",
+      "getSampleReportViewerUrl(product, origin, locale)",
     );
-    expect(sampleViewerScreen).toContain("getSampleReportPageImageUrl");
-    expect(sampleViewerScreen).toContain('createElement("iframe"');
-    expect(sampleViewerScreen).not.toContain('application/pdf"');
+    expect(sampleViewerScreen).toContain(
+      "getSampleReportDownloadUrl(product, origin, locale)",
+    );
+    expect(sampleViewerScreen).toContain(
+      "다른 언어 파일로 자동 대체하지 않습니다.",
+    );
+    expect(sampleViewerScreen).toContain("<iframe");
+    expect(sampleViewerScreen).toContain('includes("application/pdf")');
     expect(sampleViewerScreen).toContain("PDF 다운로드");
     expect(sampleViewerScreen).toContain("이 분석 알아보기 →");
   });

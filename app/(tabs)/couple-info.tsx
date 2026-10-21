@@ -30,6 +30,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import type { CommerceProductCode } from "@/shared/commerce";
 import { useLocalization } from "@/lib/localization-context";
+import { localizeStaticCopy } from "@/lib/zh-cn-copy";
 
 const GENDERS: { value: GenderType; label: string }[] = [
   { value: "남성", label: "남성" },
@@ -328,7 +329,9 @@ export default function CoupleInfoScreen() {
         >
           <Text style={[styles.personBadge, { color: colors.primary }]}>
             {hasConfiguredRoles && configuredRoleA
-              ? `첫 번째 참여자 · ${configuredRoleA}`
+              ? locale === "zh-CN"
+                ? `第一位参与者 · ${localizeStaticCopy(configuredRoleA, locale)}`
+                : `첫 번째 참여자 · ${configuredRoleA}`
               : "첫 번째 사람"}
           </Text>
           {hasConfiguredRoles ? (

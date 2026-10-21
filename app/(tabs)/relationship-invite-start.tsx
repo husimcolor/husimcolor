@@ -1,13 +1,32 @@
 import React, { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { LocalizedText as Text } from "@/components/localized-text";
-import { getRelationshipRoleGender, getRelationshipRoleOptions, isRelationshipRolePairValid, type FaithType, type GenderType, type RelationType, type RelationshipRole } from "@/constants/coupleData";
-import { getCommerceStartGrant, markCommerceAnalysisStarted, removeCommerceStartGrant } from "@/lib/commerce-access";
+import {
+  getRelationshipRoleGender,
+  getRelationshipRoleOptions,
+  isRelationshipRolePairValid,
+  type FaithType,
+  type GenderType,
+  type RelationType,
+  type RelationshipRole,
+} from "@/constants/coupleData";
+import {
+  getCommerceStartGrant,
+  markCommerceAnalysisStarted,
+  removeCommerceStartGrant,
+} from "@/lib/commerce-access";
 import { trpc } from "@/lib/trpc";
 import { useLocalization } from "@/lib/localization-context";
+import { localizeStaticCopy } from "@/lib/zh-cn-copy";
 import type { CommerceProductCode } from "@/shared/commerce";
 
 const genders: GenderType[] = ["남성", "여성"];
@@ -19,7 +38,12 @@ function one(value: string | string[] | undefined) {
 export default function RelationshipInviteStartScreen() {
   const router = useRouter();
   const { locale } = useLocalization();
-  const params = useLocalSearchParams<{ product?: string | string[]; relationType?: string | string[]; roleA?: string | string[]; roleB?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    product?: string | string[];
+    relationType?: string | string[];
+    roleA?: string | string[];
+    roleB?: string | string[];
+  }>();
   const productCode = one(params.product) as CommerceProductCode | undefined;
   const relationType = one(params.relationType) as RelationType | undefined;
   const configuredRoleA = one(params.roleA) as RelationshipRole | undefined;
@@ -146,7 +170,13 @@ export default function RelationshipInviteStartScreen() {
               <Text style={styles.label}>확정된 관계 역할</Text>
               <View style={styles.lockedRole}>
                 <Text style={styles.lockedRoleText}>
-                  {relationType} · {relationshipRole} (성별 {gender})
+                  {localizeStaticCopy(relationType, locale)} ·{" "}
+                  {localizeStaticCopy(relationshipRole, locale)} (성별{" "}
+                  {localizeStaticCopy(
+                    gender ?? getRelationshipRoleGender(relationshipRole),
+                    locale,
+                  )}
+                  )
                 </Text>
               </View>
               <Text style={styles.help}>
