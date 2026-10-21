@@ -417,14 +417,11 @@ export default function CoupleResultScreen() {
       // 커플 결과 도달 추적
       try {
         const deviceId = await AsyncStorage.getItem('husim_device_id') ?? 'unknown';
-        const aColors = data.personA.colors?.map((c: any) => c.id).join(',') ?? '';
-        const bColors = data.personB.colors?.map((c: any) => c.id).join(',') ?? '';
         logVisitor.mutate({
           deviceId,
           visitType: 'couple_result',
           testType: 'couple',
           relationshipType: data.relationType,
-          selectedColors: [aColors, bColors].filter(Boolean).join('|'),
         });
       } catch (_) {}
     } catch (e) {

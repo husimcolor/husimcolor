@@ -8,6 +8,7 @@ import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
+import { createConversionEventInput } from '@/lib/conversion-tracking';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
 import { isOpeningCampaignActive } from '@/shared/opening-campaign';
 import { getSampleReportButtonLabel, type SampleReportProduct } from '@/shared/sample-reports';
@@ -71,6 +72,7 @@ export default function HomeScreen() {
   // 방문자 수 집계 (기기별 고유 UUID, 하루 1회 기준)
   // 카카오/네이버 인앱브라우저 대응: sessionStorage + localStorage + AsyncStorage 삼중 저장
   const logVisitor = trpc.visitors.log.useMutation();
+  const funnel = trpc.conversionFunnel.track.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   const kakao = trpc.auth.kakaoStatus.useQuery();
   // 설정을 불러오는 동안에는 상품 안내를 열어 둔다. 서버가 결제 가능 여부를
@@ -156,6 +158,8 @@ export default function HomeScreen() {
   };
 
   const handlePersonalDeepEntry = () => {
+    void createConversionEventInput({ eventName: "paid_guide_click", productCode: "personal_deep", scope: "home-personal-entry" })
+      .then((event) => funnel.mutate(event)).catch(() => undefined);
     // 공개 결제 runtime이 열려 있으면 심사용 review-only보다 persistent 결제
     // lifecycle을 우선한다. 라이브와 테스트 주문은 서버 provider에서 분리된다.
     if (paidAnalysisPublicEnabled && tossPaymentEnabled) {
@@ -173,9 +177,14 @@ export default function HomeScreen() {
     router.push('/(tabs)/premium-info' as any);
   };
 
-  // 공개 샘플은 앱 내 열람 화면으로 이동한다. 결제·로그인·개인 결과에는 접근하지 않는다.
+  // 공개 샘플은 고객 PDF 접근과 분리된 앱 내 열람 화면으로 연다.
   const handleOpenSampleReport = (product: SampleReportProduct) => {
-    router.push({ pathname: '/(tabs)/sample-report', params: { product, returnTo: 'home' } } as any);
+    void createConversionEventInput({ eventName: "paid_guide_click", productCode: product, scope: `home-sample-${product}` })
+      .then((event) => funnel.mutate(event)).catch(() => undefined);
+    router.push({
+      pathname: '/(tabs)/sample-report',
+      params: { product, returnTo: 'home' },
+    } as any);
   };
 
   return (
@@ -298,7 +307,7 @@ export default function HomeScreen() {
                     </> : <Text style={styles.servicePrice}>29,000원</Text>}
                   </View>
                 </View>
-                <Text style={styles.serviceSummary}>컬러 3개와 심리카드 3장으로 나를 깊이 살펴봅니다.</Text>
+                <Text style={styles.serviceSummary}>컬러 3개 + 심리카드 3장 / 순서별·통합 해석 / 맞춤 회복 루틴 / PDF 리포트</Text>
                 {openingCampaignActive ? <Text style={styles.serviceCampaignCaption}>20% 할인 결제금액 · 자동 적용</Text> : null}
               <Text style={styles.serviceCta}>나를 깊이 알아보기 →</Text>
               {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled && !tossLiveEnabled ? (

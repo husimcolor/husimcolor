@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScreenContainer } from '@/components/screen-container';
 import { LocalizedText as Text } from '@/components/localized-text';
 import { useColors } from '@/hooks/use-colors';
-import type { CoupleSessionData, FaithType, GenderType, RelationType } from '@/constants/coupleData';
+import { getRelationshipRoleGender, isRelationshipRolePairValid, type CoupleSessionData, type FaithType, type GenderType, type RelationType, type RelationshipRole } from '@/constants/coupleData';
 import { getCommerceStartGrant, markCommerceAnalysisStarted, removeCommerceStartGrant, saveCommerceAnalysisDelivery } from '@/lib/commerce-access';
 import { trpc } from '@/lib/trpc';
 import type { CommerceProductCode } from '@/shared/commerce';
@@ -51,12 +51,20 @@ export default function CoupleInfoScreen() {
   const router = useRouter();
   const colors = useColors();
   const { locale } = useLocalization();
-  const { relationType: relationTypeParam } = useLocalSearchParams<{ relationType?: string | string[] }>();
+  const { relationType: relationTypeParam, roleA: roleAParam, roleB: roleBParam } = useLocalSearchParams<{ relationType?: string | string[]; roleA?: string | string[]; roleB?: string | string[] }>();
   const relationType = getSingleParam(relationTypeParam) as RelationType | undefined;
+  const configuredRoleA = getSingleParam(roleAParam) as RelationshipRole | undefined;
+  const configuredRoleB = getSingleParam(roleBParam) as RelationshipRole | undefined;
+  const hasConfiguredRomanticRoles = Boolean(
+    (relationType === '연인' || relationType === '부부')
+      && configuredRoleA
+      && configuredRoleB
+      && isRelationshipRolePairValid(relationType, configuredRoleA, configuredRoleB),
+  );
   const relationLabel = relationType ? RELATION_LABELS[relationType] : undefined;
-  const [genderA, setGenderA] = useState<GenderType | null>(null);
+  const [genderA, setGenderA] = useState<GenderType | null>(hasConfiguredRomanticRoles && configuredRoleA ? getRelationshipRoleGender(configuredRoleA) : null);
   const [faithA, setFaithA] = useState<FaithType | null>(null);
-  const [genderB, setGenderB] = useState<GenderType | null>(null);
+  const [genderB, setGenderB] = useState<GenderType | null>(hasConfiguredRomanticRoles && configuredRoleB ? getRelationshipRoleGender(configuredRoleB) : null);
   const [faithB, setFaithB] = useState<FaithType | null>(null);
   const [accessError, setAccessError] = useState<string | null>(null);
   const [hasStartGrant, setHasStartGrant] = useState(false);
@@ -80,6 +88,12 @@ export default function CoupleInfoScreen() {
   }, [paidProductCodeForRelation]);
 
   const canProceed = Boolean(relationType && relationLabel && genderA && faithA && genderB && faithB) && grantChecked && (!paidRelationPreparing || hasStartGrant);
+
+  useEffect(() => {
+    if (!hasConfiguredRomanticRoles || !configuredRoleA || !configuredRoleB) return;
+    setGenderA(getRelationshipRoleGender(configuredRoleA));
+    setGenderB(getRelationshipRoleGender(configuredRoleB));
+  }, [hasConfiguredRomanticRoles, configuredRoleA, configuredRoleB]);
 
   const renderChip = (label: string, selected: boolean, onPress: () => void) => (
     <Pressable
@@ -112,7 +126,14 @@ export default function CoupleInfoScreen() {
           return;
         }
         if (grant) {
-          const consumed = await consumeEntitlement.mutateAsync({ accessToken: grant.accessToken, productCode: paidProductCode, locale });
+          const consumed = await consumeEntitlement.mutateAsync({
+            accessToken: grant.accessToken,
+            productCode: paidProductCode,
+            locale,
+            ...(hasConfiguredRomanticRoles && configuredRoleA && configuredRoleB && relationType
+              ? { relationType, roleA: configuredRoleA, roleB: configuredRoleB }
+              : {}),
+          });
           await removeCommerceStartGrant(paidProductCode);
           setHasStartGrant(false);
           await markCommerceAnalysisStarted(paidProductCode);
@@ -125,8 +146,8 @@ export default function CoupleInfoScreen() {
     }
     const sessionData: CoupleSessionData = {
       relationType,
-      personA: { info: { gender: genderA, faith: faithA }, colors: [], cards: [] },
-      personB: { info: { gender: genderB, faith: faithB }, colors: [], cards: [] },
+      personA: { info: { gender: genderA, faith: faithA, ...(hasConfiguredRomanticRoles && configuredRoleA ? { relationshipRole: configuredRoleA } : {}) }, colors: [], cards: [] },
+      personB: { info: { gender: genderB, faith: faithB, ...(hasConfiguredRomanticRoles && configuredRoleB ? { relationshipRole: configuredRoleB } : {}) }, colors: [], cards: [] },
     };
     await AsyncStorage.setItem('@couple_session', JSON.stringify(sessionData));
     router.push({ pathname: '/(tabs)/couple-select', params: { person: 'A' } } as any);
@@ -157,17 +178,15 @@ export default function CoupleInfoScreen() {
         </View>
 
         <View style={[styles.personSection, { borderColor: '#4A3A30', backgroundColor: '#2A2420' }]}>
-          <Text style={[styles.personBadge, { color: colors.primary }]}>첫 번째 사람</Text>
-          <Text style={[styles.sectionTitle, { color: '#F0E8DC' }]}>성별</Text>
-          <View style={styles.chipRow}>{GENDERS.map((gender) => renderChip(gender.label, genderA === gender.value, () => setGenderA(gender.value)))}</View>
+          <Text style={[styles.personBadge, { color: colors.primary }]}>{hasConfiguredRomanticRoles && configuredRoleA ? `첫 번째 참여자 · ${configuredRoleA}` : '첫 번째 사람'}</Text>
+          {hasConfiguredRomanticRoles ? <Text style={styles.fixedRoleText}>역할에 따라 성별은 {genderA}으로 설정되었습니다.</Text> : <><Text style={[styles.sectionTitle, { color: '#F0E8DC' }]}>성별</Text><View style={styles.chipRow}>{GENDERS.map((gender) => renderChip(gender.label, genderA === gender.value, () => setGenderA(gender.value)))}</View></>}
           <Text style={[styles.sectionTitle, { color: '#F0E8DC', marginTop: 18 }]}>종교</Text>
           <View style={styles.chipRow}>{FAITHS.map((faith) => renderChip(faith.label, faithA === faith.value, () => setFaithA(faith.value)))}</View>
         </View>
 
         <View style={[styles.personSection, { borderColor: '#3A4A3A', backgroundColor: '#222A22' }]}>
-          <Text style={[styles.personBadge, { color: '#7EC8A4' }]}>두 번째 사람</Text>
-          <Text style={[styles.sectionTitle, { color: '#E0F0E4' }]}>성별</Text>
-          <View style={styles.chipRow}>{GENDERS.map((gender) => renderChip(gender.label, genderB === gender.value, () => setGenderB(gender.value)))}</View>
+          <Text style={[styles.personBadge, { color: '#7EC8A4' }]}>{hasConfiguredRomanticRoles && configuredRoleB ? `두 번째 참여자 · ${configuredRoleB}` : '두 번째 사람'}</Text>
+          {hasConfiguredRomanticRoles ? <Text style={styles.fixedRoleText}>역할에 따라 성별은 {genderB}으로 설정되었습니다.</Text> : <><Text style={[styles.sectionTitle, { color: '#E0F0E4' }]}>성별</Text><View style={styles.chipRow}>{GENDERS.map((gender) => renderChip(gender.label, genderB === gender.value, () => setGenderB(gender.value)))}</View></>}
           <Text style={[styles.sectionTitle, { color: '#E0F0E4', marginTop: 18 }]}>종교</Text>
           <View style={styles.chipRow}>{FAITHS.map((faith) => renderChip(faith.label, faithB === faith.value, () => setFaithB(faith.value)))}</View>
         </View>
@@ -194,6 +213,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, lineHeight: 22, textAlign: 'center' },
   personSection: { borderWidth: 1, borderRadius: 16, padding: 18, marginBottom: 18 },
   personBadge: { alignSelf: 'flex-start', fontSize: 13, fontWeight: '800', marginBottom: 16 },
+  fixedRoleText: { color: '#D7E9D5', fontSize: 13, fontWeight: '700', lineHeight: 20, marginBottom: 2 },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5 },

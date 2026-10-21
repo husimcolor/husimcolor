@@ -11,10 +11,12 @@ import {
   products,
   relationshipParticipants,
   relationshipSessions,
+  relationshipSetups,
+  products,
+  productPrices,
 } from "../drizzle/schema";
 import { getDb } from "../server/db";
-import { deliverPrivatePdfOutboxItem } from "../server/commerce/email-outbox-service";
-import { consumeEntitlementForAnalysisStart } from "../server/commerce/entitlement-service";
+import { configureRelationshipSetup, consumeEntitlementForAnalysisStart } from "../server/commerce/entitlement-service";
 import { completeTestPayment, createTestCheckout } from "../server/commerce/order-service";
 import {
   generateAndQueueRelationshipReport,
@@ -111,6 +113,24 @@ async function expectFailure(name: string, action: () => Promise<unknown>, inclu
   }
 }
 
+
+async function ensureE2eProducts() {
+  const db = await getDb();
+  assert(db, "DATABASE_NOT_AVAILABLE");
+  const fixture = [
+    { code: "couple_love_deep", name: "E2E 부부·연인 관계 심화분석", amountKrw: 59000 },
+    { code: "parent_child_deep", name: "E2E 부모·자녀 관계 심화분석", amountKrw: 39000 },
+  ] as const;
+  for (const item of fixture) {
+    await db.insert(products).values({ code: item.code, name: item.name, fulfillmentType: "analysis", requiresPayment: true, active: true })
+      .onDuplicateKeyUpdate({ set: { active: true, name: item.name } });
+    const row = await db.select({ id: products.id }).from(products).where(eq(products.code, item.code)).limit(1);
+    assert(row[0], `E2E product seed missing: ${item.code}`);
+    await db.insert(productPrices).values({ productId: row[0].id, regularAmountKrw: item.amountKrw, amountKrw: item.amountKrw, currency: "KRW", version: 1, active: true })
+      .onDuplicateKeyUpdate({ set: { active: true, amountKrw: item.amountKrw, regularAmountKrw: item.amountKrw } });
+  }
+}
+
 async function purchaseAndConsume(input: {
   productCode?: "couple_love_deep" | "parent_child_deep";
   mode?: "invite_link";
@@ -131,11 +151,21 @@ async function purchaseAndConsume(input: {
     amountKrw: checkout.finalAmountKrw,
   });
   assert(payment.status === "paid" && payment.startGrant, "테스트 승인 후 시작 권한이 생성되지 않았습니다.");
+  const romantic = productCode === "couple_love_deep";
+  if (romantic) {
+    await configureRelationshipSetup({
+      accessToken: payment.startGrant.accessToken,
+      relationType: "부부",
+      roleA: "남편",
+      roleB: "아내",
+    });
+  }
   return consumeEntitlementForAnalysisStart({
     accessToken: payment.startGrant.accessToken,
     productCode,
     relationshipMode: input.mode,
-    relationType: input.relationType,
+    relationType: romantic ? "부부" : input.relationType,
+    ...(romantic ? { roleA: "남편" as const, roleB: "아내" as const } : {}),
     locale: "zh-CN",
   });
 }
@@ -234,7 +264,7 @@ async function verifyInvalidRolePairRejected() {
     accessToken: invite.inviteToken,
     expectedRevision: partner.draftRevision,
     submission: invalidPartner,
-  }), "RELATIONSHIP_ROLE_PAIR_INVALID");
+  }), "RELATIONSHIP_ASSIGNED_ROLE_MISMATCH");
   const afterRejected = await getRelationshipInviteContext(invite.inviteToken);
   assert(afterRejected.status === "awaiting_partner" && afterRejected.participantStatus === "not_started", "역할 불일치 제출이 참가자 상태를 변경했습니다.");
   const db = await getDb();
@@ -247,7 +277,9 @@ async function verifyInvalidRolePairRejected() {
 async function main() {
   assertIsolatedNoSendRuntime();
   await ensureIsolatedE2eCatalog();
+  assert(process.env.HUSIM_DISABLE_EMAIL_DELIVERY === "1", "HUSIM_DISABLE_EMAIL_DELIVERY=1 없이는 이 E2E를 실행하지 않습니다.");
   assert(COLOR_DATA.length > 0 && CARD_DATA.length > 0, "분석 선택 데이터가 준비되지 않았습니다.");
+  await ensureE2eProducts();
   if (process.env.RELATIONSHIP_E2E_PARENT_ONLY === "true") {
     await verifyParentChildRoleOrder();
     await verifyInvalidRolePairRejected();
@@ -261,7 +293,11 @@ async function main() {
   const consumed = await purchaseAndConsume({ mode: "invite_link", relationType: "부부" });
   assert(consumed.relationshipInvite, "초대 방식의 관계 세션이 생성되지 않았습니다.");
   const invite = consumed.relationshipInvite;
-  checks.push({ name: "테스트 결제 권한 및 초대 세션 생성", status: "passed", detail: "테스트 승인 후 한 analysis run에 A/B 관계 세션이 생성되었습니다." });
+  const db = await getDb();
+  assert(db, "DATABASE_NOT_AVAILABLE");
+  const setupRows = await db.select({ entitlementId: relationshipSetups.entitlementId }).from(relationshipSetups).where(eq(relationshipSetups.entitlementId, consumed.entitlementId));
+  assert(setupRows.length === 1, "결제 권한별 관계 설정이 서버에 한 번 저장되지 않았습니다.");
+  checks.push({ name: "테스트 결제 권한·서버 관계 설정·초대 세션 생성", status: "passed", detail: "실제 결제 없이 테스트 승인 후 entitlement별 역할 설정과 한 analysis run의 A/B 세션을 생성했습니다." });
 
   const ownerBefore = await getRelationshipInviteContext(invite.ownerAccessToken);
   const partnerBefore = await getRelationshipInviteContext(invite.inviteToken);
@@ -313,8 +349,6 @@ async function main() {
 
   const queued = await generateAndQueueRelationshipReport(invite.relationshipSessionId);
   assert(queued.outboxId, "양측 완료 후 PDF 이메일 outbox가 생성되지 않았습니다.");
-  const db = await getDb();
-  assert(db, "DATABASE_NOT_AVAILABLE");
   const [document] = await db.select({ id: privateDocuments.id, status: privateDocuments.status, storageKey: privateDocuments.storageKey })
     .from(privateDocuments)
     .where(eq(privateDocuments.analysisRunId, consumed.analysisRunId));
@@ -356,13 +390,13 @@ async function main() {
   await verifyParentChildRoleOrder();
 
   const failed = checks.filter((check) => check.status === "failed");
-  console.log(JSON.stringify({ suite: "relationship-invite-e2e", status: failed.length ? "failed" : "passed", checks }, null, 2));
+  console.log(JSON.stringify({ suite: "relationship-invite-no-send-e2e", status: failed.length ? "failed" : "passed", checks }, null, 2));
   if (failed.length) process.exitCode = 1;
 }
 
 main()
   .then(() => process.exit(process.exitCode ?? 0))
   .catch((error) => {
-    console.error(JSON.stringify({ suite: "relationship-invite-e2e", status: "failed", error: error instanceof Error ? error.message : String(error), checks }, null, 2));
+    console.error(JSON.stringify({ suite: "relationship-invite-no-send-e2e", status: "failed", error: error instanceof Error ? error.message : String(error), checks }, null, 2));
     process.exit(1);
   });

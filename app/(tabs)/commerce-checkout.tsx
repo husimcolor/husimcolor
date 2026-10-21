@@ -8,6 +8,7 @@ import { LocalizedText as Text } from "@/components/localized-text";
 import { getCommerceProduct, isPaidAnalysisProduct, type CommerceProductCode } from "@/shared/commerce";
 import { saveCommerceStartGrant } from "@/lib/commerce-access";
 import { useLocalization } from "@/lib/localization-context";
+import { createConversionEventInput } from "@/lib/conversion-tracking";
 import { trpc } from "@/lib/trpc";
 import { OPENING_CAMPAIGN_COUPON_CODE, OPENING_CAMPAIGN_DISPLAY_PRICES, isOpeningCampaignAvailable } from "@/shared/opening-campaign";
 
@@ -162,6 +163,7 @@ export default function CommerceCheckoutScreen() {
   const completeTossLiveCheckout = trpc.commerce.checkout.completeTossLive.useMutation();
   const completeTossTestFailure = trpc.commerce.checkout.completeTossTestFailure.useMutation();
   const completeTossLiveFailure = trpc.commerce.checkout.completeTossLiveFailure.useMutation();
+  const funnel = trpc.conversionFunnel.track.useMutation();
   const testMode = trpc.commerce.checkout.testMode.useQuery();
   const paidAnalysisPublicEnabled = testMode.data?.paidAnalysisPublicEnabled ?? false;
   const tossLiveEnabled = testMode.data?.tossLiveEnabled === true;
@@ -203,6 +205,11 @@ export default function CommerceCheckoutScreen() {
     recordCommerceEvent("checkout_opened");
   }, [productCode, locale]);
   useEffect(() => {
+    if (!isPaidAnalysisCode(productCode) || cardReviewMode) return;
+    void createConversionEventInput({ eventName: "checkout_view", productCode, scope: `checkout-${productCode}` })
+      .then((event) => funnel.mutate(event)).catch(() => undefined);
+  }, [productCode, cardReviewMode]);
+  useEffect(() => {
     if (openingCampaignAvailable) {
       setCouponCode((current) => current || OPENING_CAMPAIGN_COUPON_CODE);
     }
@@ -224,6 +231,11 @@ export default function CommerceCheckoutScreen() {
       router.replace("/(tabs)/premium-info" as any);
       return;
     }
+    if (productCode === "couple_love_deep") {
+      // 구 callback의 relationType은 호환용으로만 파싱한다. 새 설정의 원천은 결제 후 화면이다.
+      router.replace({ pathname: "/(tabs)/relationship-setup", params: { product: productCode } } as any);
+      return;
+    }
     if (!relationType) throw new Error("RELATION_TYPE_REQUIRED_FOR_RELATIONSHIP_ANALYSIS");
     router.replace({ pathname: "/(tabs)/relationship-mode", params: { product: productCode, relationType } } as any);
   };
@@ -238,6 +250,8 @@ export default function CommerceCheckoutScreen() {
       .then(async (result) => {
         if (!result.startGrant) throw new Error("PAYMENT_GRANT_NOT_ISSUED");
         recordCommerceEvent("payment_completed", orderNumber);
+        void createConversionEventInput({ eventName: "payment_success", productCode, scope: `payment-${orderNumber}` })
+          .then((event) => funnel.mutate(event)).catch(() => undefined);
         await moveToAnalysis(result.startGrant);
       })
       .catch(() => setMessage("결제 승인 확인에 실패했습니다. 동일 결제를 다시 요청하지 말고 관리자에게 주문번호를 알려 주세요."))
@@ -252,6 +266,8 @@ export default function CommerceCheckoutScreen() {
     completeFailedCheckout
       .mutateAsync({ orderNumber, errorCode: failureCode, errorMessage: failureMessage })
       .then((result) => {
+        void createConversionEventInput({ eventName: result.status === "cancelled" ? "payment_cancelled" : "payment_failed", productCode, scope: `payment-${orderNumber}` })
+          .then((event) => funnel.mutate(event)).catch(() => undefined);
         setMessage(result.status === "cancelled"
           ? "결제가 취소되었습니다. 사용 예약된 쿠폰이 있었다면 다시 사용할 수 있습니다."
           : "결제에 실패했습니다. 사용 예약된 쿠폰이 있었다면 다시 사용할 수 있습니다.");
@@ -272,6 +288,7 @@ export default function CommerceCheckoutScreen() {
     }
     setProcessing(true);
     setMessage(null);
+    let funnelOrderNumber: string | null = null;
     try {
       recordCommerceEvent("payment_requested");
       const paymentMode = tossLiveEnabled ? "live" : "test";
@@ -288,9 +305,14 @@ export default function CommerceCheckoutScreen() {
       if (checkout.status === "paid") {
         if (!checkout.startGrant) throw new Error("COUPON_GRANT_NOT_ISSUED");
         recordCommerceEvent("payment_completed", checkout.orderNumber);
+        void createConversionEventInput({ eventName: "payment_success", productCode, scope: `payment-${checkout.orderNumber}` })
+          .then((event) => funnel.mutate(event)).catch(() => undefined);
         await moveToAnalysis(checkout.startGrant);
         return;
       }
+      funnelOrderNumber = checkout.orderNumber;
+      void createConversionEventInput({ eventName: "toss_request", productCode, scope: `payment-${checkout.orderNumber}` })
+        .then((event) => funnel.mutate(event)).catch(() => undefined);
       const TossPayments = await loadTossPaymentsScript();
       const tossPayments = TossPayments(checkout.tossClientKey);
       const payment = tossPayments.payment({ customerKey: "ANONYMOUS" });
@@ -298,7 +320,7 @@ export default function CommerceCheckoutScreen() {
       const baseParams = new URLSearchParams({
         product: productCode,
         paymentMode,
-        ...(relationType ? { relationType } : {}),
+        ...(relationType && productCode !== "couple_love_deep" ? { relationType } : {}),
         ...(channel === "web" ? { channel } : {}),
         ...(paymentMode === "test" && requestedPreviewLifecycle ? { testLifecycle: "toss-test-lifecycle" } : {}),
       }).toString();
@@ -314,6 +336,10 @@ export default function CommerceCheckoutScreen() {
         windowTarget: "self",
       });
     } catch (error) {
+      if (funnelOrderNumber) {
+        void createConversionEventInput({ eventName: "payment_failed", productCode, scope: `payment-${funnelOrderNumber}` })
+          .then((event) => funnel.mutate(event)).catch(() => undefined);
+      }
       setMessage(error instanceof Error && error.message.includes("COUPON") ? "쿠폰을 적용할 수 없습니다. 코드와 조건을 확인해 주세요." : "결제를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setProcessing(false);
@@ -334,7 +360,7 @@ export default function CommerceCheckoutScreen() {
       const origin = window.location.origin;
       const baseParams = new URLSearchParams({
         product: cardReview.data.productCode,
-        ...(relationType ? { relationType } : {}),
+        ...(relationType && productCode !== "couple_love_deep" ? { relationType } : {}),
         ...(channel === "web" ? { channel } : {}),
         review: "toss-card-review",
         reviewResult: "returned",
@@ -434,6 +460,7 @@ export default function CommerceCheckoutScreen() {
           </Pressable>
         </View>
         <Text style={styles.label}>주문 확인 이메일</Text>
+        <Text style={styles.emailHelp}>주문 확인과 완성된 PDF 리포트를 받을 이메일입니다</Text>
         <TextInput style={styles.input} value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" placeholder="name@example.com" placeholderTextColor="#94887C" />
         <Text style={styles.label}>쿠폰 코드 <Text style={styles.optional}>(선택)</Text></Text>
         {openingCampaignAvailable && <View style={styles.openingCampaignCard}>
@@ -477,6 +504,7 @@ const styles = StyleSheet.create({
   servicePeriodText: { color: "#4D594D", fontSize: 13, lineHeight: 20, marginTop: 5 },
   policyLink: { color: "#3F7B52", fontSize: 13, fontWeight: "800", textDecorationLine: "underline", marginTop: 8 },
   label: { color: "#3C312A", fontSize: 15, fontWeight: "700", marginBottom: 9 },
+  emailHelp: { color: "#76675A", fontSize: 12, lineHeight: 18, marginTop: -4, marginBottom: 8 },
   optional: { color: "#897D72", fontSize: 13, fontWeight: "400" },
   input: { backgroundColor: "#FFFDF9", borderColor: "#D9CDBF", borderWidth: 1, borderRadius: 12, color: "#2D2420", fontSize: 16, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 20 },
   openingCampaignCard: { backgroundColor: "#FFF7DA", borderColor: "#E4C978", borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 13, gap: 6 },

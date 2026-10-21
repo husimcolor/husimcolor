@@ -10,7 +10,7 @@ import { getCurrentVercelOidcToken } from "./vercel-request-context";
 
 type StorageEnvironment = Record<string, string | undefined>;
 
-export type StorageBackend = "vercel_blob" | "manus_forge" | "local_test" | "unconfigured";
+export type StorageBackend = "vercel_blob" | "manus_forge" | "local_test" | "local_e2e" | "unconfigured";
 
 /**
  * Vercel deployments do not receive Manus WebDev's Forge credentials. A private
@@ -21,6 +21,8 @@ export function resolveStorageBackend(env: StorageEnvironment = process.env): St
   // An explicit non-production local directory wins over ambient development
   // credentials so isolated E2E cannot accidentally write to Forge storage.
   if (env.NODE_ENV !== "production" && env.HUSIM_LOCAL_TEST_STORAGE_DIR) return "local_test";
+  // 명시적 격리 E2E만 허용한다. Production/Preview에서는 절대로 이 경로를 쓰지 않는다.
+  if (env.NODE_ENV !== "production" && !env.VERCEL && env.HUSIM_E2E_LOCAL_STORAGE_DIR && env.HUSIM_DISABLE_EMAIL_DELIVERY === "1") return "local_e2e";
   // A Vercel Blob connection supplies BLOB_STORE_ID. The request-scoped OIDC
   // header is passed directly to the SDK by this module when it is available.
   const hasVercelOidc = Boolean(env.BLOB_STORE_ID);
@@ -106,6 +108,16 @@ export async function storagePut(
     mkdirSync(path.dirname(target), { recursive: true });
     writeFileSync(target, typeof data === "string" ? data : Buffer.from(data));
     return { key: `local-test:${key}`, url: `local-test:${key}` };
+  }
+
+  if (resolveStorageBackend() === "local_e2e") {
+    const { mkdir, writeFile } = await import("node:fs/promises");
+    const { join } = await import("node:path");
+    const root = process.env.HUSIM_E2E_LOCAL_STORAGE_DIR!;
+    const destination = join(root, key);
+    await mkdir(join(destination, ".."), { recursive: true });
+    await writeFile(destination, typeof data === "string" ? data : Buffer.from(data));
+    return { key, url: `e2e-local://${key}` };
   }
 
   if (resolveStorageBackend() === "vercel_blob") {
@@ -212,6 +224,11 @@ export async function storageGetSignedUrl(relKey: string): Promise<string> {
 export async function storageGetBuffer(relKey: string): Promise<Buffer> {
   if (relKey.startsWith("local-test:")) {
     return readFileSync(localTestPath(relKey));
+  }
+  if (resolveStorageBackend() === "local_e2e") {
+    const { readFile } = await import("node:fs/promises");
+    const { join } = await import("node:path");
+    return readFile(join(process.env.HUSIM_E2E_LOCAL_STORAGE_DIR!, normalizeKey(relKey)));
   }
   if (isVercelBlobKey(relKey)) {
     if (resolveStorageBackend() !== "vercel_blob") {

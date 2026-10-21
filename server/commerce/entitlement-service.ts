@@ -1,16 +1,17 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { and, eq, gt } from "drizzle-orm";
 
-import { analysisRuns, entitlements, orderItems, products } from "../../drizzle/schema";
+import { analysisRuns, entitlements, orderItems, products, relationshipSetups } from "../../drizzle/schema";
 import type { CommerceProductCode } from "../../shared/commerce";
 import { DEFAULT_LOCALE, ZH_CN_COPY_VERSION, isAppLocale } from "../../shared/localization";
 import { getDb } from "../db";
+import { decryptCommerceValue, encryptCommerceValue } from "./crypto";
 import {
   createRelationshipInviteSession,
   type RelationshipInviteStart,
   type RelationshipInviteMode,
 } from "./relationship-invite-service";
-import type { RelationType } from "../../constants/coupleData";
+import { isRelationshipRolePairValid, type RelationType, type RelationshipRole } from "../../constants/coupleData";
 
 const TOKEN_VERSION = "v1";
 const TOKEN_TTL_MS = 2 * 60 * 60 * 1000;
@@ -46,6 +47,33 @@ export type AnalysisDeliveryGrant = {
   locale: "ko" | "zh-CN";
   copyVersion: string;
 };
+
+export type StoredRelationshipSetup = {
+  entitlementId: number;
+  productCode: "couple_love_deep";
+  relationType: Extract<RelationType, "연인" | "부부">;
+  roleA: RelationshipRole;
+  roleB: RelationshipRole;
+};
+
+function parseRelationshipSetup(row: { entitlementId: number; productCode: string; configurationEncrypted: string }): StoredRelationshipSetup {
+  try {
+    const parsed = JSON.parse(decryptCommerceValue(row.configurationEncrypted)) as Omit<StoredRelationshipSetup, "entitlementId" | "productCode">;
+    if (row.productCode !== "couple_love_deep" || (parsed.relationType !== "연인" && parsed.relationType !== "부부") || !isRelationshipRolePairValid(parsed.relationType, parsed.roleA, parsed.roleB)) {
+      throw new Error("RELATIONSHIP_SETUP_INVALID");
+    }
+    return { entitlementId: row.entitlementId, productCode: "couple_love_deep", ...parsed };
+  } catch { throw new Error("RELATIONSHIP_SETUP_INVALID"); }
+}
+
+async function assertRelationshipSetup(tx: any, input: { entitlementId: number; productCode: CommerceProductCode; relationType?: RelationType; roleA?: RelationshipRole; roleB?: RelationshipRole }) {
+  if (input.productCode !== "couple_love_deep") return null;
+  const row = (await tx.select().from(relationshipSetups).where(eq(relationshipSetups.entitlementId, input.entitlementId)).limit(1))[0];
+  if (!row) throw new Error("RELATIONSHIP_SETUP_REQUIRED");
+  const setup = parseRelationshipSetup(row);
+  if (setup.relationType !== input.relationType || setup.roleA !== input.roleA || setup.roleB !== input.roleB) throw new Error("RELATIONSHIP_SETUP_MISMATCH");
+  return setup;
+}
 
 function getTokenSecret(): string {
   const secret = process.env.COMMERCE_EMAIL_HASH_SECRET;
@@ -172,6 +200,35 @@ export function verifyAnalysisDeliveryGrant(input: {
   return payload;
 }
 
+export async function configureRelationshipSetup(input: { accessToken: string; relationType: Extract<RelationType, "연인" | "부부">; roleA: RelationshipRole; roleB: RelationshipRole }): Promise<StoredRelationshipSetup> {
+  const token = parse(input.accessToken);
+  if (token.productCode !== "couple_love_deep" || !isRelationshipRolePairValid(input.relationType, input.roleA, input.roleB)) throw new Error("RELATIONSHIP_SETUP_INVALID");
+  const db = await getDb(); if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  return (db as any).transaction(async (tx: any) => {
+    const entitlement = (await tx.select({ id: entitlements.id, status: entitlements.status, customerId: entitlements.customerId, usedCount: entitlements.usedCount, usageLimit: entitlements.usageLimit, productCode: products.code })
+      .from(entitlements).innerJoin(products, eq(entitlements.productId, products.id))
+      .where(and(eq(entitlements.id, token.entitlementId), eq(entitlements.customerId, token.customerId))).limit(1))[0];
+    if (!entitlement || entitlement.productCode !== "couple_love_deep" || entitlement.status !== "active" || entitlement.usedCount >= entitlement.usageLimit) throw new Error("RELATIONSHIP_SETUP_ENTITLEMENT_UNAVAILABLE");
+    const existing = (await tx.select().from(relationshipSetups).where(eq(relationshipSetups.entitlementId, entitlement.id)).limit(1))[0];
+    if (existing) {
+      const saved = parseRelationshipSetup(existing);
+      if (saved.relationType !== input.relationType || saved.roleA !== input.roleA || saved.roleB !== input.roleB) throw new Error("RELATIONSHIP_SETUP_ALREADY_CONFIRMED");
+      return saved;
+    }
+    const configurationEncrypted = encryptCommerceValue(JSON.stringify({ relationType: input.relationType, roleA: input.roleA, roleB: input.roleB }));
+    await tx.insert(relationshipSetups).values({ entitlementId: entitlement.id, productCode: "couple_love_deep", configurationEncrypted });
+    return { entitlementId: entitlement.id, productCode: "couple_love_deep", relationType: input.relationType, roleA: input.roleA, roleB: input.roleB };
+  });
+}
+
+export async function getRelationshipSetupForGrant(input: { accessToken: string }): Promise<StoredRelationshipSetup | null> {
+  const token = parse(input.accessToken);
+  if (token.productCode !== "couple_love_deep") return null;
+  const db = await getDb(); if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const row = (await db.select().from(relationshipSetups).where(eq(relationshipSetups.entitlementId, token.entitlementId)).limit(1))[0];
+  return row ? parseRelationshipSetup(row) : null;
+}
+
 /**
  * 정보 입력 완료 시 서버가 단 한 번만 entitlement를 소비한다.
  * 브라우저 플래그·결제 성공 URL은 권한 근거가 될 수 없으며 이 토큰과 DB 상태를 함께 만족해야 한다.
@@ -183,6 +240,9 @@ export async function consumeEntitlementForAnalysisStart(input: {
   relationType?: RelationType;
   /** 클라이언트가 선택한 locale. 허용 목록 밖의 값은 한국어 기본값으로 고정한다. */
   locale?: string;
+  /** 초대 방식의 새 세션은 설정 화면에서 확정한 역할쌍을 서버에 암호화해 고정한다. */
+  roleA?: RelationshipRole;
+  roleB?: RelationshipRole;
 }): Promise<{
   entitlementId: number;
   analysisRunId: number;
@@ -228,6 +288,8 @@ export async function consumeEntitlementForAnalysisStart(input: {
       await tx.update(entitlements).set({ status: "expired" }).where(eq(entitlements.id, entitlement.entitlementId));
       throw new Error("ENTITLEMENT_EXPIRED");
     }
+    // 부부·연인은 결제 후 한 번 확정한 server setup과 분석 시작 인수를 반드시 대조한다.
+    await assertRelationshipSetup(tx, { entitlementId: entitlement.entitlementId, productCode: input.productCode, relationType: input.relationType, roleA: input.roleA, roleB: input.roleB });
 
     const claimed = await tx
       .update(entitlements)
@@ -263,6 +325,7 @@ export async function consumeEntitlementForAnalysisStart(input: {
           relationType: input.relationType ?? (() => { throw new Error("RELATIONSHIP_TYPE_REQUIRED"); })(),
           locale,
           copyVersion,
+          ...(input.roleA && input.roleB ? { roleA: input.roleA, roleB: input.roleB } : {}),
         })
       : null;
     return {

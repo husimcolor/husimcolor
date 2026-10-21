@@ -118,11 +118,18 @@ export default function CoupleStartScreen() {
     : selectedProductId === 'parent-child'
       ? 'parent_child_deep'
       : null;
-  const canProceed = Boolean(effectiveRelationType);
+  // 유료 부부·연인은 상품만 선택하면 결제 정보 입력으로 이동한다.
+  // 친구/부모·자녀의 기존 세부 흐름은 현재 범위에서 보존한다.
+  const canProceed = selectedProductId === 'romantic' ? true : Boolean(effectiveRelationType);
 
   const handleStart = () => {
+    if (selectedProductId === 'romantic') {
+      const checkoutParams = `product=couple_love_deep${tossLiveEnabled ? '' : '&testLifecycle=toss-test-lifecycle'}`;
+      router.push(`/(tabs)/commerce-checkout?${checkoutParams}` as any);
+      return;
+    }
     if (!effectiveRelationType) return;
-    // 공개 runtime이 열려 있으면 심사용 review-only보다 persistent 결제 lifecycle을 우선한다.
+    // 부모·자녀/친구 기존 흐름은 이번 부부·연인 전환 범위에서 변경하지 않는다.
     if (paidProductCode && paidAnalysisPublicEnabled && tossPaymentEnabled) {
       router.push(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(effectiveRelationType)}${tossLiveEnabled ? '' : '&testLifecycle=toss-test-lifecycle'}` as any);
       return;
@@ -297,20 +304,9 @@ export default function CoupleStartScreen() {
             </View>
           </View>
 
-          {/* 부부·연인 상품의 기존 세부 관계 선택 */}
           {isRomanticProduct && (
             <View style={[styles.subSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[styles.subSectionTitle, { color: colors.muted }]}>관계 조합을 선택해주세요</Text>
-              <View style={styles.chipRow}>
-                {ROMANTIC_RELATION_TYPES.map((relation) =>
-                  renderChip(
-                    relation.label,
-                    relationType === relation.value,
-                    () => handleRelationTypeSelect(relation.value),
-                    relation.emoji,
-                  )
-                )}
-              </View>
+              <Text style={[styles.subSectionTitle, { color: colors.muted }]}>결제 후 첫 참여자의 컬러 선택 전에 부부/연인과 두 역할을 한 번 확인합니다.</Text>
             </View>
           )}
 
@@ -339,7 +335,7 @@ export default function CoupleStartScreen() {
             disabled={!canProceed}
           >
             <Text style={[styles.startBtnText, { color: canProceed ? '#fff' : colors.muted }]}>
-              {paidProductCode && tossCardReviewEnabled && !paidAnalysisPublicEnabled ? '심사용 Toss 테스트 결제 열기 →' : '다음 · 두 사람 정보 입력하기 →'}
+              {selectedProductId === 'romantic' ? '다음 · 결제 정보 입력 →' : paidProductCode && tossCardReviewEnabled && !paidAnalysisPublicEnabled ? '심사용 Toss 테스트 결제 열기 →' : '다음 · 두 사람 정보 입력하기 →'}
             </Text>
           </Pressable>
 

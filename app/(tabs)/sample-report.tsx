@@ -8,6 +8,7 @@ import { LocalizedText as Text } from "@/components/localized-text";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { trpc } from "@/lib/trpc";
 import { useLocalization } from "@/lib/localization-context";
+import { createConversionEventInput } from "@/lib/conversion-tracking";
 import {
   getSampleReport,
   getSampleReportDownloadUrl,
@@ -98,6 +99,7 @@ export default function SampleReportScreen() {
   const sampleReport = getSampleReport(product);
   const metric = trpc.visitors.log.useMutation();
   const [viewerState, setViewerState] = useState<"loading" | "ready" | "failed">("loading");
+  const funnel = trpc.conversionFunnel.track.useMutation();
   const [reloadKey, setReloadKey] = useState(0);
   const recordedMetricEvents = useRef(new Set<string>());
   const nativeOpenedUrl = useRef<string | null>(null);
@@ -119,6 +121,14 @@ export default function SampleReportScreen() {
     }).catch(() => undefined);
   };
 
+  useEffect(() => {
+    if (!sampleReport) return;
+    void createConversionEventInput({ eventName: "sample_view", productCode: sampleReport.product, scope: `sample-${sampleReport.product}` })
+      .then((event) => funnel.mutate(event)).catch(() => undefined);
+  }, [sampleReport?.product]);
+
+  // 네이티브 앱은 HTML canvas reader를 인앱 브라우저로 열고,
+  // 웹(네이버·카카오 인앱 브라우저 포함)은 현재 화면의 iframe reader를 쓴다.
   useEffect(() => {
     setViewerState("loading");
   }, [viewerUrl, reloadKey]);
@@ -215,6 +225,8 @@ export default function SampleReportScreen() {
   const handleExplore = () => {
     if (!sampleReport) return;
     logMetric("product_explore");
+    void createConversionEventInput({ eventName: "paid_guide_click", productCode: sampleReport.product, scope: `sample-explore-${sampleReport.product}` })
+      .then((event) => funnel.mutate(event)).catch(() => undefined);
     if (sampleReport.product === "personal_deep") {
       router.push("/(tabs)/commerce-checkout?product=personal_deep" as any);
       return;
