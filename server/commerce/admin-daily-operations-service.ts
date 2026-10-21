@@ -1,7 +1,7 @@
 import { and, eq, gte, isNull, lt, ne, or, sql } from "drizzle-orm";
 
 import { orderItems, orders, paymentTransactions, visitorLogs } from "../../drizzle/schema";
-import { getDb } from "../db";
+import { getCommerceFunnelEventRows, getDb } from "../db";
 
 /**
  * 운영 홈의 신규 지표는 기존 체험 통계를 지우지 않고, 2026-10-09 KST 이후의
@@ -110,4 +110,32 @@ export async function getAdminDailyOperationsSignals(now = new Date()) {
     parentChildDeepPaidCount: valueOf(payments, "parentChildDeepCount"),
     revenueKrw: valueOf(payments, "revenueKrw"),
   };
+}
+
+
+function kstRangeForDateLabel(label: string): KstDayRange {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(label);
+  if (!match) throw new Error("FUNNEL_DATE_INVALID");
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText); const month = Number(monthText); const day = Number(dayText);
+  const start = new Date(Date.UTC(year, month - 1, day - 1, 15, 0, 0, 0));
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { start, end, label };
+}
+
+/** 새 퍼널은 최초 수집일 이후의 event 원장만 반환한다. 기존 방문 로그를 소급 추정하지 않는다. */
+export async function getAdminFunnelDaily(input: { fromKst: string; toKst: string }) {
+  const from = kstRangeForDateLabel(input.fromKst);
+  const to = kstRangeForDateLabel(input.toKst);
+  if (to.start < from.start || to.start.getTime() - from.start.getTime() > 30 * 24 * 60 * 60 * 1000) throw new Error("FUNNEL_DATE_RANGE_INVALID");
+  const end = new Date(to.end.getTime());
+  // DB session timezone에 의존하지 않도록 각 KST 일자를 독립 window로 집계한다. 최대 31일이다.
+  const dailyRows = await Promise.all(Array.from({ length: Math.floor((end.getTime() - from.start.getTime()) / (24 * 60 * 60 * 1000)) }, async (_, index) => {
+    const start = new Date(from.start.getTime() + index * 24 * 60 * 60 * 1000);
+    const dayEnd = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+    const label = new Date(start.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const row = await getCommerceFunnelEventRows({ start, end: dayEnd });
+    return row.map((item) => ({ kstDate: label, ...item, eventCount: Number(item.eventCount), deviceCount: Number(item.deviceCount) }));
+  }));
+  return { fromKst: from.label, toKst: to.label, rows: dailyRows.flat() };
 }

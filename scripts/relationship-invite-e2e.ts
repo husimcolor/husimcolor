@@ -9,10 +9,12 @@ import {
   privateDocuments,
   relationshipParticipants,
   relationshipSessions,
+  relationshipSetups,
+  products,
+  productPrices,
 } from "../drizzle/schema";
 import { getDb } from "../server/db";
-import { deliverPrivatePdfOutboxItem } from "../server/commerce/email-outbox-service";
-import { consumeEntitlementForAnalysisStart } from "../server/commerce/entitlement-service";
+import { configureRelationshipSetup, consumeEntitlementForAnalysisStart } from "../server/commerce/entitlement-service";
 import { completeTestPayment, createTestCheckout } from "../server/commerce/order-service";
 import {
   generateAndQueueRelationshipReport,
@@ -23,7 +25,7 @@ import {
   submitRelationshipParticipant,
 } from "../server/commerce/relationship-invite-service";
 
-const E2E_EMAIL = "support@husimcolor.com";
+const E2E_EMAIL = "relationship-e2e@invalid.test";
 const A_SUBMISSION = {
   info: { gender: "남성" as const, faith: "무교" as const, relationshipRole: "남편" as const },
   colors: ["red", "blue", "green"],
@@ -53,6 +55,24 @@ async function expectFailure(name: string, action: () => Promise<unknown>, inclu
   }
 }
 
+
+async function ensureE2eProducts() {
+  const db = await getDb();
+  assert(db, "DATABASE_NOT_AVAILABLE");
+  const fixture = [
+    { code: "couple_love_deep", name: "E2E 부부·연인 관계 심화분석", amountKrw: 59000 },
+    { code: "parent_child_deep", name: "E2E 부모·자녀 관계 심화분석", amountKrw: 39000 },
+  ] as const;
+  for (const item of fixture) {
+    await db.insert(products).values({ code: item.code, name: item.name, fulfillmentType: "analysis", requiresPayment: true, active: true })
+      .onDuplicateKeyUpdate({ set: { active: true, name: item.name } });
+    const row = await db.select({ id: products.id }).from(products).where(eq(products.code, item.code)).limit(1);
+    assert(row[0], `E2E product seed missing: ${item.code}`);
+    await db.insert(productPrices).values({ productId: row[0].id, regularAmountKrw: item.amountKrw, amountKrw: item.amountKrw, currency: "KRW", version: 1, active: true })
+      .onDuplicateKeyUpdate({ set: { active: true, amountKrw: item.amountKrw, regularAmountKrw: item.amountKrw } });
+  }
+}
+
 async function purchaseAndConsume(input: {
   productCode?: "couple_love_deep" | "parent_child_deep";
   mode?: "invite_link";
@@ -73,11 +93,21 @@ async function purchaseAndConsume(input: {
     amountKrw: checkout.finalAmountKrw,
   });
   assert(payment.status === "paid" && payment.startGrant, "테스트 승인 후 시작 권한이 생성되지 않았습니다.");
+  const romantic = productCode === "couple_love_deep";
+  if (romantic) {
+    await configureRelationshipSetup({
+      accessToken: payment.startGrant.accessToken,
+      relationType: "부부",
+      roleA: "남편",
+      roleB: "아내",
+    });
+  }
   return consumeEntitlementForAnalysisStart({
     accessToken: payment.startGrant.accessToken,
     productCode,
     relationshipMode: input.mode,
-    relationType: input.relationType,
+    relationType: romantic ? "부부" : input.relationType,
+    ...(romantic ? { roleA: "남편" as const, roleB: "아내" as const } : {}),
   });
 }
 
@@ -165,7 +195,7 @@ async function verifyInvalidRolePairRejected() {
     accessToken: invite.inviteToken,
     expectedRevision: partner.draftRevision,
     submission: invalidPartner,
-  }), "RELATIONSHIP_ROLE_PAIR_INVALID");
+  }), "RELATIONSHIP_ASSIGNED_ROLE_MISMATCH");
   const afterRejected = await getRelationshipInviteContext(invite.inviteToken);
   assert(afterRejected.status === "awaiting_partner" && afterRejected.participantStatus === "not_started", "역할 불일치 제출이 참가자 상태를 변경했습니다.");
   const db = await getDb();
@@ -176,7 +206,9 @@ async function verifyInvalidRolePairRejected() {
 }
 
 async function main() {
+  assert(process.env.HUSIM_DISABLE_EMAIL_DELIVERY === "1", "HUSIM_DISABLE_EMAIL_DELIVERY=1 없이는 이 E2E를 실행하지 않습니다.");
   assert(COLOR_DATA.length > 0 && CARD_DATA.length > 0, "분석 선택 데이터가 준비되지 않았습니다.");
+  await ensureE2eProducts();
   if (process.env.RELATIONSHIP_E2E_PARENT_ONLY === "true") {
     await verifyParentChildRoleOrder();
     await verifyInvalidRolePairRejected();
@@ -190,7 +222,11 @@ async function main() {
   const consumed = await purchaseAndConsume({ mode: "invite_link", relationType: "부부" });
   assert(consumed.relationshipInvite, "초대 방식의 관계 세션이 생성되지 않았습니다.");
   const invite = consumed.relationshipInvite;
-  checks.push({ name: "테스트 결제 권한 및 초대 세션 생성", status: "passed", detail: "테스트 승인 후 한 analysis run에 A/B 관계 세션이 생성되었습니다." });
+  const db = await getDb();
+  assert(db, "DATABASE_NOT_AVAILABLE");
+  const setupRows = await db.select({ entitlementId: relationshipSetups.entitlementId }).from(relationshipSetups).where(eq(relationshipSetups.entitlementId, consumed.entitlementId));
+  assert(setupRows.length === 1, "결제 권한별 관계 설정이 서버에 한 번 저장되지 않았습니다.");
+  checks.push({ name: "테스트 결제 권한·서버 관계 설정·초대 세션 생성", status: "passed", detail: "실제 결제 없이 테스트 승인 후 entitlement별 역할 설정과 한 analysis run의 A/B 세션을 생성했습니다." });
 
   const ownerBefore = await getRelationshipInviteContext(invite.ownerAccessToken);
   const partnerBefore = await getRelationshipInviteContext(invite.inviteToken);
@@ -242,55 +278,32 @@ async function main() {
 
   const queued = await generateAndQueueRelationshipReport(invite.relationshipSessionId);
   assert(queued.outboxId, "양측 완료 후 PDF 이메일 outbox가 생성되지 않았습니다.");
-  const db = await getDb();
-  assert(db, "DATABASE_NOT_AVAILABLE");
   const [document] = await db.select({ id: privateDocuments.id, status: privateDocuments.status, storageKey: privateDocuments.storageKey })
     .from(privateDocuments)
     .where(eq(privateDocuments.analysisRunId, consumed.analysisRunId));
   assert(document?.status === "generated" && document.storageKey, "PDF가 private storage에 generated 상태로 보관되지 않았습니다.");
   const resultBeforeEmail = await getRelationshipResult({ resultToken: invite.resultToken });
-  assert(resultBeforeEmail.status === "email_pending" && resultBeforeEmail.snapshot === null, "이메일 성공 전 결과 토큰이 리포트를 노출했습니다.");
-  checks.push({ name: "양측 완료 후 private PDF 생성", status: "passed", detail: "한 번의 outbox와 private PDF 문서를 생성하고 이메일 완료 전에는 결과 토큰을 닫았습니다." });
+  assert(resultBeforeEmail.status === "email_pending" && resultBeforeEmail.snapshot, "무발송 대기 상태에서 생성된 통합 결과를 조회하지 못했습니다.");
+  assert(resultBeforeEmail.snapshot.sessionData.personA.info.relationshipRole === "남편" && resultBeforeEmail.snapshot.sessionData.personB.info.relationshipRole === "아내", "통합 결과 스냅샷에 확정 역할이 일관되게 반영되지 않았습니다.");
+  checks.push({ name: "양측 완료 후 private PDF·통합 결과 생성", status: "passed", detail: "한 번의 outbox와 private PDF, 확정 역할을 포함한 통합 결과 스냅샷을 생성했습니다." });
 
-  const firstDelivery = await deliverPrivatePdfOutboxItem(queued.outboxId);
-  assert(firstDelivery.status === "sent", `Resend PDF 자동발송이 성공하지 않았습니다: ${firstDelivery.status}`);
-  const repeatDelivery = await deliverPrivatePdfOutboxItem(queued.outboxId);
-  assert(repeatDelivery.status === "not_claimed", "동일 outbox의 중복 이메일 발송이 차단되지 않았습니다.");
   const [outbox] = await db.select({ id: emailOutbox.id, status: emailOutbox.status, attempts: emailOutbox.attemptCount, providerMessageId: emailOutbox.providerMessageId })
     .from(emailOutbox)
     .where(eq(emailOutbox.id, queued.outboxId));
-  assert(outbox?.status === "sent" && outbox.providerMessageId && outbox.attempts === 1, "이메일 outbox가 정확히 한 번 sent로 완료되지 않았습니다.");
-  checks.push({ name: "PDF 이메일 자동발송 및 중복 방지", status: "passed", detail: "result@husimcolor.com 발송 provider 응답을 기록하고 동일 outbox 재발송을 차단했습니다." });
-
-  const completedInvite = await getRelationshipInviteContext(invite.inviteToken);
-  assert(completedInvite.status === "completed" && !completedInvite.canEdit && completedInvite.draft === null, "이메일 완료 후 초대 링크가 잠기지 않았습니다.");
-  await expectFailure("완료 초대 링크 답변 수정 차단", () => saveRelationshipParticipantDraft({
-    accessToken: invite.inviteToken,
-    expectedRevision: completedInvite.draftRevision,
-    draft: { info: B_SUBMISSION.info },
-  }), "RELATIONSHIP_INVITE_COMPLETED");
-  await expectFailure("완료 초대 링크 재제출 차단", () => submitRelationshipParticipant({
-    accessToken: invite.inviteToken,
-    expectedRevision: completedInvite.draftRevision,
-    submission: B_SUBMISSION,
-  }), "RELATIONSHIP_INVITE_COMPLETED");
-
-  const result = await getRelationshipResult({ resultToken: invite.resultToken });
-  assert(result.status === "completed" && result.snapshot, "별도 결과 토큰으로 완료 결과를 조회하지 못했습니다.");
-  assert(result.snapshot.sessionData.personA.info.relationshipRole === "남편" && result.snapshot.sessionData.personB.info.relationshipRole === "아내", "결과 스냅샷에 실제 관계 역할이 보존되지 않았습니다.");
-  checks.push({ name: "완료 후 초대 링크 만료 및 결과 토큰 분리", status: "passed", detail: "초대 링크의 수정·재제출을 차단하고 별도 결과 토큰에서만 완료 스냅샷을 조회했습니다." });
+  assert(outbox?.status === "queued" && outbox.attempts === 0 && !outbox.providerMessageId, "무발송 E2E에서 outbox가 queued 상태로 보존되지 않았습니다.");
+  checks.push({ name: "무발송 private PDF·outbox 보존", status: "passed", detail: "격리 local storage에 private PDF를 생성하고 이메일 outbox는 queued·0회 상태로 그대로 남겼습니다." });
 
   await verifyExistingOnePhonePath();
   await verifyParentChildRoleOrder();
 
   const failed = checks.filter((check) => check.status === "failed");
-  console.log(JSON.stringify({ suite: "relationship-invite-e2e", status: failed.length ? "failed" : "passed", checks }, null, 2));
+  console.log(JSON.stringify({ suite: "relationship-invite-no-send-e2e", status: failed.length ? "failed" : "passed", checks }, null, 2));
   if (failed.length) process.exitCode = 1;
 }
 
 main()
   .then(() => process.exit(process.exitCode ?? 0))
   .catch((error) => {
-    console.error(JSON.stringify({ suite: "relationship-invite-e2e", status: "failed", error: error instanceof Error ? error.message : String(error), checks }, null, 2));
+    console.error(JSON.stringify({ suite: "relationship-invite-no-send-e2e", status: "failed", error: error instanceof Error ? error.message : String(error), checks }, null, 2));
     process.exit(1);
   });

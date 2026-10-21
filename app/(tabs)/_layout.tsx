@@ -76,6 +76,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="relationship-setup"
+        options={{
+          title: "관계·역할 설정",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="relationship-mode"
         options={{
           title: "검사 방식 선택",

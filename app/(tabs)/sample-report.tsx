@@ -4,6 +4,8 @@ import * as WebBrowser from "expo-web-browser";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
+import { createConversionEventInput } from "@/lib/conversion-tracking";
+import { trpc } from "@/lib/trpc";
 import { API_BASE_URL, getApiBaseUrl } from "@/constants/oauth";
 import {
   getSampleReport,
@@ -42,6 +44,7 @@ export default function SampleReportScreen() {
   const product = getSingleParam(params.product);
   const returnTo = getSingleParam(params.returnTo);
   const sampleReport = getSampleReport(product);
+  const funnel = trpc.conversionFunnel.track.useMutation();
   const [viewerMode, setViewerMode] = useState<ViewerMode>("loading");
   const [zoom, setZoom] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
@@ -62,6 +65,12 @@ export default function SampleReportScreen() {
     return Array.from({ length: sampleReport.pageCount }, (_, index) => getSampleReportPageImageUrl(sampleReport.product, index + 1, pageOrigin))
       .filter((url): url is string => Boolean(url));
   }, [pageOrigin, sampleReport]);
+
+  useEffect(() => {
+    if (!sampleReport) return;
+    void createConversionEventInput({ eventName: "sample_view", productCode: sampleReport.product, scope: `sample-${sampleReport.product}` })
+      .then((event) => funnel.mutate(event)).catch(() => undefined);
+  }, [sampleReport?.product]);
 
   // 네이티브 앱은 HTML canvas reader를 인앱 브라우저로 열고,
   // 웹(네이버·카카오 인앱 브라우저 포함)은 현재 화면의 iframe reader를 쓴다.
@@ -125,6 +134,8 @@ export default function SampleReportScreen() {
 
   const handleExplore = () => {
     if (!sampleReport) return;
+    void createConversionEventInput({ eventName: "paid_guide_click", productCode: sampleReport.product, scope: `sample-explore-${sampleReport.product}` })
+      .then((event) => funnel.mutate(event)).catch(() => undefined);
     if (sampleReport.product === "personal_deep") {
       router.push("/(tabs)/commerce-checkout?product=personal_deep" as any);
       return;

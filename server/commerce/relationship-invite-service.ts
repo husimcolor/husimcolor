@@ -19,6 +19,7 @@ import {
   generateCoupleAnalysis,
   generatePersonAnalysis,
   getLightArchetype,
+  getRelationshipRoleGender,
   isRelationshipRoleForGender,
   isRelationshipRolePairValid,
   resolveRoleBasedRelationType,
@@ -75,6 +76,8 @@ export type RelationshipInviteContext = {
   participantStatus: "not_started" | "in_progress" | "submitted";
   partnerStatus: "not_started" | "in_progress" | "submitted";
   partnerRole: RelationshipRole | null;
+  /** 새 세션은 creation 때 확정된 역할을 반환한다. legacy 세션은 null로 fallback한다. */
+  assignedRole: RelationshipRole | null;
   consentAccepted: boolean;
   canEdit: boolean;
   draftRevision: number;
@@ -117,6 +120,26 @@ function parseSubmittedPayload(value: string | null): RelationshipParticipantPay
   const parsed = parseStoredPayload(value);
   if (!isCompleteParticipantPayload(parsed)) throw new Error("RELATIONSHIP_PARTICIPANT_SUBMISSION_INVALID");
   return parsed;
+}
+
+function parseAssignedRole(value: string | null): RelationshipRole | null {
+  if (!value) return null;
+  try {
+    const role = decryptCommerceValue(value) as RelationshipRole;
+    return ["남편", "아내", "남자친구", "여자친구", "아빠", "엄마", "아들", "딸"].includes(role) ? role : null;
+  } catch {
+    throw new Error("RELATIONSHIP_ASSIGNED_ROLE_UNREADABLE");
+  }
+}
+
+function assertAssignedRoleMatches(input: { assignedRole: RelationshipRole | null; info?: RelationshipParticipantPayload["info"] }) {
+  if (!input.assignedRole) return; // migration 전 legacy session fallback
+  if (!input.info || input.info.relationshipRole !== input.assignedRole) {
+    throw new Error("RELATIONSHIP_ASSIGNED_ROLE_MISMATCH");
+  }
+  if (input.info.gender !== getRelationshipRoleGender(input.assignedRole)) {
+    throw new Error("RELATIONSHIP_ASSIGNED_ROLE_GENDER_MISMATCH");
+  }
 }
 
 function isCompleteParticipantPayload(value: Partial<RelationshipParticipantPayload> | null | undefined): value is RelationshipParticipantPayload {
@@ -436,13 +459,20 @@ export async function createRelationshipInviteSession(tx: any, input: {
   productId: number;
   productCode: CommerceProductCode;
   relationType: RelationType;
+  roleA?: RelationshipRole;
+  roleB?: RelationshipRole;
 }): Promise<RelationshipInviteStart> {
   const productAndRelationTypeMatch = input.productCode === "couple_love_deep"
     ? input.relationType === "연인" || input.relationType === "부부"
     : input.relationType === "부모-자녀" || input.relationType === "아빠-아들" || input.relationType === "아빠-딸" || input.relationType === "엄마-아들" || input.relationType === "엄마-딸";
-  if (!PAID_RELATION_PRODUCTS.has(input.productCode) || !RELATION_TYPES.has(input.relationType) || !productAndRelationTypeMatch) {
+  const hasRolePair = Boolean(input.roleA && input.roleB);
+  const romanticNeedsRolePair = input.productCode === "couple_love_deep";
+  if (!PAID_RELATION_PRODUCTS.has(input.productCode) || !RELATION_TYPES.has(input.relationType) || !productAndRelationTypeMatch || (romanticNeedsRolePair && !hasRolePair) || (hasRolePair && !isRelationshipRolePairValid(input.relationType, input.roleA!, input.roleB!))) {
     throw new Error("RELATIONSHIP_INVITE_PRODUCT_OR_TYPE_INVALID");
   }
+  const resolvedRelationType = hasRolePair
+    ? resolveRoleBasedRelationType(input.relationType, input.roleA!, input.roleB!)
+    : input.relationType;
   const ownerAccessToken = secureToken();
   const inviteToken = secureToken();
   const resultToken = secureToken();
@@ -452,7 +482,7 @@ export async function createRelationshipInviteSession(tx: any, input: {
     entitlementId: input.entitlementId,
     orderId: input.orderId,
     productId: input.productId,
-    relationType: input.relationType,
+    relationType: resolvedRelationType,
     mode: "invite_link",
     ownerTokenHash: hashCommerceValue(ownerAccessToken),
     inviteTokenHash: hashCommerceValue(inviteToken),
@@ -460,8 +490,8 @@ export async function createRelationshipInviteSession(tx: any, input: {
   });
   const relationshipSessionId = Number(insert[0].insertId);
   await tx.insert(relationshipParticipants).values([
-    { relationshipSessionId, participant: "A", status: "not_started" },
-    { relationshipSessionId, participant: "B", status: "not_started" },
+    { relationshipSessionId, participant: "A", status: "not_started", ...(input.roleA ? { assignedRoleEncrypted: encryptCommerceValue(input.roleA) } : {}) },
+    { relationshipSessionId, participant: "B", status: "not_started", ...(input.roleB ? { assignedRoleEncrypted: encryptCommerceValue(input.roleB) } : {}) },
   ]);
   return { relationshipSessionId, ownerAccessToken, inviteToken, resultToken };
 }
@@ -609,8 +639,10 @@ async function buildContext(sessionId: number, participant: RelationshipParticip
   const partner = participantRows.find((row) => row.participant !== participant);
   if (!current || !partner) throw new Error("RELATIONSHIP_PARTICIPANTS_NOT_FOUND");
   const status = session.status as SessionStatus;
+  const currentAssignedRole = parseAssignedRole(current.assignedRoleEncrypted);
+  const partnerAssignedRole = parseAssignedRole(partner.assignedRoleEncrypted);
   const partnerPayload = parseStoredPayload(partner.submittedEncrypted ?? partner.draftEncrypted);
-  const partnerRole = partnerPayload?.info?.relationshipRole ?? null;
+  const partnerRole = partnerAssignedRole ?? partnerPayload?.info?.relationshipRole ?? null;
   return {
     relationshipSessionId: session.id,
     relationType: session.relationType as RelationType,
@@ -619,6 +651,7 @@ async function buildContext(sessionId: number, participant: RelationshipParticip
     participantStatus: current.status,
     partnerStatus: partner.status,
     partnerRole,
+    assignedRole: currentAssignedRole,
     consentAccepted: current.consentAccepted,
     canEdit: EDITABLE_STATUSES.has(status) && current.status !== "submitted",
     draftRevision: current.draftRevision,
@@ -652,6 +685,7 @@ export async function saveRelationshipParticipantDraft(input: {
   if (!current) throw new Error("RELATIONSHIP_PARTICIPANT_NOT_FOUND");
   if (current.status === "submitted") throw new Error("RELATIONSHIP_PARTICIPANT_ALREADY_SUBMITTED");
   if (current.draftRevision !== input.expectedRevision) throw new Error("RELATIONSHIP_DRAFT_REVISION_CONFLICT");
+  assertAssignedRoleMatches({ assignedRole: parseAssignedRole(current.assignedRoleEncrypted), info: input.draft.info as RelationshipParticipantPayload["info"] | undefined });
 
   const now = new Date();
   const claimed = await db
@@ -697,6 +731,8 @@ export async function submitRelationshipParticipant(input: {
     if (!currentParticipant) throw new Error("RELATIONSHIP_PARTICIPANT_NOT_FOUND");
     if (currentParticipant.status === "submitted") throw new Error("RELATIONSHIP_PARTICIPANT_ALREADY_SUBMITTED");
     if (currentParticipant.draftRevision !== input.expectedRevision) throw new Error("RELATIONSHIP_DRAFT_REVISION_CONFLICT");
+    if (!currentParticipant.consentAccepted) throw new Error("RELATIONSHIP_CONSENT_REQUIRED");
+    assertAssignedRoleMatches({ assignedRole: parseAssignedRole(currentParticipant.assignedRoleEncrypted), info: input.submission.info });
     const updated = await tx
       .update(relationshipParticipants)
       .set({
@@ -956,22 +992,29 @@ async function claimRelationshipReportGeneration(relationshipSessionId: number):
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
   return (db as any).transaction(async (tx: any) => {
     const sessionRows = await tx
-      .select({ status: relationshipSessions.status })
+      .select({ status: relationshipSessions.status, relationType: relationshipSessions.relationType })
       .from(relationshipSessions)
       .where(eq(relationshipSessions.id, relationshipSessionId))
       .limit(1);
-    const status = sessionRows[0]?.status as SessionStatus | undefined;
-    if (!status || !EDITABLE_STATUSES.has(status)) return false;
+    const session = sessionRows[0];
+    const status = session?.status as SessionStatus | undefined;
+    if (!session || !status || !EDITABLE_STATUSES.has(status)) return false;
     const participants = await tx
-      .select({ status: relationshipParticipants.status })
+      .select({ participant: relationshipParticipants.participant, status: relationshipParticipants.status, submittedEncrypted: relationshipParticipants.submittedEncrypted })
       .from(relationshipParticipants)
       .where(eq(relationshipParticipants.relationshipSessionId, relationshipSessionId));
     if (participants.length !== 2 || !participants.every((row: { status: string }) => row.status === "submitted")) {
       return false;
     }
+    const submittedA = parseSubmittedPayload(participants.find((row: { participant: string }) => row.participant === "A")?.submittedEncrypted ?? null);
+    const submittedB = parseSubmittedPayload(participants.find((row: { participant: string }) => row.participant === "B")?.submittedEncrypted ?? null);
+    if (!isRelationshipRolePairValid(session.relationType as RelationType, submittedA.info.relationshipRole, submittedB.info.relationshipRole)) {
+      throw new Error("RELATIONSHIP_ROLE_PAIR_INVALID");
+    }
+    const resolvedRelationType = resolveRoleBasedRelationType(session.relationType as RelationType, submittedA.info.relationshipRole, submittedB.info.relationshipRole);
     const claimed = await tx
       .update(relationshipSessions)
-      .set({ status: "report_generating", reportErrorCode: null })
+      .set({ status: "report_generating", relationType: resolvedRelationType, reportErrorCode: null })
       .where(and(
         eq(relationshipSessions.id, relationshipSessionId),
         inArray(relationshipSessions.status, ["collecting", "awaiting_partner"]),
