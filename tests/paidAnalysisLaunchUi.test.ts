@@ -17,11 +17,14 @@ describe("유료 분석 공개 결제 진입 UI", () => {
 
   it("관계 화면은 친구 무료 경로를 보존하면서 부부·연인 상품을 결제 후 설정으로 연결한다", () => {
     const source = read("app/(tabs)/couple-start.tsx");
+    const setup = read("app/(tabs)/relationship-setup.tsx");
     expect(source).toContain('relationType: "친구"');
-    expect(source).toContain('selectedProductId === "romantic"');
+    expect(source).toContain('productId === "romantic"');
     expect(source).toContain("product=${paidProductCode}");
-    expect(source).toContain("결제 후 첫 참여자의 컬러 선택 전에");
-    expect(source).toContain("다음 · 결제 정보 입력");
+    expect(setup).toContain("컬러 선택 전에는 반드시 완료해야 합니다.");
+    expect(source).toContain("const openPaidCheckout =");
+    expect(source).toContain("openPaidCheckout(paidProductCode)");
+    expect(source).not.toContain("다음 · 결제 정보 입력하기");
   });
 
   it("한 휴대폰 흐름은 결제 grant와 확정 역할을 보존해 시작한다", () => {

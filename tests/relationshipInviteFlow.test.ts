@@ -344,7 +344,9 @@ describe("각자 휴대폰 관계 검사 초대 링크", () => {
     const start = read("app/(tabs)/couple-start.tsx");
     const checkout = read("app/(tabs)/commerce-checkout.tsx");
     expect(start).toContain('relationType: "친구"');
-    expect(start).toContain("const canProceed = Boolean(selectedProductId)");
+    expect(start).toContain("const handleProductPress =");
+    expect(start).toContain("openPaidCheckout(paidProductCode)");
+    expect(start).not.toContain("다음 · 결제 정보 입력하기");
     expect(start).toContain("product=${paidProductCode}");
     expect(start).toContain("parent_child_deep");
     expect(start).not.toContain("PARENT_CHILD_COMBOS");

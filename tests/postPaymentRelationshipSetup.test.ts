@@ -26,9 +26,16 @@ describe("결제 후 관계·역할 설정 계약", () => {
   it("상품 선택 화면은 부부·연인과 부모·자녀 모두 상품만 선택해 결제 정보로 이동한다", () => {
     const start = read("app/(tabs)/couple-start.tsx");
     const checkout = read("app/(tabs)/commerce-checkout.tsx");
-    expect(start).toContain("const canProceed = Boolean(selectedProductId);");
-    expect(start).toContain("다음 · 결제 정보 입력하기");
+    expect(start).toContain("const getPaidProductCode =");
+    expect(start).toContain("const handleProductPress =");
+    expect(start).toContain("openPaidCheckout(paidProductCode)");
     expect(start).toContain("product=${paidProductCode}");
+    expect(start).toContain('selectedProductId === "friend"');
+    expect(start).toContain('if (restoreProductId === "friend")');
+    expect(start).toContain('restoreProduct: selectedProductId === "friend" ? "friend" : ""');
+    expect(start).not.toContain("setSelectedProductId(product.id)");
+    expect(start).not.toContain("다음 · 결제 정보 입력하기");
+    expect(start).not.toContain("requestPayment");
     expect(start).toContain('"parent_child_deep"');
     expect(start).not.toContain("PARENT_CHILD_COMBOS");
     expect(start).not.toContain("아빠 ↔ 아들");
