@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpc } from '@/lib/trpc';
 import { createConversionEventInput } from '@/lib/conversion-tracking';
 import { BusinessInfoFooter } from '@/components/business-info-footer';
+import { IntroductionVideoCard } from '@/components/introduction-video-card';
 import { isOpeningCampaignActive } from '@/shared/opening-campaign';
 import { type SampleReportProduct } from '@/shared/sample-reports';
 import { startKakaoLogin } from '@/constants/oauth';
@@ -307,6 +308,13 @@ export default function HomeScreen() {
                 <Text style={styles.openingCampaignNote}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text>
               ) : null}
             </Pressable>
+            <IntroductionVideoCard
+              title="개인 심화분석 소개 영상"
+              description="실제 심화테스트 화면과 리포트 예시를 짧게 확인해 보세요."
+              videoSource={require('../../assets/videos/personal-deep-analysis-introduction-ko.mp4')}
+              posterSource={require('../../assets/images/video-posters/personal-deep-analysis-introduction-ko.jpg')}
+              accessibilityLabel="개인 심화분석 소개 영상 재생하기"
+            />
             <Pressable
               onPress={() => handleOpenSamplePdf('personal_deep')}
               style={({ pressed }) => [styles.sampleReportButton, pressed && styles.sampleReportButtonPressed]}

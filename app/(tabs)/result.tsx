@@ -21,6 +21,7 @@ import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
+import { IntroductionVideoCard } from '@/components/introduction-video-card';
 import { useColorContext } from '@/lib/colorContext';
 import { useColors } from '@/hooks/use-colors';
 import { generateInterpretation, COLOR_DATA, COLOR_PERSONALITY_TRAITS } from '@/constants/colorData';
@@ -512,6 +513,13 @@ export default function ResultScreen() {
           <Text style={styles.upsellDesc}>
             {"컬러 3개 + 심리카드 3장\n선택 순서별 해석과 통합 해석\n맞춤 회복 루틴\nPDF 리포트 제공"}
           </Text>
+          <IntroductionVideoCard
+            title="개인 심화분석 소개 영상"
+            description="실제 심화테스트 화면과 리포트 예시를 짧게 확인해 보세요."
+            videoSource={require('../../assets/videos/personal-deep-analysis-introduction-ko.mp4')}
+            posterSource={require('../../assets/images/video-posters/personal-deep-analysis-introduction-ko.jpg')}
+            accessibilityLabel="개인 심화분석 소개 영상 재생하기"
+          />
           <Pressable
             style={({ pressed }) => [styles.upsellSampleButton, pressed && styles.upsellSampleButtonPressed]}
             onPress={handleOpenPersonalSamplePdf}
