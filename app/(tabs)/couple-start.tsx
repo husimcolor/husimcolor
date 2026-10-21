@@ -70,12 +70,9 @@ export default function CoupleStartScreen() {
   const getRouteParam = (value: string | string[] | undefined) =>
     Array.isArray(value) ? value[0] : value;
   const restoreProductId = getRouteParam(routeParams.restoreProduct);
-  // 공개 샘플에서 돌아와도 상품만 복원한다. 관계·역할은 결제 후 setup에서 묻는다.
+  // 선택 상태와 다음 버튼은 무료 친구 흐름에만 남긴다. 유료 상품은 탭 즉시 checkout으로 이동한다.
   useEffect(() => {
-    const restoredProduct = VISIBLE_RELATION_PRODUCTS.find(
-      (product) => product.id === restoreProductId,
-    );
-    if (restoredProduct) setSelectedProductId(restoredProduct.id);
+    if (restoreProductId === "friend") setSelectedProductId("friend");
   }, [restoreProductId]);
 
   useEffect(() => {
@@ -93,38 +90,43 @@ export default function CoupleStartScreen() {
     track();
   }, []);
 
-  const paidProductCode =
-    selectedProductId === "romantic"
+  const getPaidProductCode = (productId: VisibleRelationProduct["id"]) =>
+    productId === "romantic"
       ? "couple_love_deep"
-      : selectedProductId === "parent-child"
+      : productId === "parent-child"
         ? "parent_child_deep"
         : null;
-  const canProceed = Boolean(selectedProductId);
 
-  const handleStart = () => {
-    if (!selectedProductId) return;
-    // 유료 두 상품은 결제 전에 세부 관계를 묻지 않는다. 결제 후 immutable setup에서 한 번만 확정한다.
+  const openPaidCheckout = (paidProductCode: "couple_love_deep" | "parent_child_deep") => {
+    // 이 단계는 checkout 화면으로만 이동한다. 실제 Toss 결제는 checkout의 결제 버튼을 눌렀을 때만 요청한다.
+    const reviewParam =
+      !paidAnalysisPublicEnabled && tossCardReviewEnabled
+        ? "&review=toss-card-review"
+        : "";
+    const lifecycleParam = tossLiveEnabled
+      ? ""
+      : "&testLifecycle=toss-test-lifecycle";
+    router.push(
+      `/(tabs)/commerce-checkout?product=${paidProductCode}${lifecycleParam}${reviewParam}` as any,
+    );
+  };
+
+  const handleProductPress = (product: VisibleRelationProduct) => {
+    const paidProductCode = getPaidProductCode(product.id);
     if (paidProductCode) {
-      const reviewParam =
-        !paidAnalysisPublicEnabled && tossCardReviewEnabled
-          ? "&review=toss-card-review"
-          : "";
-      const lifecycleParam = tossLiveEnabled
-        ? ""
-        : "&testLifecycle=toss-test-lifecycle";
-      router.push(
-        `/(tabs)/commerce-checkout?product=${paidProductCode}${lifecycleParam}${reviewParam}` as any,
-      );
+      openPaidCheckout(paidProductCode);
       return;
     }
+    // 무료 친구 관계만 기존의 두 사람 정보 입력 단계로 이어진다.
+    setSelectedProductId("friend");
+  };
+
+  const handleFreeFriendStart = () => {
+    if (selectedProductId !== "friend") return;
     router.push({
       pathname: "/(tabs)/couple-info",
       params: { relationType: "친구" },
     } as any);
-  };
-
-  const handleProductSelect = (product: VisibleRelationProduct) => {
-    setSelectedProductId(product.id);
   };
 
   // 공개 샘플은 고객 PDF 접근과 분리된 앱 내 열람 화면으로 연다.
@@ -135,7 +137,7 @@ export default function CoupleStartScreen() {
       params: {
         product,
         returnTo: "couple-start",
-        restoreProduct: selectedProductId ?? "",
+        restoreProduct: selectedProductId === "friend" ? "friend" : "",
       },
     } as any);
   };
@@ -244,7 +246,7 @@ export default function CoupleStartScreen() {
                           transform: [{ scale: 0.985 }],
                         },
                       ]}
-                      onPress={() => handleProductSelect(product)}
+                      onPress={() => handleProductPress(product)}
                     >
                       <Text
                         style={[
@@ -331,42 +333,20 @@ export default function CoupleStartScreen() {
             </View>
           </View>
 
-          {paidProductCode ? (
-            <View
-              style={[
-                styles.subSection,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+          {selectedProductId === "friend" ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.startBtn,
+                { backgroundColor: colors.primary },
+                pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
               ]}
+              onPress={handleFreeFriendStart}
             >
-              <Text style={[styles.subSectionTitle, { color: colors.muted }]}>
-                결제 후 첫 참여자의 컬러 선택 전에 관계와 두 사람의 실제 역할을
-                한 번만 확인합니다.
+              <Text style={[styles.startBtnText, { color: "#fff" }]}>
+                다음 · 두 사람 정보 입력하기
               </Text>
-            </View>
+            </Pressable>
           ) : null}
-
-          {/* 상품 선택 후 정보 입력 단계로 이동 */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.startBtn,
-              { backgroundColor: canProceed ? colors.primary : colors.border },
-              pressed &&
-                canProceed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
-            ]}
-            onPress={handleStart}
-            disabled={!canProceed}
-          >
-            <Text
-              style={[
-                styles.startBtnText,
-                { color: canProceed ? "#fff" : colors.muted },
-              ]}
-            >
-              {paidProductCode
-                ? "다음 · 결제 정보 입력하기"
-                : "다음 · 두 사람 정보 입력하기"}
-            </Text>
-          </Pressable>
 
           <BusinessInfoFooter />
           <View style={{ height: 28 }} />
@@ -465,14 +445,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   productSampleButtonPressed: { opacity: 0.78, transform: [{ scale: 0.985 }] },
-  subSection: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 20,
-    marginTop: -12,
-  },
-  subSectionTitle: { fontSize: 13, fontWeight: "500", marginBottom: 10 },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",

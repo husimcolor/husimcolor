@@ -56,7 +56,8 @@ describe("관계 분석 상품 선택 노출 구조", () => {
     expect(relationStartScreen).toContain(
       "VISIBLE_RELATION_PRODUCTS.map((product) => {",
     );
-    expect(relationStartScreen).toContain("const paidProductCode");
+    expect(relationStartScreen).toContain("const getPaidProductCode =");
+    expect(relationStartScreen).toContain("const handleProductPress =");
     expect(relationStartScreen).toContain('"parent_child_deep"');
     expect(homeScreen).toContain("onPress={handleStart}");
     expect(homeScreen).toContain("router.push('/(tabs)/premium-info' as any)");

@@ -14,8 +14,9 @@ describe("entitlement-based analysis entry", () => {
     expect(coupleStart).toContain(
       "commerce-checkout?product=${paidProductCode}",
     );
-    expect(coupleStart).toContain('selectedProductId === "parent-child"');
-    expect(coupleStart).toContain("const paidProductCode");
+    expect(coupleStart).toContain('productId === "parent-child"');
+    expect(coupleStart).toContain("openPaidCheckout(paidProductCode)");
+    expect(coupleStart).toContain("const getPaidProductCode =");
     expect(coupleStart).toContain('pathname: "/(tabs)/couple-info"');
   });
 
