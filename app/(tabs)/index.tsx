@@ -16,7 +16,9 @@ import { startKakaoLogin } from '@/constants/oauth';
 import { useAuth } from '@/hooks/use-auth';
 
 const { width, height } = Dimensions.get('window');
-const ADMIN_LOGO_LONG_PRESS_MS = 2000;
+const ADMIN_LOGO_TAP_COUNT_REQUIRED = 5;
+const ADMIN_LOGO_TAP_WINDOW_MS = 5000;
+const ADMIN_LOGO_DUPLICATE_TAP_GUARD_MS = 120;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -30,8 +32,35 @@ export default function HomeScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
   const logoAnim = useRef(new Animated.Value(0)).current;
-  const handleAdminLogoLongPress = () => {
-    router.push('/admin' as any);
+  const adminLogoTapCount = useRef(0);
+  const adminLogoTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const adminLogoLastTapAt = useRef(0);
+  const adminLogoNavigationInProgress = useRef(false);
+  const clearAdminLogoTapWindow = () => {
+    if (adminLogoTapTimer.current) {
+      clearTimeout(adminLogoTapTimer.current);
+      adminLogoTapTimer.current = null;
+    }
+    adminLogoTapCount.current = 0;
+    adminLogoLastTapAt.current = 0;
+  };
+  const handleAdminLogoTap = () => {
+    if (adminLogoNavigationInProgress.current) return;
+
+    const now = Date.now();
+    if (now - adminLogoLastTapAt.current < ADMIN_LOGO_DUPLICATE_TAP_GUARD_MS) return;
+    adminLogoLastTapAt.current = now;
+
+    if (adminLogoTapCount.current === 0) {
+      adminLogoTapTimer.current = setTimeout(clearAdminLogoTapWindow, ADMIN_LOGO_TAP_WINDOW_MS);
+    }
+    adminLogoTapCount.current += 1;
+    if (adminLogoTapCount.current >= ADMIN_LOGO_TAP_COUNT_REQUIRED) {
+      adminLogoNavigationInProgress.current = true;
+      clearAdminLogoTapWindow();
+      router.push('/admin' as any);
+      return;
+    }
   };
 
   useEffect(() => {
@@ -54,6 +83,9 @@ export default function HomeScreen() {
         }),
       ]),
     ]).start();
+    return () => {
+      if (adminLogoTapTimer.current) clearTimeout(adminLogoTapTimer.current);
+    };
   }, []);
 
   // 방문자 수 집계 (기기별 고유 UUID, 하루 1회 기준)
@@ -191,12 +223,12 @@ export default function HomeScreen() {
         <View style={[styles.decorCircle2, { backgroundColor: colors.warmgold + '15' }]} />
         <View style={[styles.decorCircle3, { backgroundColor: colors.primary + '10' }]} />
 
-        {/* 로고 영역 - 일반 탭 동작 없음, 관리자 로그인은 길게 누르기만 허용 */}
+        {/* 로고 전체 영역은 탭을 받지만, 관리자 로그인은 첫 탭부터 5초 안에 5회여야만 연다. */}
         <Animated.View style={[styles.logoSection, { opacity: logoAnim }]}>
           <TouchableOpacity
-            onLongPress={handleAdminLogoLongPress}
-            delayLongPress={ADMIN_LOGO_LONG_PRESS_MS}
+            onPress={handleAdminLogoTap}
             activeOpacity={0.9}
+            hitSlop={6}
             style={styles.logoContainer}
           >
             {Platform.OS === 'web'

@@ -411,12 +411,19 @@ export default function AdminScreen() {
     setRelationshipRecoveryStatus("제출 답변을 변경하지 않고 새 A/B 결과 링크를 발급하고 있습니다…");
     reissuePreviewRelationshipResults.mutate({ relationshipSessionId });
   };
+  const prepareCoupleCoachingTest = () => {
+    setTrialProduct("couple_love_deep");
+    setTrialRelationType("연인");
+    setTrialUrl(null);
+    setTrialStatus(null);
+    setTab("상품·쿠폰");
+  };
 
   if (auth.isLoading || legacyLoading) return <ScreenContainer><View style={styles.center}><ActivityIndicator color="#3f7b52" /></View></ScreenContainer>;
   if (!hasAdminAccess) return (
     <ScreenContainer><View style={styles.center}>
       <Text style={[styles.deniedTitle, { color: colors.foreground }]}>통합 관리자 로그인</Text>
-      <Text style={[styles.deniedBody, { color: colors.muted }]}>홈 심볼을 2초 길게 눌러 연 관리자 로그인입니다. 기존 관리자 비밀번호를 입력해 주세요. 로그인 후에는 서버 서명된 통합 관리자 세션으로 안전하게 운영 화면에 접근합니다.</Text>
+      <Text style={[styles.deniedBody, { color: colors.muted }]}>홈 심볼을 첫 터치부터 5초 안에 5회 연속 탭해 연 관리자 로그인입니다. 기존 관리자 비밀번호를 입력해 주세요. 로그인 후에는 서버 서명된 통합 관리자 세션으로 안전하게 운영 화면에 접근합니다.</Text>
       <TextInput value={password} onChangeText={(value) => { setPassword(value); setPasswordError(false); }} onSubmitEditing={() => { void loginWithLegacyPassword(); }} placeholder="관리자 비밀번호" placeholderTextColor={colors.muted} secureTextEntry autoFocus style={[styles.input, styles.passwordInput, { color: colors.foreground, borderColor: passwordError ? "#b5584f" : colors.border, backgroundColor: colors.background }]} />
       {passwordError && <Text style={styles.passwordError}>비밀번호가 올바르지 않거나 관리자 세션을 만들 수 없습니다.</Text>}
       <TouchableOpacity style={styles.login} onPress={() => { void loginWithLegacyPassword(); }}><Text style={styles.loginText}>비밀번호로 로그인</Text></TouchableOpacity>
@@ -476,6 +483,7 @@ export default function AdminScreen() {
 
         {tab === "운영 홈" && <>
           <Text style={[styles.section, { color: colors.foreground }]}>오늘의 운영 신호 · KST {dailyOperations.data?.kstDate ?? "—"}</Text>
+          <Panel><Text style={styles.noticeTitle}>💑 커플 코칭 전체 세션 테스트</Text><Text style={styles.noticeText}>관리자 전용 테스트 이용권을 발급해 결제 없이 부부·연인 관계 설정, 두 사람의 검사, 통합 결과까지 확인합니다. 테스트 이용권은 기존 주문·결제·쿠폰을 만들지 않습니다.</Text><TouchableOpacity style={styles.action} onPress={prepareCoupleCoachingTest}><Text style={styles.actionText}>💑 커플 코칭 테스트 준비하기</Text></TouchableOpacity></Panel>
           <View style={styles.grid}>
             <Metric value={dailyOperations.data?.homepageVisitors ?? 0} label="오늘 홈페이지 방문자" />
             <Metric value={dailyOperations.data?.appVisitors ?? 0} label="오늘 앱 방문자" color="#4d6f9f" />
