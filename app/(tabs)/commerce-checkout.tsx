@@ -19,7 +19,11 @@ import {
   type CommerceProductCode,
 } from "@/shared/commerce";
 import { saveCommerceStartGrant } from "@/lib/commerce-access";
-import { createConversionEventInput } from "@/lib/conversion-tracking";
+import {
+  createConversionEventInput,
+  getPaymentConversionScope,
+  type ConversionEventName,
+} from "@/lib/conversion-tracking";
 import { trpc } from "@/lib/trpc";
 import {
   OPENING_CAMPAIGN_COUPON_CODE,
@@ -245,6 +249,28 @@ export default function CommerceCheckoutScreen() {
   const productGuide = isPaidAnalysisCode(productCode)
     ? ANALYSIS_PRODUCT_GUIDES[productCode]
     : undefined;
+  const trackPaymentFunnelEvent = (
+    eventName: Extract<
+      ConversionEventName,
+      | "toss_request"
+      | "payment_success"
+      | "payment_cancelled"
+      | "payment_failed"
+    >,
+    paymentOrderNumber: string,
+  ) => {
+    if (!isPaidAnalysisCode(productCode)) return;
+    void getPaymentConversionScope(paymentOrderNumber)
+      .then((paymentScope) =>
+        createConversionEventInput({
+          eventName,
+          productCode,
+          scope: `payment-${paymentScope}`,
+        }),
+      )
+      .then((event) => funnel.mutate(event))
+      .catch(() => undefined);
+  };
   useEffect(() => {
     if (!isPaidAnalysisCode(productCode) || cardReviewMode) return;
     void createConversionEventInput({
@@ -324,13 +350,7 @@ export default function CommerceCheckoutScreen() {
       .mutateAsync({ paymentKey, orderNumber, amountKrw: amount })
       .then(async (result) => {
         if (!result.startGrant) throw new Error("PAYMENT_GRANT_NOT_ISSUED");
-        void createConversionEventInput({
-          eventName: "payment_success",
-          productCode,
-          scope: `payment-${orderNumber}`,
-        })
-          .then((event) => funnel.mutate(event))
-          .catch(() => undefined);
+        trackPaymentFunnelEvent("payment_success", orderNumber);
         await moveToAnalysis(result.startGrant);
       })
       .catch(() =>
@@ -371,16 +391,12 @@ export default function CommerceCheckoutScreen() {
         errorMessage: failureMessage,
       })
       .then((result) => {
-        void createConversionEventInput({
-          eventName:
-            result.status === "cancelled"
-              ? "payment_cancelled"
-              : "payment_failed",
-          productCode,
-          scope: `payment-${orderNumber}`,
-        })
-          .then((event) => funnel.mutate(event))
-          .catch(() => undefined);
+        trackPaymentFunnelEvent(
+          result.status === "cancelled"
+            ? "payment_cancelled"
+            : "payment_failed",
+          orderNumber,
+        );
         setMessage(
           result.status === "cancelled"
             ? "결제가 취소되었습니다. 사용 예약된 쿠폰이 있었다면 다시 사용할 수 있습니다."
@@ -431,24 +447,12 @@ export default function CommerceCheckoutScreen() {
           : await createTossTestCheckout.mutateAsync(checkoutInput);
       if (checkout.status === "paid") {
         if (!checkout.startGrant) throw new Error("COUPON_GRANT_NOT_ISSUED");
-        void createConversionEventInput({
-          eventName: "payment_success",
-          productCode,
-          scope: `payment-${checkout.orderNumber}`,
-        })
-          .then((event) => funnel.mutate(event))
-          .catch(() => undefined);
+        trackPaymentFunnelEvent("payment_success", checkout.orderNumber);
         await moveToAnalysis(checkout.startGrant);
         return;
       }
       funnelOrderNumber = checkout.orderNumber;
-      void createConversionEventInput({
-        eventName: "toss_request",
-        productCode,
-        scope: `payment-${checkout.orderNumber}`,
-      })
-        .then((event) => funnel.mutate(event))
-        .catch(() => undefined);
+      trackPaymentFunnelEvent("toss_request", checkout.orderNumber);
       const TossPayments = await loadTossPaymentsScript();
       const tossPayments = TossPayments(checkout.tossClientKey);
       const payment = tossPayments.payment({ customerKey: "ANONYMOUS" });
@@ -477,13 +481,7 @@ export default function CommerceCheckoutScreen() {
       });
     } catch (error) {
       if (funnelOrderNumber) {
-        void createConversionEventInput({
-          eventName: "payment_failed",
-          productCode,
-          scope: `payment-${funnelOrderNumber}`,
-        })
-          .then((event) => funnel.mutate(event))
-          .catch(() => undefined);
+        trackPaymentFunnelEvent("payment_failed", funnelOrderNumber);
       }
       setMessage(
         error instanceof Error && error.message.includes("COUPON")

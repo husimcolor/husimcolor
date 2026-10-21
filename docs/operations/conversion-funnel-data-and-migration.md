@@ -12,7 +12,7 @@
 - `productCode`: `free_color_trial`, `personal_deep`, `couple_love_deep`, `parent_child_deep` 중 하나다.
 - `locale`: 화면 locale (`ko-KR` 또는 `zh-CN`)이다.
 - `channel`: `app` 또는 `web`이다.
-- `isTest`: 서버 런타임이 판별한 테스트 여부다. 클라이언트가 임의 지정할 수 없다.
+- `isTest`: 서버 런타임이 판별한 테스트 여부다. 명시적 test runtime 또는 인증된 관리자 세션에서 발생한 이벤트만 테스트로 분류하며, 클라이언트가 임의 지정할 수 없다.
 - `occurredAt`: 서버 저장 시각이다.
 
 아래 값은 저장·전송하지 않는다: 이름, 이메일, 결제수단 정보, IP, 사용자 에이전트, 컬러·심리카드 식별자, 답변, 심리 해석·PDF 본문, 초대 토큰, 주문번호, 결과 토큰, 쿠폰 코드.

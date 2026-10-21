@@ -4,6 +4,7 @@
  */
 import React, { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { createConversionEventInput } from "@/lib/conversion-tracking";
 import {
   View,
   Text,
@@ -57,6 +58,7 @@ export default function CoupleStartScreen() {
 
   // 커플 테스트 시작 추적
   const logVisitor = trpc.visitors.log.useMutation();
+  const funnel = trpc.conversionFunnel.track.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   // 설정 조회 중에도 상품 선택과 정보 입력 안내를 막지 않는다. 결제 실행 여부는
   // 서버가 최종 판정하며, 운영에서 공개가 꺼져도 안내 화면은 볼 수 있다.
@@ -97,8 +99,17 @@ export default function CoupleStartScreen() {
         ? "parent_child_deep"
         : null;
 
-  const openPaidCheckout = (paidProductCode: "couple_love_deep" | "parent_child_deep") => {
+  const openPaidCheckout = (
+    paidProductCode: "couple_love_deep" | "parent_child_deep",
+  ) => {
     // 이 단계는 checkout 화면으로만 이동한다. 실제 Toss 결제는 checkout의 결제 버튼을 눌렀을 때만 요청한다.
+    void createConversionEventInput({
+      eventName: "paid_guide_click",
+      productCode: paidProductCode,
+      scope: `relationship-product-${paidProductCode}`,
+    })
+      .then((event) => funnel.mutate(event))
+      .catch(() => undefined);
     const reviewParam =
       !paidAnalysisPublicEnabled && tossCardReviewEnabled
         ? "&review=toss-card-review"
@@ -132,6 +143,13 @@ export default function CoupleStartScreen() {
   // 공개 샘플은 고객 PDF 접근과 분리된 앱 내 열람 화면으로 연다.
   // 돌아올 때 현재 상품 선택만 복원한다.
   const handleOpenSamplePdf = (product: SampleReportProduct) => {
+    void createConversionEventInput({
+      eventName: "paid_guide_click",
+      productCode: product,
+      scope: `relationship-sample-${product}`,
+    })
+      .then((event) => funnel.mutate(event))
+      .catch(() => undefined);
     router.push({
       pathname: "/(tabs)/sample-report",
       params: {
