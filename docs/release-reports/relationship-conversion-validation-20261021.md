@@ -2,7 +2,7 @@
 
 ## 포함한 변경
 
-부부·연인 상품 화면에서는 더 이상 `부부/연인` 칩을 결제 전에 요구하지 않는다. 상품을 고르면 `다음 · 결제 정보 입력`으로 checkout에 진입한다. 결제 grant가 준비된 뒤, 첫 참여자의 컬러 선택 전에 관계(`부부` 또는 `연인`)와 A/B 역할 쌍을 한 번만 확정한다. 부부는 남편·아내, 연인은 남자친구·여자친구만 허용한다. 임의 기본 역할은 사용하지 않는다.
+부부·연인과 부모·자녀 상품 화면에서는 더 이상 세부 관계·역할 조합을 결제 전에 요구하지 않는다. 상품을 고르면 `다음 · 결제 정보 입력하기`로 checkout에 진입한다. 결제 grant가 준비된 뒤, 첫 참여자의 컬러 선택 전에 관계와 A/B 역할 쌍을 한 번만 확정한다. 부부·연인은 부부/연인과 남편·아내 또는 남자친구·여자친구를, 부모·자녀는 부모와 자녀의 실제 역할(아빠/엄마/아들/딸) 및 첫 참여자를 명시적으로 선택한다. 임의 기본 역할은 사용하지 않는다.
 
 확정값은 entitlement별 `relationship_setups`에 암호화해 저장한다. invite 방식에서는 세션 A/B의 고정 역할도 암호화해 저장하고, 상대는 보완 역할로만 진행할 수 있다. 한 휴대폰 방식에서는 새 로컬 세션에 optional role을 보존한다. 기존 role 없는 세션은 기존 fallback으로 읽으며 변경하지 않는다. 결과 스냅샷, 통합 해석, PDF payload, queued email payload는 새 세션의 고정 역할을 재사용한다.
 
@@ -13,16 +13,16 @@
 ## 실제 수행한 검증
 
 - `tsc --noEmit` 통과.
-- 직렬 전체 Vitest: **94 files / 375 tests 통과**. Toss provider test는 네트워크 요청을 mock한 단위 test다.
+- 직렬 전체 Vitest: **94 files / 377 tests 통과**. Toss provider test는 네트워크 요청을 mock한 단위 test다.
 - Expo web export 통과. 새 `relationship-setup` route가 static route 목록에 포함됐다.
 - 빈 `/tmp` MariaDB에서 current schema를 생성하고, 새 `0023_relationship_setup_and_conversion_funnel.sql`을 statement breakpoint 단위로 적용했다. `relationship_setups`, `commerce_funnel_events`, `assignedRoleEncrypted`, eventKey unique index를 확인했다.
 - 같은 격리 DB에서 `COMMERCE_TEST_MODE=true`, `HUSIM_DISABLE_EMAIL_DELIVERY=1`, local private storage로 무실결제·무발송 E2E를 통과했다. 결제 grant → 서버 setup → A 저장/재접속 → B의 보완 역할 제한 → 양측 제출 → private PDF 생성 → queued outbox까지 검증했다.
 - E2E 종료 시 outbox는 `queued`, `attemptCount=0` 1건이고 local private PDF 1건이었으며, 실제 Resend/Toss 호출은 하지 않았다.
-- 부모·자녀 기존 실제 역할·역순 제출 E2E와 한 휴대폰 기존 흐름도 같은 격리 run에서 통과했다.
+- 부모·자녀의 자녀 우선 초대 흐름(역할 setup → 재접속 → 보완 역할 고정 → private PDF 생성 → queued outbox)과 한 휴대폰 역할 기반 PDF 매핑도 같은 격리 run에서 통과했다.
 
 ## 적용하지 않은 항목
 
-Production DB에는 접속·migration·데이터 변경을 전혀 수행하지 않았다. 현재 Production DB provider/관리 주체와 보호된 migration 실행 경로가 검증되지 않았기 때문이다. 따라서 새 관계 setup 서버 저장과 퍼널 table은 Production에서 아직 활성화하지 않았다.
+Production DB에는 아직 접속·migration·데이터 변경을 수행하지 않았다. 이번 branch에는 Vercel Production env를 GitHub Actions에서만 private하게 pull하고, schema backup 후 additive `0023`만 적용하는 수동 승인 workflow를 추가했다. workflow 실행 권한과 `VERCEL_TOKEN` Secret은 repository integration 권한으로 조회할 수 없으므로, 실행 결과가 확인되기 전에는 새 관계 setup 서버 저장과 퍼널 table이 Production에서 활성화됐다고 판단하지 않는다.
 
 zh-CN locale branch는 현재 main과 공통 기반이 오래되어, 이번 한국어 feature commit의 직접 cherry-pick에서 locale/checkout/relationship server 관련 충돌이 발생했다. 중국어 번역 경로를 덮어쓰지 않기 위해 자동 해결·배포하지 않았다. 즉, **한국어 feature branch에서의 구조·locale 필드 검증은 완료했지만, zh-CN UI 문구·실제 앱 흐름 검증은 아직 미완료**다. 별도 controlled integration에서 중국어 번역을 추가하고 Korean default/zh-CN 결과·PDF·queued email locale 회귀를 다시 실행해야 한다.
 

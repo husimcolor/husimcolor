@@ -1,36 +1,57 @@
-import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ScreenContainer } from '@/components/screen-container';
-import { useColors } from '@/hooks/use-colors';
-import { getRelationshipRoleGender, isRelationshipRolePairValid, type CoupleSessionData, type FaithType, type GenderType, type RelationType, type RelationshipRole } from '@/constants/coupleData';
-import { getCommerceStartGrant, markCommerceAnalysisStarted, removeCommerceStartGrant, saveCommerceAnalysisDelivery } from '@/lib/commerce-access';
-import { trpc } from '@/lib/trpc';
-import type { CommerceProductCode } from '@/shared/commerce';
+import React, { useEffect, useState } from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ScreenContainer } from "@/components/screen-container";
+import { useColors } from "@/hooks/use-colors";
+import {
+  getRelationshipRoleGender,
+  isRelationshipRolePairValid,
+  resolveRoleBasedRelationType,
+  type CoupleSessionData,
+  type FaithType,
+  type GenderType,
+  type RelationType,
+  type RelationshipRole,
+} from "@/constants/coupleData";
+import {
+  getCommerceStartGrant,
+  markCommerceAnalysisStarted,
+  removeCommerceStartGrant,
+  saveCommerceAnalysisDelivery,
+} from "@/lib/commerce-access";
+import { trpc } from "@/lib/trpc";
+import type { CommerceProductCode } from "@/shared/commerce";
 
 const GENDERS: { value: GenderType; label: string }[] = [
-  { value: '남성', label: '남성' },
-  { value: '여성', label: '여성' },
+  { value: "남성", label: "남성" },
+  { value: "여성", label: "여성" },
 ];
 
 const FAITHS: { value: FaithType; label: string }[] = [
-  { value: '기독교', label: '기독교' },
-  { value: '무교', label: '무교' },
-  { value: '기타', label: '기타' },
+  { value: "기독교", label: "기독교" },
+  { value: "무교", label: "무교" },
+  { value: "기타", label: "기타" },
 ];
 
 const RELATION_LABELS: Record<RelationType, string> = {
-  연인: '연인 관계',
-  부부: '부부 관계',
-  친구: '친구 관계',
-  '부모-자녀': '부모 · 자녀 관계',
-  '아빠-아들': '아빠 · 아들 관계',
-  '아빠-딸': '아빠 · 딸 관계',
-  '엄마-아들': '엄마 · 아들 관계',
-  '엄마-딸': '엄마 · 딸 관계',
-  형제자매: '형제자매 관계',
-  동료: '직장동료 관계',
+  연인: "연인 관계",
+  부부: "부부 관계",
+  친구: "친구 관계",
+  "부모-자녀": "부모 · 자녀 관계",
+  "아빠-아들": "아빠 · 아들 관계",
+  "아빠-딸": "아빠 · 딸 관계",
+  "엄마-아들": "엄마 · 아들 관계",
+  "엄마-딸": "엄마 · 딸 관계",
+  형제자매: "형제자매 관계",
+  동료: "직장동료 관계",
 };
 
 function getSingleParam(value: string | string[] | undefined) {
@@ -39,38 +60,75 @@ function getSingleParam(value: string | string[] | undefined) {
 
 function getPaidProductCode(
   relationType: RelationType,
-): Extract<CommerceProductCode, 'couple_love_deep' | 'parent_child_deep'> | null {
-  if (relationType === '연인' || relationType === '부부') return 'couple_love_deep';
-  if (['아빠-아들', '아빠-딸', '엄마-아들', '엄마-딸', '부모-자녀'].includes(relationType)) return 'parent_child_deep';
+): Extract<
+  CommerceProductCode,
+  "couple_love_deep" | "parent_child_deep"
+> | null {
+  if (relationType === "연인" || relationType === "부부")
+    return "couple_love_deep";
+  if (
+    ["아빠-아들", "아빠-딸", "엄마-아들", "엄마-딸", "부모-자녀"].includes(
+      relationType,
+    )
+  )
+    return "parent_child_deep";
   return null;
 }
 
 export default function CoupleInfoScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { relationType: relationTypeParam, roleA: roleAParam, roleB: roleBParam } = useLocalSearchParams<{ relationType?: string | string[]; roleA?: string | string[]; roleB?: string | string[] }>();
-  const relationType = getSingleParam(relationTypeParam) as RelationType | undefined;
-  const configuredRoleA = getSingleParam(roleAParam) as RelationshipRole | undefined;
-  const configuredRoleB = getSingleParam(roleBParam) as RelationshipRole | undefined;
-  const hasConfiguredRomanticRoles = Boolean(
-    (relationType === '연인' || relationType === '부부')
-      && configuredRoleA
-      && configuredRoleB
-      && isRelationshipRolePairValid(relationType, configuredRoleA, configuredRoleB),
+  const {
+    relationType: relationTypeParam,
+    roleA: roleAParam,
+    roleB: roleBParam,
+  } = useLocalSearchParams<{
+    relationType?: string | string[];
+    roleA?: string | string[];
+    roleB?: string | string[];
+  }>();
+  const relationType = getSingleParam(relationTypeParam) as
+    | RelationType
+    | undefined;
+  const configuredRoleA = getSingleParam(roleAParam) as
+    | RelationshipRole
+    | undefined;
+  const configuredRoleB = getSingleParam(roleBParam) as
+    | RelationshipRole
+    | undefined;
+  const hasConfiguredRoles = Boolean(
+    relationType &&
+    configuredRoleA &&
+    configuredRoleB &&
+    isRelationshipRolePairValid(relationType, configuredRoleA, configuredRoleB),
   );
-  const relationLabel = relationType ? RELATION_LABELS[relationType] : undefined;
-  const [genderA, setGenderA] = useState<GenderType | null>(hasConfiguredRomanticRoles && configuredRoleA ? getRelationshipRoleGender(configuredRoleA) : null);
+  const relationLabel = relationType
+    ? RELATION_LABELS[relationType]
+    : undefined;
+  const [genderA, setGenderA] = useState<GenderType | null>(
+    hasConfiguredRoles && configuredRoleA
+      ? getRelationshipRoleGender(configuredRoleA)
+      : null,
+  );
   const [faithA, setFaithA] = useState<FaithType | null>(null);
-  const [genderB, setGenderB] = useState<GenderType | null>(hasConfiguredRomanticRoles && configuredRoleB ? getRelationshipRoleGender(configuredRoleB) : null);
+  const [genderB, setGenderB] = useState<GenderType | null>(
+    hasConfiguredRoles && configuredRoleB
+      ? getRelationshipRoleGender(configuredRoleB)
+      : null,
+  );
   const [faithB, setFaithB] = useState<FaithType | null>(null);
   const [accessError, setAccessError] = useState<string | null>(null);
   const [hasStartGrant, setHasStartGrant] = useState(false);
   const [grantChecked, setGrantChecked] = useState(false);
-  const consumeEntitlement = trpc.commerce.entitlement.consumeForAnalysisStart.useMutation();
+  const consumeEntitlement =
+    trpc.commerce.entitlement.consumeForAnalysisStart.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
-  const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
-  const paidProductCodeForRelation = relationType ? getPaidProductCode(relationType) : null;
-  const paidRelationPreparing = Boolean(paidProductCodeForRelation && !commerceTestMode.isLoading && !paidAnalysisPublicEnabled);
+  const paidAnalysisPublicEnabled =
+    commerceTestMode.data?.paidAnalysisPublicEnabled ?? false;
+  const paidProductCodeForRelation = relationType
+    ? getPaidProductCode(relationType)
+    : null;
+  const paidRelationPreparing = false; // 구 pre-release gate를 보존하지 않는다. 유료 관계 상품은 checkout을 거쳐 grant로만 시작한다.
 
   useEffect(() => {
     if (!paidProductCodeForRelation) {
@@ -84,32 +142,56 @@ export default function CoupleInfoScreen() {
       .finally(() => setGrantChecked(true));
   }, [paidProductCodeForRelation]);
 
-  const canProceed = Boolean(relationType && relationLabel && genderA && faithA && genderB && faithB) && grantChecked && (!paidRelationPreparing || hasStartGrant);
+  const canProceed =
+    Boolean(
+      relationType && relationLabel && genderA && faithA && genderB && faithB,
+    ) &&
+    grantChecked &&
+    (!paidRelationPreparing || hasStartGrant);
 
   useEffect(() => {
-    if (!hasConfiguredRomanticRoles || !configuredRoleA || !configuredRoleB) return;
+    if (!hasConfiguredRoles || !configuredRoleA || !configuredRoleB) return;
     setGenderA(getRelationshipRoleGender(configuredRoleA));
     setGenderB(getRelationshipRoleGender(configuredRoleB));
-  }, [hasConfiguredRomanticRoles, configuredRoleA, configuredRoleB]);
+  }, [hasConfiguredRoles, configuredRoleA, configuredRoleB]);
 
-  const renderChip = (label: string, selected: boolean, onPress: () => void) => (
+  const renderChip = (
+    label: string,
+    selected: boolean,
+    onPress: () => void,
+  ) => (
     <Pressable
       key={label}
       style={({ pressed }) => [
         styles.chip,
-        { backgroundColor: selected ? colors.primary : '#F0EAE0', borderColor: selected ? colors.primary : '#C4A882' },
+        {
+          backgroundColor: selected ? colors.primary : "#F0EAE0",
+          borderColor: selected ? colors.primary : "#C4A882",
+        },
         pressed && { opacity: 0.8 },
       ]}
       onPress={onPress}
     >
-      <Text style={[styles.chipText, { color: selected ? '#FFFFFF' : '#4A3020' }]}>{label}</Text>
+      <Text
+        style={[styles.chipText, { color: selected ? "#FFFFFF" : "#4A3020" }]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 
   const handleStart = async () => {
-    if (!canProceed || !relationType || !genderA || !faithA || !genderB || !faithB) return;
+    if (
+      !canProceed ||
+      !relationType ||
+      !genderA ||
+      !faithA ||
+      !genderB ||
+      !faithB
+    )
+      return;
     if (paidRelationPreparing && !hasStartGrant) {
-      setAccessError('이 관계 심화분석은 정식 오픈 준비중입니다.');
+      setAccessError("이 관계 심화분석은 정식 오픈 준비중입니다.");
       return;
     }
     setAccessError(null);
@@ -117,16 +199,23 @@ export default function CoupleInfoScreen() {
     try {
       if (paidProductCode) {
         const grant = await getCommerceStartGrant(paidProductCode);
-        const tossPaymentEnabled = commerceTestMode.data?.tossLiveEnabled || commerceTestMode.data?.tossTestEnabled;
+        const tossPaymentEnabled =
+          commerceTestMode.data?.tossLiveEnabled ||
+          commerceTestMode.data?.tossTestEnabled;
         if (tossPaymentEnabled && !grant) {
-          router.replace(`/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(relationType)}${commerceTestMode.data?.tossLiveEnabled ? '' : '&testLifecycle=toss-test-lifecycle'}` as any);
+          router.replace(
+            `/(tabs)/commerce-checkout?product=${paidProductCode}&relationType=${encodeURIComponent(relationType)}${commerceTestMode.data?.tossLiveEnabled ? "" : "&testLifecycle=toss-test-lifecycle"}` as any,
+          );
           return;
         }
         if (grant) {
           const consumed = await consumeEntitlement.mutateAsync({
             accessToken: grant.accessToken,
             productCode: paidProductCode,
-            ...(hasConfiguredRomanticRoles && configuredRoleA && configuredRoleB && relationType
+            ...(hasConfiguredRoles &&
+            configuredRoleA &&
+            configuredRoleB &&
+            relationType
               ? { relationType, roleA: configuredRoleA, roleB: configuredRoleB }
               : {}),
           });
@@ -137,25 +226,67 @@ export default function CoupleInfoScreen() {
         }
       }
     } catch {
-      setAccessError('구매권한을 확인하지 못했습니다. 결제를 다시 진행하지 말고 잠시 후 다시 시도해 주세요.');
+      setAccessError(
+        "구매권한을 확인하지 못했습니다. 결제를 다시 진행하지 말고 잠시 후 다시 시도해 주세요.",
+      );
       return;
     }
+    // 서버 setup은 부모·자녀라는 상위 계약으로 대조한다. 새 로컬 세션은 실제 역할쌍으로
+    // 구체 관계 유형을 고정해 화면·통합 해석·PDF가 A/B 검사 순서와 무관하게 같은 호칭을 사용한다.
+    const sessionRelationType =
+      hasConfiguredRoles && configuredRoleA && configuredRoleB
+        ? resolveRoleBasedRelationType(
+            relationType,
+            configuredRoleA,
+            configuredRoleB,
+          )
+        : relationType;
     const sessionData: CoupleSessionData = {
-      relationType,
-      personA: { info: { gender: genderA, faith: faithA, ...(hasConfiguredRomanticRoles && configuredRoleA ? { relationshipRole: configuredRoleA } : {}) }, colors: [], cards: [] },
-      personB: { info: { gender: genderB, faith: faithB, ...(hasConfiguredRomanticRoles && configuredRoleB ? { relationshipRole: configuredRoleB } : {}) }, colors: [], cards: [] },
+      relationType: sessionRelationType,
+      personA: {
+        info: {
+          gender: genderA,
+          faith: faithA,
+          ...(hasConfiguredRoles && configuredRoleA
+            ? { relationshipRole: configuredRoleA }
+            : {}),
+        },
+        colors: [],
+        cards: [],
+      },
+      personB: {
+        info: {
+          gender: genderB,
+          faith: faithB,
+          ...(hasConfiguredRoles && configuredRoleB
+            ? { relationshipRole: configuredRoleB }
+            : {}),
+        },
+        colors: [],
+        cards: [],
+      },
     };
-    await AsyncStorage.setItem('@couple_session', JSON.stringify(sessionData));
-    router.push({ pathname: '/(tabs)/couple-select', params: { person: 'A' } } as any);
+    await AsyncStorage.setItem("@couple_session", JSON.stringify(sessionData));
+    router.push({
+      pathname: "/(tabs)/couple-select",
+      params: { person: "A" },
+    } as any);
   };
 
   if (!relationLabel) {
     return (
-      <ScreenContainer edges={['top', 'left', 'right']}>
+      <ScreenContainer edges={["top", "left", "right"]}>
         <View style={styles.invalidState}>
-          <Text style={[styles.invalidText, { color: colors.muted }]}>관계 상품을 먼저 선택해 주세요.</Text>
-          <Pressable style={[styles.invalidButton, { backgroundColor: colors.primary }]} onPress={() => router.replace('/(tabs)/couple-start' as any)}>
-            <Text style={styles.invalidButtonText}>관계 상품 선택으로 돌아가기</Text>
+          <Text style={[styles.invalidText, { color: colors.muted }]}>
+            관계 상품을 먼저 선택해 주세요.
+          </Text>
+          <Pressable
+            style={[styles.invalidButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.replace("/(tabs)/couple-start" as any)}
+          >
+            <Text style={styles.invalidButtonText}>
+              관계 상품 선택으로 돌아가기
+            </Text>
           </Pressable>
         </View>
       </ScreenContainer>
@@ -163,38 +294,139 @@ export default function CoupleInfoScreen() {
   }
 
   return (
-    <ScreenContainer edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScreenContainer edges={["top", "left", "right"]}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
-          <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surface }]} onPress={() => router.back()}>
-            <Text style={[styles.backButtonText, { color: colors.muted }]}>←</Text>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: colors.surface }]}
+            onPress={() => router.back()}
+          >
+            <Text style={[styles.backButtonText, { color: colors.muted }]}>
+              ←
+            </Text>
           </TouchableOpacity>
-          <Text style={[styles.title, { color: '#2D2420' }]}>{relationLabel} 정보 입력</Text>
-          <Text style={[styles.subtitle, { color: '#5F4B3B' }]}>두 사람의 기본 정보를 입력한 뒤{`\n`}기존 컬러 선택 과정으로 이어집니다.</Text>
+          <Text style={[styles.title, { color: "#2D2420" }]}>
+            {relationLabel} 정보 입력
+          </Text>
+          <Text style={[styles.subtitle, { color: "#5F4B3B" }]}>
+            두 사람의 기본 정보를 입력한 뒤{`\n`}기존 컬러 선택 과정으로
+            이어집니다.
+          </Text>
         </View>
 
-        <View style={[styles.personSection, { borderColor: '#4A3A30', backgroundColor: '#2A2420' }]}>
-          <Text style={[styles.personBadge, { color: colors.primary }]}>{hasConfiguredRomanticRoles && configuredRoleA ? `첫 번째 참여자 · ${configuredRoleA}` : '첫 번째 사람'}</Text>
-          {hasConfiguredRomanticRoles ? <Text style={styles.fixedRoleText}>역할에 따라 성별은 {genderA}으로 설정되었습니다.</Text> : <><Text style={[styles.sectionTitle, { color: '#F0E8DC' }]}>성별</Text><View style={styles.chipRow}>{GENDERS.map((gender) => renderChip(gender.label, genderA === gender.value, () => setGenderA(gender.value)))}</View></>}
-          <Text style={[styles.sectionTitle, { color: '#F0E8DC', marginTop: 18 }]}>종교</Text>
-          <View style={styles.chipRow}>{FAITHS.map((faith) => renderChip(faith.label, faithA === faith.value, () => setFaithA(faith.value)))}</View>
+        <View
+          style={[
+            styles.personSection,
+            { borderColor: "#4A3A30", backgroundColor: "#2A2420" },
+          ]}
+        >
+          <Text style={[styles.personBadge, { color: colors.primary }]}>
+            {hasConfiguredRoles && configuredRoleA
+              ? `첫 번째 참여자 · ${configuredRoleA}`
+              : "첫 번째 사람"}
+          </Text>
+          {hasConfiguredRoles ? (
+            <Text style={styles.fixedRoleText}>
+              역할에 따라 성별은 {genderA}으로 설정되었습니다.
+            </Text>
+          ) : (
+            <>
+              <Text style={[styles.sectionTitle, { color: "#F0E8DC" }]}>
+                성별
+              </Text>
+              <View style={styles.chipRow}>
+                {GENDERS.map((gender) =>
+                  renderChip(gender.label, genderA === gender.value, () =>
+                    setGenderA(gender.value),
+                  ),
+                )}
+              </View>
+            </>
+          )}
+          <Text
+            style={[styles.sectionTitle, { color: "#F0E8DC", marginTop: 18 }]}
+          >
+            종교
+          </Text>
+          <View style={styles.chipRow}>
+            {FAITHS.map((faith) =>
+              renderChip(faith.label, faithA === faith.value, () =>
+                setFaithA(faith.value),
+              ),
+            )}
+          </View>
         </View>
 
-        <View style={[styles.personSection, { borderColor: '#3A4A3A', backgroundColor: '#222A22' }]}>
-          <Text style={[styles.personBadge, { color: '#7EC8A4' }]}>{hasConfiguredRomanticRoles && configuredRoleB ? `두 번째 참여자 · ${configuredRoleB}` : '두 번째 사람'}</Text>
-          {hasConfiguredRomanticRoles ? <Text style={styles.fixedRoleText}>역할에 따라 성별은 {genderB}으로 설정되었습니다.</Text> : <><Text style={[styles.sectionTitle, { color: '#E0F0E4' }]}>성별</Text><View style={styles.chipRow}>{GENDERS.map((gender) => renderChip(gender.label, genderB === gender.value, () => setGenderB(gender.value)))}</View></>}
-          <Text style={[styles.sectionTitle, { color: '#E0F0E4', marginTop: 18 }]}>종교</Text>
-          <View style={styles.chipRow}>{FAITHS.map((faith) => renderChip(faith.label, faithB === faith.value, () => setFaithB(faith.value)))}</View>
+        <View
+          style={[
+            styles.personSection,
+            { borderColor: "#3A4A3A", backgroundColor: "#222A22" },
+          ]}
+        >
+          <Text style={[styles.personBadge, { color: "#7EC8A4" }]}>
+            {hasConfiguredRoles && configuredRoleB
+              ? `두 번째 참여자 · ${configuredRoleB}`
+              : "두 번째 사람"}
+          </Text>
+          {hasConfiguredRoles ? (
+            <Text style={styles.fixedRoleText}>
+              역할에 따라 성별은 {genderB}으로 설정되었습니다.
+            </Text>
+          ) : (
+            <>
+              <Text style={[styles.sectionTitle, { color: "#E0F0E4" }]}>
+                성별
+              </Text>
+              <View style={styles.chipRow}>
+                {GENDERS.map((gender) =>
+                  renderChip(gender.label, genderB === gender.value, () =>
+                    setGenderB(gender.value),
+                  ),
+                )}
+              </View>
+            </>
+          )}
+          <Text
+            style={[styles.sectionTitle, { color: "#E0F0E4", marginTop: 18 }]}
+          >
+            종교
+          </Text>
+          <View style={styles.chipRow}>
+            {FAITHS.map((faith) =>
+              renderChip(faith.label, faithB === faith.value, () =>
+                setFaithB(faith.value),
+              ),
+            )}
+          </View>
         </View>
 
         <Pressable
-          style={({ pressed }) => [styles.startButton, { backgroundColor: canProceed ? colors.primary : colors.border }, pressed && canProceed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+          style={({ pressed }) => [
+            styles.startButton,
+            { backgroundColor: canProceed ? colors.primary : colors.border },
+            pressed &&
+              canProceed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+          ]}
           onPress={handleStart}
           disabled={!canProceed}
         >
-          <Text style={[styles.startButtonText, { color: canProceed ? '#FFFFFF' : colors.muted }]}>{paidRelationPreparing && !hasStartGrant ? '정식 오픈 준비중' : '첫 번째 사람 컬러 선택하기 →'}</Text>
+          <Text
+            style={[
+              styles.startButtonText,
+              { color: canProceed ? "#FFFFFF" : colors.muted },
+            ]}
+          >
+            {paidRelationPreparing && !hasStartGrant
+              ? "정식 오픈 준비중"
+              : "첫 번째 사람 컬러 선택하기 →"}
+          </Text>
         </Pressable>
-        {accessError ? <Text style={styles.accessError}>{accessError}</Text> : null}
+        {accessError ? (
+          <Text style={styles.accessError}>{accessError}</Text>
+        ) : null}
       </ScrollView>
     </ScreenContainer>
   );
@@ -202,23 +434,80 @@ export default function CoupleInfoScreen() {
 
 const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 44 },
-  header: { alignItems: 'center', marginBottom: 26 },
-  backButton: { position: 'absolute', left: 0, top: 0, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  backButtonText: { fontSize: 18, fontWeight: '700' },
-  title: { fontSize: 22, fontWeight: '800', marginTop: 5, marginBottom: 8, textAlign: 'center' },
-  subtitle: { fontSize: 14, lineHeight: 22, textAlign: 'center' },
-  personSection: { borderWidth: 1, borderRadius: 16, padding: 18, marginBottom: 18 },
-  personBadge: { alignSelf: 'flex-start', fontSize: 13, fontWeight: '800', marginBottom: 16 },
-  fixedRoleText: { color: '#D7E9D5', fontSize: 13, fontWeight: '700', lineHeight: 20, marginBottom: 2 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5 },
-  chipText: { fontSize: 14, fontWeight: '600' },
-  startButton: { borderRadius: 16, paddingVertical: 17, alignItems: 'center', marginTop: 6 },
-  startButtonText: { fontSize: 16, fontWeight: '700' },
-  accessError: { color: '#A93B35', fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 12 },
-  invalidState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 16 },
-  invalidText: { fontSize: 16, textAlign: 'center' },
-  invalidButton: { borderRadius: 14, paddingHorizontal: 18, paddingVertical: 14 },
-  invalidButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  header: { alignItems: "center", marginBottom: 26 },
+  backButton: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backButtonText: { fontSize: 18, fontWeight: "700" },
+  title: {
+    fontSize: 22,
+    fontWeight: "800",
+    marginTop: 5,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  subtitle: { fontSize: 14, lineHeight: 22, textAlign: "center" },
+  personSection: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 18,
+  },
+  personBadge: {
+    alignSelf: "flex-start",
+    fontSize: 13,
+    fontWeight: "800",
+    marginBottom: 16,
+  },
+  fixedRoleText: {
+    color: "#D7E9D5",
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 20,
+    marginBottom: 2,
+  },
+  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  chipText: { fontSize: 14, fontWeight: "600" },
+  startButton: {
+    borderRadius: 16,
+    paddingVertical: 17,
+    alignItems: "center",
+    marginTop: 6,
+  },
+  startButtonText: { fontSize: 16, fontWeight: "700" },
+  accessError: {
+    color: "#A93B35",
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "center",
+    marginTop: 12,
+  },
+  invalidState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+    gap: 16,
+  },
+  invalidText: { fontSize: 16, textAlign: "center" },
+  invalidButton: {
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  invalidButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
 });

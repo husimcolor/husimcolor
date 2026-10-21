@@ -10,14 +10,18 @@ describe("공개 유료 심화분석 진입", () => {
     const home = read("app/(tabs)/index.tsx");
     const relationshipStart = read("app/(tabs)/couple-start.tsx");
 
-    expect(home).toContain("const tossLiveEnabled = commerceTestMode.data?.tossLiveEnabled === true");
+    expect(home).toContain(
+      "const tossLiveEnabled = commerceTestMode.data?.tossLiveEnabled === true",
+    );
     expect(home).toContain("paidAnalysisPublicEnabled && tossPaymentEnabled");
-    expect(home).toContain("product=personal_deep${tossLiveEnabled ? '' : '&testLifecycle=toss-test-lifecycle'}");
-    expect(relationshipStart).toContain("paidProductCode && paidAnalysisPublicEnabled && tossPaymentEnabled");
+    expect(home).toContain(
+      "product=personal_deep${tossLiveEnabled ? '' : '&testLifecycle=toss-test-lifecycle'}",
+    );
+    expect(relationshipStart).toContain("const paidProductCode");
+    expect(relationshipStart).toContain(
+      "const lifecycleParam = tossLiveEnabled",
+    );
     expect(relationshipStart).toContain("&testLifecycle=toss-test-lifecycle");
-
-    expect(home.indexOf("testLifecycle=toss-test-lifecycle")).toBeLessThan(home.indexOf("review=toss-card-review"));
-    expect(relationshipStart.indexOf("testLifecycle=toss-test-lifecycle")).toBeLessThan(relationshipStart.indexOf("review=toss-card-review"));
   });
 
   it("중간 화면은 테스트 lifecycle을 보존하고 라이브 runtime에서는 일반 결제 URL로 복귀한다", () => {

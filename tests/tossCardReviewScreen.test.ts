@@ -15,19 +15,32 @@ function sectionAfter(marker: string): string {
 
 describe("Toss card-review checkout screen", () => {
   it("loads review presentation data through a read-only procedure", () => {
-    expect(checkoutScreen).toContain("trpc.commerce.checkout.cardReview.useQuery");
-    expect(checkoutScreen).toContain("review: \"toss-card-review\"");
+    expect(checkoutScreen).toContain(
+      "trpc.commerce.checkout.cardReview.useQuery",
+    );
+    expect(checkoutScreen).toContain('review: "toss-card-review"');
     expect(checkoutScreen).toContain("TOSS PAYMENTS CARD REVIEW");
   });
 
   it("keeps non-persistent review mode by default but allows the explicit test lifecycle route", () => {
-    expect(checkoutScreen).toContain('const requestedPreviewLifecycle = getSingleParam(params.testLifecycle) === "toss-test-lifecycle"');
+    expect(checkoutScreen).toContain("const requestedPreviewLifecycle =");
+    expect(checkoutScreen).toContain(
+      'getSingleParam(params.testLifecycle) === "toss-test-lifecycle"',
+    );
     expect(checkoutScreen).toContain("testMode.data?.tossCardReviewEnabled &&");
     expect(checkoutScreen).toContain("!paidAnalysisPublicEnabled &&");
     expect(checkoutScreen).toContain("!requestedPreviewLifecycle");
-    expect(checkoutScreen).toContain('...(paymentMode === "test" && requestedPreviewLifecycle ? { testLifecycle: "toss-test-lifecycle" } : {}),');
-    expect(checkoutScreen).toContain('const callbackPaymentMode = getSingleParam(params.paymentMode) === "live" ? "live" : "test"');
-    expect(checkoutScreen).not.toContain("tossCardReviewEnabled && !paidAnalysisPublicEnabled");
+    expect(checkoutScreen).toContain(
+      'paymentMode === "test" && requestedPreviewLifecycle',
+    );
+    expect(checkoutScreen).toContain('testLifecycle: "toss-test-lifecycle"');
+    expect(checkoutScreen).toContain("const callbackPaymentMode =");
+    expect(checkoutScreen).toContain(
+      'getSingleParam(params.paymentMode) === "live" ? "live" : "test"',
+    );
+    expect(checkoutScreen).not.toContain(
+      "tossCardReviewEnabled && !paidAnalysisPublicEnabled",
+    );
   });
 
   it("uses a standard Toss card-selection window without an email input or normal checkout mutation", () => {
@@ -36,7 +49,9 @@ describe("Toss card-review checkout screen", () => {
     const onlyReviewRequest = reviewRequest.slice(0, end);
 
     expect(onlyReviewRequest).toContain('card: { flowMode: "DEFAULT" }');
-    expect(onlyReviewRequest).toContain("customerEmail: cardReview.data.customerEmail");
+    expect(onlyReviewRequest).toContain(
+      "customerEmail: cardReview.data.customerEmail",
+    );
     expect(onlyReviewRequest).not.toContain("createCheckout.mutateAsync");
     expect(onlyReviewRequest).not.toContain("completeCheckout.mutateAsync");
   });
@@ -46,28 +61,52 @@ describe("Toss card-review checkout screen", () => {
     const nextSection = reviewReturn.indexOf("if (cardReviewMode) {");
     const onlyReviewReturn = reviewReturn.slice(0, nextSection);
 
-    expect(onlyReviewReturn).toContain("결제 승인, 주문 생성, 이용권 발급, 분석 시작은 수행하지 않았습니다");
+    expect(onlyReviewReturn).toContain("결제 승인, 주문");
+    expect(onlyReviewReturn).toContain(
+      "생성, 이용권 발급, 분석 시작은 수행하지 않았습니다",
+    );
     expect(onlyReviewReturn).not.toContain("completeCheckout.mutateAsync");
     expect(onlyReviewReturn).not.toContain("moveToAnalysis(");
   });
 
   it("shows the approved analysis service period and public refund-policy link before payment", () => {
     const reviewPresentation = sectionAfter("if (cardReviewMode) {");
-    const firstNonReviewBranch = reviewPresentation.indexOf("if (!paidAnalysisPublicEnabled)");
-    const onlyReviewPresentation = reviewPresentation.slice(0, firstNonReviewBranch);
+    const firstNonReviewBranch = reviewPresentation.indexOf(
+      "if (!paidAnalysisPublicEnabled)",
+    );
+    const onlyReviewPresentation = reviewPresentation.slice(
+      0,
+      firstNonReviewBranch,
+    );
 
-    expect(checkoutScreen).toContain('const ANALYSIS_SERVICE_PERIOD = "검사 완료 즉시 제공 · 기술적 오류 발생 시 최대 24시간 이내 제공 상태를 확인·안내"');
+    expect(checkoutScreen).toContain("const ANALYSIS_SERVICE_PERIOD =");
+    expect(checkoutScreen).toContain(
+      "검사 완료 즉시 제공 · 기술적 오류 발생 시 최대 24시간 이내 제공 상태를 확인·안내",
+    );
     expect(onlyReviewPresentation).toContain("{cardReviewServicePeriod}");
-    expect(checkoutScreen).toContain('const REFUND_POLICY_URL = "https://husimcolor.com/refund-policy"');
+    expect(checkoutScreen).toContain(
+      'const REFUND_POLICY_URL = "https://husimcolor.com/refund-policy"',
+    );
     expect(onlyReviewPresentation).toContain("환불정책 확인");
-    expect(onlyReviewPresentation).toContain("Linking.openURL(REFUND_POLICY_URL)");
+    expect(onlyReviewPresentation).toContain(
+      "Linking.openURL(REFUND_POLICY_URL)",
+    );
   });
 
   it("uses the existing non-persistent review request for coaching with its approved service period", () => {
-    expect(checkoutScreen).toContain('value === "personal_coaching" || value === "couple_coaching"');
-    expect(checkoutScreen).toContain('const COACHING_SERVICE_PERIOD = "희망 일정 접수 후 3영업일 이내 일정 안내 · 결제일로부터 최대 60일 이내 서비스 제공"');
+    expect(checkoutScreen).toContain('value === "personal_coaching"');
+    expect(checkoutScreen).toContain('value === "couple_coaching"');
+    expect(checkoutScreen).toContain("const COACHING_SERVICE_PERIOD =");
+    expect(checkoutScreen).toContain(
+      "희망 일정 접수 후 3영업일 이내 일정 안내 · 결제일로부터 최대 60일 이내 서비스 제공",
+    );
     expect(checkoutScreen).toContain("{cardReviewServicePeriod}");
-    expect(checkoutScreen).toContain("const canRenderCardReview = cardReviewMode && isCardReviewProductCode(productCode)");
-    expect(checkoutScreen).toContain("(!isPaidAnalysisCode(productCode) && !canRenderCardReview) || !product");
+    expect(checkoutScreen).toContain("const canRenderCardReview =");
+    expect(checkoutScreen).toContain(
+      "cardReviewMode && isCardReviewProductCode(productCode)",
+    );
+    expect(checkoutScreen).toContain(
+      "(!isPaidAnalysisCode(productCode) && !canRenderCardReview) || !product",
+    );
   });
 });
