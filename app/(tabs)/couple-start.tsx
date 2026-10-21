@@ -24,6 +24,7 @@ import {
   type VisibleRelationProduct,
 } from "@/constants/relationProducts";
 import { BusinessInfoFooter } from "@/components/business-info-footer";
+import { IntroductionVideoCard } from "@/components/introduction-video-card";
 import {
   isOpeningCampaignActive,
   OPENING_CAMPAIGN_DISPLAY_PRICES,
@@ -273,6 +274,15 @@ export default function CoupleStartScreen() {
                         </> : <Text style={[styles.productPrice, { color: isSelectedFreeProduct ? '#F4D9A8' : '#8B5D2E' }]}>{product.price}</Text>}
                       </View>
                     </Pressable>
+                    {product.id === "romantic" ? (
+                      <IntroductionVideoCard
+                        title="두 사람이 이용하는 방법"
+                        description="각자 참여하고 초대 링크로 결과를 함께 확인하는 흐름을 살펴보세요."
+                        videoSource={require('../../assets/videos/relationship-how-to-use-ko.mp4')}
+                        posterSource={require('../../assets/images/video-posters/relationship-how-to-use-ko.jpg')}
+                        accessibilityLabel="두 사람이 이용하는 방법 영상 재생하기"
+                      />
+                    ) : null}
                     {sampleProduct ? (
                       <Pressable
                         onPress={() => handleOpenSampleReport(sampleProduct)}
