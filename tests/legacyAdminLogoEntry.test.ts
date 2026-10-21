@@ -8,9 +8,14 @@ const adminScreen = readFileSync(resolve(process.cwd(), "app/(tabs)/admin.tsx"),
 const workflow = readFileSync(resolve(process.cwd(), ".github/workflows/deploy.yml"), "utf8");
 
 describe("기존 관리자 심볼 진입", () => {
-  it("심볼 5회 탭은 OAuth가 아닌 기존 비밀번호 관리자 탭으로 이동한다", () => {
-    expect(homeScreen).toContain("if (newCount >= 5)");
+  it("심볼 2초 길게 누르기는 OAuth가 아닌 기존 비밀번호 관리자 탭으로 이동한다", () => {
+    expect(homeScreen).toContain("onLongPress={handleLogoLongPress}");
+    expect(homeScreen).toContain("delayLongPress={2000}");
     expect(homeScreen).toContain("router.push('/admin' as any)");
+    expect(homeScreen).not.toContain("if (newCount >= 5)");
+    expect(homeScreen).not.toContain("handleLogoTap");
+    expect(homeScreen).not.toContain("styles.adminLink");
+    expect(homeScreen).not.toContain(">관리자</Text>");
     expect(homeScreen).not.toContain("startOAuthLogin");
   });
 
