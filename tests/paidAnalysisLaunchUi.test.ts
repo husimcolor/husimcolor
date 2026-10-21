@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const projectRoot = join(__dirname, "..");
-const read = (relativePath: string) => readFileSync(join(projectRoot, relativePath), "utf8");
+const read = (relativePath: string) =>
+  readFileSync(join(projectRoot, relativePath), "utf8");
 
 describe("유료 분석 공개 결제 진입 UI", () => {
   it("홈은 유료 개인 심화분석의 가격과 결제·샘플 경로를 표시한다", () => {
@@ -16,9 +17,9 @@ describe("유료 분석 공개 결제 진입 UI", () => {
 
   it("관계 화면은 친구 무료 경로를 보존하면서 부부·연인 상품을 결제 후 설정으로 연결한다", () => {
     const source = read("app/(tabs)/couple-start.tsx");
-    expect(source).toContain("setRelationType('친구')");
-    expect(source).toContain("selectedProductId === 'romantic' ? true");
-    expect(source).toContain("product=couple_love_deep");
+    expect(source).toContain('relationType: "친구"');
+    expect(source).toContain('selectedProductId === "romantic"');
+    expect(source).toContain("product=${paidProductCode}");
     expect(source).toContain("결제 후 첫 참여자의 컬러 선택 전에");
     expect(source).toContain("다음 · 결제 정보 입력");
   });
@@ -34,8 +35,14 @@ describe("유료 분석 공개 결제 진입 UI", () => {
     const home = read("app/(tabs)/index.tsx");
     const relationship = read("app/(tabs)/couple-start.tsx");
     const checkout = read("app/(tabs)/commerce-checkout.tsx");
-    expect(home).toContain("현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음");
-    expect(relationship).toContain("현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음");
-    expect(checkout).toContain("현재 테스트 운영 중입니다. Toss 테스트키로만 동작하며 실제 청구는 발생하지 않습니다.");
+    expect(home).toContain(
+      "현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음",
+    );
+    expect(relationship).toContain(
+      "현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음",
+    );
+    expect(checkout).toContain(
+      "현재 테스트 운영 중입니다. Toss 테스트키로만 동작하며 실제 청구는 발생하지 않습니다.",
+    );
   });
 });

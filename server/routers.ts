@@ -4,7 +4,12 @@ import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import {
+  adminProcedure,
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from "./_core/trpc";
 import * as db from "./db";
 import { parseCoupleShareSnapshot } from "../shared/couple-share";
 import { getCommerceEmailProtectionStatus } from "./commerce/crypto";
@@ -21,10 +26,18 @@ import {
 } from "./commerce/order-service";
 import { isTossTestPaymentEnabled } from "./commerce/toss-test-provider";
 import { isTossLivePaymentEnabled } from "./commerce/toss-live-provider";
-import { getTossCardReviewConfig, isTossCardReviewEnabled } from "./commerce/toss-card-review";
+import {
+  getTossCardReviewConfig,
+  isTossCardReviewEnabled,
+} from "./commerce/toss-card-review";
 import { isPublicPaidAnalysisEnabled } from "./commerce/release-policy";
 import { previewCoupon } from "./commerce/coupon-service";
-import { configureRelationshipSetup, consumeEntitlementForAnalysisStart, getRelationshipSetupForGrant, verifyAnalysisDeliveryGrant } from "./commerce/entitlement-service";
+import {
+  configureRelationshipSetup,
+  consumeEntitlementForAnalysisStart,
+  getRelationshipSetupForGrant,
+  verifyAnalysisDeliveryGrant,
+} from "./commerce/entitlement-service";
 import {
   deliverAccountLinkOutboxItem,
   deliverPrivatePdfOutboxItem,
@@ -56,7 +69,10 @@ import {
 import { applyProductionOpeningCampaignConfiguration } from "./commerce/production-opening-campaign-config-service";
 import { applyProductionLivePaymentProviderMigration } from "./commerce/production-live-payment-migration-service";
 import { getSupportTicketSchemaAudit } from "./commerce/support-ticket-schema-audit";
-import { getAdminDailyOperationsSignals, getAdminFunnelDaily } from "./commerce/admin-daily-operations-service";
+import {
+  getAdminDailyOperationsSignals,
+  getAdminFunnelDaily,
+} from "./commerce/admin-daily-operations-service";
 import { isExplicitTestPaymentRuntime } from "./commerce/test-runtime";
 import {
   deleteAdminReview,
@@ -74,7 +90,10 @@ import {
   updateAdminLegacyPaymentStatus,
   updateAdminSupportTicketStatus,
 } from "./commerce/admin-operations-service";
-import { getAdminCoachingBookingEvents, updateAdminCoachingBooking } from "./commerce/coaching-booking-service";
+import {
+  getAdminCoachingBookingEvents,
+  updateAdminCoachingBooking,
+} from "./commerce/coaching-booking-service";
 import {
   createAdminCoachingBlackoutDate,
   getAdminCoachingBlackoutDates,
@@ -111,25 +130,40 @@ export async function loadPrivatePdfDeliveryService() {
 }
 
 /** 홈페이지 서버만 현장 결제 체험 신청을 중계할 수 있다. 브라우저에는 이 헤더가 전달되지 않는다. */
-const landingExperienceRequestProcedure = publicProcedure.use(({ ctx, next }) => {
-  const configured = process.env.HUSIM_APP_LANDING_REQUEST_SECRET;
-  const provided = ctx.req.header("x-husim-landing-secret");
-  const expected = configured ? Buffer.from(configured, "utf8") : null;
-  const actual = provided ? Buffer.from(provided, "utf8") : null;
-  const authorized = Boolean(expected && actual && expected.length >= 32 && expected.length === actual.length && timingSafeEqual(expected, actual));
-  if (!authorized) throw new TRPCError({ code: "UNAUTHORIZED", message: "LANDING_REQUEST_UNAUTHORIZED" });
-  return next();
-});
+const landingExperienceRequestProcedure = publicProcedure.use(
+  ({ ctx, next }) => {
+    const configured = process.env.HUSIM_APP_LANDING_REQUEST_SECRET;
+    const provided = ctx.req.header("x-husim-landing-secret");
+    const expected = configured ? Buffer.from(configured, "utf8") : null;
+    const actual = provided ? Buffer.from(provided, "utf8") : null;
+    const authorized = Boolean(
+      expected &&
+      actual &&
+      expected.length >= 32 &&
+      expected.length === actual.length &&
+      timingSafeEqual(expected, actual),
+    );
+    if (!authorized)
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "LANDING_REQUEST_UNAUTHORIZED",
+      });
+    return next();
+  },
+);
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(async (opts) => {
-      if (opts.ctx.user) await ensureCommonAccountForAuthenticatedUser(opts.ctx.user);
+      if (opts.ctx.user)
+        await ensureCommonAccountForAuthenticatedUser(opts.ctx.user);
       return opts.ctx.user;
     }),
-    kakaoStatus: publicProcedure.query(() => ({ enabled: isKakaoLoginEnabled() })),
+    kakaoStatus: publicProcedure.query(() => ({
+      enabled: isKakaoLoginEnabled(),
+    })),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -145,63 +179,156 @@ export const appRouter = router({
     health: publicProcedure.query(() => getCommerceEmailProtectionStatus()),
     support: router({
       submitInquiry: protectedProcedure
-        .input(z.object({
-          name: z.string().trim().min(1).max(80),
-          email: z.string().email().max(320),
-          inquiryType: z.enum(["payment_refund", "analysis_result", "pdf_email", "coaching_booking", "other"]),
-          subject: z.string().trim().min(2).max(160),
-          message: z.string().trim().min(10).max(4000),
-        }))
+        .input(
+          z.object({
+            name: z.string().trim().min(1).max(80),
+            email: z.string().email().max(320),
+            inquiryType: z.enum([
+              "payment_refund",
+              "analysis_result",
+              "pdf_email",
+              "coaching_booking",
+              "other",
+            ]),
+            subject: z.string().trim().min(2).max(160),
+            message: z.string().trim().min(10).max(4000),
+          }),
+        )
         .mutation(async ({ ctx, input }) => {
-          const inquiry = await createSupportInquiry({ user: ctx.user, ...input });
-          const { deliverSupportNotificationOutboxItem } = await import("./commerce/email-outbox-service");
-          const delivery = await deliverSupportNotificationOutboxItem(inquiry.outboxId);
+          const inquiry = await createSupportInquiry({
+            user: ctx.user,
+            ...input,
+          });
+          const { deliverSupportNotificationOutboxItem } =
+            await import("./commerce/email-outbox-service");
+          const delivery = await deliverSupportNotificationOutboxItem(
+            inquiry.outboxId,
+          );
           return { ...inquiry, delivery };
         }),
     }),
     coupons: router({
       preview: publicProcedure
-        .input(z.object({
-          couponCode: z.string().min(1).max(64),
-          productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
-          listAmountKrw: z.number().int().min(0).max(1_000_000),
-          email: z.string().email().max(320).optional(),
-        }))
+        .input(
+          z.object({
+            couponCode: z.string().min(1).max(64),
+            productCode: z.enum([
+              "personal_deep",
+              "couple_love_deep",
+              "parent_child_deep",
+            ]),
+            listAmountKrw: z.number().int().min(0).max(1_000_000),
+            email: z.string().email().max(320).optional(),
+          }),
+        )
         .query(({ input }) => previewCoupon(input)),
     }),
     entitlement: router({
       configureRelationshipSetup: publicProcedure
-        .input(z.object({ accessToken: z.string().min(20).max(2048), relationType: z.enum(["연인", "부부"]), roleA: z.enum(["남편", "아내", "남자친구", "여자친구"]), roleB: z.enum(["남편", "아내", "남자친구", "여자친구"]) }))
+        .input(
+          z.object({
+            accessToken: z.string().min(20).max(2048),
+            relationType: z.enum(["연인", "부부", "부모-자녀"]),
+            roleA: z.enum([
+              "남편",
+              "아내",
+              "남자친구",
+              "여자친구",
+              "아빠",
+              "엄마",
+              "아들",
+              "딸",
+            ]),
+            roleB: z.enum([
+              "남편",
+              "아내",
+              "남자친구",
+              "여자친구",
+              "아빠",
+              "엄마",
+              "아들",
+              "딸",
+            ]),
+          }),
+        )
         .mutation(({ input }) => configureRelationshipSetup(input)),
       relationshipSetup: publicProcedure
         .input(z.object({ accessToken: z.string().min(20).max(2048) }))
         .query(({ input }) => getRelationshipSetupForGrant(input)),
       consumeForAnalysisStart: publicProcedure
-        .input(z.object({
-          accessToken: z.string().min(20).max(2048),
-          productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
-          relationshipMode: z.enum(["invite_link"]).optional(),
-          relationType: z.enum(["연인", "부부", "친구", "부모-자녀", "아빠-아들", "아빠-딸", "엄마-아들", "엄마-딸", "형제자매", "동료"]).optional(),
-          roleA: z.enum(["남편", "아내", "남자친구", "여자친구", "아빠", "엄마", "아들", "딸"]).optional(),
-          roleB: z.enum(["남편", "아내", "남자친구", "여자친구", "아빠", "엄마", "아들", "딸"]).optional(),
-        }))
+        .input(
+          z.object({
+            accessToken: z.string().min(20).max(2048),
+            productCode: z.enum([
+              "personal_deep",
+              "couple_love_deep",
+              "parent_child_deep",
+            ]),
+            relationshipMode: z.enum(["invite_link"]).optional(),
+            relationType: z
+              .enum([
+                "연인",
+                "부부",
+                "친구",
+                "부모-자녀",
+                "아빠-아들",
+                "아빠-딸",
+                "엄마-아들",
+                "엄마-딸",
+                "형제자매",
+                "동료",
+              ])
+              .optional(),
+            roleA: z
+              .enum([
+                "남편",
+                "아내",
+                "남자친구",
+                "여자친구",
+                "아빠",
+                "엄마",
+                "아들",
+                "딸",
+              ])
+              .optional(),
+            roleB: z
+              .enum([
+                "남편",
+                "아내",
+                "남자친구",
+                "여자친구",
+                "아빠",
+                "엄마",
+                "아들",
+                "딸",
+              ])
+              .optional(),
+          }),
+        )
         .mutation(({ input }) => consumeEntitlementForAnalysisStart(input)),
     }),
     delivery: router({
       queueAndSendPdf: publicProcedure
-        .input(z.object({
-          analysisRunId: z.number().int().positive(),
-          productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
-          deliveryToken: z.string().min(20).max(2048),
-          payload: z.unknown(),
-        }))
+        .input(
+          z.object({
+            analysisRunId: z.number().int().positive(),
+            productCode: z.enum([
+              "personal_deep",
+              "couple_love_deep",
+              "parent_child_deep",
+            ]),
+            deliveryToken: z.string().min(20).max(2048),
+            payload: z.unknown(),
+          }),
+        )
         .mutation(async ({ input }) => {
           verifyAnalysisDeliveryGrant({
             accessToken: input.deliveryToken,
             analysisRunId: input.analysisRunId,
             productCode: input.productCode,
           });
-          const { queuePrivateAnalysisPdfDelivery } = await loadPrivatePdfDeliveryService();
+          const { queuePrivateAnalysisPdfDelivery } =
+            await loadPrivatePdfDeliveryService();
           const queued = await queuePrivateAnalysisPdfDelivery({
             analysisRunId: input.analysisRunId,
             kind: input.productCode,
@@ -215,10 +342,12 @@ export const appRouter = router({
     }),
     adminDelivery: router({
       list: adminProcedure
-        .input(z.object({
-          limit: z.number().int().min(1).max(100).default(50),
-          search: z.string().max(320).optional(),
-        }))
+        .input(
+          z.object({
+            limit: z.number().int().min(1).max(100).default(50),
+            search: z.string().max(320).optional(),
+          }),
+        )
         .query(({ input }) => getPrivatePdfOutboxSnapshot(input)),
       retry: adminProcedure
         .input(z.object({ outboxId: z.number().int().positive() }))
@@ -238,20 +367,35 @@ export const appRouter = router({
       }),
       downloadPrivateDocument: protectedProcedure
         .input(z.object({ documentId: z.number().int().positive() }))
-        .mutation(({ ctx, input }) => getMemberPrivateDocumentDownload(ctx.user, input.documentId)),
+        .mutation(({ ctx, input }) =>
+          getMemberPrivateDocumentDownload(ctx.user, input.documentId),
+        ),
       requestGuestClaim: protectedProcedure
         .input(z.object({ email: z.string().email().max(320) }))
         .mutation(async ({ ctx, input }) => {
-          const claim = await createGuestCommerceClaim({ user: ctx.user, email: input.email });
+          const claim = await createGuestCommerceClaim({
+            user: ctx.user,
+            email: input.email,
+          });
           const delivery = await deliverAccountLinkOutboxItem(claim.outboxId);
           return { ...claim, delivery };
         }),
-      restorableGuestClaim: protectedProcedure.query(({ ctx }) => getRestorableGuestCommerceClaim(ctx.user)),
+      restorableGuestClaim: protectedProcedure.query(({ ctx }) =>
+        getRestorableGuestCommerceClaim(ctx.user),
+      ),
       confirmGuestClaim: protectedProcedure
-        .input(z.object({ challengeId: z.number().int().positive(), code: z.string().regex(/^\d{6}$/) }))
-        .mutation(({ ctx, input }) => confirmGuestCommerceClaim({ user: ctx.user, ...input })),
-      processApprovedPreviewOutbox: protectedProcedure
-        .mutation(({ ctx }) => processApprovedPreviewOutboxForUser(ctx.user.id)),
+        .input(
+          z.object({
+            challengeId: z.number().int().positive(),
+            code: z.string().regex(/^\d{6}$/),
+          }),
+        )
+        .mutation(({ ctx, input }) =>
+          confirmGuestCommerceClaim({ user: ctx.user, ...input }),
+        ),
+      processApprovedPreviewOutbox: protectedProcedure.mutation(({ ctx }) =>
+        processApprovedPreviewOutboxForUser(ctx.user.id),
+      ),
     }),
     checkout: router({
       createTest: publicProcedure
@@ -268,22 +412,26 @@ export const appRouter = router({
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
             couponCode: z.string().min(1).max(64).optional(),
-            bookingRequest: z.object({
-              contactName: z.string().min(1).max(100),
-              contactPhone: z.string().min(8).max(40),
-              requestedWindowStart: z.string().datetime({ offset: true }),
-              requestedWindowEnd: z.string().datetime({ offset: true }),
-              sessionMode: z.enum(["online", "in_person"]),
-              notes: z.string().max(2000).optional(),
-            }).optional(),
+            bookingRequest: z
+              .object({
+                contactName: z.string().min(1).max(100),
+                contactPhone: z.string().min(8).max(40),
+                requestedWindowStart: z.string().datetime({ offset: true }),
+                requestedWindowEnd: z.string().datetime({ offset: true }),
+                sessionMode: z.enum(["online", "in_person"]),
+                notes: z.string().max(2000).optional(),
+              })
+              .optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
           }),
         )
-        .mutation(({ input, ctx }) => createTestCheckout({
-          ...input,
-          userId: ctx.user?.id,
-          authenticatedEmail: ctx.user?.email,
-        })),
+        .mutation(({ input, ctx }) =>
+          createTestCheckout({
+            ...input,
+            userId: ctx.user?.id,
+            authenticatedEmail: ctx.user?.email,
+          }),
+        ),
       createTossTest: publicProcedure
         .input(
           z.object({
@@ -298,37 +446,47 @@ export const appRouter = router({
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
             couponCode: z.string().min(1).max(64).optional(),
-            bookingRequest: z.object({
-              contactName: z.string().min(1).max(100),
-              contactPhone: z.string().min(8).max(40),
-              requestedWindowStart: z.string().datetime({ offset: true }),
-              requestedWindowEnd: z.string().datetime({ offset: true }),
-              sessionMode: z.enum(["online", "in_person"]),
-              notes: z.string().max(2000).optional(),
-            }).optional(),
+            bookingRequest: z
+              .object({
+                contactName: z.string().min(1).max(100),
+                contactPhone: z.string().min(8).max(40),
+                requestedWindowStart: z.string().datetime({ offset: true }),
+                requestedWindowEnd: z.string().datetime({ offset: true }),
+                sessionMode: z.enum(["online", "in_person"]),
+                notes: z.string().max(2000).optional(),
+              })
+              .optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
           }),
         )
-        .mutation(({ input, ctx }) => createTossTestCheckout({
-          ...input,
-          userId: ctx.user?.id,
-          authenticatedEmail: ctx.user?.email,
-        })),
+        .mutation(({ input, ctx }) =>
+          createTossTestCheckout({
+            ...input,
+            userId: ctx.user?.id,
+            authenticatedEmail: ctx.user?.email,
+          }),
+        ),
       createTossLive: publicProcedure
         .input(
           z.object({
-            productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
+            productCode: z.enum([
+              "personal_deep",
+              "couple_love_deep",
+              "parent_child_deep",
+            ]),
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
             couponCode: z.string().min(1).max(64).optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
           }),
         )
-        .mutation(({ input, ctx }) => createTossLiveCheckout({
-          ...input,
-          userId: ctx.user?.id,
-          authenticatedEmail: ctx.user?.email,
-        })),
+        .mutation(({ input, ctx }) =>
+          createTossLiveCheckout({
+            ...input,
+            userId: ctx.user?.id,
+            authenticatedEmail: ctx.user?.email,
+          }),
+        ),
       completeTest: publicProcedure
         .input(
           z.object({
@@ -358,38 +516,49 @@ export const appRouter = router({
         )
         .mutation(({ input }) => completeTossTestPaymentFailure(input)),
       completeTossLive: publicProcedure
-        .input(z.object({
-          orderNumber: z.string().min(8).max(64),
-          paymentKey: z.string().min(8).max(200),
-          amountKrw: z.number().int().min(0).max(1_000_000),
-        }))
+        .input(
+          z.object({
+            orderNumber: z.string().min(8).max(64),
+            paymentKey: z.string().min(8).max(200),
+            amountKrw: z.number().int().min(0).max(1_000_000),
+          }),
+        )
         .mutation(({ input }) => completeTossLivePayment(input)),
       completeTossLiveFailure: publicProcedure
-        .input(z.object({
-          orderNumber: z.string().min(8).max(64),
-          errorCode: z.string().min(1).max(120),
-          errorMessage: z.string().max(500).optional(),
-        }))
+        .input(
+          z.object({
+            orderNumber: z.string().min(8).max(64),
+            errorCode: z.string().min(1).max(120),
+            errorMessage: z.string().max(500).optional(),
+          }),
+        )
         .mutation(({ input }) => completeTossLivePaymentFailure(input)),
       cardReview: publicProcedure
-        .input(z.object({
-          productCode: z.enum([
-            "personal_deep",
-            "couple_love_deep",
-            "parent_child_deep",
-            "personal_coaching",
-            "couple_coaching",
-          ]),
-        }))
+        .input(
+          z.object({
+            productCode: z.enum([
+              "personal_deep",
+              "couple_love_deep",
+              "parent_child_deep",
+              "personal_coaching",
+              "couple_coaching",
+            ]),
+          }),
+        )
         .query(({ input }) => getTossCardReviewConfig(input.productCode)),
       offlineCoachingAvailability: publicProcedure
-        .input(z.object({
-          productCode: z.enum(["personal_coaching", "couple_coaching"]),
-          fromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-          toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        }))
+        .input(
+          z.object({
+            productCode: z.enum(["personal_coaching", "couple_coaching"]),
+            fromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+            toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          }),
+        )
         .query(async ({ input }) => ({
-          blackoutDates: await getPublicCoachingBlackoutDates(input.fromDate, input.toDate),
+          blackoutDates: await getPublicCoachingBlackoutDates(
+            input.fromDate,
+            input.toDate,
+          ),
         })),
       testMode: publicProcedure.query(() => ({
         localSimulatorEnabled: isTestPaymentEnabled(),
@@ -406,44 +575,71 @@ export const appRouter = router({
       .input(z.object({ accessToken: z.string().min(32).max(256) }))
       .query(({ input }) => getRelationshipInviteContext(input.accessToken)),
     saveDraft: publicProcedure
-      .input(z.object({
-        accessToken: z.string().min(32).max(256),
-        expectedRevision: z.number().int().min(0),
-        consentAccepted: z.boolean().optional(),
-        draft: z.object({
-          info: z.object({
-            gender: z.enum(["남성", "여성"]),
-            faith: z.enum(["기독교", "무교", "기타"]),
-            relationshipRole: z.enum(["남편", "아내", "남자친구", "여자친구", "아빠", "엄마", "아들", "딸"]),
-          }).optional(),
-          colors: z.array(z.string().min(1).max(64)).max(3).optional(),
-          cards: z.array(z.string().min(1).max(64)).max(3).optional(),
+      .input(
+        z.object({
+          accessToken: z.string().min(32).max(256),
+          expectedRevision: z.number().int().min(0),
+          consentAccepted: z.boolean().optional(),
+          draft: z.object({
+            info: z
+              .object({
+                gender: z.enum(["남성", "여성"]),
+                faith: z.enum(["기독교", "무교", "기타"]),
+                relationshipRole: z.enum([
+                  "남편",
+                  "아내",
+                  "남자친구",
+                  "여자친구",
+                  "아빠",
+                  "엄마",
+                  "아들",
+                  "딸",
+                ]),
+              })
+              .optional(),
+            colors: z.array(z.string().min(1).max(64)).max(3).optional(),
+            cards: z.array(z.string().min(1).max(64)).max(3).optional(),
+          }),
         }),
-      }))
+      )
       .mutation(({ input }) => saveRelationshipParticipantDraft(input)),
     submit: publicProcedure
-      .input(z.object({
-        accessToken: z.string().min(32).max(256),
-        expectedRevision: z.number().int().min(0),
-        submission: z.object({
-          info: z.object({
-            gender: z.enum(["남성", "여성"]),
-            faith: z.enum(["기독교", "무교", "기타"]),
-            relationshipRole: z.enum(["남편", "아내", "남자친구", "여자친구", "아빠", "엄마", "아들", "딸"]),
+      .input(
+        z.object({
+          accessToken: z.string().min(32).max(256),
+          expectedRevision: z.number().int().min(0),
+          submission: z.object({
+            info: z.object({
+              gender: z.enum(["남성", "여성"]),
+              faith: z.enum(["기독교", "무교", "기타"]),
+              relationshipRole: z.enum([
+                "남편",
+                "아내",
+                "남자친구",
+                "여자친구",
+                "아빠",
+                "엄마",
+                "아들",
+                "딸",
+              ]),
+            }),
+            colors: z.array(z.string().min(1).max(64)).length(3),
+            cards: z.array(z.string().min(1).max(64)).length(3),
           }),
-          colors: z.array(z.string().min(1).max(64)).length(3),
-          cards: z.array(z.string().min(1).max(64)).length(3),
         }),
-      }))
+      )
       .mutation(async ({ input }) => {
         const submitted = await submitRelationshipParticipant(input);
         if (!submitted.shouldGenerateReport) return submitted.context;
         try {
-          const report = await generateAndQueueRelationshipReport(submitted.context.relationshipSessionId);
+          const report = await generateAndQueueRelationshipReport(
+            submitted.context.relationshipSessionId,
+          );
           // Queueing has already persisted both submissions and the immutable PDF.
           // Send once through the locked outbox now so a completed A/B session is
           // not left waiting for an opportunistic cron invocation.
-          if (report.outboxId) await deliverPrivatePdfOutboxItem(report.outboxId);
+          if (report.outboxId)
+            await deliverPrivatePdfOutboxItem(report.outboxId);
         } catch {
           // 세션은 failed 상태와 오류 코드로 남긴다. 제출 자체를 실패로 되돌려 재제출을 유도하지 않는다.
         }
@@ -455,7 +651,9 @@ export const appRouter = router({
         const retry = await retryFailedRelationshipReport(input.accessToken);
         if (retry.shouldGenerateReport) {
           try {
-            await generateAndQueueRelationshipReport(retry.relationshipSessionId);
+            await generateAndQueueRelationshipReport(
+              retry.relationshipSessionId,
+            );
           } catch {
             // The failure remains recorded as failed; submitted participants
             // never return to the editable examination flow.
@@ -465,50 +663,75 @@ export const appRouter = router({
       }),
     deliverPreviewReport: publicProcedure
       .input(z.object({ accessToken: z.string().min(32).max(256) }))
-      .mutation(({ input }) => deliverPreviewRelationshipReport(input.accessToken)),
+      .mutation(({ input }) =>
+        deliverPreviewRelationshipReport(input.accessToken),
+      ),
     previewRecoveryLink: publicProcedure
-      .input(z.object({
-        relationshipSessionId: z.number().int().positive(),
-        recoveryKey: z.string().min(32).max(512),
-      }))
+      .input(
+        z.object({
+          relationshipSessionId: z.number().int().positive(),
+          recoveryKey: z.string().min(32).max(512),
+        }),
+      )
       .mutation(({ input }) => createPreviewFailedRelationshipRecovery(input)),
     result: publicProcedure
-      .input(z.object({
-        resultToken: z.string().min(32).max(256).optional(),
-        accessToken: z.string().min(32).max(256).optional(),
-      }).refine((value) => Boolean(value.resultToken || value.accessToken), {
-        message: "RELATIONSHIP_RESULT_ACCESS_REQUIRED",
-      }))
+      .input(
+        z
+          .object({
+            resultToken: z.string().min(32).max(256).optional(),
+            accessToken: z.string().min(32).max(256).optional(),
+          })
+          .refine((value) => Boolean(value.resultToken || value.accessToken), {
+            message: "RELATIONSHIP_RESULT_ACCESS_REQUIRED",
+          }),
+      )
       .query(({ input }) => getRelationshipResult(input)),
   }),
 
   /** 홈페이지 서버만 전용 서명 헤더로 현장 결제 체험 신청을 기록한다. */
   experienceRequests: router({
     submit: landingExperienceRequestProcedure
-      .input(z.object({
-        // Historical `engaged_couple...` entries remain readable but are not accepted for new submissions.
-        productCode: z.enum(["personal_three_color_experience", "relationship_coaching_experience"]),
-        relationshipType: z.enum(["married_couple", "lovers", "parent_child"]).optional(),
-        childAge: z.number().int().min(0).max(120).optional(),
-        preferredDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        preferredTime: z.string().regex(/^\d{2}:\d{2}$/),
-        name: z.string().min(1).max(80),
-        contactPhone: z.string().min(8).max(24),
-        privacyConsentAccepted: z.literal(true),
-        idempotencyKey: z.string().min(16).max(128),
-      }))
-      .mutation(({ ctx, input }) => createYearEndThreeColorExperienceRequest({
-        ...input,
-        landingRequestSecret: ctx.req.header("x-husim-landing-secret") ?? undefined,
-      })),
+      .input(
+        z.object({
+          // Historical `engaged_couple...` entries remain readable but are not accepted for new submissions.
+          productCode: z.enum([
+            "personal_three_color_experience",
+            "relationship_coaching_experience",
+          ]),
+          relationshipType: z
+            .enum(["married_couple", "lovers", "parent_child"])
+            .optional(),
+          childAge: z.number().int().min(0).max(120).optional(),
+          preferredDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          preferredTime: z.string().regex(/^\d{2}:\d{2}$/),
+          name: z.string().min(1).max(80),
+          contactPhone: z.string().min(8).max(24),
+          privacyConsentAccepted: z.literal(true),
+          idempotencyKey: z.string().min(16).max(128),
+        }),
+      )
+      .mutation(({ ctx, input }) =>
+        createYearEndThreeColorExperienceRequest({
+          ...input,
+          landingRequestSecret:
+            ctx.req.header("x-husim-landing-secret") ?? undefined,
+        }),
+      ),
   }),
 
   // 통합 운영 관리 API. 모든 조회·변경은 서버의 users.role=admin을 요구한다.
   admin: router({
     dashboard: adminProcedure.query(() => getAdminOperationsDashboard()),
-    dailyOperationsSignals: adminProcedure.query(() => getAdminDailyOperationsSignals()),
+    dailyOperationsSignals: adminProcedure.query(() =>
+      getAdminDailyOperationsSignals(),
+    ),
     funnelDaily: adminProcedure
-      .input(z.object({ fromKst: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), toKst: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .input(
+        z.object({
+          fromKst: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          toKst: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        }),
+      )
       .query(({ input }) => getAdminFunnelDaily(input)),
     orders: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
@@ -516,11 +739,22 @@ export const appRouter = router({
     revealOrderEmailDetails: adminProcedure
       .input(z.object({ orderId: z.number().int().positive() }))
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return revealAdminOrderEmailDetails({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return revealAdminOrderEmailDetails({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
-    previewVerification: adminProcedure.query(() => getPreviewReadOnlyVerificationSnapshot()),
-    supportTicketSchemaAudit: adminProcedure.query(() => getSupportTicketSchemaAudit()),
+    previewVerification: adminProcedure.query(() =>
+      getPreviewReadOnlyVerificationSnapshot(),
+    ),
+    supportTicketSchemaAudit: adminProcedure.query(() =>
+      getSupportTicketSchemaAudit(),
+    ),
     customers: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminCustomerList(input.limit)),
@@ -528,10 +762,22 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
       .query(({ input }) => getAdminSupportTicketList(input.limit)),
     updateSupportTicket: adminProcedure
-      .input(z.object({ id: z.number().int().positive(), status: z.enum(["received", "reviewing", "answered"]) }))
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          status: z.enum(["received", "reviewing", "answered"]),
+        }),
+      )
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return updateAdminSupportTicketStatus({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return updateAdminSupportTicketStatus({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
     coupons: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
@@ -540,48 +786,88 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().int().min(1).max(50).default(20) }))
       .query(({ input }) => getAdminTargetedCouponList(input.limit)),
     issueTargetedCoupon: adminProcedure
-      .input(z.object({
-        email: z.string().email().max(320),
-        productCodes: z.array(z.enum([
-          "personal_deep",
-          "couple_love_deep",
-          "parent_child_deep",
-          "personal_coaching",
-          "couple_coaching",
-        ])).min(1).max(5),
-        discountType: z.enum(["fixed", "percent"]),
-        discountValue: z.number().int().positive(),
-        validDays: z.number().int().min(1).max(365),
-        requestedCode: z.string().max(64).optional(),
-      }))
+      .input(
+        z.object({
+          email: z.string().email().max(320),
+          productCodes: z
+            .array(
+              z.enum([
+                "personal_deep",
+                "couple_love_deep",
+                "parent_child_deep",
+                "personal_coaching",
+                "couple_coaching",
+              ]),
+            )
+            .min(1)
+            .max(5),
+          discountType: z.enum(["fixed", "percent"]),
+          discountValue: z.number().int().positive(),
+          validDays: z.number().int().min(1).max(365),
+          requestedCode: z.string().max(64).optional(),
+        }),
+      )
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return issueAdminTargetedCoupon({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return issueAdminTargetedCoupon({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
     revokeTargetedCoupon: adminProcedure
       .input(z.object({ couponId: z.number().int().positive() }))
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return revokeAdminTargetedCoupon({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return revokeAdminTargetedCoupon({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
-    applyProductionOpeningCampaign: adminProcedure
-      .mutation(({ ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return applyProductionOpeningCampaignConfiguration({ ...auditActor, auditActor });
-      }),
-    applyProductionLivePaymentProvider: adminProcedure
-      .mutation(({ ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return applyProductionLivePaymentProviderMigration({ ...auditActor, auditActor });
-      }),
+    applyProductionOpeningCampaign: adminProcedure.mutation(({ ctx }) => {
+      const auditActor = resolveAdminAuditActor({
+        adminUserId: ctx.user?.id,
+        legacyAdmin: ctx.legacyAdmin,
+      });
+      return applyProductionOpeningCampaignConfiguration({
+        ...auditActor,
+        auditActor,
+      });
+    }),
+    applyProductionLivePaymentProvider: adminProcedure.mutation(({ ctx }) => {
+      const auditActor = resolveAdminAuditActor({
+        adminUserId: ctx.user?.id,
+        legacyAdmin: ctx.legacyAdmin,
+      });
+      return applyProductionLivePaymentProviderMigration({
+        ...auditActor,
+        auditActor,
+      });
+    }),
     testRelationshipReportRecovery: adminProcedure
       .input(z.object({ orderId: z.number().int().positive() }))
-      .query(({ input }) => getAdminTestRelationshipReportRecoverySnapshot(input.orderId)),
+      .query(({ input }) =>
+        getAdminTestRelationshipReportRecoverySnapshot(input.orderId),
+      ),
     retryTestRelationshipReport: adminProcedure
       .input(z.object({ orderId: z.number().int().positive() }))
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return retryAdminTestRelationshipReport({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return retryAdminTestRelationshipReport({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
     customerDetail: adminProcedure
       .input(z.object({ customerId: z.number().int().positive() }))
@@ -590,14 +876,23 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
       .query(({ input }) => getAdminLegacyPaymentRecords(input.limit)),
     updateLegacyPayment: adminProcedure
-      .input(z.object({
-        id: z.number().int().positive(),
-        status: z.enum(["pending", "confirmed", "rejected"]),
-        memo: z.string().max(500).optional(),
-      }))
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          status: z.enum(["pending", "confirmed", "rejected"]),
+          memo: z.string().max(500).optional(),
+        }),
+      )
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return updateAdminLegacyPaymentStatus({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return updateAdminLegacyPaymentStatus({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
     reviews: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
@@ -605,7 +900,10 @@ export const appRouter = router({
     deleteReview: adminProcedure
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
         return deleteAdminReview({ ...input, ...auditActor, auditActor });
       }),
     coachingBookings: adminProcedure
@@ -613,94 +911,186 @@ export const appRouter = router({
       .query(({ input }) => getAdminCoachingBookingList(input.limit)),
     yearEndExperienceRequests: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
-      .query(({ input }) => getAdminYearEndThreeColorExperienceRequests(input.limit)),
+      .query(({ input }) =>
+        getAdminYearEndThreeColorExperienceRequests(input.limit),
+      ),
     revealYearEndExperienceRequestContact: adminProcedure
       .input(z.object({ requestId: z.number().int().positive() }))
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return revealAdminYearEndThreeColorExperienceRequestContact({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return revealAdminYearEndThreeColorExperienceRequestContact({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
     updateYearEndExperienceRequest: adminProcedure
-      .input(z.object({
-        requestId: z.number().int().positive(),
-        status: z.enum(["received", "reviewing", "confirmed", "cancelled"]),
-        cancellationReason: z.string().trim().max(500).optional(),
-      }))
+      .input(
+        z.object({
+          requestId: z.number().int().positive(),
+          status: z.enum(["received", "reviewing", "confirmed", "cancelled"]),
+          cancellationReason: z.string().trim().max(500).optional(),
+        }),
+      )
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return updateAdminYearEndThreeColorExperienceRequest({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return updateAdminYearEndThreeColorExperienceRequest({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
     coachingBookingEvents: adminProcedure
       .input(z.object({ bookingId: z.number().int().positive() }))
       .query(({ input }) => getAdminCoachingBookingEvents(input.bookingId)),
     updateCoachingBooking: adminProcedure
-      .input(z.object({
-        bookingId: z.number().int().positive(),
-        status: z.enum(["pending_schedule", "change_requested", "scheduled", "completed", "cancelled", "no_show"]),
-        scheduledAt: z.date().nullable().optional(),
-        scheduledEndAt: z.date().nullable().optional(),
-        sessionMode: z.enum(["undecided", "online", "in_person"]).optional(),
-        requestedWindowStart: z.date().nullable().optional(),
-        requestedWindowEnd: z.date().nullable().optional(),
-        assignedAdminUserId: z.number().int().positive().nullable().optional(),
-        internalNote: z.string().max(2000).optional(),
-        cancelReason: z.string().max(500).optional(),
-      }))
+      .input(
+        z.object({
+          bookingId: z.number().int().positive(),
+          status: z.enum([
+            "pending_schedule",
+            "change_requested",
+            "scheduled",
+            "completed",
+            "cancelled",
+            "no_show",
+          ]),
+          scheduledAt: z.date().nullable().optional(),
+          scheduledEndAt: z.date().nullable().optional(),
+          sessionMode: z.enum(["undecided", "online", "in_person"]).optional(),
+          requestedWindowStart: z.date().nullable().optional(),
+          requestedWindowEnd: z.date().nullable().optional(),
+          assignedAdminUserId: z
+            .number()
+            .int()
+            .positive()
+            .nullable()
+            .optional(),
+          internalNote: z.string().max(2000).optional(),
+          cancelReason: z.string().max(500).optional(),
+        }),
+      )
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return updateAdminCoachingBooking({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return updateAdminCoachingBooking({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
-    coachingBlackoutDates: adminProcedure.query(() => getAdminCoachingBlackoutDates()),
+    coachingBlackoutDates: adminProcedure.query(() =>
+      getAdminCoachingBlackoutDates(),
+    ),
     createCoachingBlackoutDate: adminProcedure
-      .input(z.object({
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        note: z.string().max(500).optional(),
-      }))
+      .input(
+        z.object({
+          date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          note: z.string().max(500).optional(),
+        }),
+      )
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return createAdminCoachingBlackoutDate({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return createAdminCoachingBlackoutDate({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
     removeCoachingBlackoutDate: adminProcedure
       .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return removeAdminCoachingBlackoutDate({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return removeAdminCoachingBlackoutDate({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
     issueTestEntitlement: adminProcedure
-      .input(z.object({
-        email: z.string().email().max(320),
-        productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
-      }))
+      .input(
+        z.object({
+          email: z.string().email().max(320),
+          productCode: z.enum([
+            "personal_deep",
+            "couple_love_deep",
+            "parent_child_deep",
+          ]),
+        }),
+      )
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return issueAdminTestEntitlement({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return issueAdminTestEntitlement({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
     revokeTestEntitlement: adminProcedure
-      .input(z.object({
-        email: z.string().email().max(320),
-        productCode: z.enum(["personal_deep", "couple_love_deep", "parent_child_deep"]),
-      }))
+      .input(
+        z.object({
+          email: z.string().email().max(320),
+          productCode: z.enum([
+            "personal_deep",
+            "couple_love_deep",
+            "parent_child_deep",
+          ]),
+        }),
+      )
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return revokeAdminTestEntitlement({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return revokeAdminTestEntitlement({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
     reissuePreviewRelationshipResults: adminProcedure
       .input(z.object({ relationshipSessionId: z.number().int().positive() }))
       .mutation(({ input, ctx }) => {
-        const auditActor = resolveAdminAuditActor({ adminUserId: ctx.user?.id, legacyAdmin: ctx.legacyAdmin });
-        return reissuePreviewRelationshipResultAccess({ ...input, ...auditActor, auditActor });
+        const auditActor = resolveAdminAuditActor({
+          adminUserId: ctx.user?.id,
+          legacyAdmin: ctx.legacyAdmin,
+        });
+        return reissuePreviewRelationshipResultAccess({
+          ...input,
+          ...auditActor,
+          auditActor,
+        });
       }),
   }),
 
   // 입금 기록 API
   payments: router({
     create: publicProcedure
-      .input(z.object({
-        senderName: z.string().min(1).max(100),
-        contact: z.string().min(1).max(100),
-        depositorName: z.string().min(1).max(100),
-        amount: z.number().int().default(30000),
-      }))
+      .input(
+        z.object({
+          senderName: z.string().min(1).max(100),
+          contact: z.string().min(1).max(100),
+          depositorName: z.string().min(1).max(100),
+          amount: z.number().int().default(30000),
+        }),
+      )
       .mutation(({ input }) => {
         return db.createPaymentRecord(input);
       }),
@@ -708,11 +1098,13 @@ export const appRouter = router({
       return db.getPaymentRecords();
     }),
     updateStatus: adminProcedure
-      .input(z.object({
-        id: z.number().int(),
-        status: z.enum(['pending', 'confirmed', 'rejected']),
-        memo: z.string().max(500).optional(),
-      }))
+      .input(
+        z.object({
+          id: z.number().int(),
+          status: z.enum(["pending", "confirmed", "rejected"]),
+          memo: z.string().max(500).optional(),
+        }),
+      )
       .mutation(({ input }) => {
         return db.updatePaymentStatus(input.id, input.status, input.memo);
       }),
@@ -721,31 +1113,61 @@ export const appRouter = router({
   /** 최소 익명 전환 퍼널. 입력은 strict allow-list로 제한하며 집계 조회는 관리자 route에만 있다. */
   conversionFunnel: router({
     track: publicProcedure
-      .input(z.object({
-        eventKey: z.string().min(16).max(255),
-        deviceId: z.string().uuid(),
-        eventType: z.enum(["free_result", "paid_guide_click", "sample_view", "checkout_view", "toss_request", "payment_success", "payment_cancelled", "payment_failed"]),
-        productCode: z.enum(["free_color_trial", "personal_deep", "couple_love_deep", "parent_child_deep"]),
-        locale: z.enum(["ko-KR", "zh-CN"]),
-        channel: z.enum(["app", "web"]),
-      }).strict())
-      .mutation(({ input }) => db.logCommerceFunnelEvent({ ...input, isTest: isExplicitTestPaymentRuntime() })),
+      .input(
+        z
+          .object({
+            eventKey: z.string().min(16).max(255),
+            deviceId: z.string().uuid(),
+            eventType: z.enum([
+              "free_result",
+              "paid_guide_click",
+              "sample_view",
+              "checkout_view",
+              "toss_request",
+              "payment_success",
+              "payment_cancelled",
+              "payment_failed",
+            ]),
+            productCode: z.enum([
+              "free_color_trial",
+              "personal_deep",
+              "couple_love_deep",
+              "parent_child_deep",
+            ]),
+            locale: z.enum(["ko-KR", "zh-CN"]),
+            channel: z.enum(["app", "web"]),
+          })
+          .strict(),
+      )
+      .mutation(({ input }) =>
+        db.logCommerceFunnelEvent({
+          ...input,
+          isTest: isExplicitTestPaymentRuntime(),
+        }),
+      ),
   }),
 
   // 방문자 수 추적 API
   visitors: router({
     log: publicProcedure
-      .input(z.object({
-        deviceId: z.string().min(1).max(128),
-        visitType: z.enum([
-          'home', 'free_trial', 'premium',
-          'free_start', 'free_result',
-          'deep_start', 'deep_result',
-          'couple_start', 'couple_result',
-        ]),
-        testType: z.string().max(50).optional(),
-        relationshipType: z.string().max(50).optional(),
-      }))
+      .input(
+        z.object({
+          deviceId: z.string().min(1).max(128),
+          visitType: z.enum([
+            "home",
+            "free_trial",
+            "premium",
+            "free_start",
+            "free_result",
+            "deep_start",
+            "deep_result",
+            "couple_start",
+            "couple_result",
+          ]),
+          testType: z.string().max(50).optional(),
+          relationshipType: z.string().max(50).optional(),
+        }),
+      )
       .mutation(({ input }) => {
         return db.logVisitor(input);
       }),
@@ -786,24 +1208,28 @@ export const appRouter = router({
       return db.getReviewStats();
     }),
     create: publicProcedure
-      .input(z.object({
-        nickname: z.string().min(1).max(50),
-        rating: z.number().int().min(1).max(5),
-        content: z.string().max(500).optional(),
-        checkItems: z.string().max(500).optional(), // 선택형 체크 항목 (콤마 구분)
-        tags: z.string().max(255).optional(),
-        colorCombo: z.string().max(100).optional(),
-      }))
+      .input(
+        z.object({
+          nickname: z.string().min(1).max(50),
+          rating: z.number().int().min(1).max(5),
+          content: z.string().max(500).optional(),
+          checkItems: z.string().max(500).optional(), // 선택형 체크 항목 (콤마 구분)
+          tags: z.string().max(255).optional(),
+          colorCombo: z.string().max(100).optional(),
+        }),
+      )
       .mutation(({ input }) => {
         return db.createReview(input);
       }),
     update: publicProcedure
-      .input(z.object({
-        id: z.number().int(),
-        rating: z.number().int().min(1).max(5).optional(),
-        content: z.string().max(500).optional(),
-        tags: z.string().max(255).optional(),
-      }))
+      .input(
+        z.object({
+          id: z.number().int(),
+          rating: z.number().int().min(1).max(5).optional(),
+          content: z.string().max(500).optional(),
+          tags: z.string().max(255).optional(),
+        }),
+      )
       .mutation(({ input }) => {
         const { id, ...data } = input;
         return db.updateReview(id, data);
