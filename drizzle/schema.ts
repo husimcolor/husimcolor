@@ -661,7 +661,11 @@ export const yearEndThreeColorExperienceRequests = mysqlTable(
   "year_end_three_color_experience_requests",
   {
     id: int("id").autoincrement().primaryKey(),
-    productCode: mysqlEnum("productCode", ["personal_three_color_experience", "engaged_couple_three_color_experience"]).notNull(),
+    // `engaged_couple...` is retained for historical applications. New two-person
+    // applications use `relationship_coaching_experience` so past records keep their label.
+    productCode: mysqlEnum("productCode", ["personal_three_color_experience", "engaged_couple_three_color_experience", "relationship_coaching_experience"]).notNull(),
+    relationshipType: mysqlEnum("relationshipType", ["married_couple", "lovers", "parent_child"]),
+    childAgeEncrypted: text("childAgeEncrypted"),
     preferredDate: varchar("preferredDate", { length: 10 }).notNull(),
     preferredTime: varchar("preferredTime", { length: 5 }).notNull(),
     nameEncrypted: text("nameEncrypted").notNull(),

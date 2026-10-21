@@ -477,7 +477,10 @@ export const appRouter = router({
   experienceRequests: router({
     submit: landingExperienceRequestProcedure
       .input(z.object({
-        productCode: z.enum(["personal_three_color_experience", "engaged_couple_three_color_experience"]),
+        // Historical `engaged_couple...` entries remain readable but are not accepted for new submissions.
+        productCode: z.enum(["personal_three_color_experience", "relationship_coaching_experience"]),
+        relationshipType: z.enum(["married_couple", "lovers", "parent_child"]).optional(),
+        childAge: z.number().int().min(0).max(120).optional(),
         preferredDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         preferredTime: z.string().regex(/^\d{2}:\d{2}$/),
         name: z.string().min(1).max(80),

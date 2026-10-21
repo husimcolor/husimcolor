@@ -587,6 +587,7 @@ export default function AdminScreen() {
                 <Badge text={experienceRequestStatusLabels[item.status] ?? item.status} tone={tone} />
               </View>
               <Text style={[styles.meta, { color: colors.muted }]}>희망 {item.preferredDate} {item.preferredTime} · {item.nameMasked} · {item.contactPhoneMasked}</Text>
+              {item.relationshipLabel && <Text style={[styles.meta, { color: colors.muted }]}>관계 {item.relationshipLabel}{item.relationshipType === "parent_child" && item.childAge !== null ? ` · 자녀 나이 ${item.childAge}세` : ""}</Text>}
               <Text style={[styles.meta, { color: colors.muted }]}>접수 {dateText(item.createdAt)} · 개인정보 동의 {dateText(item.privacyConsentAcceptedAt)}</Text>
               {item.status === "cancelled" && <>
                 <Text style={[styles.meta, { color: "#b5584f" }]}>취소 {dateText(item.cancelledAt)}</Text>
