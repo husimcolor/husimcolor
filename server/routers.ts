@@ -107,6 +107,10 @@ import {
   updateAdminYearEndThreeColorExperienceRequest,
 } from "./commerce/year-end-three-color-experience-request-service";
 import {
+  getLandingEbookOrders,
+  resendLandingEbookReceipt,
+} from "./commerce/landing-ebook-admin-proxy";
+import {
   deliverPreviewRelationshipReport,
   generateAndQueueRelationshipReport,
   createPreviewFailedRelationshipRecovery,
@@ -151,6 +155,21 @@ const landingExperienceRequestProcedure = publicProcedure.use(
     return next();
   },
 );
+
+/**
+ * Legacy administrator cookies use SameSite=None for mobile browser compatibility.
+ * Restrict the new cross-system ebook ledger calls to the official app origin so a
+ * foreign website cannot use a signed legacy session to read or resend ebook data.
+ */
+const ebookAdminProcedure = adminProcedure.use(({ ctx, next }) => {
+  const origin = ctx.req.header("origin");
+  const isProduction = process.env.NODE_ENV === "production";
+  const allowedProductionOrigins = new Set(["https://husimcolor.vercel.app", "https://www.husimcolor.vercel.app"]);
+  if (isProduction && origin && !allowedProductionOrigins.has(origin)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "EBOOK_ADMIN_ORIGIN_FORBIDDEN" });
+  }
+  return next();
+});
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -736,6 +755,24 @@ export const appRouter = router({
     orders: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminOrderList(input.limit)),
+    ebookOrders: ebookAdminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
+      .query(async ({ input }) => {
+        try {
+          return await getLandingEbookOrders(input.limit);
+        } catch {
+          throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: "전자책 주문 원장에 연결할 수 없습니다." });
+        }
+      }),
+    resendEbookReceipt: ebookAdminProcedure
+      .input(z.object({ orderId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        try {
+          return await resendLandingEbookReceipt(input.orderId);
+        } catch {
+          throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: "전자책 구매 안내를 재발송할 수 없습니다." });
+        }
+      }),
     revealOrderEmailDetails: adminProcedure
       .input(z.object({ orderId: z.number().int().positive() }))
       .mutation(({ input, ctx }) => {

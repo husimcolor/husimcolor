@@ -134,6 +134,7 @@ export default function AdminScreen() {
   const dailyOperations = trpc.admin.dailyOperationsSignals.useQuery(undefined, secured);
   const funnelDaily = trpc.admin.funnelDaily.useQuery({ fromKst: kstDateOffset(13), toKst: kstDateOffset(0) }, secured);
   const orders = trpc.admin.orders.useQuery({ limit: 50 }, secured);
+  const ebookOrders = trpc.admin.ebookOrders.useQuery({ limit: 50 }, secured);
   const previewVerification = trpc.admin.previewVerification.useQuery(undefined, secured);
   const customers = trpc.admin.customers.useQuery({ limit: 50 }, secured);
   const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: hasAdminAccess && customerId !== null });
@@ -150,6 +151,18 @@ export default function AdminScreen() {
   const tests = trpc.visitors.testStats.useQuery(undefined, secured);
   const logout = trpc.auth.logout.useMutation({ onSuccess: () => router.replace("/(tabs)") });
   const updateLegacy = trpc.admin.updateLegacyPayment.useMutation({ onSuccess: () => { legacy.refetch(); dailyOperations.refetch(); } });
+  const resendEbookReceipt = trpc.admin.resendEbookReceipt.useMutation({
+    onSuccess: (result) => {
+      void ebookOrders.refetch();
+      Alert.alert(
+        result.status === "sent" ? "구매 안내 재발송" : "구매 안내 발송 상태 확인",
+        result.status === "sent"
+          ? "새 다운로드 링크를 포함한 구매 안내를 재발송했습니다. 기존 다운로드 권한은 취소하지 않습니다."
+          : "메일 발송 상태를 확인해 주세요. 기존 결제 완료 화면에서 발급된 다운로드 권한은 유지됩니다.",
+      );
+    },
+    onError: () => Alert.alert("재발송 실패", "전자책 구매 안내를 재발송하지 못했습니다. 홈페이지 전자책 원장 연결과 메일 설정을 확인해 주세요."),
+  });
   const retryMail = trpc.commerce.adminDelivery.retry.useMutation({ onSuccess: () => delivery.refetch() });
   const revealOrderEmailDetails = trpc.admin.revealOrderEmailDetails.useMutation({
     onSuccess: (result) => {
@@ -276,7 +289,7 @@ export default function AdminScreen() {
 
   const refresh = async () => {
     setRefreshing(true);
-    await Promise.all([auth.refetch(), dailyOperations.refetch(), orders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), experienceRequests.refetch(), blackoutDates.refetch(), supportTickets.refetch(), coupons.refetch(), targetedCoupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), funnelDaily.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
+    await Promise.all([auth.refetch(), dailyOperations.refetch(), funnelDaily.refetch(), orders.refetch(), ebookOrders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), experienceRequests.refetch(), blackoutDates.refetch(), supportTickets.refetch(), coupons.refetch(), targetedCoupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
     setRefreshing(false);
   };
   const updatePayment = (id: number, status: LegacyStatus) => Alert.alert("과거 신청 상태", `“${legacyLabels[status]}”으로 변경하시겠습니까?`, [
@@ -296,6 +309,12 @@ export default function AdminScreen() {
   const copyAdminEmail = async (email: string) => {
     await Clipboard.setStringAsync(email);
     Alert.alert("이메일 복사", "관리자 기기의 클립보드에 복사했습니다.");
+  };
+  const confirmEbookReceiptResend = (order: { id: number; orderNumber: string }) => {
+    Alert.alert("전자책 구매 안내 재발송", `${order.orderNumber} 주문의 구매 안내 이메일을 다시 보내시겠습니까? 새 다운로드 링크를 발급하며 기존 다운로드 권한은 취소하지 않습니다.`, [
+      { text: "취소", style: "cancel" },
+      { text: "재발송", onPress: () => resendEbookReceipt.mutate({ orderId: order.id }) },
+    ]);
   };
   const createBlackout = () => {
     const date = blackoutDate.trim();
@@ -506,6 +525,18 @@ export default function AdminScreen() {
         {tab === "주문·결제" && <>
           <Text style={[styles.section, { color: colors.foreground }]}>주문·결제</Text>
           <Text style={[styles.helper, { color: colors.muted }]}>고객 → 주문 → 결제 → 이용권 흐름의 공통 원장을 표시합니다. 목록 이메일은 마스킹되며, 주문별 ‘이메일 보기’에서만 전체 주소를 열람·복사할 수 있습니다. 열람은 감사 로그에 남습니다.</Text>
+          <Text style={[styles.section, { color: colors.foreground }]}>홈페이지 전자책 주문</Text>
+          <Text style={[styles.helper, { color: colors.muted }]}>《부부의 온도》 직접 결제 주문입니다. 이름·이메일은 마스킹해 표시하며, 전자책 원장의 파일 키·다운로드 토큰·결제 식별자는 이 화면에 표시하지 않습니다.</Text>
+          {ebookOrders.isLoading && <ActivityIndicator color="#3f7b52" />}
+          {ebookOrders.isError && <Panel><Text style={styles.noticeText}>전자책 주문 원장에 연결하지 못했습니다. 새로고침 후 다시 확인해 주세요.</Text></Panel>}
+          {ebookOrders.data?.orders.map((item) => <Panel key={`ebook-${item.id}`}>
+            <View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.bookTitle}</Text><Badge text={item.status === "paid" ? "결제 확인" : item.status === "payment_failed" ? "승인 실패" : "승인 대기"} tone={item.status === "paid" ? "good" : item.status === "payment_failed" ? "bad" : "warn"} /></View>
+            <Text style={[styles.meta, { color: colors.muted }]}>{item.orderNumber} · {item.environment === "live" ? "실결제" : "테스트"} · {item.amountKrw.toLocaleString()}원 · PDF {item.pageCount}쪽</Text>
+            <Text style={[styles.meta, { color: colors.muted }]}>{item.buyerName} · {item.buyerEmail} · 결제 {dateText(item.paidAt ?? item.createdAt)}</Text>
+            <Text style={[styles.meta, { color: colors.muted }]}>구매 안내 {item.emailStatus === "sent" ? "발송 성공" : item.emailStatus === "failed" ? "발송 실패" : item.emailStatus === "skipped" ? "설정 대기" : "미시도"} · 마지막 시도 {dateText(item.emailAttemptedAt)}</Text>
+            {item.status === "paid" && <TouchableOpacity style={styles.smallAction} disabled={resendEbookReceipt.isPending} onPress={() => confirmEbookReceiptResend(item)}><Text style={styles.smallActionText}>{resendEbookReceipt.isPending ? "재발송 중…" : "구매 안내 재발송"}</Text></TouchableOpacity>}
+          </Panel>)}
+          {!ebookOrders.isLoading && !ebookOrders.isError && ebookOrders.data?.orders.length === 0 && <Panel><Text style={styles.noticeText}>표시할 전자책 주문이 없습니다.</Text></Panel>}
           {orders.data?.map((item) => {
             const revealed = revealedOrderEmails[item.id];
             return <Panel key={item.id}>
