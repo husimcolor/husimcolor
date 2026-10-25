@@ -335,12 +335,22 @@ async function createCheckoutForProvider(input: {
       .limit(1);
     let customerId = customerRows[0]?.id;
     if (!customerId) {
-      const customerInsert = await tx.insert(customers).values({
+      // 동일 이메일의 첫 checkout 요청이 아주 짧은 간격으로 겹쳐도 emailHash
+      // unique 충돌로 주문 생성을 실패시키지 않는다. 기존 고객의 암호화 이메일·계정
+      // 연결은 절대 덮어쓰지 않고, upsert 뒤 해당 행만 다시 읽는다.
+      await tx.insert(customers).values({
+        userId: null,
         emailHash,
         emailEncrypted: encryptCommerceEmail(email),
         status: "active",
-      });
-      customerId = Number(customerInsert[0].insertId);
+      }).onDuplicateKeyUpdate({ set: { emailHash } });
+      const resolvedCustomerRows = await tx
+        .select({ id: customers.id })
+        .from(customers)
+        .where(eq(customers.emailHash, emailHash))
+        .limit(1);
+      customerId = resolvedCustomerRows[0]?.id;
+      if (!customerId) throw new Error("CHECKOUT_CUSTOMER_RESOLUTION_FAILED");
     }
     const linkedUserId = await linkCheckoutCustomerToAuthenticatedUser(tx, {
       customerId,
