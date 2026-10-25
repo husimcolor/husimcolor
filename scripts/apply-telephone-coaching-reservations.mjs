@@ -37,6 +37,9 @@ try {
     await connection.query("ALTER TABLE `coaching_schedule_mutex` ADD COLUMN `version` int NOT NULL DEFAULT 0");
   }
   await connection.query("INSERT IGNORE INTO `coaching_schedule_mutex` (`id`) VALUES (1)");
+  if (!await hasTable("coaching_slot_claims")) {
+    await connection.query("CREATE TABLE `coaching_slot_claims` (`id` int AUTO_INCREMENT NOT NULL, `orderId` int NULL, `bookingId` int NULL, `bucketStart` timestamp NOT NULL, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `coaching_slot_claims_id` PRIMARY KEY(`id`), CONSTRAINT `coaching_slot_claims_bucket_unique` UNIQUE(`bucketStart`), INDEX `coaching_slot_claims_order_idx` (`orderId`), INDEX `coaching_slot_claims_booking_idx` (`bookingId`))");
+  }
   if (!await hasTable("telephone_coaching_slot_settings")) {
     await connection.query("CREATE TABLE `telephone_coaching_slot_settings` (`id` int AUTO_INCREMENT NOT NULL, `slotTime` varchar(5) NOT NULL, `active` boolean NOT NULL DEFAULT true, `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `telephone_coaching_slot_settings_id` PRIMARY KEY(`id`), CONSTRAINT `telephone_coaching_slot_settings_time_unique` UNIQUE(`slotTime`))");
   }

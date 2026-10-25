@@ -3,6 +3,7 @@ import { and, eq, gt, inArray, lt, lte, sql } from "drizzle-orm";
 import {
   coachingBookings,
   coachingScheduleMutex,
+  coachingSlotClaims,
   coachingSlotHolds,
   telephoneCoachingSlotSettings,
 } from "../../drizzle/schema";
@@ -173,6 +174,7 @@ export async function ensureTelephoneCoachingPreviewSchema(): Promise<void> {
         await execute("ALTER TABLE `coaching_schedule_mutex` ADD COLUMN `version` int NOT NULL DEFAULT 0");
       }
       await execute("INSERT IGNORE INTO `coaching_schedule_mutex` (`id`) VALUES (1)");
+      await execute("CREATE TABLE IF NOT EXISTS `coaching_slot_claims` (`id` int AUTO_INCREMENT NOT NULL, `orderId` int NULL, `bookingId` int NULL, `bucketStart` timestamp NOT NULL, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `coaching_slot_claims_id` PRIMARY KEY(`id`), CONSTRAINT `coaching_slot_claims_bucket_unique` UNIQUE(`bucketStart`), INDEX `coaching_slot_claims_order_idx` (`orderId`), INDEX `coaching_slot_claims_booking_idx` (`bookingId`))");
       await execute("CREATE TABLE IF NOT EXISTS `telephone_coaching_slot_settings` (`id` int AUTO_INCREMENT NOT NULL, `slotTime` varchar(5) NOT NULL, `active` boolean NOT NULL DEFAULT true, `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `telephone_coaching_slot_settings_id` PRIMARY KEY(`id`), CONSTRAINT `telephone_coaching_slot_settings_time_unique` UNIQUE(`slotTime`))");
       await execute("INSERT INTO `telephone_coaching_slot_settings` (`slotTime`, `active`) VALUES ('10:00', true), ('11:30', true), ('14:00', true), ('16:00', true), ('19:00', true) ON DUPLICATE KEY UPDATE `slotTime` = VALUES(`slotTime`)");
       await execute("INSERT INTO `products` (`code`, `name`, `fulfillmentType`, `requiresPayment`, `active`) VALUES ('telephone_coaching', '비대면 전화 코칭', 'coaching', true, true) ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `fulfillmentType` = VALUES(`fulfillmentType`), `requiresPayment` = VALUES(`requiresPayment`), `active` = true");
@@ -186,10 +188,18 @@ export async function ensureTelephoneCoachingPreviewSchema(): Promise<void> {
 }
 
 async function expireHeldSlots(tx: any, now: Date) {
+  const expired = await tx
+    .select({ orderId: coachingSlotHolds.orderId })
+    .from(coachingSlotHolds)
+    .where(and(eq(coachingSlotHolds.status, "held"), lte(coachingSlotHolds.expiresAt, now)));
   await tx
     .update(coachingSlotHolds)
     .set({ status: "expired", updatedAt: now })
     .where(and(eq(coachingSlotHolds.status, "held"), lte(coachingSlotHolds.expiresAt, now)));
+  const expiredOrderIds = expired.map((row: { orderId: number }) => row.orderId);
+  if (expiredOrderIds.length > 0) {
+    await tx.delete(coachingSlotClaims).where(inArray(coachingSlotClaims.orderId, expiredOrderIds));
+  }
 }
 
 /**
@@ -240,6 +250,52 @@ async function assertNoSharedCoachingConflict(tx: any, input: {
   if (existingHold[0]) throw new Error("COACHING_SLOT_NOT_AVAILABLE");
 }
 
+const COACHING_SLOT_BUCKET_MS = 30 * 60 * 1000;
+
+function getCoachingSlotBucketStarts(slotStart: Date, slotEnd: Date): Date[] {
+  const first = Math.floor(slotStart.getTime() / COACHING_SLOT_BUCKET_MS) * COACHING_SLOT_BUCKET_MS;
+  const buckets: Date[] = [];
+  for (let value = first; value < slotEnd.getTime(); value += COACHING_SLOT_BUCKET_MS) {
+    buckets.push(new Date(value));
+  }
+  return buckets;
+}
+
+/**
+ * 30분 단위 bucketStart의 UNIQUE 제약이 동시 트랜잭션에서도 같은 일정 점유를 차단한다.
+ * 스케줄 변경이면 기존 예약의 claims를 같은 트랜잭션에서 교체하며, 실패하면 롤백된다.
+ */
+export async function claimSharedCoachingSlot(tx: any, input: {
+  slotStart: Date;
+  slotEnd: Date;
+  orderId?: number | null;
+  bookingId?: number | null;
+  replaceBookingId?: number | null;
+}) {
+  if (input.replaceBookingId) {
+    await tx.delete(coachingSlotClaims).where(eq(coachingSlotClaims.bookingId, input.replaceBookingId));
+  }
+  try {
+    await tx.insert(coachingSlotClaims).values(
+      getCoachingSlotBucketStarts(input.slotStart, input.slotEnd).map((bucketStart) => ({
+        orderId: input.orderId ?? null,
+        bookingId: input.bookingId ?? null,
+        bucketStart,
+      })),
+    );
+  } catch (error) {
+    const code = String((error as { code?: string; cause?: { code?: string } })?.cause?.code ?? (error as { code?: string })?.code ?? "");
+    if (code === "ER_DUP_ENTRY" || /duplicate|unique/i.test(String(error))) {
+      throw new Error("COACHING_SLOT_NOT_AVAILABLE");
+    }
+    throw error;
+  }
+}
+
+export async function releaseSharedCoachingSlotClaimsForBooking(tx: any, bookingId: number) {
+  await tx.delete(coachingSlotClaims).where(eq(coachingSlotClaims.bookingId, bookingId));
+}
+
 export async function reserveTelephoneCoachingSlot(tx: any, input: {
   orderId: number;
   productId: number;
@@ -261,6 +317,11 @@ export async function reserveTelephoneCoachingSlot(tx: any, input: {
     slotEnd: input.request.requestedWindowEnd,
     excludeOrderId: input.orderId,
     now,
+  });
+  await claimSharedCoachingSlot(tx, {
+    orderId: input.orderId,
+    slotStart: input.request.requestedWindowStart,
+    slotEnd: input.request.requestedWindowEnd,
   });
   await tx.insert(coachingSlotHolds).values({
     orderId: input.orderId,
@@ -286,12 +347,16 @@ export async function confirmTelephoneCoachingSlot(tx: any, input: {
   await tx.update(coachingSlotHolds)
     .set({ status: "confirmed", bookingId: input.bookingId, updatedAt: now })
     .where(eq(coachingSlotHolds.id, hold.id));
+  await tx.update(coachingSlotClaims)
+    .set({ bookingId: input.bookingId })
+    .where(eq(coachingSlotClaims.orderId, input.orderId));
 }
 
 export async function releaseTelephoneCoachingSlotForOrder(tx: any, orderId: number, now = new Date()) {
   await tx.update(coachingSlotHolds)
     .set({ status: "released", updatedAt: now })
     .where(and(eq(coachingSlotHolds.orderId, orderId), inArray(coachingSlotHolds.status, ["held", "confirmed"])));
+  await tx.delete(coachingSlotClaims).where(eq(coachingSlotClaims.orderId, orderId));
 }
 
 /** 관리자 대면 예약도 전화 코칭 결제 중 보류된 시간을 침범하지 않도록 같은 판정을 쓴다. */

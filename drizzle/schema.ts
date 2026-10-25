@@ -821,6 +821,26 @@ export const coachingScheduleMutex = mysqlTable("coaching_schedule_mutex", {
   version: int("version").notNull().default(0),
 });
 
+/**
+ * 예약 진행 중이거나 확정된 공용 코칭 일정을 30분 버킷으로 점유한다.
+ * bucketStart의 고유 제약이 전화·방문 코칭의 동시 요청을 DB 수준에서 막는다.
+ */
+export const coachingSlotClaims = mysqlTable(
+  "coaching_slot_claims",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    orderId: int("orderId"),
+    bookingId: int("bookingId"),
+    bucketStart: timestamp("bucketStart").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("coaching_slot_claims_bucket_unique").on(table.bucketStart),
+    index("coaching_slot_claims_order_idx").on(table.orderId),
+    index("coaching_slot_claims_booking_idx").on(table.bookingId),
+  ],
+);
+
 /** 관리자가 전화 코칭에서 고객에게 열어둘 60분 시작 시각을 설정한다. */
 export const telephoneCoachingSlotSettings = mysqlTable(
   "telephone_coaching_slot_settings",

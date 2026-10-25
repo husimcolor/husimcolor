@@ -6,6 +6,8 @@ import type { AdminAuditActor } from "./admin-audit-actor";
 import { encryptCommerceValue } from "./crypto";
 import {
   assertSharedCoachingSlotAvailable,
+  claimSharedCoachingSlot,
+  releaseSharedCoachingSlotClaimsForBooking,
   releaseTelephoneCoachingSlotForOrder,
 } from "./telephone-coaching-service";
 
@@ -78,6 +80,13 @@ export async function updateAdminCoachingBooking(input: {
         excludeOrderId: before.orderId,
         now,
       });
+      await claimSharedCoachingSlot(tx, {
+        slotStart: nextScheduledAt,
+        slotEnd: nextScheduledEndAt,
+        orderId: before.orderId,
+        bookingId: before.id,
+        replaceBookingId: before.id,
+      });
     }
     const update: Record<string, unknown> = {
       status: input.status,
@@ -95,6 +104,8 @@ export async function updateAdminCoachingBooking(input: {
     await tx.update(coachingBookings).set(update).where(eq(coachingBookings.id, input.bookingId));
     if (input.status === "cancelled" && before.sessionMode === "telephone") {
       await releaseTelephoneCoachingSlotForOrder(tx, before.orderId, now);
+    } else if (input.status === "cancelled") {
+      await releaseSharedCoachingSlotClaimsForBooking(tx, before.id);
     }
     await tx.insert(coachingBookingEvents).values({
       bookingId: input.bookingId,

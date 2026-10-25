@@ -22,6 +22,17 @@ CREATE TABLE IF NOT EXISTS `coaching_schedule_mutex` (
   CONSTRAINT `coaching_schedule_mutex_id` PRIMARY KEY(`id`)
 );--> statement-breakpoint
 INSERT IGNORE INTO `coaching_schedule_mutex` (`id`) VALUES (1);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `coaching_slot_claims` (
+  `id` int AUTO_INCREMENT NOT NULL,
+  `orderId` int,
+  `bookingId` int,
+  `bucketStart` timestamp NOT NULL,
+  `createdAt` timestamp NOT NULL DEFAULT (now()),
+  CONSTRAINT `coaching_slot_claims_id` PRIMARY KEY(`id`),
+  CONSTRAINT `coaching_slot_claims_bucket_unique` UNIQUE(`bucketStart`)
+);--> statement-breakpoint
+CREATE INDEX `coaching_slot_claims_order_idx` ON `coaching_slot_claims` (`orderId`);--> statement-breakpoint
+CREATE INDEX `coaching_slot_claims_booking_idx` ON `coaching_slot_claims` (`bookingId`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `telephone_coaching_slot_settings` (
   `id` int AUTO_INCREMENT NOT NULL,
   `slotTime` varchar(5) NOT NULL,
