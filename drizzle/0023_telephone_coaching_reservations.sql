@@ -18,6 +18,7 @@ CREATE INDEX `coaching_slot_holds_range_status_idx` ON `coaching_slot_holds` (`s
 CREATE INDEX `coaching_slot_holds_booking_idx` ON `coaching_slot_holds` (`bookingId`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `coaching_schedule_mutex` (
   `id` int NOT NULL,
+  `version` int NOT NULL DEFAULT 0,
   CONSTRAINT `coaching_schedule_mutex_id` PRIMARY KEY(`id`)
 );--> statement-breakpoint
 INSERT IGNORE INTO `coaching_schedule_mutex` (`id`) VALUES (1);--> statement-breakpoint

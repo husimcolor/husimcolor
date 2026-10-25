@@ -818,6 +818,7 @@ export const coachingSlotHolds = mysqlTable(
  */
 export const coachingScheduleMutex = mysqlTable("coaching_schedule_mutex", {
   id: int("id").primaryKey(),
+  version: int("version").notNull().default(0),
 });
 
 /** 관리자가 전화 코칭에서 고객에게 열어둘 60분 시작 시각을 설정한다. */

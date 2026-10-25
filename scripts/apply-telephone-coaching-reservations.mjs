@@ -32,7 +32,9 @@ try {
     await connection.query("CREATE TABLE `coaching_slot_holds` (`id` int AUTO_INCREMENT NOT NULL, `orderId` int NOT NULL, `productId` int NOT NULL, `bookingId` int NULL, `slotStart` timestamp NOT NULL, `slotEnd` timestamp NOT NULL, `status` enum('held','confirmed','released','expired') NOT NULL DEFAULT 'held', `expiresAt` timestamp NOT NULL, `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `coaching_slot_holds_id` PRIMARY KEY(`id`), CONSTRAINT `coaching_slot_holds_order_unique` UNIQUE(`orderId`), INDEX `coaching_slot_holds_range_status_idx` (`status`,`slotStart`,`slotEnd`), INDEX `coaching_slot_holds_booking_idx` (`bookingId`))");
   }
   if (!await hasTable("coaching_schedule_mutex")) {
-    await connection.query("CREATE TABLE `coaching_schedule_mutex` (`id` int NOT NULL, CONSTRAINT `coaching_schedule_mutex_id` PRIMARY KEY(`id`))");
+    await connection.query("CREATE TABLE `coaching_schedule_mutex` (`id` int NOT NULL, `version` int NOT NULL DEFAULT 0, CONSTRAINT `coaching_schedule_mutex_id` PRIMARY KEY(`id`))");
+  } else if (!await hasColumn("coaching_schedule_mutex", "version")) {
+    await connection.query("ALTER TABLE `coaching_schedule_mutex` ADD COLUMN `version` int NOT NULL DEFAULT 0");
   }
   await connection.query("INSERT IGNORE INTO `coaching_schedule_mutex` (`id`) VALUES (1)");
   if (!await hasTable("telephone_coaching_slot_settings")) {

@@ -167,7 +167,11 @@ export async function ensureTelephoneCoachingPreviewSchema(): Promise<void> {
         await execute("ALTER TABLE `email_outbox` MODIFY COLUMN `purpose` enum('account_link','analysis_result_pdf','support_notification','coaching_booking_confirmation') NOT NULL");
       }
       await execute("CREATE TABLE IF NOT EXISTS `coaching_slot_holds` (`id` int AUTO_INCREMENT NOT NULL, `orderId` int NOT NULL, `productId` int NOT NULL, `bookingId` int NULL, `slotStart` timestamp NOT NULL, `slotEnd` timestamp NOT NULL, `status` enum('held','confirmed','released','expired') NOT NULL DEFAULT 'held', `expiresAt` timestamp NOT NULL, `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `coaching_slot_holds_id` PRIMARY KEY(`id`), CONSTRAINT `coaching_slot_holds_order_unique` UNIQUE(`orderId`), INDEX `coaching_slot_holds_range_status_idx` (`status`,`slotStart`,`slotEnd`), INDEX `coaching_slot_holds_booking_idx` (`bookingId`))");
-      await execute("CREATE TABLE IF NOT EXISTS `coaching_schedule_mutex` (`id` int NOT NULL, CONSTRAINT `coaching_schedule_mutex_id` PRIMARY KEY(`id`))");
+      await execute("CREATE TABLE IF NOT EXISTS `coaching_schedule_mutex` (`id` int NOT NULL, `version` int NOT NULL DEFAULT 0, CONSTRAINT `coaching_schedule_mutex_id` PRIMARY KEY(`id`))");
+      const [scheduleMutexVersion] = await execute("SHOW COLUMNS FROM `coaching_schedule_mutex` LIKE 'version'");
+      if (!(scheduleMutexVersion as any)?.[0]) {
+        await execute("ALTER TABLE `coaching_schedule_mutex` ADD COLUMN `version` int NOT NULL DEFAULT 0");
+      }
       await execute("INSERT IGNORE INTO `coaching_schedule_mutex` (`id`) VALUES (1)");
       await execute("CREATE TABLE IF NOT EXISTS `telephone_coaching_slot_settings` (`id` int AUTO_INCREMENT NOT NULL, `slotTime` varchar(5) NOT NULL, `active` boolean NOT NULL DEFAULT true, `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `telephone_coaching_slot_settings_id` PRIMARY KEY(`id`), CONSTRAINT `telephone_coaching_slot_settings_time_unique` UNIQUE(`slotTime`))");
       await execute("INSERT INTO `telephone_coaching_slot_settings` (`slotTime`, `active`) VALUES ('10:00', true), ('11:30', true), ('14:00', true), ('16:00', true), ('19:00', true) ON DUPLICATE KEY UPDATE `slotTime` = VALUES(`slotTime`)");
@@ -193,7 +197,13 @@ async function expireHeldSlots(tx: any, now: Date) {
  * 단일 mutex 행을 잠가 충돌 조회와 보류/확정 저장을 직렬화한다.
  */
 async function lockSharedCoachingSchedule(tx: any) {
-  await tx.execute(sql`SELECT ${coachingScheduleMutex.id} FROM coaching_schedule_mutex WHERE id = 1 FOR UPDATE`);
+  const result = await tx
+    .update(coachingScheduleMutex)
+    .set({ version: sql`${coachingScheduleMutex.version} + 1` })
+    .where(eq(coachingScheduleMutex.id, 1));
+  if (Number((result as any)[0]?.affectedRows ?? 0) !== 1) {
+    throw new Error("COACHING_SCHEDULE_MUTEX_UNAVAILABLE");
+  }
 }
 
 async function assertNoSharedCoachingConflict(tx: any, input: {
