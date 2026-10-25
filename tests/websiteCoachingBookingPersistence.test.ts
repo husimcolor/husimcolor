@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { decryptPendingCoachingBookingRequest, encryptPendingCoachingBookingRequest, getApprovedPaymentRawPayload, getCoachingBookingPersistence, normalizeCoachingBookingRequest } from "../server/commerce/order-service";
-import { decryptCommerceValue } from "../server/commerce/crypto";
+import { decryptCommerceValue, encryptCommerceValue } from "../server/commerce/crypto";
 
 const encryptionKey = Buffer.alloc(32, 7).toString("base64");
 
@@ -65,6 +65,12 @@ describe("website coaching booking persistence", () => {
       .toBe(pendingBookingCiphertext);
     expect(getApprovedPaymentRawPayload(null, approvedProviderCiphertext))
       .toBe(approvedProviderCiphertext);
+  });
+
+  it("does not treat an encrypted provider response as a recoverable telephone booking request", () => {
+    vi.stubEnv("COMMERCE_EMAIL_ENCRYPTION_KEY", encryptionKey);
+    const providerCiphertext = encryptCommerceValue(JSON.stringify({ status: "DONE", method: "CARD" }));
+    expect(decryptPendingCoachingBookingRequest(providerCiphertext)).toBeNull();
   });
 
   it("rejects an invalid booking time window before an order is written", () => {

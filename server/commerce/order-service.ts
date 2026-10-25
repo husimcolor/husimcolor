@@ -677,6 +677,20 @@ async function completePaymentForProvider(input: {
     }
     if (record.transactionStatus !== "ready") throw new Error("TOSS_PAYMENT_PROCESSING");
 
+    // 전화 코칭은 대기 예약 암호문이 일정·전화 방식·연락처의 유일한 원장이다.
+    // 과거 provider 원문으로 덮인 레코드를 승인 처리하면 빈 예약을 만들 수 있으므로,
+    // 상태를 claimed/approved로 바꾸기 전에 반드시 복원 가능 여부를 확인한다.
+    if (input.outcome === "success" && isTelephoneCoachingProduct(record.productCode)) {
+      const pendingTelephoneBooking = decryptPendingCoachingBookingRequest(record.pendingBookingRequestEncrypted);
+      if (
+        pendingTelephoneBooking?.sessionMode !== "telephone"
+        || !pendingTelephoneBooking.requestedWindowStart
+        || !pendingTelephoneBooking.requestedWindowEnd
+      ) {
+        throw new Error("PREVIEW_TELEPHONE_RECOVERY_BOOKING_MISSING");
+      }
+    }
+
     // 동일 결제 승인 콜백이 동시에 도착해도 ready 상태의 한 행만 선점할 수 있다.
     const claimed = await tx
       .update(paymentTransactions)
@@ -956,6 +970,16 @@ export async function recoverApprovedPreviewTelephoneCoachingTossTestPayment(inp
   }
   if (record.transactionStatus !== "ready") {
     throw new Error("PREVIEW_TELEPHONE_RECOVERY_NOT_READY");
+  }
+  // 결제 provider 응답에는 예약 일시·연락처가 없으므로 과거 손상 레코드를
+  // 추정 복구하지 않는다. 새 Preview 테스트 주문으로만 재검증할 수 있게 명확히 중단한다.
+  const pendingTelephoneBooking = decryptPendingCoachingBookingRequest(record.pendingBookingRequestEncrypted);
+  if (
+    pendingTelephoneBooking?.sessionMode !== "telephone"
+    || !pendingTelephoneBooking.requestedWindowStart
+    || !pendingTelephoneBooking.requestedWindowEnd
+  ) {
+    throw new Error("PREVIEW_TELEPHONE_RECOVERY_BOOKING_MISSING");
   }
   const providerPayment = await getTossTestPaymentByOrderNumber(input.orderNumber);
   if (providerPayment.status !== "DONE") return { status: "not_approved" };
