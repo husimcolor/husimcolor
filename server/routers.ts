@@ -555,6 +555,22 @@ export const appRouter = router({
           }),
         )
         .mutation(({ input }) => completeTossTestPaymentFailure(input)),
+      /**
+       * 성공 URL의 최초 승인 요청이 시간 초과된 경우에만 고객 성공 화면이 재시도한다.
+       * Preview 테스트 전화 코칭 + Toss DONE + 주문 금액 + 현재 공유 일정까지 서버에서
+       * 검증하며, 결제키·고객정보·provider 원문은 절대로 반환하지 않는다.
+       */
+      recoverPreviewTelephoneCoachingTossTest: publicProcedure
+        .input(z.object({ orderNumber: z.string().regex(/^HC-[A-F0-9]{24}$/) }))
+        .mutation(async ({ input }) => {
+          const result = await recoverApprovedPreviewTelephoneCoachingTossTestPayment(input);
+          if (result.status === "not_approved") return { status: "not_approved" as const };
+          return {
+            status: result.status,
+            alreadyProcessed: result.alreadyProcessed,
+            bookingConfirmed: result.status === "paid",
+          };
+        }),
       completeTossLive: publicProcedure
         .input(
           z.object({
