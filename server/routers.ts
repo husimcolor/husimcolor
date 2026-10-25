@@ -513,10 +513,27 @@ export const appRouter = router({
               "personal_deep",
               "couple_love_deep",
               "parent_child_deep",
+              "telephone_coaching",
             ]),
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
             couponCode: z.string().min(1).max(64).optional(),
+            bookingRequest: z
+              .object({
+                contactName: z.string().min(1).max(100),
+                contactPhone: z.string().min(8).max(40),
+                requestedWindowStart: z.string().datetime({ offset: true }),
+                requestedWindowEnd: z.string().datetime({ offset: true }),
+                sessionMode: z.enum(["online", "in_person", "telephone"]),
+                notes: z.string().max(2000).optional(),
+                topic: z.string().max(500).optional(),
+                fiveElementsOptIn: z.boolean().optional(),
+                birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+                birthCalendarType: z.enum(["solar", "lunar"]).optional(),
+                isLeapMonth: z.boolean().optional(),
+                adultConfirmed: z.boolean().optional(),
+              })
+              .optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
           }),
         )

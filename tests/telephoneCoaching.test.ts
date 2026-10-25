@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import { getCommerceProduct } from "../shared/commerce";
 import {
@@ -80,5 +82,24 @@ describe("telephone coaching", () => {
       VERCEL_ENV: "preview",
       COMMERCE_TEST_MODE: "true",
     })).toBe(false);
+  });
+
+  it("accepts the same telephone booking shape for explicit live checkout without enabling the product by default", () => {
+    const router = readFileSync(resolve(__dirname, "../server/routers.ts"), "utf8");
+    const liveCheckout = router.slice(router.indexOf("createTossLive:"), router.indexOf("completeTest:"));
+    expect(liveCheckout).toContain('"telephone_coaching"');
+    expect(liveCheckout).toContain('sessionMode: z.enum(["online", "in_person", "telephone"])');
+    expect(liveCheckout).toContain("birthCalendarType");
+    expect(liveCheckout).toContain("adultConfirmed");
+    expect(getCommerceProduct("telephone_coaching")?.active).toBe(false);
+  });
+
+  it("keeps the production activation as a separate explicit release step", () => {
+    const releaseScript = readFileSync(resolve(__dirname, "../scripts/release-telephone-coaching-live.mjs"), "utf8");
+    expect(releaseScript).toContain("COMMERCE_TELEPHONE_COACHING_RELEASE");
+    expect(releaseScript).toContain("VERCEL_ENV !== \"production\"");
+    expect(releaseScript).toContain("COMMERCE_LIVE_PAYMENT_ENABLED");
+    expect(releaseScript).toContain("amountKrw` = 50000");
+    expect(releaseScript).toContain("UPDATE `products` SET `active` = true");
   });
 });
