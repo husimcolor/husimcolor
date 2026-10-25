@@ -18,6 +18,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
+import { formatKstDateTime } from "@/lib/kst-date";
 
 type Tab = "운영 홈" | "고객·회원" | "주문·결제" | "검사·결과" | "PDF·이메일" | "상품·쿠폰" | "코칭예약" | "체험 신청" | "문의" | "레거시" | "통계·리뷰" | "Preview 검증";
 type LegacyStatus = "pending" | "confirmed" | "rejected";
@@ -40,11 +41,7 @@ const inquiryStatusLabels: Record<string, string> = { received: "접수", review
 const experienceRequestStatusLabels: Record<string, string> = { received: "접수", reviewing: "일정 확인 중", confirmed: "예약 확정", cancelled: "취소" };
 
 function dateText(value: Date | string | null | undefined) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return formatKstDateTime(value);
 }
 
 function Badge({ text, tone = "neutral" }: { text: string; tone?: "good" | "warn" | "bad" | "neutral" }) {
