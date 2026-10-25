@@ -75,6 +75,7 @@ export async function updateAdminCoachingBooking(input: {
         slotStart: nextScheduledAt,
         slotEnd: nextScheduledEndAt,
         excludeBookingId: before.id,
+        excludeOrderId: before.orderId,
         now,
       });
     }

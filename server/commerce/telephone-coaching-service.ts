@@ -289,6 +289,7 @@ export async function assertSharedCoachingSlotAvailable(tx: any, input: {
   slotStart: Date;
   slotEnd: Date;
   excludeBookingId?: number;
+  excludeOrderId?: number;
   now?: Date;
 }) {
   await lockSharedCoachingSchedule(tx);
