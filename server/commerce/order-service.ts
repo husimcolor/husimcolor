@@ -564,6 +564,7 @@ async function completePaymentForProvider(input: {
       .from(paymentTransactions)
       .innerJoin(orders, eq(paymentTransactions.orderId, orders.id))
       .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+      .innerJoin(customers, eq(orders.customerId, customers.id))
       .where(and(eq(paymentTransactions.provider, input.provider), eq(orders.orderNumber, input.orderNumber)))
       .limit(1);
     const record = rows[0];
