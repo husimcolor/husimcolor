@@ -353,6 +353,55 @@ export async function reserveTelephoneCoachingSlot(tx: any, input: {
   });
 }
 
+/**
+ * 성공 리디렉션이 늦게 도착한 Preview 테스트 주문을 위한 일회성 재보류다.
+ * 기존 만료 보류를 그대로 확정하지 않고, 현재 운영 설정·대면/전화 충돌·bucket
+ * unique claim을 다시 통과한 경우에만 짧은 보류를 새로 만든다.
+ */
+export async function restoreExpiredTelephoneCoachingSlotForOrder(tx: any, input: {
+  orderId: number;
+  productId: number;
+  request: NormalizedTelephoneCoachingBookingRequest;
+  expiresAt: Date;
+  now?: Date;
+}) {
+  const now = input.now ?? new Date();
+  await lockSharedCoachingSchedule(tx);
+  const time = getKstTime(input.request.requestedWindowStart);
+  const slot = await tx.select({ active: telephoneCoachingSlotSettings.active })
+    .from(telephoneCoachingSlotSettings)
+    .where(eq(telephoneCoachingSlotSettings.slotTime, time))
+    .limit(1);
+  if (!slot[0]?.active) throw new Error("TELEPHONE_COACHING_SLOT_DISABLED");
+
+  await assertNoSharedCoachingConflict(tx, {
+    slotStart: input.request.requestedWindowStart,
+    slotEnd: input.request.requestedWindowEnd,
+    excludeOrderId: input.orderId,
+    now,
+  });
+  await claimSharedCoachingSlot(tx, {
+    orderId: input.orderId,
+    slotStart: input.request.requestedWindowStart,
+    slotEnd: input.request.requestedWindowEnd,
+  });
+  const reheld = await tx.update(coachingSlotHolds).set({
+    productId: input.productId,
+    bookingId: null,
+    slotStart: input.request.requestedWindowStart,
+    slotEnd: input.request.requestedWindowEnd,
+    status: "held",
+    expiresAt: input.expiresAt,
+    updatedAt: now,
+  }).where(and(
+    eq(coachingSlotHolds.orderId, input.orderId),
+    inArray(coachingSlotHolds.status, ["expired", "released"]),
+  ));
+  if (Number((reheld as any)[0]?.affectedRows ?? 0) !== 1) {
+    throw new Error("TELEPHONE_COACHING_RECOVERY_HOLD_NOT_AVAILABLE");
+  }
+}
+
 export async function confirmTelephoneCoachingSlot(tx: any, input: {
   orderId: number;
   bookingId: number;

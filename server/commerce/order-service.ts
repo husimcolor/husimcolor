@@ -49,6 +49,7 @@ import {
   isTelephoneCoachingProduct,
   normalizeTelephoneCoachingBookingRequest,
   releaseTelephoneCoachingSlotForOrder,
+  restoreExpiredTelephoneCoachingSlotForOrder,
   type TelephoneCoachingBookingRequest,
   type NormalizedTelephoneCoachingBookingRequest,
   reserveTelephoneCoachingSlot,
@@ -567,6 +568,7 @@ async function completePaymentForProvider(input: {
   amountKrw?: number;
   provider: "test" | "toss_pg" | "toss_live";
   rawPayloadEncrypted?: string;
+  restoreExpiredTelephoneCoachingHold?: boolean;
 }): Promise<PaymentResponse> {
   if (input.provider === "test" && !isTestPaymentEnabled()) {
     throw new Error("TEST_PAYMENT_DISABLED_IN_PRODUCTION");
@@ -648,7 +650,20 @@ async function completePaymentForProvider(input: {
         alreadyProcessed: true,
       };
     }
-    if (record.expiresAt.getTime() <= Date.now()) {
+    const now = new Date();
+    if (record.expiresAt.getTime() <= now.getTime()) {
+      if (input.outcome === "success" && input.restoreExpiredTelephoneCoachingHold && isTelephoneCoachingProduct(record.productCode)) {
+        const restoredRequest = decryptPendingCoachingBookingRequest(record.pendingBookingRequestEncrypted);
+        await restoreExpiredTelephoneCoachingSlotForOrder(tx, {
+          orderId: record.orderId,
+          productId: record.productId,
+          request: restoredRequest as NormalizedTelephoneCoachingBookingRequest,
+          // 같은 트랜잭션 안에서 즉시 confirmed로 전환한다. 이 짧은 보류는 중간 오류가
+          // 난 경우에만 만료·해제되며, 기존 종료된 보류를 임의로 되살리지 않는다.
+          expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+          now,
+        });
+      } else {
       await tx
         .update(orders)
         .set({ status: "expired" })
@@ -658,6 +673,7 @@ async function completePaymentForProvider(input: {
         await releaseTelephoneCoachingSlotForOrder(tx, record.orderId);
       }
       throw new Error("TOSS_ORDER_EXPIRED");
+      }
     }
     if (record.transactionStatus !== "ready") throw new Error("TOSS_PAYMENT_PROCESSING");
 
@@ -670,7 +686,6 @@ async function completePaymentForProvider(input: {
       throw new Error("TOSS_PAYMENT_PROCESSING");
     }
 
-    const now = new Date();
     if (input.outcome === "success") {
       await tx
         .update(paymentTransactions)
@@ -954,6 +969,7 @@ export async function recoverApprovedPreviewTelephoneCoachingTossTestPayment(inp
     amountKrw: providerPayment.amountKrw,
     provider: "toss_pg",
     rawPayloadEncrypted: encryptCommerceValue(providerPayment.rawPayload),
+    restoreExpiredTelephoneCoachingHold: true,
   });
 }
 
