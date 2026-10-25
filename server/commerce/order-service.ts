@@ -942,6 +942,9 @@ export async function recoverApprovedPreviewTelephoneCoachingTossTestPayment(inp
     .select({
       transactionStatus: paymentTransactions.status,
       savedPaymentId: paymentTransactions.providerPaymentId,
+      // 전화 코칭은 결제 전 이 칼럼에 예약 요청을 암호화해 보관한다. Preview 복구도
+      // 이 값을 선택해야 Toss 승인 확인 뒤 일시·방식·연락처를 안전하게 복원할 수 있다.
+      pendingBookingRequestEncrypted: paymentTransactions.rawPayloadEncrypted,
       finalAmountKrw: orders.finalAmountKrw,
       isTest: orders.isTest,
       productCode: orderItems.productCodeSnapshot,

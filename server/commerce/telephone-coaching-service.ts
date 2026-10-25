@@ -105,7 +105,13 @@ export function normalizeTelephoneCoachingBookingRequest(
   const topic = request.topic?.trim() || null;
   const fiveElementsOptIn = request.fiveElementsOptIn === true;
   const birthDate = request.birthDate?.trim() || null;
-  const hasBirthCalendarMetadata = request.birthCalendarType !== undefined || request.isLeapMonth !== undefined;
+  // 결제 전 암호문은 선택 생년월일을 비웠을 때도 `null` / `false`를 보존한다.
+  // 이는 실제 달력 선택이 아니므로 복원 시 생년월일 입력으로 오인하면 안 된다.
+  const birthCalendarType = request.birthCalendarType === "solar" || request.birthCalendarType === "lunar"
+    ? request.birthCalendarType
+    : undefined;
+  const isLeapMonth = request.isLeapMonth === true;
+  const hasBirthCalendarMetadata = birthCalendarType !== undefined || isLeapMonth;
 
   if (!request.adultConfirmed) throw new Error("TELEPHONE_COACHING_ADULT_CONFIRMATION_REQUIRED");
   if (!contactName || contactName.length > 100) throw new Error("INVALID_COACHING_CONTACT_NAME");
@@ -133,8 +139,8 @@ export function normalizeTelephoneCoachingBookingRequest(
   const validatedBirthDate = birthDate
     ? validateTelephoneBirthDate({
         birthDate,
-        birthCalendarType: request.birthCalendarType,
-        isLeapMonth: request.isLeapMonth,
+        birthCalendarType,
+        isLeapMonth,
       })
     : null;
   if (validatedBirthDate && !isAdultTelephoneBirthDate(validatedBirthDate, now)) {
