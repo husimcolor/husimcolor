@@ -23,6 +23,7 @@ import {
   createTestCheckout,
   createTossTestCheckout,
   isTestPaymentEnabled,
+  recoverApprovedPreviewTelephoneCoachingTossTestPayment,
 } from "./commerce/order-service";
 import { isTossTestPaymentEnabled } from "./commerce/toss-test-provider";
 import { isTossLivePaymentEnabled } from "./commerce/toss-live-provider";
@@ -820,6 +821,9 @@ export const appRouter = router({
     previewVerification: adminProcedure.query(() =>
       getPreviewReadOnlyVerificationSnapshot(),
     ),
+    recoverPreviewTelephoneCoachingPayment: adminProcedure
+      .input(z.object({ orderNumber: z.string().min(8).max(64) }))
+      .mutation(({ input }) => recoverApprovedPreviewTelephoneCoachingTossTestPayment(input)),
     supportTicketSchemaAudit: adminProcedure.query(() =>
       getSupportTicketSchemaAudit(),
     ),

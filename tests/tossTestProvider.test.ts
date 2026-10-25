@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   confirmTossTestPayment,
+  getTossTestPaymentByOrderNumber,
   getTossTestPayment,
   getTossTestClientConfig,
   isTossTestPaymentEnabled,
@@ -98,6 +99,28 @@ describe("Toss test payment adapter", () => {
 
     await expect(getTossTestPayment({ paymentKey: "pay_test_123", orderNumber: "HC-ORDER-001", amountKrw: 29_000 }, fetcher))
       .resolves.toMatchObject({ paymentKey: "pay_test_123", orderNumber: "HC-ORDER-001", amountKrw: 29_000 });
+  });
+
+  it("looks up a test payment by order number without exposing a secret to the client", async () => {
+    vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("COMMERCE_TEST_MODE", "true");
+    vi.stubEnv("TOSS_TEST_CLIENT_KEY", "test_ck_sample");
+    vi.stubEnv("TOSS_TEST_SECRET_KEY", "test_sk_sample");
+    const fetcher = vi.fn(async (url: string, init: RequestInit) => {
+      expect(url).toContain("/v1/payments/orders/HC-ORDER-001");
+      expect(init.method).toBe("GET");
+      expect(init.headers).toMatchObject({ Authorization: expect.stringMatching(/^Basic /) });
+      return mockResponse({
+        paymentKey: "pay_test_123",
+        orderId: "HC-ORDER-001",
+        totalAmount: 29_000,
+        status: "DONE",
+        method: "카드",
+      });
+    });
+
+    await expect(getTossTestPaymentByOrderNumber("HC-ORDER-001", fetcher))
+      .resolves.toMatchObject({ paymentKey: "pay_test_123", orderNumber: "HC-ORDER-001", amountKrw: 29_000, status: "DONE" });
   });
 
   it("rejects failed or mismatched provider responses before entitlement processing", async () => {

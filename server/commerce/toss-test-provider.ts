@@ -12,6 +12,14 @@ const tossApprovedPaymentSchema = z.object({
   method: z.string().optional(),
 });
 
+const tossPaymentLookupSchema = z.object({
+  paymentKey: z.string().min(1),
+  orderId: z.string().min(1),
+  totalAmount: z.number().int().nonnegative(),
+  status: z.string().min(1),
+  method: z.string().optional(),
+});
+
 type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
 
 function getRequiredTestKey(name: "TOSS_TEST_CLIENT_KEY" | "TOSS_TEST_SECRET_KEY", prefix: string): string {
@@ -120,6 +128,46 @@ export async function getTossTestPayment(
     orderNumber: approved.data.orderId,
     amountKrw: approved.data.totalAmount,
     method: approved.data.method ?? null,
+    rawPayload: JSON.stringify(payload),
+  };
+}
+
+/**
+ * Preview 복구용 주문번호 조회다. 결제키를 잃어버린 성공 리디렉션의 복구에만
+ * 사용하며, 호출자는 DONE·주문번호·금액을 다시 대조한 뒤에만 원장을 갱신한다.
+ */
+export async function getTossTestPaymentByOrderNumber(
+  orderNumber: string,
+  fetcher: FetchLike = fetch,
+): Promise<{
+  paymentKey: string;
+  orderNumber: string;
+  amountKrw: number;
+  status: string;
+  method: string | null;
+  rawPayload: string;
+}> {
+  if (!isTossTestPaymentEnabled()) throw new Error("TOSS_TEST_PAYMENT_DISABLED");
+  const secretKey = getRequiredTestKey("TOSS_TEST_SECRET_KEY", "test_sk_");
+  const authorization = Buffer.from(`${secretKey}:`, "utf8").toString("base64");
+  const response = await fetcher(`${TOSS_TEST_PAYMENT_URL}/orders/${encodeURIComponent(orderNumber)}`, {
+    method: "GET",
+    headers: { Authorization: `Basic ${authorization}` },
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(`TOSS_TEST_ORDER_LOOKUP_FAILED_${response.status}`);
+  }
+  const payment = tossPaymentLookupSchema.safeParse(payload);
+  if (!payment.success || payment.data.orderId !== orderNumber) {
+    throw new Error("TOSS_TEST_ORDER_LOOKUP_RESPONSE_MISMATCH");
+  }
+  return {
+    paymentKey: payment.data.paymentKey,
+    orderNumber: payment.data.orderId,
+    amountKrw: payment.data.totalAmount,
+    status: payment.data.status,
+    method: payment.data.method ?? null,
     rawPayload: JSON.stringify(payload),
   };
 }

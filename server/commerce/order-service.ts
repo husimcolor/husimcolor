@@ -23,6 +23,7 @@ import {
 import { getDb } from "../db";
 import {
   confirmTossTestPayment,
+  getTossTestPaymentByOrderNumber,
   getTossTestPayment,
   getTossTestClientConfig,
   isTossTestPaymentEnabled,
@@ -892,6 +893,67 @@ export async function completeTossTestPayment(input: {
     amountKrw: approved.amountKrw,
     provider: "toss_pg",
     rawPayloadEncrypted: encryptCommerceValue(approved.rawPayload),
+  });
+}
+
+/**
+ * 성공 URL이 유실된 Preview 전화 코칭 테스트 주문만 복구한다.
+ * 주문번호 조회는 Toss 서버에서 수행하고, DONE·금액·상품·Preview 테스트 주문을
+ * 모두 확인하기 전에는 원장이나 예약을 변경하지 않는다.
+ */
+export async function recoverApprovedPreviewTelephoneCoachingTossTestPayment(input: {
+  orderNumber: string;
+}): Promise<PaymentResponse | { status: "not_approved" }> {
+  if (process.env.VERCEL_ENV !== "preview" || !isExplicitTestPaymentRuntime()) {
+    throw new Error("PREVIEW_TELEPHONE_RECOVERY_DISABLED");
+  }
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const rows = await (db as any)
+    .select({
+      transactionStatus: paymentTransactions.status,
+      savedPaymentId: paymentTransactions.providerPaymentId,
+      finalAmountKrw: orders.finalAmountKrw,
+      isTest: orders.isTest,
+      productCode: orderItems.productCodeSnapshot,
+    })
+    .from(paymentTransactions)
+    .innerJoin(orders, eq(paymentTransactions.orderId, orders.id))
+    .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+    .where(and(
+      eq(paymentTransactions.provider, "toss_pg"),
+      eq(orders.orderNumber, input.orderNumber),
+    ))
+    .limit(1);
+  const record = rows[0];
+  if (!record || !record.isTest || !isTelephoneCoachingProduct(record.productCode)) {
+    throw new Error("PREVIEW_TELEPHONE_RECOVERY_ORDER_NOT_FOUND");
+  }
+  if (record.transactionStatus === "approved") {
+    return {
+      orderNumber: input.orderNumber,
+      paymentId: record.savedPaymentId,
+      status: "paid",
+      entitlementId: null,
+      startGrant: null,
+      alreadyProcessed: true,
+    };
+  }
+  if (record.transactionStatus !== "ready") {
+    throw new Error("PREVIEW_TELEPHONE_RECOVERY_NOT_READY");
+  }
+  const providerPayment = await getTossTestPaymentByOrderNumber(input.orderNumber);
+  if (providerPayment.status !== "DONE") return { status: "not_approved" };
+  if (providerPayment.amountKrw !== record.finalAmountKrw) {
+    throw new Error("ORDER_AMOUNT_MISMATCH");
+  }
+  return completePaymentForProvider({
+    orderNumber: providerPayment.orderNumber,
+    providerPaymentId: providerPayment.paymentKey,
+    outcome: "success",
+    amountKrw: providerPayment.amountKrw,
+    provider: "toss_pg",
+    rawPayloadEncrypted: encryptCommerceValue(providerPayment.rawPayload),
   });
 }
 
