@@ -100,6 +100,8 @@ export type CoachingBookingRequest = {
   topic?: string;
   fiveElementsOptIn?: boolean;
   birthDate?: string;
+  birthCalendarType?: "solar" | "lunar";
+  isLeapMonth?: boolean;
   adultConfirmed?: boolean;
 };
 
@@ -113,9 +115,11 @@ type NormalizedCoachingBookingRequest = {
   topic: string | null;
   fiveElementsOptIn: boolean;
   birthDate: string | null;
+  birthCalendarType: "solar" | "lunar" | null;
+  isLeapMonth: boolean;
 };
 
-const PENDING_COACHING_BOOKING_VERSION = 1;
+const PENDING_COACHING_BOOKING_VERSION = 2;
 
 export function normalizeCoachingBookingRequest(request: CoachingBookingRequest | undefined): NormalizedCoachingBookingRequest | null {
   if (!request) return null;
@@ -130,7 +134,7 @@ export function normalizeCoachingBookingRequest(request: CoachingBookingRequest 
   if (Number.isNaN(requestedWindowStart.getTime()) || Number.isNaN(requestedWindowEnd.getTime()) || requestedWindowEnd <= requestedWindowStart) throw new Error("INVALID_COACHING_REQUESTED_WINDOW");
   if (request.sessionMode !== "online" && request.sessionMode !== "in_person") throw new Error("INVALID_COACHING_SESSION_MODE");
   if (notes && notes.length > 2000) throw new Error("INVALID_COACHING_NOTES");
-  return { contactName, contactPhone, requestedWindowStart, requestedWindowEnd, sessionMode: request.sessionMode, notes, topic: null, fiveElementsOptIn: false, birthDate: null };
+  return { contactName, contactPhone, requestedWindowStart, requestedWindowEnd, sessionMode: request.sessionMode, notes, topic: null, fiveElementsOptIn: false, birthDate: null, birthCalendarType: null, isLeapMonth: false };
 }
 
 export function encryptPendingCoachingBookingRequest(request: NormalizedCoachingBookingRequest): string {
@@ -139,6 +143,9 @@ export function encryptPendingCoachingBookingRequest(request: NormalizedCoaching
     requestedWindowStart: request.requestedWindowStart.toISOString(), requestedWindowEnd: request.requestedWindowEnd.toISOString(),
     sessionMode: request.sessionMode, notes: request.notes,
     topic: request.topic, fiveElementsOptIn: request.fiveElementsOptIn, birthDate: request.birthDate,
+    birthCalendarType: request.birthCalendarType, isLeapMonth: request.isLeapMonth,
+    // 이 payload는 이미 성인 확인을 통과한 정규화 요청이다. 승인 시에도 이를 복원해야 전화 예약이 빈 일정으로 생성되지 않는다.
+    adultConfirmed: request.sessionMode === "telephone" ? true : undefined,
   } }));
 }
 
@@ -146,7 +153,17 @@ export function decryptPendingCoachingBookingRequest(value: string | null | unde
   if (!value) return null;
   try {
     const payload = JSON.parse(decryptCommerceValue(value)) as { version?: number; request?: CoachingBookingRequest };
-    return payload.version === PENDING_COACHING_BOOKING_VERSION ? normalizeCoachingBookingRequest(payload.request) : null;
+    if (payload.version !== 1 && payload.version !== PENDING_COACHING_BOOKING_VERSION) return null;
+    const request = payload.request;
+    if (!request) return null;
+    // v1 및 초기 payload에는 adultConfirmed가 없었다. 해당 요청은 주문 생성 시 이미 확인을 통과했으므로 승인 시에만 안전하게 복원한다.
+    if (request.sessionMode === "telephone") {
+      request.adultConfirmed = true;
+      // 기존 암호문에는 양력/음력 메타데이터가 없으므로 보수적으로 양력·윤달 아님으로 읽는다.
+      if (request.birthDate && !request.birthCalendarType) request.birthCalendarType = "solar";
+      if (request.birthDate && request.isLeapMonth === undefined) request.isLeapMonth = false;
+    }
+    return normalizeCoachingBookingRequest(request);
   } catch {
     return null;
   }
@@ -667,6 +684,13 @@ async function completePaymentForProvider(input: {
       let coachingEmailOutboxId: number | null = null;
       if (record.fulfillmentType === "coaching") {
         const bookingPersistence = getCoachingBookingPersistence(decryptPendingCoachingBookingRequest(record.pendingBookingRequestEncrypted));
+        if (isTelephoneCoachingProduct(record.productCode) && (
+          bookingPersistence.sessionMode !== "telephone"
+          || !bookingPersistence.requestedWindowStart
+          || !bookingPersistence.requestedWindowEnd
+        )) {
+          throw new Error("TELEPHONE_COACHING_PENDING_BOOKING_INVALID");
+        }
         const bookingInsert = await tx.insert(coachingBookings).values({
           userId: record.userId,
           customerId: record.customerId,

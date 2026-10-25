@@ -46,12 +46,16 @@ describe("telephone coaching", () => {
     expect(() => normalizeTelephoneCoachingBookingRequest(request({ requestedWindowEnd: "2026-11-02T10:50:00+09:00" }), now)).toThrow("TELEPHONE_COACHING_REQUIRES_60_MINUTE_SLOT");
   });
 
-  it("stores birth date only after explicit five-elements opt-in and validates adulthood", () => {
+  it("allows five-elements opt-in without a birth date and stores verified calendar details only when provided", () => {
     const withoutOptIn = normalizeTelephoneCoachingBookingRequest(request({ topic: "관계 대화" }), now);
-    expect(withoutOptIn).toMatchObject({ topic: "관계 대화", fiveElementsOptIn: false, birthDate: null });
+    expect(withoutOptIn).toMatchObject({ topic: "관계 대화", fiveElementsOptIn: false, birthDate: null, birthCalendarType: null, isLeapMonth: false });
     expect(() => normalizeTelephoneCoachingBookingRequest(request({ birthDate: "1990-01-01" }), now)).toThrow("TELEPHONE_COACHING_BIRTH_DATE_REQUIRES_OPT_IN");
     expect(() => normalizeTelephoneCoachingBookingRequest(request({ fiveElementsOptIn: true, birthDate: "2014-01-01" }), now)).toThrow("INVALID_TELEPHONE_COACHING_BIRTH_DATE");
-    expect(normalizeTelephoneCoachingBookingRequest(request({ fiveElementsOptIn: true, birthDate: "1990-01-01" }), now)).toMatchObject({ fiveElementsOptIn: true, birthDate: "1990-01-01" });
+    expect(normalizeTelephoneCoachingBookingRequest(request({ fiveElementsOptIn: true }), now)).toMatchObject({ fiveElementsOptIn: true, birthDate: null, birthCalendarType: null, isLeapMonth: false });
+    expect(normalizeTelephoneCoachingBookingRequest(request({ fiveElementsOptIn: true, birthDate: "1990-01-01" }), now)).toMatchObject({ fiveElementsOptIn: true, birthDate: "1990-01-01", birthCalendarType: "solar", isLeapMonth: false });
+    expect(normalizeTelephoneCoachingBookingRequest(request({ fiveElementsOptIn: true, birthDate: "1982-04-01", birthCalendarType: "lunar", isLeapMonth: true }), now)).toMatchObject({ fiveElementsOptIn: true, birthCalendarType: "lunar", isLeapMonth: true });
+    expect(() => normalizeTelephoneCoachingBookingRequest(request({ fiveElementsOptIn: true, birthDate: "2023-02-29" }), now)).toThrow("INVALID_TELEPHONE_COACHING_BIRTH_DATE");
+    expect(() => normalizeTelephoneCoachingBookingRequest(request({ fiveElementsOptIn: true, birthDate: "1990-01-01", birthCalendarType: "solar", isLeapMonth: true }), now)).toThrow("TELEPHONE_COACHING_LEAP_MONTH_REQUIRES_LUNAR_DATE");
   });
 
   it("only prepares the product and schema in an explicit Preview test runtime", () => {

@@ -449,6 +449,8 @@ export const appRouter = router({
                 topic: z.string().max(500).optional(),
                 fiveElementsOptIn: z.boolean().optional(),
                 birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+                birthCalendarType: z.enum(["solar", "lunar"]).optional(),
+                isLeapMonth: z.boolean().optional(),
                 adultConfirmed: z.boolean().optional(),
               })
               .optional(),
@@ -488,6 +490,8 @@ export const appRouter = router({
                 topic: z.string().max(500).optional(),
                 fiveElementsOptIn: z.boolean().optional(),
                 birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+                birthCalendarType: z.enum(["solar", "lunar"]).optional(),
+                isLeapMonth: z.boolean().optional(),
                 adultConfirmed: z.boolean().optional(),
               })
               .optional(),
@@ -1031,7 +1035,7 @@ export const appRouter = router({
           ]),
           scheduledAt: z.date().nullable().optional(),
           scheduledEndAt: z.date().nullable().optional(),
-          sessionMode: z.enum(["undecided", "online", "in_person"]).optional(),
+          sessionMode: z.enum(["undecided", "online", "in_person", "telephone"]).optional(),
           requestedWindowStart: z.date().nullable().optional(),
           requestedWindowEnd: z.date().nullable().optional(),
           assignedAdminUserId: z

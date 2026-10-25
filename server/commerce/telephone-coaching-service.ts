@@ -7,6 +7,11 @@ import {
   coachingSlotHolds,
   telephoneCoachingSlotSettings,
 } from "../../drizzle/schema";
+import {
+  isAdultTelephoneBirthDate,
+  type BirthCalendarType,
+  validateTelephoneBirthDate,
+} from "./telephone-birth-date";
 
 export const TELEPHONE_COACHING_PRODUCT_CODE = "telephone_coaching" as const;
 export const TELEPHONE_COACHING_DURATION_MINUTES = 50;
@@ -27,6 +32,8 @@ export type TelephoneCoachingDetails = {
   topic: string | null;
   fiveElementsOptIn: boolean;
   birthDate: string | null;
+  birthCalendarType: BirthCalendarType | null;
+  isLeapMonth: boolean;
 };
 
 export type TelephoneCoachingBookingRequest = {
@@ -39,6 +46,8 @@ export type TelephoneCoachingBookingRequest = {
   topic?: string;
   fiveElementsOptIn?: boolean;
   birthDate?: string;
+  birthCalendarType?: BirthCalendarType;
+  isLeapMonth?: boolean;
   adultConfirmed?: boolean;
 };
 
@@ -52,6 +61,8 @@ export type NormalizedTelephoneCoachingBookingRequest = {
   topic: string | null;
   fiveElementsOptIn: boolean;
   birthDate: string | null;
+  birthCalendarType: BirthCalendarType | null;
+  isLeapMonth: boolean;
 };
 
 export function isTelephoneCoachingProduct(productCode: string): productCode is typeof TELEPHONE_COACHING_PRODUCT_CODE {
@@ -76,14 +87,6 @@ function getKstTime(value: Date): string {
   }).format(value);
 }
 
-function isAdultAtBooking(birthDate: string, now = new Date()): boolean {
-  const parsed = new Date(`${birthDate}T00:00:00+09:00`);
-  if (Number.isNaN(parsed.getTime())) return false;
-  const adulthood = new Date(parsed.getTime());
-  adulthood.setUTCFullYear(adulthood.getUTCFullYear() + 18);
-  return adulthood <= now;
-}
-
 /**
  * 전화 코칭은 성인 1인 50분이며, 예약 원장에는 준비·정리 시간을 포함해 60분을 점유한다.
  * 생년월일은 오행 참고를 명시적으로 희망한 경우에만 수집한다.
@@ -101,6 +104,7 @@ export function normalizeTelephoneCoachingBookingRequest(
   const topic = request.topic?.trim() || null;
   const fiveElementsOptIn = request.fiveElementsOptIn === true;
   const birthDate = request.birthDate?.trim() || null;
+  const hasBirthCalendarMetadata = request.birthCalendarType !== undefined || request.isLeapMonth !== undefined;
 
   if (!request.adultConfirmed) throw new Error("TELEPHONE_COACHING_ADULT_CONFIRMATION_REQUIRED");
   if (!contactName || contactName.length > 100) throw new Error("INVALID_COACHING_CONTACT_NAME");
@@ -117,12 +121,23 @@ export function normalizeTelephoneCoachingBookingRequest(
   }
   if (notes && notes.length > 2000) throw new Error("INVALID_COACHING_NOTES");
   if (topic && topic.length > 500) throw new Error("INVALID_TELEPHONE_COACHING_TOPIC");
-  if (fiveElementsOptIn) {
-    if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || !isAdultAtBooking(birthDate, now)) {
-      throw new Error("INVALID_TELEPHONE_COACHING_BIRTH_DATE");
-    }
-  } else if (birthDate) {
+  if (!fiveElementsOptIn && (birthDate || hasBirthCalendarMetadata)) {
     throw new Error("TELEPHONE_COACHING_BIRTH_DATE_REQUIRES_OPT_IN");
+  }
+  if (!birthDate && hasBirthCalendarMetadata) {
+    throw new Error("TELEPHONE_COACHING_BIRTH_DATE_REQUIRED_FOR_CALENDAR_DETAILS");
+  }
+
+  // 오행 참고를 선택해도 생년월일은 선택사항이다. 실제 입력된 경우에만 양력·음력·윤달을 검증·보관한다.
+  const validatedBirthDate = birthDate
+    ? validateTelephoneBirthDate({
+        birthDate,
+        birthCalendarType: request.birthCalendarType,
+        isLeapMonth: request.isLeapMonth,
+      })
+    : null;
+  if (validatedBirthDate && !isAdultTelephoneBirthDate(validatedBirthDate, now)) {
+    throw new Error("INVALID_TELEPHONE_COACHING_BIRTH_DATE");
   }
 
   return {
@@ -134,7 +149,9 @@ export function normalizeTelephoneCoachingBookingRequest(
     notes,
     topic,
     fiveElementsOptIn,
-    birthDate: fiveElementsOptIn ? birthDate : null,
+    birthDate: validatedBirthDate?.birthDate ?? null,
+    birthCalendarType: validatedBirthDate?.birthCalendarType ?? null,
+    isLeapMonth: validatedBirthDate?.isLeapMonth ?? false,
   };
 }
 
@@ -143,6 +160,8 @@ export function getTelephoneCoachingDetails(request: NormalizedTelephoneCoaching
     topic: request.topic,
     fiveElementsOptIn: request.fiveElementsOptIn,
     birthDate: request.birthDate,
+    birthCalendarType: request.birthCalendarType,
+    isLeapMonth: request.isLeapMonth,
   };
 }
 
