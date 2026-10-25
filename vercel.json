@@ -1,5 +1,11 @@
 {
   "outputDirectory": "dist",
+  "crons": [
+    {
+      "path": "/api/cron-email-outbox",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "functions": {
     "api/trpc/[...trpc].ts": {
       "maxDuration": 30
@@ -21,6 +27,7 @@
     { "source": "/api/auth/legacy-admin-login", "destination": "/api/trpc/[...trpc]?legacyAdminRoute=legacy-admin-login" },
     { "source": "/api/auth/legacy-admin-session", "destination": "/api/trpc/[...trpc]?legacyAdminRoute=legacy-admin-session" },
     { "source": "/api/auth/legacy-admin-logout", "destination": "/api/trpc/[...trpc]?legacyAdminRoute=legacy-admin-logout" },
+    { "source": "/api/cron-email-outbox", "destination": "/api/cron-email-outbox" },
     { "source": "/api/trpc/:path*", "destination": "/api/trpc/[...trpc]" },
     { "source": "/api/pdf-report", "destination": "/api/pdf-report" },
     { "source": "/api/couple-pdf-report", "destination": "/api/couple-pdf-report" },

@@ -283,6 +283,44 @@ export async function deliverTelephoneCoachingConfirmationOutboxItem(outboxId: n
   }
 }
 
+/**
+ * 관리자 수동 재시도는 분석 PDF와 전화 코칭 예약 확인 메일에만 한정한다.
+ * 이미 발송 완료·취소·다른 worker가 처리 중인 행은 다시 보내지 않는다.
+ */
+export async function retryAdminDeliveryOutboxItem(outboxId: number): Promise<{
+  status: "sent" | "retry_scheduled" | "not_claimed";
+  attemptCount?: number;
+}> {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const retryablePurposes = ["analysis_result_pdf", "coaching_booking_confirmation"] as const;
+  const rows = await db
+    .select({ purpose: emailOutbox.purpose, status: emailOutbox.status })
+    .from(emailOutbox)
+    .where(eq(emailOutbox.id, outboxId))
+    .limit(1);
+  const item = rows[0];
+  if (!item || !retryablePurposes.includes(item.purpose as (typeof retryablePurposes)[number])) {
+    throw new Error("ADMIN_DELIVERY_OUTBOX_NOT_FOUND");
+  }
+  if (item.status !== "queued" && item.status !== "failed") {
+    throw new Error("ADMIN_DELIVERY_OUTBOX_NOT_RETRYABLE");
+  }
+  const reset = await db
+    .update(emailOutbox)
+    .set({ status: "queued", nextAttemptAt: new Date(), lastErrorCode: null })
+    .where(and(
+      eq(emailOutbox.id, outboxId),
+      inArray(emailOutbox.purpose, retryablePurposes),
+      inArray(emailOutbox.status, ["queued", "failed"]),
+    ));
+  if (Number((reset as any)[0]?.affectedRows ?? 0) !== 1) return { status: "not_claimed" };
+  return item.purpose === "coaching_booking_confirmation"
+    ? deliverTelephoneCoachingConfirmationOutboxItem(outboxId)
+    : deliverPrivatePdfOutboxItem(outboxId);
+}
+
+/** 기존 분석 PDF 재시도 호출부와의 호환을 유지한다. */
 export async function retryFailedPrivatePdfOutboxItem(outboxId: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -400,6 +438,7 @@ export async function getPrivatePdfOutboxSnapshot(input: {
   search?: string;
 } = {}): Promise<Array<{
   id: number;
+  purpose: "analysis_result_pdf" | "coaching_booking_confirmation";
   orderId: number | null;
   orderNumber: string | null;
   privateDocumentId: number | null;
@@ -415,7 +454,7 @@ export async function getPrivatePdfOutboxSnapshot(input: {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
   const search = input.search?.trim() ?? "";
-  const filters = [eq(emailOutbox.purpose, "analysis_result_pdf")];
+  const filters = [inArray(emailOutbox.purpose, ["analysis_result_pdf", "coaching_booking_confirmation"])];
   if (search) {
     const conditions = [like(orders.orderNumber, `%${search}%`)];
     if (search.includes("@")) conditions.push(eq(emailOutbox.toEmailHash, hashCommerceEmail(search)));
@@ -424,6 +463,7 @@ export async function getPrivatePdfOutboxSnapshot(input: {
   const rows = await db
     .select({
       id: emailOutbox.id,
+      purpose: emailOutbox.purpose,
       orderId: emailOutbox.orderId,
       orderNumber: orders.orderNumber,
       privateDocumentId: emailOutbox.privateDocumentId,
@@ -456,6 +496,7 @@ export async function getPrivatePdfOutboxSnapshot(input: {
     }
     return {
       id: row.id,
+      purpose: row.purpose,
       orderId: row.orderId,
       orderNumber: row.orderNumber,
       privateDocumentId: row.privateDocumentId,

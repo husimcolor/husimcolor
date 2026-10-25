@@ -44,6 +44,7 @@ import {
   deliverPrivatePdfOutboxItem,
   getPrivatePdfOutboxSnapshot,
   processApprovedPreviewOutboxForUser,
+  retryAdminDeliveryOutboxItem,
   retryFailedPrivatePdfOutboxItem,
 } from "./commerce/email-outbox-service";
 import {
@@ -377,10 +378,7 @@ export const appRouter = router({
         .query(({ input }) => getPrivatePdfOutboxSnapshot(input)),
       retry: adminProcedure
         .input(z.object({ outboxId: z.number().int().positive() }))
-        .mutation(async ({ input }) => {
-          await retryFailedPrivatePdfOutboxItem(input.outboxId);
-          return deliverPrivatePdfOutboxItem(input.outboxId);
-        }),
+        .mutation(({ input }) => retryAdminDeliveryOutboxItem(input.outboxId)),
     }),
     account: router({
       snapshot: protectedProcedure.query(async ({ ctx }) => {

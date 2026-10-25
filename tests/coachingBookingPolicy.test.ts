@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import { assertCoachingBookingTransition } from "../server/commerce/coaching-booking-service";
 import { getCoachingScheduledEnd } from "../shared/coachingSchedule";
@@ -39,5 +41,15 @@ describe("coaching booking policy", () => {
       active: false,
       amountKrw: 0,
     });
+  });
+
+  it("uses a web-compatible confirmation modal and visible error handling for admin booking actions", () => {
+    const admin = readFileSync(resolve(__dirname, "../app/(tabs)/admin.tsx"), "utf8");
+    expect(admin).toContain("pendingBookingStatusAction");
+    expect(admin).toContain("confirmBookingStatusChange");
+    expect(admin).toContain("코칭 예약 상태 변경 확인");
+    expect(admin).toContain("Toss 결제를 취소하거나 환불하지 않습니다.");
+    expect(admin).toContain("bookingActionError");
+    expect(admin).not.toContain('Alert.alert("예약 상태 변경"');
   });
 });
