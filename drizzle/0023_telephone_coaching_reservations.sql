@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `telephone_coaching_slot_settings` (
   CONSTRAINT `telephone_coaching_slot_settings_time_unique` UNIQUE(`slotTime`)
 );--> statement-breakpoint
 INSERT INTO `telephone_coaching_slot_settings` (`slotTime`, `active`) VALUES
-  ('10:00', true), ('11:30', true), ('14:00', true), ('16:00', true), ('19:00', true)
+  ('10:00', true), ('11:30', true), ('14:00', true), ('16:00', true), ('19:00', true), ('20:00', true)
 ON DUPLICATE KEY UPDATE `slotTime` = VALUES(`slotTime`);--> statement-breakpoint
 INSERT INTO `products` (`code`, `name`, `fulfillmentType`, `requiresPayment`, `active`) VALUES
   ('telephone_coaching', '비대면 전화 코칭', 'coaching', true, false)

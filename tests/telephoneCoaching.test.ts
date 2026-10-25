@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { getCommerceProduct } from "../shared/commerce";
 import {
+  DEFAULT_TELEPHONE_COACHING_SLOT_TIMES,
   TELEPHONE_COACHING_DURATION_MINUTES,
   TELEPHONE_COACHING_SLOT_MINUTES,
   isTelephoneCoachingPreviewPreparationEnabled,
@@ -36,12 +37,18 @@ describe("telephone coaching", () => {
     });
     expect(TELEPHONE_COACHING_DURATION_MINUTES).toBe(50);
     expect(TELEPHONE_COACHING_SLOT_MINUTES).toBe(60);
+    expect(DEFAULT_TELEPHONE_COACHING_SLOT_TIMES).toEqual(["10:00", "11:30", "14:00", "16:00", "19:00", "20:00"]);
   });
 
   it("only accepts an adult-confirmed, future 60-minute telephone slot", () => {
     const normalized = normalizeTelephoneCoachingBookingRequest(request(), now);
     expect(normalized.sessionMode).toBe("telephone");
     expect(normalized.requestedWindowEnd.getTime() - normalized.requestedWindowStart.getTime()).toBe(60 * 60 * 1000);
+    const lastSlot = normalizeTelephoneCoachingBookingRequest(request({
+      requestedWindowStart: "2026-11-02T20:00:00+09:00",
+      requestedWindowEnd: "2026-11-02T21:00:00+09:00",
+    }), now);
+    expect(lastSlot.requestedWindowEnd.toISOString()).toBe("2026-11-02T12:00:00.000Z");
     expect(() => normalizeTelephoneCoachingBookingRequest(request({ adultConfirmed: false }), now)).toThrow("TELEPHONE_COACHING_ADULT_CONFIRMATION_REQUIRED");
     expect(() => normalizeTelephoneCoachingBookingRequest(request({ requestedWindowEnd: "2026-11-02T10:50:00+09:00" }), now)).toThrow("TELEPHONE_COACHING_REQUIRES_60_MINUTE_SLOT");
   });

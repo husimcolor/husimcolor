@@ -43,7 +43,7 @@ try {
   if (!await hasTable("telephone_coaching_slot_settings")) {
     await connection.query("CREATE TABLE `telephone_coaching_slot_settings` (`id` int AUTO_INCREMENT NOT NULL, `slotTime` varchar(5) NOT NULL, `active` boolean NOT NULL DEFAULT true, `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `telephone_coaching_slot_settings_id` PRIMARY KEY(`id`), CONSTRAINT `telephone_coaching_slot_settings_time_unique` UNIQUE(`slotTime`))");
   }
-  await connection.query("INSERT INTO `telephone_coaching_slot_settings` (`slotTime`, `active`) VALUES ('10:00', true), ('11:30', true), ('14:00', true), ('16:00', true), ('19:00', true) ON DUPLICATE KEY UPDATE `slotTime` = VALUES(`slotTime`)");
+  await connection.query("INSERT INTO `telephone_coaching_slot_settings` (`slotTime`, `active`) VALUES ('10:00', true), ('11:30', true), ('14:00', true), ('16:00', true), ('19:00', true), ('20:00', true) ON DUPLICATE KEY UPDATE `slotTime` = VALUES(`slotTime`)");
 
   await connection.query("INSERT INTO `products` (`code`, `name`, `fulfillmentType`, `requiresPayment`, `active`) VALUES ('telephone_coaching', '비대면 전화 코칭', 'coaching', true, false) ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `fulfillmentType` = VALUES(`fulfillmentType`), `requiresPayment` = VALUES(`requiresPayment`)");
   const [products] = await connection.query("SELECT `id` FROM `products` WHERE `code` = 'telephone_coaching' LIMIT 1");

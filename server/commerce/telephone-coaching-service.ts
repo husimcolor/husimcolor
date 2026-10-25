@@ -16,7 +16,8 @@ import {
 export const TELEPHONE_COACHING_PRODUCT_CODE = "telephone_coaching" as const;
 export const TELEPHONE_COACHING_DURATION_MINUTES = 50;
 export const TELEPHONE_COACHING_SLOT_MINUTES = 60;
-export const DEFAULT_TELEPHONE_COACHING_SLOT_TIMES = ["10:00", "11:30", "14:00", "16:00", "19:00"] as const;
+/** 고객 기준 마지막 예약 시작은 20:00(상담 20:50 종료), 운영 슬롯은 21:00까지 점유한다. */
+export const DEFAULT_TELEPHONE_COACHING_SLOT_TIMES = ["10:00", "11:30", "14:00", "16:00", "19:00", "20:00"] as const;
 
 let previewSchemaPreparation: Promise<void> | null = null;
 
@@ -195,7 +196,7 @@ export async function ensureTelephoneCoachingPreviewSchema(): Promise<void> {
       await execute("INSERT IGNORE INTO `coaching_schedule_mutex` (`id`) VALUES (1)");
       await execute("CREATE TABLE IF NOT EXISTS `coaching_slot_claims` (`id` int AUTO_INCREMENT NOT NULL, `orderId` int NULL, `bookingId` int NULL, `bucketStart` timestamp NOT NULL, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `coaching_slot_claims_id` PRIMARY KEY(`id`), CONSTRAINT `coaching_slot_claims_bucket_unique` UNIQUE(`bucketStart`), INDEX `coaching_slot_claims_order_idx` (`orderId`), INDEX `coaching_slot_claims_booking_idx` (`bookingId`))");
       await execute("CREATE TABLE IF NOT EXISTS `telephone_coaching_slot_settings` (`id` int AUTO_INCREMENT NOT NULL, `slotTime` varchar(5) NOT NULL, `active` boolean NOT NULL DEFAULT true, `createdAt` timestamp NOT NULL DEFAULT (now()), `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `telephone_coaching_slot_settings_id` PRIMARY KEY(`id`), CONSTRAINT `telephone_coaching_slot_settings_time_unique` UNIQUE(`slotTime`))");
-      await execute("INSERT INTO `telephone_coaching_slot_settings` (`slotTime`, `active`) VALUES ('10:00', true), ('11:30', true), ('14:00', true), ('16:00', true), ('19:00', true) ON DUPLICATE KEY UPDATE `slotTime` = VALUES(`slotTime`)");
+      await execute("INSERT INTO `telephone_coaching_slot_settings` (`slotTime`, `active`) VALUES ('10:00', true), ('11:30', true), ('14:00', true), ('16:00', true), ('19:00', true), ('20:00', true) ON DUPLICATE KEY UPDATE `slotTime` = VALUES(`slotTime`)");
       await execute("INSERT INTO `products` (`code`, `name`, `fulfillmentType`, `requiresPayment`, `active`) VALUES ('telephone_coaching', '비대면 전화 코칭', 'coaching', true, true) ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `fulfillmentType` = VALUES(`fulfillmentType`), `requiresPayment` = VALUES(`requiresPayment`), `active` = true");
       await execute("INSERT INTO `product_prices` (`productId`, `regularAmountKrw`, `amountKrw`, `currency`, `version`, `active`) SELECT `id`, 50000, 50000, 'KRW', 1, true FROM `products` WHERE `code` = 'telephone_coaching' ON DUPLICATE KEY UPDATE `regularAmountKrw` = VALUES(`regularAmountKrw`), `amountKrw` = VALUES(`amountKrw`), `active` = true");
     })().catch((error) => {
