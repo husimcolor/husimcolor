@@ -49,7 +49,7 @@ try {
   const [products] = await connection.query("SELECT `id` FROM `products` WHERE `code` = 'telephone_coaching' LIMIT 1");
   const productId = Array.isArray(products) ? products[0]?.id : null;
   if (!productId) throw new Error("telephone-coaching product setup failed");
-  await connection.query("INSERT INTO `product_prices` (`productId`, `regularAmountKrw`, `amountKrw`, `currency`, `version`, `active`) VALUES (?, 50000, 50000, 'KRW', 1, false) ON DUPLICATE KEY UPDATE `regularAmountKrw` = VALUES(`regularAmountKrw`), `amountKrw` = VALUES(`amountKrw`), `active` = VALUES(`active`)", [productId]);
+  await connection.query("INSERT INTO `product_prices` (`productId`, `regularAmountKrw`, `amountKrw`, `currency`, `version`, `active`) VALUES (?, 50000, 50000, 'KRW', 1, false) ON DUPLICATE KEY UPDATE `regularAmountKrw` = VALUES(`regularAmountKrw`), `amountKrw` = VALUES(`amountKrw`), `active` = `active`", [productId]);
 
   const modeAfter = await hasColumn("coaching_bookings", "sessionMode");
   if (!String(modeAfter?.Type ?? "").includes("telephone") || !await hasTable("coaching_slot_holds") || !await hasTable("coaching_schedule_mutex") || !await hasTable("telephone_coaching_slot_settings")) {

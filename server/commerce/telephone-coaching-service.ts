@@ -254,7 +254,9 @@ async function assertNoSharedCoachingConflict(tx: any, input: {
   const bookedConditions = [
     eq(coachingBookings.status, "scheduled"),
     lt(coachingBookings.scheduledAt, input.slotEnd),
-    gt(coachingBookings.scheduledEndAt, input.slotStart),
+    // 이전 방문 코칭의 종료 일시가 비어 있는 경우에도 120분을 보수적으로 점유한다.
+    // 전화 코칭과 기존 일정이 겹쳐 예약되는 것보다 운영자가 기존 일정을 보완하는 편이 안전하다.
+    gt(sql<Date>`COALESCE(${coachingBookings.scheduledEndAt}, DATE_ADD(${coachingBookings.scheduledAt}, INTERVAL 120 MINUTE))`, input.slotStart),
   ];
   if (input.excludeBookingId) bookedConditions.push(sql`${coachingBookings.id} <> ${input.excludeBookingId}`);
   const existingBooking = await tx.select({ id: coachingBookings.id })

@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 
 import { adminAuditLogs, coachingBookingEvents, coachingBookings } from "../../drizzle/schema";
+import { getCoachingScheduledEnd } from "../../shared/coachingSchedule";
 import { getDb } from "../db";
 import type { AdminAuditActor } from "./admin-audit-actor";
 import { encryptCommerceValue } from "./crypto";
@@ -32,12 +33,19 @@ export function assertCoachingBookingTransition(input: {
   from: CoachingBookingStatus;
   to: CoachingBookingStatus;
   scheduledAt?: Date | null;
+  scheduledEndAt?: Date | null;
 }): void {
   if (!ALLOWED_NEXT_STATUSES[input.from].includes(input.to)) {
     throw new Error("COACHING_BOOKING_INVALID_STATUS_TRANSITION");
   }
   if (input.to === "scheduled" && !input.scheduledAt) {
     throw new Error("COACHING_BOOKING_SCHEDULED_AT_REQUIRED");
+  }
+  if (input.to === "scheduled" && !input.scheduledEndAt) {
+    throw new Error("COACHING_BOOKING_SCHEDULED_END_AT_REQUIRED");
+  }
+  if (input.to === "scheduled" && input.scheduledAt && input.scheduledEndAt && input.scheduledEndAt <= input.scheduledAt) {
+    throw new Error("COACHING_BOOKING_SCHEDULE_RANGE_INVALID");
   }
 }
 
@@ -63,15 +71,19 @@ export async function updateAdminCoachingBooking(input: {
     const before = rows[0];
     if (!before) throw new Error("COACHING_BOOKING_NOT_FOUND");
 
+    const now = new Date();
+    const nextScheduledAt = input.scheduledAt === undefined ? before.scheduledAt : input.scheduledAt;
+    const requestedScheduledEndAt = input.scheduledEndAt === undefined ? before.scheduledEndAt : input.scheduledEndAt;
+    const nextScheduledEndAt = input.status === "scheduled" && nextScheduledAt
+      ? getCoachingScheduledEnd(nextScheduledAt, before.sessionMode === "telephone" ? "telephone_coaching" : null, requestedScheduledEndAt)
+      : requestedScheduledEndAt;
+
     assertCoachingBookingTransition({
       from: before.status as CoachingBookingStatus,
       to: input.status,
-      scheduledAt: input.scheduledAt === undefined ? before.scheduledAt : input.scheduledAt,
+      scheduledAt: nextScheduledAt,
+      scheduledEndAt: nextScheduledEndAt,
     });
-
-    const now = new Date();
-    const nextScheduledAt = input.scheduledAt === undefined ? before.scheduledAt : input.scheduledAt;
-    const nextScheduledEndAt = input.scheduledEndAt === undefined ? before.scheduledEndAt : input.scheduledEndAt;
     if (input.status === "scheduled" && nextScheduledAt && nextScheduledEndAt) {
       await assertSharedCoachingSlotAvailable(tx, {
         slotStart: nextScheduledAt,
@@ -91,7 +103,7 @@ export async function updateAdminCoachingBooking(input: {
     const update: Record<string, unknown> = {
       status: input.status,
       ...(input.scheduledAt !== undefined ? { scheduledAt: input.scheduledAt } : {}),
-      ...(input.scheduledEndAt !== undefined ? { scheduledEndAt: input.scheduledEndAt } : {}),
+      ...(input.status === "scheduled" && nextScheduledEndAt ? { scheduledEndAt: nextScheduledEndAt } : input.scheduledEndAt !== undefined ? { scheduledEndAt: input.scheduledEndAt } : {}),
       ...(input.sessionMode !== undefined ? { sessionMode: input.sessionMode } : {}),
       ...(input.requestedWindowStart !== undefined ? { requestedWindowStart: input.requestedWindowStart } : {}),
       ...(input.requestedWindowEnd !== undefined ? { requestedWindowEnd: input.requestedWindowEnd } : {}),

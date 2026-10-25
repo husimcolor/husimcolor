@@ -55,6 +55,11 @@ describe("telephone coaching", () => {
     expect(() => normalizeTelephoneCoachingBookingRequest(request({ requestedWindowEnd: "2026-11-02T10:50:00+09:00" }), now)).toThrow("TELEPHONE_COACHING_REQUIRES_60_MINUTE_SLOT");
   });
 
+  it("keeps legacy scheduled coaching with a missing end time in the shared conflict guard", () => {
+    const service = readFileSync(resolve(__dirname, "../server/commerce/telephone-coaching-service.ts"), "utf8");
+    expect(service).toContain("DATE_ADD(${coachingBookings.scheduledAt}, INTERVAL 120 MINUTE)");
+  });
+
   it("allows five-elements opt-in without a birth date and stores verified calendar details only when provided", () => {
     const withoutOptIn = normalizeTelephoneCoachingBookingRequest(request({ topic: "관계 대화" }), now);
     expect(withoutOptIn).toMatchObject({ topic: "관계 대화", fiveElementsOptIn: false, birthDate: null, birthCalendarType: null, isLeapMonth: false });
@@ -96,10 +101,12 @@ describe("telephone coaching", () => {
 
   it("keeps the production activation as a separate explicit release step", () => {
     const releaseScript = readFileSync(resolve(__dirname, "../scripts/release-telephone-coaching-live.mjs"), "utf8");
+    const preparationScript = readFileSync(resolve(__dirname, "../scripts/apply-telephone-coaching-reservations.mjs"), "utf8");
     expect(releaseScript).toContain("COMMERCE_TELEPHONE_COACHING_RELEASE");
     expect(releaseScript).toContain("VERCEL_ENV !== \"production\"");
     expect(releaseScript).toContain("COMMERCE_LIVE_PAYMENT_ENABLED");
     expect(releaseScript).toContain("amountKrw` = 50000");
     expect(releaseScript).toContain("UPDATE `products` SET `active` = true");
+    expect(preparationScript).toContain("`active` = `active`");
   });
 });
