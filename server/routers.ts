@@ -95,6 +95,12 @@ import {
   updateAdminCoachingBooking,
 } from "./commerce/coaching-booking-service";
 import {
+  ensureTelephoneCoachingPreviewSchema,
+  getAdminTelephoneCoachingSlotSettings,
+  getPublicTelephoneCoachingAvailability,
+  updateAdminTelephoneCoachingSlotSetting,
+} from "./commerce/telephone-coaching-service";
+import {
   createAdminCoachingBlackoutDate,
   getAdminCoachingBlackoutDates,
   getPublicCoachingBlackoutDates,
@@ -427,6 +433,7 @@ export const appRouter = router({
               "personal_coaching",
               "couple_coaching",
               "relationship_coaching",
+              "telephone_coaching",
             ]),
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
@@ -437,8 +444,12 @@ export const appRouter = router({
                 contactPhone: z.string().min(8).max(40),
                 requestedWindowStart: z.string().datetime({ offset: true }),
                 requestedWindowEnd: z.string().datetime({ offset: true }),
-                sessionMode: z.enum(["online", "in_person"]),
+                sessionMode: z.enum(["online", "in_person", "telephone"]),
                 notes: z.string().max(2000).optional(),
+                topic: z.string().max(500).optional(),
+                fiveElementsOptIn: z.boolean().optional(),
+                birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+                adultConfirmed: z.boolean().optional(),
               })
               .optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
@@ -461,6 +472,7 @@ export const appRouter = router({
               "personal_coaching",
               "couple_coaching",
               "relationship_coaching",
+              "telephone_coaching",
             ]),
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
@@ -471,8 +483,12 @@ export const appRouter = router({
                 contactPhone: z.string().min(8).max(40),
                 requestedWindowStart: z.string().datetime({ offset: true }),
                 requestedWindowEnd: z.string().datetime({ offset: true }),
-                sessionMode: z.enum(["online", "in_person"]),
+                sessionMode: z.enum(["online", "in_person", "telephone"]),
                 notes: z.string().max(2000).optional(),
+                topic: z.string().max(500).optional(),
+                fiveElementsOptIn: z.boolean().optional(),
+                birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+                adultConfirmed: z.boolean().optional(),
               })
               .optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
@@ -579,6 +595,17 @@ export const appRouter = router({
             input.toDate,
           ),
         })),
+      telephoneCoachingAvailability: publicProcedure
+        .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+        .query(async ({ input }) => {
+          await ensureTelephoneCoachingPreviewSchema();
+          const database = await db.getDb();
+          if (!database) throw new Error("DATABASE_NOT_AVAILABLE");
+          return {
+            slotMinutes: 60,
+            availableTimes: await getPublicTelephoneCoachingAvailability(database as any, input),
+          };
+        }),
       testMode: publicProcedure.query(() => ({
         localSimulatorEnabled: isTestPaymentEnabled(),
         tossTestEnabled: isTossTestPaymentEnabled(),
@@ -946,6 +973,10 @@ export const appRouter = router({
     coachingBookings: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminCoachingBookingList(input.limit)),
+    telephoneCoachingSlotSettings: adminProcedure.query(() => getAdminTelephoneCoachingSlotSettings()),
+    updateTelephoneCoachingSlotSetting: adminProcedure
+      .input(z.object({ slotTime: z.string().regex(/^\d{2}:\d{2}$/), active: z.boolean() }))
+      .mutation(({ input }) => updateAdminTelephoneCoachingSlotSetting(input)),
     yearEndExperienceRequests: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
       .query(({ input }) =>

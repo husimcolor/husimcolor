@@ -10,6 +10,7 @@ import {
   customers,
   coachingBookings,
   coachingBookingEvents,
+  emailOutbox,
 } from "../../drizzle/schema";
 import type { CommercePaymentOutcome, CommerceProductCode } from "../../shared/commerce";
 import {
@@ -39,6 +40,18 @@ import {
 import { createEntitlementStartGrant, type EntitlementStartGrant } from "./entitlement-service";
 import { assertPublicPaidAnalysisCheckout } from "./release-policy";
 import { linkCheckoutCustomerToAuthenticatedUser } from "./account-service";
+import {
+  confirmTelephoneCoachingSlot,
+  ensureTelephoneCoachingPreviewSchema,
+  getTelephoneCoachingDetails,
+  isTelephoneCoachingProduct,
+  normalizeTelephoneCoachingBookingRequest,
+  releaseTelephoneCoachingSlotForOrder,
+  type TelephoneCoachingBookingRequest,
+  type NormalizedTelephoneCoachingBookingRequest,
+  reserveTelephoneCoachingSlot,
+} from "./telephone-coaching-service";
+import { deliverTelephoneCoachingConfirmationOutboxItem } from "./email-outbox-service";
 
 const ORDER_TIMEOUT_MS = 30 * 60 * 1000;
 
@@ -61,6 +74,7 @@ type PaymentResponse = {
   entitlementId: number | null;
   startGrant: EntitlementStartGrant | null;
   alreadyProcessed: boolean;
+  coachingEmailOutboxId?: number | null;
 };
 
 export type TossTestTerminalOutcome = "failed" | "cancelled";
@@ -81,8 +95,12 @@ export type CoachingBookingRequest = {
   contactPhone: string;
   requestedWindowStart: string;
   requestedWindowEnd: string;
-  sessionMode: "online" | "in_person";
+  sessionMode: "online" | "in_person" | "telephone";
   notes?: string;
+  topic?: string;
+  fiveElementsOptIn?: boolean;
+  birthDate?: string;
+  adultConfirmed?: boolean;
 };
 
 type NormalizedCoachingBookingRequest = {
@@ -90,14 +108,18 @@ type NormalizedCoachingBookingRequest = {
   contactPhone: string;
   requestedWindowStart: Date;
   requestedWindowEnd: Date;
-  sessionMode: "online" | "in_person";
+  sessionMode: "online" | "in_person" | "telephone";
   notes: string | null;
+  topic: string | null;
+  fiveElementsOptIn: boolean;
+  birthDate: string | null;
 };
 
 const PENDING_COACHING_BOOKING_VERSION = 1;
 
 export function normalizeCoachingBookingRequest(request: CoachingBookingRequest | undefined): NormalizedCoachingBookingRequest | null {
   if (!request) return null;
+  if (request.sessionMode === "telephone") return normalizeTelephoneCoachingBookingRequest(request as TelephoneCoachingBookingRequest);
   const contactName = request.contactName.trim();
   const contactPhone = request.contactPhone.trim();
   const requestedWindowStart = new Date(request.requestedWindowStart);
@@ -108,7 +130,7 @@ export function normalizeCoachingBookingRequest(request: CoachingBookingRequest 
   if (Number.isNaN(requestedWindowStart.getTime()) || Number.isNaN(requestedWindowEnd.getTime()) || requestedWindowEnd <= requestedWindowStart) throw new Error("INVALID_COACHING_REQUESTED_WINDOW");
   if (request.sessionMode !== "online" && request.sessionMode !== "in_person") throw new Error("INVALID_COACHING_SESSION_MODE");
   if (notes && notes.length > 2000) throw new Error("INVALID_COACHING_NOTES");
-  return { contactName, contactPhone, requestedWindowStart, requestedWindowEnd, sessionMode: request.sessionMode, notes };
+  return { contactName, contactPhone, requestedWindowStart, requestedWindowEnd, sessionMode: request.sessionMode, notes, topic: null, fiveElementsOptIn: false, birthDate: null };
 }
 
 export function encryptPendingCoachingBookingRequest(request: NormalizedCoachingBookingRequest): string {
@@ -116,6 +138,7 @@ export function encryptPendingCoachingBookingRequest(request: NormalizedCoaching
     contactName: request.contactName, contactPhone: request.contactPhone,
     requestedWindowStart: request.requestedWindowStart.toISOString(), requestedWindowEnd: request.requestedWindowEnd.toISOString(),
     sessionMode: request.sessionMode, notes: request.notes,
+    topic: request.topic, fiveElementsOptIn: request.fiveElementsOptIn, birthDate: request.birthDate,
   } }));
 }
 
@@ -135,7 +158,12 @@ export function getCoachingBookingPersistence(request: NormalizedCoachingBooking
     sessionMode: request.sessionMode,
     requestedWindowStart: request.requestedWindowStart,
     requestedWindowEnd: request.requestedWindowEnd,
-    detailsEncrypted: encryptCommerceValue(JSON.stringify({ contactName: request.contactName, contactPhone: request.contactPhone, notes: request.notes })),
+    detailsEncrypted: encryptCommerceValue(JSON.stringify({
+      contactName: request.contactName,
+      contactPhone: request.contactPhone,
+      notes: request.notes,
+      ...(request.sessionMode === "telephone" ? getTelephoneCoachingDetails(request as NormalizedTelephoneCoachingBookingRequest) : {}),
+    })),
   };
 }
 
@@ -215,6 +243,9 @@ async function createCheckoutForProvider(input: {
   /** Toss 라이브 결제만 운영 매출 원장으로 기록한다. */
   const isTestOrder = provider === "test" || provider === "toss_pg";
   const bookingRequest = normalizeCoachingBookingRequest(input.bookingRequest);
+  if (isTelephoneCoachingProduct(input.productCode)) {
+    await ensureTelephoneCoachingPreviewSchema();
+  }
   const now = new Date();
 
   return (db as any).transaction(async (tx: any) => {
@@ -232,6 +263,7 @@ async function createCheckoutForProvider(input: {
       .from(paymentTransactions)
       .innerJoin(orders, eq(paymentTransactions.orderId, orders.id))
       .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+      .innerJoin(customers, eq(customers.id, orders.customerId))
       .where(eq(paymentTransactions.idempotencyKey, input.idempotencyKey))
       .limit(1);
     if (existing[0]) return asCheckoutResponse(existing[0]);
@@ -326,6 +358,19 @@ async function createCheckoutForProvider(input: {
         .where(eq(orders.id, orderId));
     }
 
+    if (isTelephoneCoachingProduct(product.code)) {
+      if (!bookingRequest || bookingRequest.sessionMode !== "telephone") {
+        throw new Error("TELEPHONE_COACHING_BOOKING_REQUIRED");
+      }
+      await reserveTelephoneCoachingSlot(tx, {
+        orderId,
+        productId: product.id,
+        request: bookingRequest as NormalizedTelephoneCoachingBookingRequest,
+        expiresAt,
+        now,
+      });
+    }
+
     await tx.insert(orderItems).values({
       orderId,
       productId: product.id,
@@ -376,13 +421,19 @@ async function createCheckoutForProvider(input: {
           customerId,
           orderId,
           productId: product.id,
-          status: "pending_schedule",
+          status: isTelephoneCoachingProduct(product.code) ? "scheduled" : "pending_schedule",
+          ...(isTelephoneCoachingProduct(product.code)
+            ? { scheduledAt: bookingPersistence.requestedWindowStart, scheduledEndAt: bookingPersistence.requestedWindowEnd }
+            : {}),
           ...bookingPersistence,
         });
+        if (isTelephoneCoachingProduct(product.code)) {
+          await confirmTelephoneCoachingSlot(tx, { orderId, bookingId: Number(bookingInsert[0].insertId), now: paidAt });
+        }
         await tx.insert(coachingBookingEvents).values({
           bookingId: Number(bookingInsert[0].insertId),
-          eventType: "booking_created",
-          toStatus: "pending_schedule",
+          eventType: isTelephoneCoachingProduct(product.code) ? "telephone_booking_confirmed_after_payment" : "booking_created",
+          toStatus: isTelephoneCoachingProduct(product.code) ? "scheduled" : "pending_schedule",
         });
       }
       const startGrant = product.fulfillmentType === "analysis"
@@ -489,7 +540,7 @@ async function completePaymentForProvider(input: {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
 
-  return (db as any).transaction(async (tx: any) => {
+  const response: PaymentResponse = await (db as any).transaction(async (tx: any) => {
     const rows = await tx
       .select({
         transactionId: paymentTransactions.id,
@@ -503,8 +554,11 @@ async function completePaymentForProvider(input: {
         finalAmountKrw: orders.finalAmountKrw,
         customerId: orders.customerId,
         userId: orders.userId,
+        customerEmailHash: customers.emailHash,
+        customerEmailEncrypted: customers.emailEncrypted,
         orderItemId: orderItems.id,
         productId: orderItems.productId,
+        productCode: orderItems.productCodeSnapshot,
         fulfillmentType: orderItems.fulfillmentType,
       })
       .from(paymentTransactions)
@@ -559,6 +613,9 @@ async function completePaymentForProvider(input: {
         .set({ status: "expired" })
         .where(eq(orders.id, record.orderId));
       await releaseCouponReservation(tx, record.orderId);
+      if (isTelephoneCoachingProduct(record.productCode)) {
+        await releaseTelephoneCoachingSlotForOrder(tx, record.orderId);
+      }
       throw new Error("TOSS_ORDER_EXPIRED");
     }
     if (record.transactionStatus !== "ready") throw new Error("TOSS_PAYMENT_PROCESSING");
@@ -606,6 +663,7 @@ async function completePaymentForProvider(input: {
         .limit(1);
       const productCode = itemProductRows[0]?.code as CommerceProductCode | undefined;
       if (!productCode) throw new Error("ENTITLEMENT_PRODUCT_NOT_FOUND");
+      let coachingEmailOutboxId: number | null = null;
       if (record.fulfillmentType === "coaching") {
         const bookingPersistence = getCoachingBookingPersistence(decryptPendingCoachingBookingRequest(record.pendingBookingRequestEncrypted));
         const bookingInsert = await tx.insert(coachingBookings).values({
@@ -613,13 +671,30 @@ async function completePaymentForProvider(input: {
           customerId: record.customerId,
           orderId: record.orderId,
           productId: record.productId,
-          status: "pending_schedule",
+          status: isTelephoneCoachingProduct(record.productCode) ? "scheduled" : "pending_schedule",
+          ...(isTelephoneCoachingProduct(record.productCode)
+            ? { scheduledAt: bookingPersistence.requestedWindowStart, scheduledEndAt: bookingPersistence.requestedWindowEnd }
+            : {}),
           ...bookingPersistence,
         });
+        if (isTelephoneCoachingProduct(record.productCode)) {
+          await confirmTelephoneCoachingSlot(tx, { orderId: record.orderId, bookingId: Number(bookingInsert[0].insertId), now });
+          const emailOutboxInsert = await tx.insert(emailOutbox).values({
+            userId: record.userId,
+            customerId: record.customerId,
+            orderId: record.orderId,
+            purpose: "coaching_booking_confirmation",
+            toEmailHash: record.customerEmailHash,
+            toEmailEncrypted: record.customerEmailEncrypted,
+            status: "queued",
+            nextAttemptAt: now,
+          });
+          coachingEmailOutboxId = Number(emailOutboxInsert[0].insertId);
+        }
         await tx.insert(coachingBookingEvents).values({
           bookingId: Number(bookingInsert[0].insertId),
-          eventType: "booking_created",
-          toStatus: "pending_schedule",
+          eventType: isTelephoneCoachingProduct(record.productCode) ? "telephone_booking_confirmed_after_payment" : "booking_created",
+          toStatus: isTelephoneCoachingProduct(record.productCode) ? "scheduled" : "pending_schedule",
         });
       }
       return {
@@ -631,6 +706,7 @@ async function completePaymentForProvider(input: {
           ? createEntitlementStartGrant({ entitlementId, customerId: record.customerId, productCode })
           : null,
         alreadyProcessed: false,
+        coachingEmailOutboxId,
       };
     }
 
@@ -649,6 +725,9 @@ async function completePaymentForProvider(input: {
       .set({ status, cancelledAt: now })
       .where(eq(orders.id, record.orderId));
     await releaseCouponReservation(tx, record.orderId);
+    if (isTelephoneCoachingProduct(record.productCode)) {
+      await releaseTelephoneCoachingSlotForOrder(tx, record.orderId, now);
+    }
     return {
       orderNumber: record.orderNumber,
       paymentId: input.providerPaymentId,
@@ -658,6 +737,11 @@ async function completePaymentForProvider(input: {
       alreadyProcessed: false,
     };
   });
+  if (response.coachingEmailOutboxId) {
+    // 예약 확정은 메일과 독립적으로 완료된다. 메일 전송 실패는 Outbox 재시도로 남긴다.
+    await deliverTelephoneCoachingConfirmationOutboxItem(response.coachingEmailOutboxId);
+  }
+  return response;
 }
 
 export async function completeTestPayment(input: {

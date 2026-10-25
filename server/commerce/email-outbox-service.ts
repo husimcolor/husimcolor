@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray, like, lt, lte, or, sql } from "drizzle-orm";
 
-import { accountLinkChallenges, analysisRuns, emailOutbox, orderItems, orders, privateDocuments, products, supportTickets } from "../../drizzle/schema";
+import { accountLinkChallenges, analysisRuns, coachingBookings, emailOutbox, orderItems, orders, privateDocuments, products, supportTickets } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { storageGetBuffer } from "../storage";
 import { decryptCommerceEmail, decryptCommerceValue, hashCommerceEmail } from "./crypto";
@@ -241,6 +241,48 @@ export async function deliverSupportNotificationOutboxItem(outboxId: number): Pr
   }
 }
 
+
+function telephoneCoachingConfirmationHtml(input: { scheduledAt: Date | null; scheduledEndAt: Date | null }) {
+  const formatter = new Intl.DateTimeFormat("ko-KR", { dateStyle: "full", timeStyle: "short", timeZone: "Asia/Seoul" });
+  const schedule = input.scheduledAt ? formatter.format(input.scheduledAt) : "예약하신 시간";
+  return [
+    "<p>안녕하세요. 휴심컬러입니다.</p>",
+    "<p>비대면 전화 코칭 결제와 예약이 확인되었습니다.</p>",
+    `<p><strong>일정</strong>: ${schedule}<br/><strong>진행</strong>: 전화 코칭 50분 (준비·정리 포함 60분 일정 칸)<br/><strong>금액</strong>: 50,000원</p>`,
+    "<p>진행자가 예약하신 번호로 전화드립니다. 시작 전 취소는 전액 환불되며, 시작 후 중단은 실제 진행 시간과 사유에 따라 남은 시간 재예약 또는 미진행분 환불을 협의합니다.</p>",
+  ].join("");
+}
+
+export async function deliverTelephoneCoachingConfirmationOutboxItem(outboxId: number): Promise<{ status: "sent" | "retry_scheduled" | "not_claimed"; attemptCount?: number }> {
+  const db = await getDb();
+  if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
+  const now = new Date();
+  const claimed = await db.update(emailOutbox).set({ status: "sending", attemptCount: sql`${emailOutbox.attemptCount} + 1` }).where(and(
+    eq(emailOutbox.id, outboxId),
+    eq(emailOutbox.purpose, "coaching_booking_confirmation"),
+    inArray(emailOutbox.status, ["queued", "failed"]),
+    lte(emailOutbox.nextAttemptAt, now),
+  ));
+  if (Number((claimed as any)[0]?.affectedRows ?? 0) !== 1) return { status: "not_claimed" };
+  const rows = await db.select({ id: emailOutbox.id, attemptCount: emailOutbox.attemptCount, toEmailEncrypted: emailOutbox.toEmailEncrypted, scheduledAt: coachingBookings.scheduledAt, scheduledEndAt: coachingBookings.scheduledEndAt }).from(emailOutbox).innerJoin(coachingBookings, eq(coachingBookings.orderId, emailOutbox.orderId)).where(and(eq(emailOutbox.id, outboxId), eq(emailOutbox.status, "sending"))).limit(1);
+  const item = rows[0];
+  if (!item) return { status: "not_claimed" };
+  try {
+    const result = await sendResendEmail({
+      to: decryptCommerceEmail(item.toEmailEncrypted),
+      subject: "[휴심컬러] 비대면 전화 코칭 예약 확인",
+      html: telephoneCoachingConfirmationHtml(item),
+      idempotencyKey: `husim-telephone-coaching-outbox-${item.id}`,
+    });
+    await db.update(emailOutbox).set({ status: "sent", providerMessageId: result.providerMessageId, sentAt: new Date(), lastErrorCode: null }).where(eq(emailOutbox.id, item.id));
+    return { status: "sent", attemptCount: item.attemptCount };
+  } catch (error) {
+    const errorCode = error instanceof Error ? error.message.slice(0, 160) : "TELEPHONE_COACHING_EMAIL_DELIVERY_FAILED";
+    await db.update(emailOutbox).set({ status: "failed", lastErrorCode: errorCode, nextAttemptAt: getOutboxRetryAt(item.attemptCount) }).where(eq(emailOutbox.id, item.id));
+    return { status: "retry_scheduled", attemptCount: item.attemptCount };
+  }
+}
+
 export async function retryFailedPrivatePdfOutboxItem(outboxId: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
@@ -254,7 +296,7 @@ export async function processDueEmailOutbox(limit = 10): Promise<{ sent: number;
     .select({ id: emailOutbox.id, purpose: emailOutbox.purpose })
     .from(emailOutbox)
     .where(and(
-      inArray(emailOutbox.purpose, ["analysis_result_pdf", "account_link", "support_notification"]),
+      inArray(emailOutbox.purpose, ["analysis_result_pdf", "account_link", "support_notification", "coaching_booking_confirmation"]),
       inArray(emailOutbox.status, ["queued", "failed"]),
       lte(emailOutbox.nextAttemptAt, new Date()),
       lt(emailOutbox.attemptCount, MAX_AUTOMATIC_ATTEMPTS),
@@ -266,7 +308,9 @@ export async function processDueEmailOutbox(limit = 10): Promise<{ sent: number;
       ? deliverAccountLinkOutboxItem(item.id)
       : item.purpose === "support_notification"
         ? deliverSupportNotificationOutboxItem(item.id)
-        : deliverPrivatePdfOutboxItem(item.id),
+        : item.purpose === "coaching_booking_confirmation"
+          ? deliverTelephoneCoachingConfirmationOutboxItem(item.id)
+          : deliverPrivatePdfOutboxItem(item.id),
   ));
   return {
     sent: outcomes.filter((outcome) => outcome.status === "sent").length,

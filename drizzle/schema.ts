@@ -655,7 +655,7 @@ export const emailOutbox = mysqlTable(
     privateDocumentId: int("privateDocumentId"),
     accountLinkChallengeId: int("accountLinkChallengeId"),
     supportTicketId: int("supportTicketId"),
-    purpose: mysqlEnum("purpose", ["account_link", "analysis_result_pdf", "support_notification"]).notNull(),
+    purpose: mysqlEnum("purpose", ["account_link", "analysis_result_pdf", "support_notification", "coaching_booking_confirmation"]).notNull(),
     toEmailHash: varchar("toEmailHash", { length: 128 }).notNull(),
     toEmailEncrypted: text("toEmailEncrypted").notNull(),
     status: mysqlEnum("status", ["queued", "sending", "sent", "failed", "cancelled"])
@@ -762,7 +762,7 @@ export const coachingBookings = mysqlTable(
       .default("pending_schedule"),
     requestedWindowStart: timestamp("requestedWindowStart"),
     requestedWindowEnd: timestamp("requestedWindowEnd"),
-    sessionMode: mysqlEnum("sessionMode", ["undecided", "online", "in_person"])
+    sessionMode: mysqlEnum("sessionMode", ["undecided", "online", "in_person", "telephone"])
       .notNull()
       .default("undecided"),
     scheduledAt: timestamp("scheduledAt"),
@@ -786,6 +786,52 @@ export const coachingBookings = mysqlTable(
 );
 
 export type CoachingBooking = typeof coachingBookings.$inferSelect;
+
+/**
+ * 전화 코칭 결제 중에만 60분 일정 칸을 보류한다. 승인된 뒤에는 confirmed가 되어
+ * 대면·온라인 코칭 관리자 일정과 함께 충돌을 막고, 실패·취소·만료 시에는 해제한다.
+ */
+export const coachingSlotHolds = mysqlTable(
+  "coaching_slot_holds",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    orderId: int("orderId").notNull(),
+    productId: int("productId").notNull(),
+    bookingId: int("bookingId"),
+    slotStart: timestamp("slotStart").notNull(),
+    slotEnd: timestamp("slotEnd").notNull(),
+    status: mysqlEnum("status", ["held", "confirmed", "released", "expired"]).notNull().default("held"),
+    expiresAt: timestamp("expiresAt").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("coaching_slot_holds_order_unique").on(table.orderId),
+    index("coaching_slot_holds_range_status_idx").on(table.status, table.slotStart, table.slotEnd),
+    index("coaching_slot_holds_booking_idx").on(table.bookingId),
+  ],
+);
+
+/**
+ * 예약 시간 충돌 판정은 이 단일 행을 FOR UPDATE로 잠가 같은 트랜잭션 안에서 직렬화한다.
+ * 이 잠금은 커밋·롤백과 함께 자동 해제되며, 고객 정보나 일정 자체를 저장하지 않는다.
+ */
+export const coachingScheduleMutex = mysqlTable("coaching_schedule_mutex", {
+  id: int("id").primaryKey(),
+});
+
+/** 관리자가 전화 코칭에서 고객에게 열어둘 60분 시작 시각을 설정한다. */
+export const telephoneCoachingSlotSettings = mysqlTable(
+  "telephone_coaching_slot_settings",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    slotTime: varchar("slotTime", { length: 5 }).notNull(),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => [uniqueIndex("telephone_coaching_slot_settings_time_unique").on(table.slotTime)],
+);
 
 /** 예약 상태 변경은 덮어쓰기 대신 운영자·사유·전후 상태를 append-only로 남긴다. */
 export const coachingBookingEvents = mysqlTable(

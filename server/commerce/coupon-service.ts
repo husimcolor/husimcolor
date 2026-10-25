@@ -1,7 +1,7 @@
 import { and, eq, gt, isNull, lte, or, sql } from "drizzle-orm";
 
 import { couponProductRules, couponRedemptions, coupons, customers, products } from "../../drizzle/schema";
-import { calculateDiscountedAmount } from "../../shared/commerce";
+import { calculateDiscountedAmount, getCommerceProduct } from "../../shared/commerce";
 import { getDb } from "../db";
 import { hashCommerceEmail, normalizeCommerceEmail } from "./crypto";
 
@@ -44,6 +44,15 @@ async function loadCouponQuote(
   input: { couponCode: string; productId: number; customerId?: number; listAmountKrw: number; now?: Date; lock?: boolean },
 ): Promise<CouponQuote> {
   const now = input.now ?? new Date();
+  const productRows = await tx
+    .select({ code: products.code })
+    .from(products)
+    .where(eq(products.id, input.productId))
+    .limit(1);
+  const product = productRows[0] ? getCommerceProduct(productRows[0].code) : null;
+  if (product && "couponEligible" in product && product.couponEligible === false) {
+    throw new Error("COUPON_PRODUCT_NOT_ELIGIBLE");
+  }
   const code = normalizeCouponCode(input.couponCode);
   if (!code) throw new Error("COUPON_CODE_REQUIRED");
 

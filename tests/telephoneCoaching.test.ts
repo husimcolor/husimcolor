@@ -1,0 +1,73 @@
+import { describe, expect, it } from "vitest";
+
+import { getCommerceProduct } from "../shared/commerce";
+import {
+  TELEPHONE_COACHING_DURATION_MINUTES,
+  TELEPHONE_COACHING_SLOT_MINUTES,
+  isTelephoneCoachingPreviewPreparationEnabled,
+  normalizeTelephoneCoachingBookingRequest,
+} from "../server/commerce/telephone-coaching-service";
+
+const now = new Date("2026-10-25T00:00:00.000Z");
+const futureStart = "2026-11-02T10:00:00+09:00";
+const futureEnd = "2026-11-02T11:00:00+09:00";
+
+function request(overrides: Record<string, unknown> = {}) {
+  return {
+    contactName: "테스트 신청자",
+    contactPhone: "010-0000-0000",
+    requestedWindowStart: futureStart,
+    requestedWindowEnd: futureEnd,
+    sessionMode: "telephone" as const,
+    adultConfirmed: true,
+    ...overrides,
+  };
+}
+
+describe("telephone coaching", () => {
+  it("is an active 50-minute, 50,000-won product excluded from coupons", () => {
+    const product = getCommerceProduct("telephone_coaching");
+    expect(product).toMatchObject({
+      code: "telephone_coaching",
+      name: "비대면 전화 코칭",
+      amountKrw: 50_000,
+      active: false,
+      couponEligible: false,
+    });
+    expect(TELEPHONE_COACHING_DURATION_MINUTES).toBe(50);
+    expect(TELEPHONE_COACHING_SLOT_MINUTES).toBe(60);
+  });
+
+  it("only accepts an adult-confirmed, future 60-minute telephone slot", () => {
+    const normalized = normalizeTelephoneCoachingBookingRequest(request(), now);
+    expect(normalized.sessionMode).toBe("telephone");
+    expect(normalized.requestedWindowEnd.getTime() - normalized.requestedWindowStart.getTime()).toBe(60 * 60 * 1000);
+    expect(() => normalizeTelephoneCoachingBookingRequest(request({ adultConfirmed: false }), now)).toThrow("TELEPHONE_COACHING_ADULT_CONFIRMATION_REQUIRED");
+    expect(() => normalizeTelephoneCoachingBookingRequest(request({ requestedWindowEnd: "2026-11-02T10:50:00+09:00" }), now)).toThrow("TELEPHONE_COACHING_REQUIRES_60_MINUTE_SLOT");
+  });
+
+  it("stores birth date only after explicit five-elements opt-in and validates adulthood", () => {
+    const withoutOptIn = normalizeTelephoneCoachingBookingRequest(request({ topic: "관계 대화" }), now);
+    expect(withoutOptIn).toMatchObject({ topic: "관계 대화", fiveElementsOptIn: false, birthDate: null });
+    expect(() => normalizeTelephoneCoachingBookingRequest(request({ birthDate: "1990-01-01" }), now)).toThrow("TELEPHONE_COACHING_BIRTH_DATE_REQUIRES_OPT_IN");
+    expect(() => normalizeTelephoneCoachingBookingRequest(request({ fiveElementsOptIn: true, birthDate: "2014-01-01" }), now)).toThrow("INVALID_TELEPHONE_COACHING_BIRTH_DATE");
+    expect(normalizeTelephoneCoachingBookingRequest(request({ fiveElementsOptIn: true, birthDate: "1990-01-01" }), now)).toMatchObject({ fiveElementsOptIn: true, birthDate: "1990-01-01" });
+  });
+
+  it("only prepares the product and schema in an explicit Preview test runtime", () => {
+    expect(isTelephoneCoachingPreviewPreparationEnabled({
+      VERCEL_ENV: "preview",
+      COMMERCE_TEST_MODE: "true",
+      COMMERCE_PREVIEW_TELEPHONE_COACHING_TEST_ENABLED: "true",
+    })).toBe(true);
+    expect(isTelephoneCoachingPreviewPreparationEnabled({
+      VERCEL_ENV: "production",
+      COMMERCE_TEST_MODE: "true",
+      COMMERCE_PREVIEW_TELEPHONE_COACHING_TEST_ENABLED: "true",
+    })).toBe(false);
+    expect(isTelephoneCoachingPreviewPreparationEnabled({
+      VERCEL_ENV: "preview",
+      COMMERCE_TEST_MODE: "true",
+    })).toBe(false);
+  });
+});

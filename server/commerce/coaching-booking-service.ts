@@ -4,6 +4,10 @@ import { adminAuditLogs, coachingBookingEvents, coachingBookings } from "../../d
 import { getDb } from "../db";
 import type { AdminAuditActor } from "./admin-audit-actor";
 import { encryptCommerceValue } from "./crypto";
+import {
+  assertSharedCoachingSlotAvailable,
+  releaseTelephoneCoachingSlotForOrder,
+} from "./telephone-coaching-service";
 
 export type CoachingBookingStatus =
   | "pending_schedule"
@@ -40,7 +44,7 @@ export async function updateAdminCoachingBooking(input: {
   status: CoachingBookingStatus;
   scheduledAt?: Date | null;
   scheduledEndAt?: Date | null;
-  sessionMode?: "undecided" | "online" | "in_person";
+  sessionMode?: "undecided" | "online" | "in_person" | "telephone";
   requestedWindowStart?: Date | null;
   requestedWindowEnd?: Date | null;
   assignedAdminUserId?: number | null;
@@ -64,6 +68,16 @@ export async function updateAdminCoachingBooking(input: {
     });
 
     const now = new Date();
+    const nextScheduledAt = input.scheduledAt === undefined ? before.scheduledAt : input.scheduledAt;
+    const nextScheduledEndAt = input.scheduledEndAt === undefined ? before.scheduledEndAt : input.scheduledEndAt;
+    if (input.status === "scheduled" && nextScheduledAt && nextScheduledEndAt) {
+      await assertSharedCoachingSlotAvailable(tx, {
+        slotStart: nextScheduledAt,
+        slotEnd: nextScheduledEndAt,
+        excludeBookingId: before.id,
+        now,
+      });
+    }
     const update: Record<string, unknown> = {
       status: input.status,
       ...(input.scheduledAt !== undefined ? { scheduledAt: input.scheduledAt } : {}),
@@ -78,6 +92,9 @@ export async function updateAdminCoachingBooking(input: {
       ...(input.status === "no_show" ? { noShowAt: now } : {}),
     };
     await tx.update(coachingBookings).set(update).where(eq(coachingBookings.id, input.bookingId));
+    if (input.status === "cancelled" && before.sessionMode === "telephone") {
+      await releaseTelephoneCoachingSlotForOrder(tx, before.orderId, now);
+    }
     await tx.insert(coachingBookingEvents).values({
       bookingId: input.bookingId,
       adminUserId: input.adminUserId,

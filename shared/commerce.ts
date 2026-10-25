@@ -70,6 +70,18 @@ export const COMMERCE_PRODUCTS = [
     amountKrw: 0,
     active: false,
   },
+  {
+    code: "telephone_coaching",
+    name: "비대면 전화 코칭",
+    fulfillmentType: "coaching",
+    requiresPayment: true,
+    regularAmountKrw: 50_000,
+    amountKrw: 50_000,
+    /** 별도 공개 승인 전에는 상품 레코드도 비활성 상태로 유지한다. */
+    active: false,
+    /** 기존 행사·쿠폰은 이 상품에 자동 적용하지 않는다. */
+    couponEligible: false,
+  },
 ] as const;
 
 export type CommerceProduct = (typeof COMMERCE_PRODUCTS)[number];
