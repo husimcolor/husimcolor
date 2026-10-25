@@ -23,6 +23,7 @@ import {
 import { getDb } from "../db";
 import {
   confirmTossTestPayment,
+  getTossTestPayment,
   getTossTestClientConfig,
   isTossTestPaymentEnabled,
 } from "./toss-test-provider";
@@ -120,6 +121,17 @@ type NormalizedCoachingBookingRequest = {
 };
 
 const PENDING_COACHING_BOOKING_VERSION = 2;
+
+/**
+ * 코칭 주문은 확정 전까지 transaction 원문 칼럼에 암호화된 예약 요청을 보관한다.
+ * 승인 provider 원문은 예약이 없는 주문에만 기록해 예약 일시·방식의 복원을 보장한다.
+ */
+export function getApprovedPaymentRawPayload(
+  pendingBookingRequestEncrypted: string | null,
+  providerRawPayloadEncrypted: string | null | undefined,
+): string | null {
+  return pendingBookingRequestEncrypted ?? providerRawPayloadEncrypted ?? null;
+}
 
 export function normalizeCoachingBookingRequest(request: CoachingBookingRequest | undefined): NormalizedCoachingBookingRequest | null {
   if (!request) return null;
@@ -654,7 +666,13 @@ async function completePaymentForProvider(input: {
         .set({
           status: "approved",
           providerPaymentId: input.providerPaymentId,
-          rawPayloadEncrypted: input.rawPayloadEncrypted ?? null,
+          // 코칭 승인 시 이 칼럼에는 결제 전 암호화한 예약 요청이 들어 있다.
+          // 승인 원문으로 덮어쓰면 같은 transaction 안의 예약 확정이 일시·방식을
+          // 복원하지 못하므로, 예약 요청이 있으면 끝까지 유지한다.
+          rawPayloadEncrypted: getApprovedPaymentRawPayload(
+            record.pendingBookingRequestEncrypted,
+            input.rawPayloadEncrypted,
+          ),
           approvedAt: now,
         })
         .where(eq(paymentTransactions.id, record.transactionId));
@@ -840,11 +858,23 @@ export async function completeTossTestPayment(input: {
   if (!isTossTestPaymentEnabled()) throw new Error("TOSS_TEST_PAYMENT_DISABLED");
   const known = await getKnownTossSuccess("toss_pg", input);
   if (known) return known;
-  const approved = await confirmTossTestPayment({
+  const confirmationInput = {
     paymentKey: input.paymentKey,
     orderNumber: input.orderNumber,
     amountKrw: input.amountKrw,
-  });
+  };
+  let approved: Awaited<ReturnType<typeof confirmTossTestPayment>>;
+  try {
+    approved = await confirmTossTestPayment(confirmationInput);
+  } catch (error) {
+    // Toss can reject a second confirm after it has already approved the card.
+    // A prior DB transaction failure must be recoverable, but only after a
+    // strict server-side readback proves this exact payment is DONE.
+    if (!(error instanceof Error) || !/^TOSS_TEST_CONFIRM_FAILED_(400|409)$/.test(error.message)) {
+      throw error;
+    }
+    approved = await getTossTestPayment(confirmationInput);
+  }
   return completePaymentForProvider({
     orderNumber: approved.orderNumber,
     providerPaymentId: approved.paymentKey,

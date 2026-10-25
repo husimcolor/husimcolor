@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../server/db", () => ({ getDb: mocks.getDb }));
 vi.mock("../server/commerce/toss-test-provider", () => ({
   confirmTossTestPayment: mocks.confirm,
+  getTossTestPayment: vi.fn(),
   getTossTestClientConfig: vi.fn(),
   isTossTestPaymentEnabled: vi.fn(() => true),
 }));

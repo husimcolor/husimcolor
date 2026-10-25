@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { decryptPendingCoachingBookingRequest, encryptPendingCoachingBookingRequest, getCoachingBookingPersistence, normalizeCoachingBookingRequest } from "../server/commerce/order-service";
+import { decryptPendingCoachingBookingRequest, encryptPendingCoachingBookingRequest, getApprovedPaymentRawPayload, getCoachingBookingPersistence, normalizeCoachingBookingRequest } from "../server/commerce/order-service";
 import { decryptCommerceValue } from "../server/commerce/crypto";
 
 const encryptionKey = Buffer.alloc(32, 7).toString("base64");
@@ -56,6 +56,15 @@ describe("website coaching booking persistence", () => {
       birthCalendarType: "lunar",
       isLeapMonth: true,
     });
+  });
+
+  it("preserves pending telephone booking ciphertext instead of replacing it with an approval payload", () => {
+    const pendingBookingCiphertext = "v1.pending-booking-ciphertext";
+    const approvedProviderCiphertext = "v1.toss-approved-ciphertext";
+    expect(getApprovedPaymentRawPayload(pendingBookingCiphertext, approvedProviderCiphertext))
+      .toBe(pendingBookingCiphertext);
+    expect(getApprovedPaymentRawPayload(null, approvedProviderCiphertext))
+      .toBe(approvedProviderCiphertext);
   });
 
   it("rejects an invalid booking time window before an order is written", () => {

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isExplicitTestPaymentRuntime } from "./test-runtime";
 
 const TOSS_TEST_CONFIRM_URL = "https://api.tosspayments.com/v1/payments/confirm";
+const TOSS_TEST_PAYMENT_URL = "https://api.tosspayments.com/v1/payments";
 
 const tossApprovedPaymentSchema = z.object({
   paymentKey: z.string().min(1),
@@ -71,6 +72,49 @@ export async function confirmTossTestPayment(
     throw new Error("TOSS_TEST_CONFIRM_RESPONSE_MISMATCH");
   }
 
+  return {
+    paymentKey: approved.data.paymentKey,
+    orderNumber: approved.data.orderId,
+    amountKrw: approved.data.totalAmount,
+    method: approved.data.method ?? null,
+    rawPayload: JSON.stringify(payload),
+  };
+}
+
+/**
+ * 승인 API가 이미 처리된 결제를 다시 승인하지 않을 때만 사용하는 서버 측 복구 조회다.
+ * paymentKey, 주문번호, 금액을 모두 다시 대조하므로 브라우저 입력을 권한 근거로 삼지 않는다.
+ */
+export async function getTossTestPayment(
+  input: { paymentKey: string; orderNumber: string; amountKrw: number },
+  fetcher: FetchLike = fetch,
+): Promise<{
+  paymentKey: string;
+  orderNumber: string;
+  amountKrw: number;
+  method: string | null;
+  rawPayload: string;
+}> {
+  if (!isTossTestPaymentEnabled()) throw new Error("TOSS_TEST_PAYMENT_DISABLED");
+  const secretKey = getRequiredTestKey("TOSS_TEST_SECRET_KEY", "test_sk_");
+  const authorization = Buffer.from(`${secretKey}:`, "utf8").toString("base64");
+  const response = await fetcher(`${TOSS_TEST_PAYMENT_URL}/${encodeURIComponent(input.paymentKey)}`, {
+    method: "GET",
+    headers: { Authorization: `Basic ${authorization}` },
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(`TOSS_TEST_LOOKUP_FAILED_${response.status}`);
+  }
+  const approved = tossApprovedPaymentSchema.safeParse(payload);
+  if (
+    !approved.success
+    || approved.data.paymentKey !== input.paymentKey
+    || approved.data.orderId !== input.orderNumber
+    || approved.data.totalAmount !== input.amountKrw
+  ) {
+    throw new Error("TOSS_TEST_CONFIRM_RESPONSE_MISMATCH");
+  }
   return {
     paymentKey: approved.data.paymentKey,
     orderNumber: approved.data.orderId,
