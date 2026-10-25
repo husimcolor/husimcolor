@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { decryptPendingCoachingBookingRequest, encryptPendingCoachingBookingRequest, getCoachingBookingPersistence, normalizeCoachingBookingRequest } from "../server/commerce/order-service";
-import { decryptCommerceValue } from "../server/commerce/crypto";
+import { decryptPendingCoachingBookingRequest, encryptPendingCoachingBookingRequest, getApprovedPaymentRawPayload, getCoachingBookingPersistence, normalizeCoachingBookingRequest } from "../server/commerce/order-service";
+import { decryptCommerceValue, encryptCommerceValue } from "../server/commerce/crypto";
 
 const encryptionKey = Buffer.alloc(32, 7).toString("base64");
 
@@ -22,6 +22,55 @@ describe("website coaching booking persistence", () => {
     expect(persisted).toMatchObject({ sessionMode: "in_person" });
     expect(persisted.detailsEncrypted).not.toContain("010-0000-0000");
     expect(JSON.parse(decryptCommerceValue(persisted.detailsEncrypted!))).toEqual({ contactName: "Preview Customer", contactPhone: "010-0000-0000", notes: "테스트 메모" });
+  });
+
+  it("restores telephone schedule, mode, and optional lunar details after the pending encrypted request round trip", () => {
+    vi.stubEnv("COMMERCE_EMAIL_ENCRYPTION_KEY", encryptionKey);
+    const request = normalizeCoachingBookingRequest({
+      contactName: "Preview Customer",
+      contactPhone: "010-0000-0000",
+      requestedWindowStart: "2026-11-02T14:00:00+09:00",
+      requestedWindowEnd: "2026-11-02T15:00:00+09:00",
+      sessionMode: "telephone",
+      adultConfirmed: true,
+      fiveElementsOptIn: true,
+      birthDate: "1982-04-01",
+      birthCalendarType: "lunar",
+      isLeapMonth: true,
+    });
+    const recovered = decryptPendingCoachingBookingRequest(encryptPendingCoachingBookingRequest(request!));
+    expect(recovered).toMatchObject({
+      sessionMode: "telephone",
+      fiveElementsOptIn: true,
+      birthDate: "1982-04-01",
+      birthCalendarType: "lunar",
+      isLeapMonth: true,
+    });
+    const persisted = getCoachingBookingPersistence(recovered);
+    expect(persisted).toMatchObject({
+      sessionMode: "telephone",
+      requestedWindowStart: new Date("2026-11-02T05:00:00.000Z"),
+      requestedWindowEnd: new Date("2026-11-02T06:00:00.000Z"),
+    });
+    expect(JSON.parse(decryptCommerceValue(persisted.detailsEncrypted!))).toMatchObject({
+      birthCalendarType: "lunar",
+      isLeapMonth: true,
+    });
+  });
+
+  it("preserves pending telephone booking ciphertext instead of replacing it with an approval payload", () => {
+    const pendingBookingCiphertext = "v1.pending-booking-ciphertext";
+    const approvedProviderCiphertext = "v1.toss-approved-ciphertext";
+    expect(getApprovedPaymentRawPayload(pendingBookingCiphertext, approvedProviderCiphertext))
+      .toBe(pendingBookingCiphertext);
+    expect(getApprovedPaymentRawPayload(null, approvedProviderCiphertext))
+      .toBe(approvedProviderCiphertext);
+  });
+
+  it("does not treat an encrypted provider response as a recoverable telephone booking request", () => {
+    vi.stubEnv("COMMERCE_EMAIL_ENCRYPTION_KEY", encryptionKey);
+    const providerCiphertext = encryptCommerceValue(JSON.stringify({ status: "DONE", method: "CARD" }));
+    expect(decryptPendingCoachingBookingRequest(providerCiphertext)).toBeNull();
   });
 
   it("rejects an invalid booking time window before an order is written", () => {

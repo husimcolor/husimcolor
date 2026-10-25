@@ -18,6 +18,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
+import { formatKstDateTime } from "@/lib/kst-date";
 
 type Tab = "운영 홈" | "고객·회원" | "주문·결제" | "검사·결과" | "PDF·이메일" | "상품·쿠폰" | "코칭예약" | "체험 신청" | "문의" | "레거시" | "통계·리뷰" | "Preview 검증";
 type LegacyStatus = "pending" | "confirmed" | "rejected";
@@ -40,11 +41,7 @@ const inquiryStatusLabels: Record<string, string> = { received: "접수", review
 const experienceRequestStatusLabels: Record<string, string> = { received: "접수", reviewing: "일정 확인 중", confirmed: "예약 확정", cancelled: "취소" };
 
 function dateText(value: Date | string | null | undefined) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return formatKstDateTime(value);
 }
 
 function Badge({ text, tone = "neutral" }: { text: string; tone?: "good" | "warn" | "bad" | "neutral" }) {
@@ -140,6 +137,7 @@ export default function AdminScreen() {
   const customer = trpc.admin.customerDetail.useQuery({ customerId: customerId ?? 1 }, { ...secured, enabled: hasAdminAccess && customerId !== null });
   const delivery = trpc.commerce.adminDelivery.list.useQuery({ limit: 50, search: deliverySearch.trim() || undefined }, secured);
   const bookings = trpc.admin.coachingBookings.useQuery({ limit: 50 }, secured);
+  const telephoneSlotSettings = trpc.admin.telephoneCoachingSlotSettings.useQuery(undefined, secured);
   const experienceRequests = trpc.admin.yearEndExperienceRequests.useQuery({ limit: 100 }, secured);
   const blackoutDates = trpc.admin.coachingBlackoutDates.useQuery(undefined, secured);
   const supportTickets = trpc.admin.supportTickets.useQuery({ limit: 100 }, secured);
@@ -171,6 +169,7 @@ export default function AdminScreen() {
     onError: () => Alert.alert("이메일 열람 불가", "주문 이메일을 불러오지 못했습니다. 관리자 로그인을 확인해 주세요."),
   });
   const updateBooking = trpc.admin.updateCoachingBooking.useMutation({ onSuccess: () => { bookings.refetch(); dailyOperations.refetch(); } });
+  const updateTelephoneSlotSetting = trpc.admin.updateTelephoneCoachingSlotSetting.useMutation({ onSuccess: () => { void telephoneSlotSettings.refetch(); } });
   const revealExperienceContact = trpc.admin.revealYearEndExperienceRequestContact.useMutation({
     onSuccess: (result) => setRevealedExperienceContacts((previous) => ({ ...previous, [result.requestId]: { name: result.name, contactPhone: result.contactPhone } })),
     onError: () => Alert.alert("연락처 열람 불가", "신청자 연락처를 불러오지 못했습니다. 관리자 로그인을 확인해 주세요."),
@@ -289,7 +288,7 @@ export default function AdminScreen() {
 
   const refresh = async () => {
     setRefreshing(true);
-    await Promise.all([auth.refetch(), dailyOperations.refetch(), funnelDaily.refetch(), orders.refetch(), ebookOrders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), experienceRequests.refetch(), blackoutDates.refetch(), supportTickets.refetch(), coupons.refetch(), targetedCoupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
+    await Promise.all([auth.refetch(), dailyOperations.refetch(), funnelDaily.refetch(), orders.refetch(), ebookOrders.refetch(), previewVerification.refetch(), customers.refetch(), delivery.refetch(), bookings.refetch(), telephoneSlotSettings.refetch(), experienceRequests.refetch(), blackoutDates.refetch(), supportTickets.refetch(), coupons.refetch(), targetedCoupons.refetch(), legacy.refetch(), reviews.refetch(), visits.refetch(), tests.refetch(), customerId ? customer.refetch() : Promise.resolve()]);
     setRefreshing(false);
   };
   const updatePayment = (id: number, status: LegacyStatus) => Alert.alert("과거 신청 상태", `“${legacyLabels[status]}”으로 변경하시겠습니까?`, [
@@ -614,7 +613,7 @@ export default function AdminScreen() {
           {!targetedCoupons.data?.length && <Panel><Text style={styles.noticeText}>최근 발급한 지정 고객 쿠폰이 없습니다.</Text></Panel>}
           <Text style={[styles.section, { color: colors.foreground }]}>상품·쿠폰</Text><Text style={[styles.helper, { color: colors.muted }]}>공개 행사와 지정 고객 쿠폰의 사용·예약 상태를 표시합니다. 한 주문에는 쿠폰 하나만 적용됩니다.</Text>{coupons.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.code}</Text><Badge text={item.status} tone={item.status === "active" ? "good" : "neutral"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.discountType === "percent" ? `${item.discountValue}% 할인` : `${item.discountValue.toLocaleString()}원 할인`} · 사용 {item.redemptionCount}건 · 예약 {item.reservedCount}건</Text><Text style={[styles.meta, { color: colors.muted }]}>종료 {dateText(item.endsAt)}</Text></Panel>)}{!coupons.data?.length && <Panel><Text style={styles.noticeText}>등록된 쿠폰이 없습니다.</Text></Panel>}</>}
 
-        {tab === "코칭예약" && <><Text style={[styles.section, { color: colors.foreground }]}>코칭 예약 운영</Text><Text style={[styles.helper, { color: colors.muted }]}>결제 완료 코칭 주문은 일정 대기로 생성되어 운영자가 확정합니다.</Text>{bookings.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={bookingLabels[item.status] ?? item.status} tone={item.status === "completed" ? "good" : item.status === "cancelled" || item.status === "no_show" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.orderNumber}</Text><Text style={[styles.meta, { color: colors.muted }]}>확정 일시 {dateText(item.scheduledAt)} · {item.sessionMode === "online" ? "온라인" : item.sessionMode === "in_person" ? "대면" : "방식 미정"}</Text>{(item.status === "pending_schedule" || item.status === "change_requested") && <><TextInput value={schedule[item.id] ?? ""} onChangeText={(value) => setSchedule((old) => ({ ...old, [item.id]: value }))} placeholder="예: 2026-10-01 14:00" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><View style={styles.actions}><TouchableOpacity style={styles.action} onPress={() => confirmSchedule(item.id)}><Text style={styles.actionText}>일정 확정</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View></>}{item.status === "scheduled" && <View style={styles.actions}><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "completed")}><Text style={styles.smallActionText}>완료</Text></TouchableOpacity><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "change_requested")}><Text style={styles.smallActionText}>변경 요청</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "no_show")}><Text style={styles.dangerActionText}>노쇼</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View>}</Panel>)}</>}
+        {tab === "코칭예약" && <><Text style={[styles.section, { color: colors.foreground }]}>코칭 예약 운영</Text><Text style={[styles.helper, { color: colors.muted }]}>결제 완료 코칭 주문은 일정 대기로 생성되어 운영자가 확정합니다. 비대면 전화 코칭은 결제 승인 후 즉시 예약 확정되며, 같은 60분 시간대에는 다른 코칭 예약을 받을 수 없습니다.</Text><Panel><Text style={styles.noticeTitle}>비대면 전화 코칭 가능 시간</Text><Text style={styles.noticeText}>활성 시간만 고객 예약 화면에 표시됩니다. 방문 코칭 확정·전화 코칭 보류·확정 시간과 겹치면 고객에게 표시되지 않습니다.</Text><View style={styles.actions}>{telephoneSlotSettings.data?.map((slot) => <TouchableOpacity key={slot.slotTime} style={slot.active ? styles.action : styles.smallAction} disabled={updateTelephoneSlotSetting.isPending} onPress={() => updateTelephoneSlotSetting.mutate({ slotTime: slot.slotTime, active: !slot.active })}><Text style={slot.active ? styles.actionText : styles.smallActionText}>{slot.slotTime} · {slot.active ? "운영" : "중지"}</Text></TouchableOpacity>)}</View></Panel>{bookings.data?.map((item) => <Panel key={item.id}><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.productName}</Text><Badge text={bookingLabels[item.status] ?? item.status} tone={item.status === "completed" ? "good" : item.status === "cancelled" || item.status === "no_show" ? "bad" : "warn"} /></View><Text style={[styles.meta, { color: colors.muted }]}>{item.customerEmailMasked} · {item.orderNumber}</Text><Text style={[styles.meta, { color: colors.muted }]}>확정 일시 {dateText(item.scheduledAt)} · {item.sessionMode === "telephone" ? "전화" : item.sessionMode === "online" ? "온라인" : item.sessionMode === "in_person" ? "대면" : "방식 미정"}</Text>{(item.status === "pending_schedule" || item.status === "change_requested") && <><TextInput value={schedule[item.id] ?? ""} onChangeText={(value) => setSchedule((old) => ({ ...old, [item.id]: value }))} placeholder="예: 2026-10-01 14:00" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]} /><View style={styles.actions}><TouchableOpacity style={styles.action} onPress={() => confirmSchedule(item.id)}><Text style={styles.actionText}>일정 확정</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View></>}{item.status === "scheduled" && <View style={styles.actions}><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "completed")}><Text style={styles.smallActionText}>완료</Text></TouchableOpacity><TouchableOpacity style={styles.smallAction} onPress={() => changeBookingStatus(item.id, "change_requested")}><Text style={styles.smallActionText}>변경 요청</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "no_show")}><Text style={styles.dangerActionText}>노쇼</Text></TouchableOpacity><TouchableOpacity style={styles.dangerAction} onPress={() => changeBookingStatus(item.id, "cancelled")}><Text style={styles.dangerActionText}>취소</Text></TouchableOpacity></View>}</Panel>)}</>}
 
         {tab === "체험 신청" && <>
           <Text style={[styles.section, { color: colors.foreground }]}>연말 3컬러 체험 신청</Text>

@@ -23,6 +23,7 @@ import {
   createTestCheckout,
   createTossTestCheckout,
   isTestPaymentEnabled,
+  recoverApprovedPreviewTelephoneCoachingTossTestPayment,
 } from "./commerce/order-service";
 import { isTossTestPaymentEnabled } from "./commerce/toss-test-provider";
 import { isTossLivePaymentEnabled } from "./commerce/toss-live-provider";
@@ -94,6 +95,12 @@ import {
   getAdminCoachingBookingEvents,
   updateAdminCoachingBooking,
 } from "./commerce/coaching-booking-service";
+import {
+  ensureTelephoneCoachingPreviewSchema,
+  getAdminTelephoneCoachingSlotSettings,
+  getPublicTelephoneCoachingAvailability,
+  updateAdminTelephoneCoachingSlotSetting,
+} from "./commerce/telephone-coaching-service";
 import {
   createAdminCoachingBlackoutDate,
   getAdminCoachingBlackoutDates,
@@ -427,6 +434,7 @@ export const appRouter = router({
               "personal_coaching",
               "couple_coaching",
               "relationship_coaching",
+              "telephone_coaching",
             ]),
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
@@ -437,8 +445,14 @@ export const appRouter = router({
                 contactPhone: z.string().min(8).max(40),
                 requestedWindowStart: z.string().datetime({ offset: true }),
                 requestedWindowEnd: z.string().datetime({ offset: true }),
-                sessionMode: z.enum(["online", "in_person"]),
+                sessionMode: z.enum(["online", "in_person", "telephone"]),
                 notes: z.string().max(2000).optional(),
+                topic: z.string().max(500).optional(),
+                fiveElementsOptIn: z.boolean().optional(),
+                birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+                birthCalendarType: z.enum(["solar", "lunar"]).optional(),
+                isLeapMonth: z.boolean().optional(),
+                adultConfirmed: z.boolean().optional(),
               })
               .optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
@@ -461,6 +475,7 @@ export const appRouter = router({
               "personal_coaching",
               "couple_coaching",
               "relationship_coaching",
+              "telephone_coaching",
             ]),
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
@@ -471,8 +486,14 @@ export const appRouter = router({
                 contactPhone: z.string().min(8).max(40),
                 requestedWindowStart: z.string().datetime({ offset: true }),
                 requestedWindowEnd: z.string().datetime({ offset: true }),
-                sessionMode: z.enum(["online", "in_person"]),
+                sessionMode: z.enum(["online", "in_person", "telephone"]),
                 notes: z.string().max(2000).optional(),
+                topic: z.string().max(500).optional(),
+                fiveElementsOptIn: z.boolean().optional(),
+                birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+                birthCalendarType: z.enum(["solar", "lunar"]).optional(),
+                isLeapMonth: z.boolean().optional(),
+                adultConfirmed: z.boolean().optional(),
               })
               .optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
@@ -492,10 +513,27 @@ export const appRouter = router({
               "personal_deep",
               "couple_love_deep",
               "parent_child_deep",
+              "telephone_coaching",
             ]),
             email: z.string().email().max(320),
             idempotencyKey: z.string().min(16).max(128),
             couponCode: z.string().min(1).max(64).optional(),
+            bookingRequest: z
+              .object({
+                contactName: z.string().min(1).max(100),
+                contactPhone: z.string().min(8).max(40),
+                requestedWindowStart: z.string().datetime({ offset: true }),
+                requestedWindowEnd: z.string().datetime({ offset: true }),
+                sessionMode: z.enum(["online", "in_person", "telephone"]),
+                notes: z.string().max(2000).optional(),
+                topic: z.string().max(500).optional(),
+                fiveElementsOptIn: z.boolean().optional(),
+                birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+                birthCalendarType: z.enum(["solar", "lunar"]).optional(),
+                isLeapMonth: z.boolean().optional(),
+                adultConfirmed: z.boolean().optional(),
+              })
+              .optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
           }),
         )
@@ -534,6 +572,22 @@ export const appRouter = router({
           }),
         )
         .mutation(({ input }) => completeTossTestPaymentFailure(input)),
+      /**
+       * 성공 URL의 최초 승인 요청이 시간 초과된 경우에만 고객 성공 화면이 재시도한다.
+       * Preview 테스트 전화 코칭 + Toss DONE + 주문 금액 + 현재 공유 일정까지 서버에서
+       * 검증하며, 결제키·고객정보·provider 원문은 절대로 반환하지 않는다.
+       */
+      recoverPreviewTelephoneCoachingTossTest: publicProcedure
+        .input(z.object({ orderNumber: z.string().regex(/^HC-[A-F0-9]{24}$/) }))
+        .mutation(async ({ input }) => {
+          const result = await recoverApprovedPreviewTelephoneCoachingTossTestPayment(input);
+          if (result.status === "not_approved") return { status: "not_approved" as const };
+          return {
+            status: result.status,
+            alreadyProcessed: result.alreadyProcessed,
+            bookingConfirmed: result.status === "paid",
+          };
+        }),
       completeTossLive: publicProcedure
         .input(
           z.object({
@@ -579,6 +633,17 @@ export const appRouter = router({
             input.toDate,
           ),
         })),
+      telephoneCoachingAvailability: publicProcedure
+        .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+        .query(async ({ input }) => {
+          await ensureTelephoneCoachingPreviewSchema();
+          const database = await db.getDb();
+          if (!database) throw new Error("DATABASE_NOT_AVAILABLE");
+          return {
+            slotMinutes: 60,
+            availableTimes: await getPublicTelephoneCoachingAvailability(database as any, input),
+          };
+        }),
       testMode: publicProcedure.query(() => ({
         localSimulatorEnabled: isTestPaymentEnabled(),
         tossTestEnabled: isTossTestPaymentEnabled(),
@@ -789,6 +854,9 @@ export const appRouter = router({
     previewVerification: adminProcedure.query(() =>
       getPreviewReadOnlyVerificationSnapshot(),
     ),
+    recoverPreviewTelephoneCoachingPayment: adminProcedure
+      .input(z.object({ orderNumber: z.string().min(8).max(64) }))
+      .mutation(({ input }) => recoverApprovedPreviewTelephoneCoachingTossTestPayment(input)),
     supportTicketSchemaAudit: adminProcedure.query(() =>
       getSupportTicketSchemaAudit(),
     ),
@@ -946,6 +1014,10 @@ export const appRouter = router({
     coachingBookings: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
       .query(({ input }) => getAdminCoachingBookingList(input.limit)),
+    telephoneCoachingSlotSettings: adminProcedure.query(() => getAdminTelephoneCoachingSlotSettings()),
+    updateTelephoneCoachingSlotSetting: adminProcedure
+      .input(z.object({ slotTime: z.string().regex(/^\d{2}:\d{2}$/), active: z.boolean() }))
+      .mutation(({ input }) => updateAdminTelephoneCoachingSlotSetting(input)),
     yearEndExperienceRequests: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }))
       .query(({ input }) =>
@@ -1000,7 +1072,7 @@ export const appRouter = router({
           ]),
           scheduledAt: z.date().nullable().optional(),
           scheduledEndAt: z.date().nullable().optional(),
-          sessionMode: z.enum(["undecided", "online", "in_person"]).optional(),
+          sessionMode: z.enum(["undecided", "online", "in_person", "telephone"]).optional(),
           requestedWindowStart: z.date().nullable().optional(),
           requestedWindowEnd: z.date().nullable().optional(),
           assignedAdminUserId: z

@@ -63,6 +63,7 @@
     "expo-web-browser": "~15.0.10",
     "express": "^4.22.1",
     "jsonwebtoken": "^9.0.3",
+    "korean-lunar-calendar": "0.4.0",
     "mysql2": "^3.16.0",
     "nativewind": "^4.2.1",
     "pdfjs-dist": "^6.4.299",
