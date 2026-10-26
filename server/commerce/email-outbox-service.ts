@@ -306,15 +306,22 @@ export async function retryAdminDeliveryOutboxItem(outboxId: number): Promise<{
   if (item.status !== "queued" && item.status !== "failed") {
     throw new Error("ADMIN_DELIVERY_OUTBOX_NOT_RETRYABLE");
   }
-  const reset = await db
+  // queued 항목은 아래 delivery 함수가 queued → sending으로 원자적으로 선점한다.
+  // queued → queued 재갱신의 changed-row 결과를 선점 실패로 오인하지 않는다.
+  if (item.status === "queued") {
+    return item.purpose === "coaching_booking_confirmation"
+      ? deliverTelephoneCoachingConfirmationOutboxItem(outboxId)
+      : deliverPrivatePdfOutboxItem(outboxId);
+  }
+  const [reset] = await db
     .update(emailOutbox)
     .set({ status: "queued", nextAttemptAt: new Date(), lastErrorCode: null })
     .where(and(
       eq(emailOutbox.id, outboxId),
       inArray(emailOutbox.purpose, retryablePurposes),
-      inArray(emailOutbox.status, ["queued", "failed"]),
+      eq(emailOutbox.status, "failed"),
     ));
-  if (Number((reset as any)[0]?.affectedRows ?? 0) !== 1) return { status: "not_claimed" };
+  if (Number((reset as any)?.affectedRows ?? 0) !== 1) return { status: "not_claimed" };
   return item.purpose === "coaching_booking_confirmation"
     ? deliverTelephoneCoachingConfirmationOutboxItem(outboxId)
     : deliverPrivatePdfOutboxItem(outboxId);

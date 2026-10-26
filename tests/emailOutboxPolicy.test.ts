@@ -36,4 +36,13 @@ describe("email outbox retry policy", () => {
     expect(router).toContain("retryAdminDeliveryOutboxItem(input.outboxId)");
     expect(config.crons).toContainEqual({ path: "/api/cron-email-outbox", schedule: "0 0 * * *" });
   });
+
+  it("claims queued admin deliveries directly instead of treating a queued-to-queued reset as a conflict", () => {
+    const service = readFileSync(resolve(__dirname, "../server/commerce/email-outbox-service.ts"), "utf8");
+    const queuedBranch = service.indexOf('if (item.status === "queued")');
+    const failedReset = service.indexOf('eq(emailOutbox.status, "failed")');
+    expect(queuedBranch).toBeGreaterThan(-1);
+    expect(failedReset).toBeGreaterThan(queuedBranch);
+    expect(service.slice(queuedBranch, failedReset)).toContain("deliverTelephoneCoachingConfirmationOutboxItem(outboxId)");
+  });
 });
