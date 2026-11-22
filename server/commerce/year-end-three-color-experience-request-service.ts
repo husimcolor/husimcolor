@@ -7,8 +7,9 @@ import { getDb } from "../db";
 import type { AdminAuditActor } from "./admin-audit-actor";
 import { decryptCommerceValue, encryptCommerceValue, hashCommerceValue } from "./crypto";
 
-export const YEAR_END_THREE_COLOR_EXPERIENCE_LAST_DATE = "2026-11-30";
-export const YEAR_END_THREE_COLOR_EXPERIENCE_EVENT_END_AT = Date.UTC(2026, 10, 30, 14, 59, 59, 999);
+export const YEAR_END_THREE_COLOR_EXPERIENCE_FIRST_DATE = "2026-12-01";
+export const YEAR_END_THREE_COLOR_EXPERIENCE_LAST_DATE = "2026-12-30";
+export const YEAR_END_THREE_COLOR_EXPERIENCE_EVENT_END_AT = Date.UTC(2026, 11, 30, 14, 59, 59, 999);
 
 /** Existing pre-marriage entries remain readable; new submissions never create that legacy code. */
 export type StoredExperienceProductCode = "personal_three_color_experience" | "engaged_couple_three_color_experience" | "relationship_coaching_experience";
@@ -21,6 +22,15 @@ const PRODUCT_LABELS: Record<StoredExperienceProductCode, string> = {
   engaged_couple_three_color_experience: "예비부부 3컬러 관계 체험",
   relationship_coaching_experience: "두 사람 관계코칭 체험",
 };
+
+/** Resolve the new event label without rewriting existing November records. */
+export function getExperienceRequestProductLabel(productCode: StoredExperienceProductCode, preferredDate: string): string {
+  if (preferredDate >= YEAR_END_THREE_COLOR_EXPERIENCE_FIRST_DATE && preferredDate <= YEAR_END_THREE_COLOR_EXPERIENCE_LAST_DATE) {
+    if (productCode === "personal_three_color_experience") return "12월 특별 할인 · 1:1 프리미엄 컬러심리 코칭";
+    if (productCode === "relationship_coaching_experience") return "12월 특별 할인 · 부부 컬러심리 코칭";
+  }
+  return PRODUCT_LABELS[productCode];
+}
 
 const RELATIONSHIP_LABELS: Record<ExperienceRelationshipType, string> = {
   married_couple: "부부",
@@ -98,7 +108,8 @@ function kstDate(now = new Date()): string {
 
 export function getEarliestExperienceRequestDate(now = new Date()): string {
   const [year, month, day] = kstDate(now).split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+  const nextDay = new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+  return nextDay < YEAR_END_THREE_COLOR_EXPERIENCE_FIRST_DATE ? YEAR_END_THREE_COLOR_EXPERIENCE_FIRST_DATE : nextDay;
 }
 
 function assertCalendarDate(value: string): void {
@@ -289,7 +300,7 @@ export async function getAdminYearEndThreeColorExperienceRequests(limit = 100) {
     return {
       id: row.id,
       productCode,
-      productLabel: PRODUCT_LABELS[productCode],
+      productLabel: getExperienceRequestProductLabel(productCode, row.preferredDate),
       relationshipType,
       relationshipLabel: relationshipType ? RELATIONSHIP_LABELS[relationshipType] : null,
       childAge: relationshipType === "parent_child" ? decryptOptionalAgeSafely(row.childAgeEncrypted) : null,

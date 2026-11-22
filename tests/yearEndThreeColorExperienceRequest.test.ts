@@ -6,6 +6,7 @@ import {
   assertExperienceRequestDate,
   assertExperienceRequestRelationship,
   getEarliestExperienceRequestDate,
+  getExperienceRequestProductLabel,
   YEAR_END_THREE_COLOR_EXPERIENCE_EVENT_END_AT,
 } from "../server/commerce/year-end-three-color-experience-request-service";
 import { appRouter } from "../server/routers";
@@ -14,26 +15,49 @@ const source = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("year-end three-color experience request safety contract", () => {
-  it("accepts only the next KST calendar day through the event end date", () => {
-    const now = new Date("2026-10-19T02:00:00.000Z");
-    expect(getEarliestExperienceRequestDate(now)).toBe("2026-10-20");
-    expect(() => assertExperienceRequestDate("2026-10-19", now)).toThrow(
+  it("accepts December consultations during immediate November prebooking without a November discount", () => {
+    const now = new Date("2026-11-22T11:00:00.000Z");
+    expect(getEarliestExperienceRequestDate(now)).toBe("2026-12-01");
+    expect(() => assertExperienceRequestDate("2026-11-23", now)).toThrow(
       "EXPERIENCE_REQUEST_DATE_OUT_OF_RANGE",
     );
-    expect(() => assertExperienceRequestDate("2026-12-01", now)).toThrow(
+    expect(() => assertExperienceRequestDate("2026-11-30", now)).toThrow(
       "EXPERIENCE_REQUEST_DATE_OUT_OF_RANGE",
     );
-    expect(() => assertExperienceRequestDate("2026-10-20", now)).not.toThrow();
-    expect(() => assertExperienceRequestDate("2026-11-30", now)).not.toThrow();
+    expect(() => assertExperienceRequestDate("2026-12-01", now)).not.toThrow();
+    expect(() => assertExperienceRequestDate("2026-12-30", now)).not.toThrow();
+    expect(() => assertExperienceRequestDate("2026-12-31", now)).toThrow("EXPERIENCE_REQUEST_DATE_OUT_OF_RANGE");
+  });
+
+  it("keeps the existing next-day rule during the consultation period and uses Korean calendar days", () => {
+    expect(getEarliestExperienceRequestDate(new Date("2026-11-30T14:59:59.999Z"))).toBe("2026-12-01");
+    expect(getEarliestExperienceRequestDate(new Date("2026-11-30T15:00:00.000Z"))).toBe("2026-12-02");
+    expect(() => assertExperienceRequestDate("2026-12-01", new Date("2026-11-30T15:00:00.000Z"))).toThrow("EXPERIENCE_REQUEST_DATE_OUT_OF_RANGE");
+    expect(() => assertExperienceRequestDate("2026-12-30", new Date("2026-12-29T14:59:59.999Z"))).not.toThrow();
+    expect(() => assertExperienceRequestDate("2026-12-30", new Date("2026-12-29T15:00:00.000Z"))).toThrow("EXPERIENCE_REQUEST_DATE_OUT_OF_RANGE");
+  });
+
+  it("rejects impossible calendar dates before reaching storage", () => {
+    expect(() => assertExperienceRequestDate("2026-12-32", new Date("2026-11-22T11:00:00.000Z"))).toThrow("EXPERIENCE_REQUEST_DATE_INVALID");
   });
 
   it("closes after the Korean-time event boundary", () => {
+    expect(YEAR_END_THREE_COLOR_EXPERIENCE_EVENT_END_AT).toBe(Date.parse("2026-12-30T23:59:59.999+09:00"));
     expect(() =>
       assertExperienceRequestDate(
-        "2026-11-30",
+        "2026-12-30",
         new Date(YEAR_END_THREE_COLOR_EXPERIENCE_EVENT_END_AT + 1),
       ),
     ).toThrow("EXPERIENCE_EVENT_ENDED");
+  });
+
+  it("shows new December event names without relabeling historical November and legacy requests", () => {
+    expect(getExperienceRequestProductLabel("personal_three_color_experience", "2026-11-30")).toBe("일대일 코칭체험");
+    expect(getExperienceRequestProductLabel("relationship_coaching_experience", "2026-11-30")).toBe("두 사람 관계코칭 체험");
+    expect(getExperienceRequestProductLabel("engaged_couple_three_color_experience", "2026-11-30")).toBe("예비부부 3컬러 관계 체험");
+    expect(getExperienceRequestProductLabel("personal_three_color_experience", "2026-12-01")).toBe("12월 특별 할인 · 1:1 프리미엄 컬러심리 코칭");
+    expect(getExperienceRequestProductLabel("relationship_coaching_experience", "2026-12-30")).toBe("12월 특별 할인 · 부부 컬러심리 코칭");
+    expect(getExperienceRequestProductLabel("engaged_couple_three_color_experience", "2026-12-01")).toBe("예비부부 3컬러 관계 체험");
   });
 
   it("requires a relationship for new two-person requests and a child age only for parent-child", () => {
