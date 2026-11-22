@@ -11,6 +11,13 @@ import {
 } from "./preview-outbox-verification";
 import { sendResendEmail, sendResendPdfEmail } from "./resend-provider";
 import { markRelationshipSessionEmailDelivered } from "./relationship-session-completion";
+import {
+  TELEPHONE_EVENT_NAME,
+  TELEPHONE_EVENT_DURATION_MINUTES,
+  TELEPHONE_CONNECTION_NOTICE,
+  TELEPHONE_CONDUCT_NOTICE,
+  TELEPHONE_CONDUCT_REFUND_NOTICE,
+} from "../../shared/telephoneCoachingEvent";
 
 const MAX_AUTOMATIC_ATTEMPTS = 5;
 const RETRY_MINUTES = [5, 15, 60, 240, 1440] as const;
@@ -242,14 +249,20 @@ export async function deliverSupportNotificationOutboxItem(outboxId: number): Pr
 }
 
 
-function telephoneCoachingConfirmationHtml(input: { scheduledAt: Date | null; scheduledEndAt: Date | null }) {
+export function telephoneCoachingConfirmationHtml(input: { scheduledAt: Date | null; scheduledEndAt: Date | null; productName?: string; finalAmountKrw?: number }) {
   const formatter = new Intl.DateTimeFormat("ko-KR", { dateStyle: "full", timeStyle: "short", timeZone: "Asia/Seoul" });
   const schedule = input.scheduledAt ? formatter.format(input.scheduledAt) : "예약하신 시간";
+  const isEvent = input.productName === TELEPHONE_EVENT_NAME;
+  const duration = isEvent ? TELEPHONE_EVENT_DURATION_MINUTES : 50;
+  const amount = new Intl.NumberFormat("ko-KR").format(input.finalAmountKrw ?? 50_000);
   return [
     "<p>안녕하세요. 휴심컬러입니다.</p>",
-    "<p>비대면 전화 코칭 결제와 예약이 확인되었습니다.</p>",
-    `<p><strong>일정</strong>: ${schedule}<br/><strong>진행</strong>: 전화 코칭 50분 (준비·정리 포함 60분 일정 칸)<br/><strong>금액</strong>: 50,000원</p>`,
-    "<p>진행자가 예약하신 번호로 전화드립니다. 시작 전 취소는 전액 환불되며, 시작 후 중단은 실제 진행 시간과 사유에 따라 남은 시간 재예약 또는 미진행분 환불을 협의합니다.</p>",
+    isEvent ? `<p>${TELEPHONE_EVENT_NAME} 결제와 예약이 확인되었습니다.</p>` : "<p>비대면 전화 코칭 결제와 예약이 확인되었습니다.</p>",
+    `<p><strong>일정</strong>: ${schedule}<br/><strong>진행</strong>: 전화 상담 ${duration}분 (준비·정리 포함 60분 일정 칸)<br/><strong>금액</strong>: ${amount}원</p>`,
+    `<p>${TELEPHONE_CONNECTION_NOTICE}</p>`,
+    "<p>시작 전 취소는 전액 환불되며, 시작 후 중단은 실제 진행 시간과 사유에 따라 남은 시간 재예약 또는 미진행분 환불을 협의합니다.</p>",
+    `<p>${TELEPHONE_CONDUCT_NOTICE}</p>`,
+    `<p>${TELEPHONE_CONDUCT_REFUND_NOTICE}</p>`,
   ].join("");
 }
 
@@ -264,7 +277,7 @@ export async function deliverTelephoneCoachingConfirmationOutboxItem(outboxId: n
     lte(emailOutbox.nextAttemptAt, now),
   ));
   if (Number((claimed as any)[0]?.affectedRows ?? 0) !== 1) return { status: "not_claimed" };
-  const rows = await db.select({ id: emailOutbox.id, attemptCount: emailOutbox.attemptCount, toEmailEncrypted: emailOutbox.toEmailEncrypted, scheduledAt: coachingBookings.scheduledAt, scheduledEndAt: coachingBookings.scheduledEndAt }).from(emailOutbox).innerJoin(coachingBookings, eq(coachingBookings.orderId, emailOutbox.orderId)).where(and(eq(emailOutbox.id, outboxId), eq(emailOutbox.status, "sending"))).limit(1);
+  const rows = await db.select({ id: emailOutbox.id, attemptCount: emailOutbox.attemptCount, toEmailEncrypted: emailOutbox.toEmailEncrypted, scheduledAt: coachingBookings.scheduledAt, scheduledEndAt: coachingBookings.scheduledEndAt, productName: orderItems.productNameSnapshot, finalAmountKrw: orderItems.finalAmountKrw }).from(emailOutbox).innerJoin(coachingBookings, eq(coachingBookings.orderId, emailOutbox.orderId)).innerJoin(orderItems, eq(orderItems.orderId, emailOutbox.orderId)).where(and(eq(emailOutbox.id, outboxId), eq(emailOutbox.status, "sending"))).limit(1);
   const item = rows[0];
   if (!item) return { status: "not_claimed" };
   try {

@@ -53,8 +53,10 @@ import {
   type TelephoneCoachingBookingRequest,
   type NormalizedTelephoneCoachingBookingRequest,
   reserveTelephoneCoachingSlot,
+  resolveTelephoneCoachingCheckoutOffer,
 } from "./telephone-coaching-service";
 import { deliverTelephoneCoachingConfirmationOutboxItem } from "./email-outbox-service";
+import type { TelephoneEventOfferCode } from "../../shared/telephoneCoachingEvent";
 
 const ORDER_TIMEOUT_MS = 30 * 60 * 1000;
 
@@ -106,6 +108,7 @@ export type CoachingBookingRequest = {
   birthCalendarType?: "solar" | "lunar";
   isLeapMonth?: boolean;
   adultConfirmed?: boolean;
+  offerCode?: TelephoneEventOfferCode;
 };
 
 type NormalizedCoachingBookingRequest = {
@@ -120,6 +123,7 @@ type NormalizedCoachingBookingRequest = {
   birthDate: string | null;
   birthCalendarType: "solar" | "lunar" | null;
   isLeapMonth: boolean;
+  offerCode?: TelephoneEventOfferCode;
 };
 
 const PENDING_COACHING_BOOKING_VERSION = 2;
@@ -160,6 +164,7 @@ export function encryptPendingCoachingBookingRequest(request: NormalizedCoaching
     birthCalendarType: request.birthCalendarType, isLeapMonth: request.isLeapMonth,
     // 이 payload는 이미 성인 확인을 통과한 정규화 요청이다. 승인 시에도 이를 복원해야 전화 예약이 빈 일정으로 생성되지 않는다.
     adultConfirmed: request.sessionMode === "telephone" ? true : undefined,
+    ...(request.offerCode ? { offerCode: request.offerCode } : {}),
   } }));
 }
 
@@ -266,6 +271,13 @@ async function createCheckoutForProvider(input: {
     throw new Error("INVALID_CHECKOUT_IDEMPOTENCY_KEY");
   }
 
+  // 행사 선택과 기간을 DB/주문 생성 전에 차단한다. 정규 요청은 기존 DB 가격을 그대로 사용한다.
+  const telephoneOffer = resolveTelephoneCoachingCheckoutOffer({
+    productCode: input.productCode,
+    offerCode: input.bookingRequest?.offerCode,
+    requestedWindowStart: input.bookingRequest ? new Date(input.bookingRequest.requestedWindowStart) : undefined,
+    couponCode: input.couponCode,
+  });
   const db = await getDb();
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
   const email = assertCheckoutEmail(input.email);
@@ -329,6 +341,9 @@ async function createCheckoutForProvider(input: {
       .limit(1);
     const price = priceRows[0];
     if (!price) throw new Error("PRODUCT_PRICE_NOT_AVAILABLE");
+    if (telephoneOffer && (price.amountKrw !== telephoneOffer.regularAmountKrw || (price.regularAmountKrw || price.amountKrw) !== telephoneOffer.regularAmountKrw)) {
+      throw new Error("TELEPHONE_EVENT_REGULAR_PRICE_CHANGED");
+    }
 
     const customerRows = await tx
       .select({ id: customers.id })
@@ -372,8 +387,8 @@ async function createCheckoutForProvider(input: {
       isTest: isTestOrder,
       regularAmountKrw: price.regularAmountKrw || price.amountKrw,
       listAmountKrw: price.amountKrw,
-      discountAmountKrw: 0,
-      finalAmountKrw: price.amountKrw,
+      discountAmountKrw: telephoneOffer?.discountAmountKrw ?? 0,
+      finalAmountKrw: telephoneOffer?.finalAmountKrw ?? price.amountKrw,
       expiresAt,
     });
     const orderId = Number(orderInsert[0].insertId);
@@ -390,8 +405,8 @@ async function createCheckoutForProvider(input: {
           listAmountKrw: price.amountKrw,
         })
       : null;
-    const discountAmountKrw = coupon?.discountAmountKrw ?? 0;
-    const finalAmountKrw = coupon?.finalAmountKrw ?? price.amountKrw;
+    const discountAmountKrw = coupon?.discountAmountKrw ?? telephoneOffer?.discountAmountKrw ?? 0;
+    const finalAmountKrw = coupon?.finalAmountKrw ?? telephoneOffer?.finalAmountKrw ?? price.amountKrw;
     if (coupon) {
       await tx
         .update(orders)
@@ -416,7 +431,7 @@ async function createCheckoutForProvider(input: {
       orderId,
       productId: product.id,
       productCodeSnapshot: product.code,
-      productNameSnapshot: product.name,
+      productNameSnapshot: telephoneOffer?.name ?? product.name,
       fulfillmentType: product.fulfillmentType,
       priceVersion: price.version,
       regularAmountKrw: price.regularAmountKrw || price.amountKrw,
@@ -487,7 +502,7 @@ async function createCheckoutForProvider(input: {
       return asCheckoutResponse({
         orderNumber: createdOrder.orderNumber,
         productCode: product.code,
-        productName: product.name,
+        productName: telephoneOffer?.name ?? product.name,
         listAmountKrw: price.amountKrw,
         discountAmountKrw,
         finalAmountKrw,
@@ -508,7 +523,7 @@ async function createCheckoutForProvider(input: {
     return asCheckoutResponse({
       orderNumber: createdOrder.orderNumber,
       productCode: product.code,
-      productName: product.name,
+      productName: telephoneOffer?.name ?? product.name,
       listAmountKrw: price.amountKrw,
       discountAmountKrw,
       finalAmountKrw,

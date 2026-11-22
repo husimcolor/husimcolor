@@ -12,6 +12,16 @@ import {
   type BirthCalendarType,
   validateTelephoneBirthDate,
 } from "./telephone-birth-date";
+import {
+  TELEPHONE_EVENT_OFFER_CODE,
+  TELEPHONE_EVENT_NAME,
+  TELEPHONE_EVENT_PRICE_KRW,
+  TELEPHONE_EVENT_DURATION_MINUTES,
+  TELEPHONE_REGULAR_PRICE_KRW,
+  isTelephoneEventConsultationDate,
+  isTelephoneEventPaymentOpen,
+  type TelephoneEventOfferCode,
+} from "../../shared/telephoneCoachingEvent";
 
 export const TELEPHONE_COACHING_PRODUCT_CODE = "telephone_coaching" as const;
 export const TELEPHONE_COACHING_DURATION_MINUTES = 50;
@@ -35,6 +45,8 @@ export type TelephoneCoachingDetails = {
   birthDate: string | null;
   birthCalendarType: BirthCalendarType | null;
   isLeapMonth: boolean;
+  offerCode?: TelephoneEventOfferCode;
+  durationMinutes?: number;
 };
 
 export type TelephoneCoachingBookingRequest = {
@@ -50,6 +62,7 @@ export type TelephoneCoachingBookingRequest = {
   birthCalendarType?: BirthCalendarType;
   isLeapMonth?: boolean;
   adultConfirmed?: boolean;
+  offerCode?: TelephoneEventOfferCode;
 };
 
 export type NormalizedTelephoneCoachingBookingRequest = {
@@ -64,6 +77,7 @@ export type NormalizedTelephoneCoachingBookingRequest = {
   birthDate: string | null;
   birthCalendarType: BirthCalendarType | null;
   isLeapMonth: boolean;
+  offerCode?: TelephoneEventOfferCode;
 };
 
 export function isTelephoneCoachingProduct(productCode: string): productCode is typeof TELEPHONE_COACHING_PRODUCT_CODE {
@@ -86,6 +100,33 @@ function getKstTime(value: Date): string {
     minute: "2-digit",
     hourCycle: "h23",
   }).format(value);
+}
+
+/** 명시적인 행사 선택에만 적용하며, 기존 정규 상품과 가격 원장은 수정하지 않는다. */
+export function resolveTelephoneCoachingCheckoutOffer(input: {
+  productCode: string;
+  offerCode?: string;
+  requestedWindowStart?: Date;
+  couponCode?: string;
+  now?: Date;
+}) {
+  if (!input.offerCode) return null;
+  if (input.productCode !== TELEPHONE_COACHING_PRODUCT_CODE || input.offerCode !== TELEPHONE_EVENT_OFFER_CODE) {
+    throw new Error("TELEPHONE_EVENT_INVALID_OFFER");
+  }
+  if (!isTelephoneEventPaymentOpen(input.now ?? new Date())) throw new Error("TELEPHONE_EVENT_NOT_ACTIVE");
+  if (!input.requestedWindowStart || Number.isNaN(input.requestedWindowStart.getTime()) || !isTelephoneEventConsultationDate(getKstDate(input.requestedWindowStart))) {
+    throw new Error("TELEPHONE_EVENT_DATE_OUT_OF_RANGE");
+  }
+  if (input.couponCode) throw new Error("TELEPHONE_EVENT_COUPON_NOT_ALLOWED");
+  return {
+    offerCode: TELEPHONE_EVENT_OFFER_CODE,
+    name: TELEPHONE_EVENT_NAME,
+    regularAmountKrw: TELEPHONE_REGULAR_PRICE_KRW,
+    finalAmountKrw: TELEPHONE_EVENT_PRICE_KRW,
+    discountAmountKrw: TELEPHONE_REGULAR_PRICE_KRW - TELEPHONE_EVENT_PRICE_KRW,
+    durationMinutes: TELEPHONE_EVENT_DURATION_MINUTES,
+  };
 }
 
 /**
@@ -146,6 +187,8 @@ export function normalizeTelephoneCoachingBookingRequest(
   if (validatedBirthDate && !isAdultTelephoneBirthDate(validatedBirthDate, now)) {
     throw new Error("INVALID_TELEPHONE_COACHING_BIRTH_DATE");
   }
+  if (request.offerCode && request.offerCode !== TELEPHONE_EVENT_OFFER_CODE) throw new Error("TELEPHONE_EVENT_INVALID_OFFER");
+  if (request.offerCode && !isTelephoneEventConsultationDate(getKstDate(requestedWindowStart))) throw new Error("TELEPHONE_EVENT_DATE_OUT_OF_RANGE");
 
   return {
     contactName,
@@ -159,6 +202,7 @@ export function normalizeTelephoneCoachingBookingRequest(
     birthDate: validatedBirthDate?.birthDate ?? null,
     birthCalendarType: validatedBirthDate?.birthCalendarType ?? null,
     isLeapMonth: validatedBirthDate?.isLeapMonth ?? false,
+    ...(request.offerCode ? { offerCode: request.offerCode } : {}),
   };
 }
 
@@ -169,6 +213,7 @@ export function getTelephoneCoachingDetails(request: NormalizedTelephoneCoaching
     birthDate: request.birthDate,
     birthCalendarType: request.birthCalendarType,
     isLeapMonth: request.isLeapMonth,
+    ...(request.offerCode ? { offerCode: request.offerCode, durationMinutes: TELEPHONE_EVENT_DURATION_MINUTES } : {}),
   };
 }
 

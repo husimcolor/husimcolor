@@ -451,6 +451,7 @@ export const appRouter = router({
                 birthCalendarType: z.enum(["solar", "lunar"]).optional(),
                 isLeapMonth: z.boolean().optional(),
                 adultConfirmed: z.boolean().optional(),
+                offerCode: z.literal("december_year_end_2026").optional(),
               })
               .optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
@@ -492,6 +493,7 @@ export const appRouter = router({
                 birthCalendarType: z.enum(["solar", "lunar"]).optional(),
                 isLeapMonth: z.boolean().optional(),
                 adultConfirmed: z.boolean().optional(),
+                offerCode: z.literal("december_year_end_2026").optional(),
               })
               .optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
@@ -530,6 +532,7 @@ export const appRouter = router({
                 birthCalendarType: z.enum(["solar", "lunar"]).optional(),
                 isLeapMonth: z.boolean().optional(),
                 adultConfirmed: z.boolean().optional(),
+                offerCode: z.literal("december_year_end_2026").optional(),
               })
               .optional(),
             channel: z.enum(["app", "web"]).optional().default("app"),
