@@ -6,6 +6,7 @@ node_modules/
 # Expo
 .expo/
 web-build/
+dist-december/
 expo-env.d.ts
 
 # Vercel build output is generated in the cloud from GitHub main.

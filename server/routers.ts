@@ -33,6 +33,7 @@ import {
 } from "./commerce/toss-card-review";
 import { isPublicPaidAnalysisEnabled } from "./commerce/release-policy";
 import { previewCoupon } from "./commerce/coupon-service";
+import { claimDecemberReportCoupons, getDecemberReportStatus } from "./commerce/december-report-event-service";
 import {
   configureRelationshipSetup,
   consumeEntitlementForAnalysisStart,
@@ -235,6 +236,8 @@ export const appRouter = router({
         }),
     }),
     coupons: router({
+      decemberStatus: publicProcedure.query(({ ctx }) => getDecemberReportStatus(ctx.user?.id)),
+      claimDecember: protectedProcedure.mutation(({ ctx }) => claimDecemberReportCoupons(ctx.user.id)),
       preview: publicProcedure
         .input(
           z.object({
@@ -248,7 +251,7 @@ export const appRouter = router({
             email: z.string().email().max(320).optional(),
           }),
         )
-        .query(({ input }) => previewCoupon(input)),
+        .query(({ input, ctx }) => previewCoupon({ ...input, userId: ctx.user?.id })),
     }),
     entitlement: router({
       configureRelationshipSetup: publicProcedure

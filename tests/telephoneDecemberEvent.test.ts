@@ -95,6 +95,9 @@ describe("December telephone event: no live writes or payments", () => {
     expect(source).toContain("productNameSnapshot: telephoneOffer?.name ?? product.name");
     expect(source).toContain("discountAmountKrw: telephoneOffer?.discountAmountKrw ?? 0");
     expect(source).toContain("record.finalAmountKrw !== input.amountKrw");
-    expect(source).toContain("if (existing[0]) return asCheckoutResponse(existing[0]);");
+    expect(source).toContain("if (existing[0]) {");
+    expect(source).toContain("return asCheckoutResponse(existing[0]);");
+    expect(source).toContain("CHECKOUT_IDEMPOTENCY_CONFLICT");
+    expect(source.indexOf("return asCheckoutResponse(existing[0]);")).toBeLessThan(source.indexOf("const resolvedCouponCode"));
   });
 });

@@ -47,6 +47,7 @@ jobs:
           mkdir -p ".vercel/output/functions/api/parent-child-pdf-report.func"
           mkdir -p ".vercel/output/functions/api/public-sample-report.func"
           mkdir -p ".vercel/output/functions/api/auth/kakao/login.func"
+          mkdir -p ".vercel/output/functions/api/cron-email-outbox.func"
           mkdir -p ".vercel/output/functions/api/auth/kakao/callback.func"
           mkdir -p ".vercel/output/functions/api/auth/legacy-admin-login.func"
           mkdir -p ".vercel/output/functions/api/auth/legacy-admin-session.func"
@@ -55,6 +56,7 @@ jobs:
       - name: Build tRPC API function (with mysql2 bundled)
         run: |
           npx esbuild "api/trpc/[...trpc].ts" --bundle --platform=node --target=node20 --format=cjs --external:pdfkit --outfile=".vercel/output/functions/api/trpc/[...trpc].func/index.js"
+          npx esbuild "api/cron-email-outbox.ts" --bundle --platform=node --target=node20 --format=cjs --external:pdfkit --outfile=".vercel/output/functions/api/cron-email-outbox.func/index.js"
 
       - name: Build Kakao OAuth API functions
         run: |
@@ -89,7 +91,7 @@ jobs:
 
       - name: Include PDFKit serverless runtime
         run: |
-          for function in "trpc/[...trpc]" pdf-report private-pdf-download couple-pdf-report parent-child-pdf-report; do
+          for function in "trpc/[...trpc]" pdf-report private-pdf-download couple-pdf-report parent-child-pdf-report cron-email-outbox; do
             runtime=".vercel/output/functions/api/${function}.func/node_modules"
             mkdir -p "${runtime}/@noble" "${runtime}/@swc"
             for package in pdfkit fflate fontkit linebreak png-js brotli clone dfa fast-deep-equal restructure tiny-inflate unicode-properties unicode-trie base64-js pako tslib; do
@@ -115,6 +117,7 @@ jobs:
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/private-pdf-download.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/couple-pdf-report.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/parent-child-pdf-report.func/.vc-config.json"
+          cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/cron-email-outbox.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/public-sample-report.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/kakao/login.func/.vc-config.json"
           cp ".vercel/output/functions/api/trpc/[...trpc].func/.vc-config.json" ".vercel/output/functions/api/auth/kakao/callback.func/.vc-config.json"
@@ -127,6 +130,7 @@ jobs:
           cat > .vercel/output/config.json << 'CFGEOF'
           {
             "version": 3,
+            "crons": [{ "path": "/api/cron-email-outbox", "schedule": "0 0 * * *" }],
             "routes": [
               { "src": "/api/auth/legacy-admin-login", "dest": "/api/auth/legacy-admin-login" },
               { "src": "/api/auth/legacy-admin-session", "dest": "/api/auth/legacy-admin-session" },
@@ -137,6 +141,7 @@ jobs:
               { "src": "/api/couple-pdf-report", "dest": "/api/couple-pdf-report" },
               { "src": "/api/parent-child-pdf-report", "dest": "/api/parent-child-pdf-report" },
               { "src": "/api/public-sample-report", "dest": "/api/public-sample-report" },
+              { "src": "/api/cron-email-outbox", "dest": "/api/cron-email-outbox" },
               { "src": "/site.webmanifest", "headers": { "Content-Type": "application/manifest+json; charset=utf-8", "Cache-Control": "no-cache" }, "continue": true },
               { "src": "/_expo/static/js/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
               { "src": "/_expo/static/css/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },

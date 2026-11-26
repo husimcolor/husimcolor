@@ -14,6 +14,7 @@ import { isOpeningCampaignActive } from '@/shared/opening-campaign';
 import { type SampleReportProduct } from '@/shared/sample-reports';
 import { startKakaoLogin } from '@/constants/oauth';
 import { useAuth } from '@/hooks/use-auth';
+import { DecemberEventBanner, DecemberOfferPrice, getActiveDecemberOffer } from '@/components/december-event-banner';
 
 const { width, height } = Dimensions.get('window');
 const ADMIN_LOGO_TAP_COUNT_REQUIRED = 5;
@@ -94,6 +95,18 @@ export default function HomeScreen() {
   const funnel = trpc.conversionFunnel.track.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
   const kakao = trpc.auth.kakaoStatus.useQuery();
+  const decemberStatus = trpc.commerce.coupons.decemberStatus.useQuery(undefined, {
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchInterval: 10_000,
+  });
+  const refetchDecemberStatus = decemberStatus.refetch;
+  useEffect(() => {
+    if (!auth.loading) void refetchDecemberStatus();
+  }, [auth.user?.id, auth.loading, refetchDecemberStatus]);
+  const decemberActive = decemberStatus.isSuccess && decemberStatus.data?.active === true;
+  const personalDecemberOffer = getActiveDecemberOffer(decemberActive ? decemberStatus.data : undefined, 'personal_deep');
   // 설정을 불러오는 동안에는 상품 안내를 열어 둔다. 서버가 결제 가능 여부를
   // 최종 판정하며, 운영에서 공개가 꺼진 경우에도 안내 화면은 확인할 수 있다.
   const paidAnalysisPublicEnabled = commerceTestMode.data?.paidAnalysisPublicEnabled ?? true;
@@ -229,7 +242,7 @@ export default function HomeScreen() {
             onPress={handleAdminLogoTap}
             activeOpacity={0.9}
             hitSlop={6}
-            style={styles.logoContainer}
+            style={[styles.logoContainer, decemberActive && styles.eventLogoContainer]}
           >
             {Platform.OS === 'web'
               ? createElement('img', {
@@ -244,13 +257,18 @@ export default function HomeScreen() {
                 })
               : <Image
                   source={require('../../assets/images/icon.png')}
-                  style={styles.logoImage}
+                  style={[styles.logoImage, decemberActive && styles.eventLogoImage]}
                   resizeMode="contain"
                   accessibilityLabel="휴심컬러 심볼"
                 />}
 
           </TouchableOpacity>
         </Animated.View>
+
+        <DecemberEventBanner
+          active={decemberActive}
+          onPress={() => router.push('/(tabs)/december-coupons' as any)}
+        />
 
         {/* 텍스트 영역 */}
         <Animated.View
@@ -270,7 +288,7 @@ export default function HomeScreen() {
           <Text style={[styles.description, { color: colors.muted }]}>
             지금의 나와 두 사람의 관계를 원하는 방식으로 천천히 살펴보세요.
           </Text>
-          {openingCampaignActive && <View style={styles.openingCampaign}>
+          {!decemberActive && openingCampaignActive && <View style={styles.openingCampaign}>
             <Text style={styles.openingCampaignTitle}>오픈 기념 20% 할인</Text>
             <Text style={styles.openingCampaignDeadline}>10월 30일까지</Text>
             <Text style={styles.openingCampaignText}>회원·비회원 동일 · 결제 시 자동 적용</Text>
@@ -318,14 +336,14 @@ export default function HomeScreen() {
                 <View style={styles.serviceHeadingRow}>
                   <Text style={styles.serviceTitle}>🎨 컬러 + 심리카드 개인 심화분석</Text>
                   <View style={styles.servicePriceGroup}>
-                    {openingCampaignActive ? <>
+                    {personalDecemberOffer ? <DecemberOfferPrice offer={personalDecemberOffer} /> : openingCampaignActive ? <>
                       <Text style={styles.serviceRegularPrice}>정가 29,000원</Text>
                       <Text style={styles.serviceDiscountPrice}>→ 23,200원</Text>
                     </> : <Text style={styles.servicePrice}>29,000원</Text>}
                   </View>
                 </View>
                 <Text style={styles.serviceSummary}>{"컬러 3개 + 심리카드 3장\n선택 순서별 해석과 통합 해석\n맞춤 회복 루틴\nPDF 리포트 제공"}</Text>
-                {openingCampaignActive ? <Text style={styles.serviceCampaignCaption}>20% 할인 결제금액 · 자동 적용</Text> : null}
+                {!decemberActive && openingCampaignActive ? <Text style={styles.serviceCampaignCaption}>20% 할인 결제금액 · 자동 적용</Text> : null}
               <Text style={styles.serviceCta}>개인 심화분석 알아보기 →</Text>
               {paidAnalysisPublicEnabled && commerceTestMode.data?.tossTestEnabled && !tossLiveEnabled ? (
                 <Text style={styles.openingCampaignNote}>현재 테스트 운영 중 · Toss 테스트키 사용 · 실제 청구 없음</Text>
@@ -414,6 +432,8 @@ const styles = StyleSheet.create({
   logoSection: {
     alignItems: 'center',
   },
+  eventLogoContainer: { width: 64, height: 64, borderRadius: 18 },
+  eventLogoImage: { width: 54, height: 54, borderRadius: 14 },
   openingCampaign: { width: '100%', marginTop: 16, borderRadius: 14, borderWidth: 1, borderColor: '#E4C978', backgroundColor: '#FFF7DA', padding: 14, gap: 4 },
   openingCampaignTitle: { color: '#75561B', fontSize: 14, fontWeight: '800', textAlign: 'center' },
   openingCampaignDeadline: { color: '#5E4512', fontSize: 22, lineHeight: 28, fontWeight: '900', textAlign: 'center', letterSpacing: -0.3 },

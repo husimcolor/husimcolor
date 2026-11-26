@@ -25,6 +25,8 @@ import {
   type ConversionEventName,
 } from "@/lib/conversion-tracking";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/hooks/use-auth";
+import { startKakaoLogin } from "@/constants/oauth";
 import {
   OPENING_CAMPAIGN_COUPON_CODE,
   OPENING_CAMPAIGN_DISPLAY_PRICES,
@@ -158,6 +160,11 @@ async function loadTossPaymentsScript(): Promise<
 
 export default function CommerceCheckoutScreen() {
   const router = useRouter();
+  const auth = useAuth();
+  // Static Expo HTML has no query params; keep the first web render identical.
+  const [hydrated, setHydrated] = useState(Platform.OS !== "web");
+  useEffect(() => { setHydrated(true); }, []);
+  const december = trpc.commerce.coupons.decemberStatus.useQuery(undefined, { refetchInterval: 15000, refetchOnWindowFocus: true });
   const params = useLocalSearchParams<{
     product?: string | string[];
     relationType?: string | string[];
@@ -194,6 +201,9 @@ export default function CommerceCheckoutScreen() {
   const product = productCode ? getCommerceProduct(productCode) : undefined;
   const [email, setEmail] = useState("");
   const [couponCode, setCouponCode] = useState("");
+  const decemberOffer = december.data?.active ? december.data.offers.find((offer) => offer.productCode === productCode) : undefined;
+  const decemberIssued = decemberOffer?.state === "issued";
+  const decemberCode = decemberIssued ? decemberOffer.couponCode : undefined;
   const [message, setMessage] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const processedReturn = useRef(false);
@@ -246,6 +256,9 @@ export default function CommerceCheckoutScreen() {
     isPaidAnalysisCode(productCode) && openingCampaignAvailable
       ? OPENING_CAMPAIGN_DISPLAY_PRICES[productCode]
       : null;
+  useEffect(() => {
+    void december.refetch();
+  }, [auth.user?.id]);
   const productGuide = isPaidAnalysisCode(productCode)
     ? ANALYSIS_PRODUCT_GUIDES[productCode]
     : undefined;
@@ -286,6 +299,13 @@ export default function CommerceCheckoutScreen() {
       setCouponCode((current) => current || OPENING_CAMPAIGN_COUPON_CODE);
     }
   }, [openingCampaignAvailable]);
+  useEffect(() => {
+    if (auth.user?.email) setEmail((current) => current || auth.user!.email!);
+  }, [auth.user?.email]);
+  useEffect(() => {
+    if (decemberCode) setCouponCode(decemberCode);
+    else if (december.data && !december.data.active) setCouponCode((current) => current.startsWith("DEC2026-") ? "" : current);
+  }, [decemberCode, december.data?.active]);
   const couponQuote = trpc.commerce.coupons.preview.useQuery(
     {
       couponCode: couponCode.trim(),
@@ -304,6 +324,9 @@ export default function CommerceCheckoutScreen() {
       ),
     },
   );
+  const displayedFinalAmountKrw = couponCode.trim() && couponQuote.isSuccess
+    ? couponQuote.data.finalAmountKrw
+    : product?.amountKrw ?? 0;
 
   const moveToAnalysis = async (grant: {
     productCode: CommerceProductCode;
@@ -421,6 +444,10 @@ export default function CommerceCheckoutScreen() {
 
   const requestPayment = async () => {
     if (!isPaidAnalysisCode(productCode) || !product) return;
+    if (couponCode.trim() && (!couponQuote.isSuccess || couponQuote.isFetching)) {
+      setMessage("쿠폰 적용 금액을 확인한 뒤 다시 시도해 주세요.");
+      return;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setMessage("결과와 주문 확인에 사용할 이메일을 입력해 주세요.");
       return;
@@ -445,6 +472,11 @@ export default function CommerceCheckoutScreen() {
         paymentMode === "live"
           ? await createTossLiveCheckout.mutateAsync(checkoutInput)
           : await createTossTestCheckout.mutateAsync(checkoutInput);
+      if (checkout.finalAmountKrw !== displayedFinalAmountKrw) {
+        await december.refetch();
+        await couponQuote.refetch();
+        throw new Error("CHECKOUT_QUOTE_CHANGED");
+      }
       if (checkout.status === "paid") {
         if (!checkout.startGrant) throw new Error("COUPON_GRANT_NOT_ISSUED");
         trackPaymentFunnelEvent("payment_success", checkout.orderNumber);
@@ -484,7 +516,9 @@ export default function CommerceCheckoutScreen() {
         trackPaymentFunnelEvent("payment_failed", funnelOrderNumber);
       }
       setMessage(
-        error instanceof Error && error.message.includes("COUPON")
+        error instanceof Error && error.message === "CHECKOUT_QUOTE_CHANGED"
+          ? "쿠폰 상태 또는 결제 금액이 변경되었습니다. 금액을 다시 확인해 주세요. 결제창은 열지 않았습니다."
+          : error instanceof Error && error.message.includes("COUPON")
           ? "쿠폰을 적용할 수 없습니다. 코드와 조건을 확인해 주세요."
           : "결제를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       );
@@ -541,6 +575,16 @@ export default function CommerceCheckoutScreen() {
   // configuration above.
   const canRenderCardReview =
     cardReviewMode && isCardReviewProductCode(productCode);
+  if (!hydrated) {
+    return (
+      <ScreenContainer>
+        <View style={styles.center}>
+          <ActivityIndicator />
+          <Text style={styles.message}>결제 정보를 확인하고 있습니다.</Text>
+        </View>
+      </ScreenContainer>
+    );
+  }
   if ((!isPaidAnalysisCode(productCode) && !canRenderCardReview) || !product) {
     return (
       <ScreenContainer>
@@ -675,7 +719,12 @@ export default function CommerceCheckoutScreen() {
           {tossLiveEnabled ? "휴심컬러 안전 결제" : "휴심컬러 테스트 결제"}
         </Text>
         <Text style={styles.title}>{product.name}</Text>
-        {openingCampaignPrice ? (
+        {couponCode.trim() && couponQuote.isSuccess && couponQuote.data.discountAmountKrw > 0 ? (
+          <View style={styles.priceGroup}>
+            <Text style={styles.regularPrice}>정가 {product.amountKrw?.toLocaleString()}원</Text>
+            <Text style={styles.discountPrice}>{displayedFinalAmountKrw.toLocaleString()}원</Text>
+          </View>
+        ) : openingCampaignPrice ? (
           <View style={styles.priceGroup}>
             <Text style={styles.regularPrice}>
               정가 {openingCampaignPrice.listAmountKrw.toLocaleString()}원
@@ -736,6 +785,12 @@ export default function CommerceCheckoutScreen() {
         <Text style={styles.label}>
           쿠폰 코드 <Text style={styles.optional}>(선택)</Text>
         </Text>
+        {decemberOffer && <View style={styles.openingCampaignCard}>
+          <Text style={styles.openingCampaignTitle}>12월 연말 감사 이벤트</Text>
+          <Text style={styles.openingCampaignText}>{decemberIssued ? "상품 전용 쿠폰 자동 적용 · 계정당 상품별 1회" : decemberOffer.state === "used" ? "이 상품의 이벤트 쿠폰을 이미 사용했습니다." : decemberOffer.state === "reserved" ? "진행 중인 주문에 쿠폰이 예약돼 있습니다. 기존 결제 결과를 먼저 확인해 주세요." : "로그인 후 할인 쿠폰을 받으면 이 상품에 자동 적용됩니다."}</Text>
+          <Text style={styles.openingCampaignPrompt}>다른 쿠폰과 중복 불가 · 12월 31일 종료 · 이벤트 기간 내 결제 완료</Text>
+          {!decemberIssued && decemberOffer.state === "available" && <Pressable onPress={() => auth.isAuthenticated ? router.push("/(tabs)/december-coupons" as any) : startKakaoLogin(`/commerce-checkout?product=${productCode}`)} accessibilityRole="button"><Text style={styles.policyLink}>{auth.isAuthenticated ? "할인 쿠폰 받기" : "로그인하고 쿠폰 받기"}</Text></Pressable>}
+        </View>}
         {openingCampaignAvailable && (
           <View style={styles.openingCampaignCard}>
             <Text style={styles.openingCampaignTitle}>오픈 기념 20% 할인</Text>
@@ -749,6 +804,7 @@ export default function CommerceCheckoutScreen() {
         <TextInput
           style={styles.input}
           value={couponCode}
+          editable={!decemberIssued}
           onChangeText={(value) => {
             setCouponCode(value);
             setMessage(null);
@@ -757,7 +813,7 @@ export default function CommerceCheckoutScreen() {
           placeholder="쿠폰 코드를 입력하세요"
           placeholderTextColor="#94887C"
         />
-        {couponQuote.isSuccess && couponQuote.data && (
+        {couponCode.trim() && couponQuote.isSuccess && couponQuote.data && (
           <View style={styles.couponQuote}>
             <Text style={styles.couponQuoteTitle}>쿠폰이 적용되었습니다</Text>
             <Text style={styles.couponQuoteText}>
@@ -774,7 +830,7 @@ export default function CommerceCheckoutScreen() {
         ) : null}
         {message ? <Text style={styles.error}>{message}</Text> : null}
         <Pressable
-          disabled={processing || testMode.isLoading || !tossPaymentEnabled}
+          disabled={processing || testMode.isLoading || december.isLoading || !tossPaymentEnabled || Boolean(couponCode.trim() && (!couponQuote.isSuccess || couponQuote.isFetching))}
           onPress={requestPayment}
           style={({ pressed }) => [
             styles.button,
@@ -787,7 +843,7 @@ export default function CommerceCheckoutScreen() {
           ) : (
             <Text style={styles.buttonText}>
               {tossLiveEnabled
-                ? "토스페이먼츠 결제하기"
+                ? `${displayedFinalAmountKrw.toLocaleString()}원 · 토스페이먼츠 결제하기`
                 : tossTestEnabled
                   ? "토스 테스트 결제 진행"
                   : "결제 준비 중"}

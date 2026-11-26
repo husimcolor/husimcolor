@@ -1,0 +1,174 @@
+# 12월 이벤트 브라우저 QA 결과
+
+**실제 Expo export 브라우저 에뮬레이션 + API fixture QA입니다. DB E2E, 실제 Android 또는 실제 Toss 결제가 아닙니다.**
+
+- 결과: 107 통과 / 0 실패 (107 검사)
+- 실행: `python3 scripts/december-browser-qa.py`
+- 대상: `dist-december` 실제 Expo export, Chromium / Playwright
+- 화면: 390×844, 360×844, 1365×900 (캡처는 실제 스크롤 위치별 viewport)
+- 로그인: 가상 회원 990026 / `december-qa@example.invalid`
+- 모든 `/api/trpc/*` 응답을 Playwright에서 superjson fixture로 처리. POST도 네트워크 전송 전에 fulfill.
+- DB·프로덕션 API·비밀값·실제 결제·이메일 발송 없음. 외부 네트워크 요청 전면 차단.
+- Toss SDK는 `requestPayment` 기록 stub. checkout API fixture의 9,900/23,600/15,600원과 SDK 인자를 대조.
+- 상품 카탈로그 API는 현재 앱에 없으며 `shared/commerce.ts` 로컬 상품 정의를 사용.
+- 공개 PDF 샘플은 export에 포함된 가상 샘플 bytes로 fixture 처리.
+
+## 검사
+
+- PASS — mobile390 home banner and CTA first viewport
+- PASS — mobile390 no horizontal viewport overflow
+- PASS — mobile390 home CTA opens coupon screen
+- PASS — mobile390 authenticated claim fixture called once
+- PASS — mobile390 issued personal_deep
+- PASS — mobile390 issued couple_love_deep
+- PASS — mobile390 issued parent_child_deep
+- PASS — mobile390 coupon product link routes personal_deep
+- PASS — mobile390 in-app checkout navigation no page error personal_deep
+- PASS — mobile390 coupon product link routes couple_love_deep
+- PASS — mobile390 in-app checkout navigation no page error couple_love_deep
+- PASS — mobile390 coupon product link routes parent_child_deep
+- PASS — mobile390 in-app checkout navigation no page error parent_child_deep
+- PASS — mobile390 checkout prices personal_deep
+- PASS — mobile390 automatic dedicated coupon personal_deep
+- PASS — mobile390 requestPayment exact amount personal_deep
+- PASS — mobile390 checkout prices couple_love_deep
+- PASS — mobile390 automatic dedicated coupon couple_love_deep
+- PASS — mobile390 requestPayment exact amount couple_love_deep
+- PASS — mobile390 checkout prices parent_child_deep
+- PASS — mobile390 automatic dedicated coupon parent_child_deep
+- PASS — mobile390 requestPayment exact amount parent_child_deep
+- PASS — narrow360 home banner and CTA first viewport
+- PASS — narrow360 no horizontal viewport overflow
+- PASS — narrow360 home CTA opens coupon screen
+- PASS — narrow360 authenticated claim fixture called once
+- PASS — narrow360 issued personal_deep
+- PASS — narrow360 issued couple_love_deep
+- PASS — narrow360 issued parent_child_deep
+- PASS — narrow360 coupon product link routes personal_deep
+- PASS — narrow360 in-app checkout navigation no page error personal_deep
+- PASS — narrow360 coupon product link routes couple_love_deep
+- PASS — narrow360 in-app checkout navigation no page error couple_love_deep
+- PASS — narrow360 coupon product link routes parent_child_deep
+- PASS — narrow360 in-app checkout navigation no page error parent_child_deep
+- PASS — narrow360 checkout prices personal_deep
+- PASS — narrow360 automatic dedicated coupon personal_deep
+- PASS — narrow360 requestPayment exact amount personal_deep
+- PASS — narrow360 checkout prices couple_love_deep
+- PASS — narrow360 automatic dedicated coupon couple_love_deep
+- PASS — narrow360 requestPayment exact amount couple_love_deep
+- PASS — narrow360 checkout prices parent_child_deep
+- PASS — narrow360 automatic dedicated coupon parent_child_deep
+- PASS — narrow360 requestPayment exact amount parent_child_deep
+- PASS — pc1365 home banner and CTA first viewport
+- PASS — pc1365 no horizontal viewport overflow
+- PASS — pc1365 home CTA opens coupon screen
+- PASS — pc1365 authenticated claim fixture called once
+- PASS — pc1365 issued personal_deep
+- PASS — pc1365 issued couple_love_deep
+- PASS — pc1365 issued parent_child_deep
+- PASS — pc1365 coupon product link routes personal_deep
+- PASS — pc1365 in-app checkout navigation no page error personal_deep
+- PASS — pc1365 coupon product link routes couple_love_deep
+- PASS — pc1365 in-app checkout navigation no page error couple_love_deep
+- PASS — pc1365 coupon product link routes parent_child_deep
+- PASS — pc1365 in-app checkout navigation no page error parent_child_deep
+- PASS — pc1365 checkout prices personal_deep
+- PASS — pc1365 automatic dedicated coupon personal_deep
+- PASS — pc1365 requestPayment exact amount personal_deep
+- PASS — pc1365 checkout prices couple_love_deep
+- PASS — pc1365 automatic dedicated coupon couple_love_deep
+- PASS — pc1365 requestPayment exact amount couple_love_deep
+- PASS — pc1365 checkout prices parent_child_deep
+- PASS — pc1365 automatic dedicated coupon parent_child_deep
+- PASS — pc1365 requestPayment exact amount parent_child_deep
+- PASS — guest claim routes to login with returnTo
+- PASS — guest does not call claim mutation
+- PASS — before-december home banner hidden
+- PASS — before-december home personal normal price
+- PASS — before-december relationship normal prices
+- PASS — before-december coupon claim disabled
+- PASS — before-december coupons normal prices
+- PASS — before-december checkout normal price personal_deep
+- PASS — before-december checkout normal price couple_love_deep
+- PASS — before-december checkout normal price parent_child_deep
+- PASS — after-january1 home banner hidden
+- PASS — after-january1 home personal normal price
+- PASS — after-january1 relationship normal prices
+- PASS — after-january1 coupon claim disabled
+- PASS — after-january1 coupons normal prices
+- PASS — after-january1 checkout normal price personal_deep
+- PASS — after-january1 checkout normal price couple_love_deep
+- PASS — after-january1 checkout normal price parent_child_deep
+- PASS — expired DEC prefix preview rejected and payment disabled
+- PASS — expired DEC prefix does not emit checkout or SDK
+- PASS — server mismatch 10000 versus quoted 9900 blocks SDK
+- PASS — personal video is poster-first no MP4 request
+- PASS — personal video player opens local source without autoplay
+- PASS — personal sample viewer opens
+- PASS — personal sample canvas rendered
+- PASS — personal sample back restores home
+- PASS — free color entry still selects colors
+- PASS — relationship discounted list and final prices
+- PASS — friend card remains free
+- PASS — relationship video poster-first
+- PASS — relationship video player opens
+- PASS — couple_love_deep sample opens and canvas renders
+- PASS — couple_love_deep sample back restores relationship selection
+- PASS — parent_child_deep sample opens and canvas renders
+- PASS — parent_child_deep sample back restores relationship selection
+- PASS — free friend routes to information with friend relation
+- PASS — symbol first four taps do not navigate admin
+- PASS — symbol fifth tap opens admin route
+- PASS — no unhandled tRPC fixture procedures
+- PASS — no JavaScript page errors
+- PASS — no external Toss SDK request reached network
+
+## 캡처
+
+- [mobile390-home-first-viewport.png](captures/mobile390-home-first-viewport.png)
+- [mobile390-coupons-issued-top.png](captures/mobile390-coupons-issued-top.png)
+- [mobile390-coupons-issued-bottom.png](captures/mobile390-coupons-issued-bottom.png)
+- [mobile390-checkout-personal_deep-top.png](captures/mobile390-checkout-personal_deep-top.png)
+- [mobile390-checkout-personal_deep-payment.png](captures/mobile390-checkout-personal_deep-payment.png)
+- [mobile390-checkout-couple_love_deep-top.png](captures/mobile390-checkout-couple_love_deep-top.png)
+- [mobile390-checkout-couple_love_deep-payment.png](captures/mobile390-checkout-couple_love_deep-payment.png)
+- [mobile390-checkout-parent_child_deep-top.png](captures/mobile390-checkout-parent_child_deep-top.png)
+- [mobile390-checkout-parent_child_deep-payment.png](captures/mobile390-checkout-parent_child_deep-payment.png)
+- [narrow360-home-first-viewport.png](captures/narrow360-home-first-viewport.png)
+- [narrow360-coupons-issued-top.png](captures/narrow360-coupons-issued-top.png)
+- [narrow360-coupons-issued-bottom.png](captures/narrow360-coupons-issued-bottom.png)
+- [narrow360-checkout-personal_deep-top.png](captures/narrow360-checkout-personal_deep-top.png)
+- [narrow360-checkout-personal_deep-payment.png](captures/narrow360-checkout-personal_deep-payment.png)
+- [narrow360-checkout-couple_love_deep-top.png](captures/narrow360-checkout-couple_love_deep-top.png)
+- [narrow360-checkout-couple_love_deep-payment.png](captures/narrow360-checkout-couple_love_deep-payment.png)
+- [narrow360-checkout-parent_child_deep-top.png](captures/narrow360-checkout-parent_child_deep-top.png)
+- [narrow360-checkout-parent_child_deep-payment.png](captures/narrow360-checkout-parent_child_deep-payment.png)
+- [pc1365-home-first-viewport.png](captures/pc1365-home-first-viewport.png)
+- [pc1365-coupons-issued-top.png](captures/pc1365-coupons-issued-top.png)
+- [pc1365-coupons-issued-bottom.png](captures/pc1365-coupons-issued-bottom.png)
+- [pc1365-checkout-personal_deep-top.png](captures/pc1365-checkout-personal_deep-top.png)
+- [pc1365-checkout-personal_deep-payment.png](captures/pc1365-checkout-personal_deep-payment.png)
+- [pc1365-checkout-couple_love_deep-top.png](captures/pc1365-checkout-couple_love_deep-top.png)
+- [pc1365-checkout-couple_love_deep-payment.png](captures/pc1365-checkout-couple_love_deep-payment.png)
+- [pc1365-checkout-parent_child_deep-top.png](captures/pc1365-checkout-parent_child_deep-top.png)
+- [pc1365-checkout-parent_child_deep-payment.png](captures/pc1365-checkout-parent_child_deep-payment.png)
+- [guest-claim-login-required.png](captures/guest-claim-login-required.png)
+- [before-december-home.png](captures/before-december-home.png)
+- [before-december-relationships.png](captures/before-december-relationships.png)
+- [before-december-coupons.png](captures/before-december-coupons.png)
+- [after-january1-home.png](captures/after-january1-home.png)
+- [after-january1-relationships.png](captures/after-january1-relationships.png)
+- [after-january1-coupons.png](captures/after-january1-coupons.png)
+- [after-january1-expired-dec-rejected.png](captures/after-january1-expired-dec-rejected.png)
+- [server-amount-mismatch-blocked.png](captures/server-amount-mismatch-blocked.png)
+- [regression-personal-video.png](captures/regression-personal-video.png)
+- [regression-personal-sample.png](captures/regression-personal-sample.png)
+- [regression-free-color.png](captures/regression-free-color.png)
+- [regression-sample-couple_love_deep.png](captures/regression-sample-couple_love_deep.png)
+- [regression-sample-parent_child_deep.png](captures/regression-sample-parent_child_deep.png)
+- [regression-free-friend.png](captures/regression-free-friend.png)
+- [regression-symbol-five-tap.png](captures/regression-symbol-five-tap.png)
+
+## 범위와 한계
+
+서버 쿠폰 유효기간·소유권·원장·중복 사용/예약 경쟁 처리는 실제 DB로 검증하지 않았습니다. 이 검사는 서버 응답 계약을 모사하여 UI 표시, 탐색, 만료 거절 상태, 금액 불일치 시 결제창 차단을 검증합니다. OAuth는 로그인 경로 요청과 returnTo만 검증하며 카카오 인증을 실행하지 않습니다. Toss 요청 기록은 승인·청구·callback 완료 증거가 아닙니다.

@@ -434,6 +434,23 @@ export const coupons = mysqlTable(
 export type Coupon = typeof coupons.$inferSelect;
 export type InsertCoupon = typeof coupons.$inferInsert;
 
+/** December event issuance is account-bound, not checkout-email-bound. */
+export const decemberReportCouponGrants = mysqlTable(
+  "december_report_coupon_grants",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    eventKey: varchar("eventKey", { length: 40 }).notNull(),
+    userId: int("userId").notNull(),
+    productCode: varchar("productCode", { length: 80 }).notNull(),
+    couponId: int("couponId").notNull(),
+    issuedAt: timestamp("issuedAt").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("december_report_grants_account_product_unique").on(table.eventKey, table.userId, table.productCode),
+    index("december_report_grants_coupon_idx").on(table.couponId, table.userId),
+  ],
+);
+
 export const couponProductRules = mysqlTable(
   "coupon_product_rules",
   {

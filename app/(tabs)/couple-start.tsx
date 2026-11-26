@@ -34,9 +34,12 @@ import {
   getSampleReportButtonLabel,
   type SampleReportProduct,
 } from "@/shared/sample-reports";
+import { DecemberEventBanner, DecemberOfferPrice, getActiveDecemberOffer } from "@/components/december-event-banner";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function CoupleStartScreen() {
   const router = useRouter();
+  const auth = useAuth();
   const routeParams = useLocalSearchParams<{
     restoreProduct?: string | string[];
   }>();
@@ -61,6 +64,17 @@ export default function CoupleStartScreen() {
   const logVisitor = trpc.visitors.log.useMutation();
   const funnel = trpc.conversionFunnel.track.useMutation();
   const commerceTestMode = trpc.commerce.checkout.testMode.useQuery();
+  const decemberStatus = trpc.commerce.coupons.decemberStatus.useQuery(undefined, {
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchInterval: 10_000,
+  });
+  const refetchDecemberStatus = decemberStatus.refetch;
+  useEffect(() => {
+    if (!auth.loading) void refetchDecemberStatus();
+  }, [auth.user?.id, auth.loading, refetchDecemberStatus]);
+  const decemberActive = decemberStatus.isSuccess && decemberStatus.data?.active === true;
   // 설정 조회 중에도 상품 선택과 정보 입력 안내를 막지 않는다. 결제 실행 여부는
   // 서버가 최종 판정하며, 운영에서 공개가 꺼져도 안내 화면은 볼 수 있다.
   const paidAnalysisPublicEnabled =
@@ -191,6 +205,13 @@ export default function CoupleStartScreen() {
             </View>
           </View>
 
+          <View style={styles.eventBannerWrap}>
+            <DecemberEventBanner
+              active={decemberActive}
+              onPress={() => router.push("/(tabs)/december-coupons" as any)}
+            />
+          </View>
+
           {/* 안내 문구 */}
           <View
             style={[
@@ -211,7 +232,7 @@ export default function CoupleStartScreen() {
             <Text style={[styles.sectionTitle, { color: "#2D2420" }]}>
               관계 분석 상품 선택
             </Text>
-            {openingCampaignActive && (
+            {!decemberActive && openingCampaignActive && (
               <View style={styles.openingCampaign}>
                 <Text style={styles.openingCampaignTitle}>
                   오픈 기념 20% 할인
@@ -245,6 +266,9 @@ export default function CoupleStartScreen() {
                 const campaignPrice = sampleProduct
                   ? OPENING_CAMPAIGN_DISPLAY_PRICES[sampleProduct]
                   : null;
+                const decemberOffer = sampleProduct
+                  ? getActiveDecemberOffer(decemberActive ? decemberStatus.data : undefined, sampleProduct)
+                  : undefined;
                 return (
                   <View key={product.id} style={styles.productCardGroup}>
                     <Pressable
@@ -281,7 +305,7 @@ export default function CoupleStartScreen() {
                         {product.title}
                       </Text>
                       <View style={styles.productPriceGroup}>
-                        {openingCampaignActive && campaignPrice ? (
+                        {decemberOffer ? <DecemberOfferPrice offer={decemberOffer} /> : openingCampaignActive && campaignPrice ? (
                           <>
                             <Text
                               style={[
@@ -386,6 +410,7 @@ export default function CoupleStartScreen() {
 
 const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  eventBannerWrap: { marginBottom: 12 },
   header: {
     flexDirection: "row",
     alignItems: "center",

@@ -5,7 +5,7 @@ import { decryptCommerceValue, encryptCommerceValue } from "../server/commerce/c
 const encryptionKey = Buffer.alloc(32, 7).toString("base64");
 
 describe("website coaching booking persistence", () => {
-  afterEach(() => vi.unstubAllEnvs());
+  afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
 
   it("keeps booking details encrypted until payment approval", () => {
     vi.stubEnv("COMMERCE_EMAIL_ENCRYPTION_KEY", encryptionKey);
@@ -26,6 +26,9 @@ describe("website coaching booking persistence", () => {
 
   it("restores telephone schedule, mode, and optional lunar details after the pending encrypted request round trip", () => {
     vi.stubEnv("COMMERCE_EMAIL_ENCRYPTION_KEY", encryptionKey);
+    // Synthetic schedule fixture must remain in the future regardless of the day QA runs.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-01T00:00:00+09:00"));
     const request = normalizeCoachingBookingRequest({
       contactName: "Preview Customer",
       contactPhone: "010-0000-0000",

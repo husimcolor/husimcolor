@@ -1,7 +1,9 @@
-import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, or, sql } from "drizzle-orm";
 
 import {
   entitlements,
+  couponRedemptions,
+  coupons,
   orderItems,
   orders,
   paymentTransactions,
@@ -57,6 +59,9 @@ import {
 } from "./telephone-coaching-service";
 import { deliverTelephoneCoachingConfirmationOutboxItem } from "./email-outbox-service";
 import type { TelephoneEventOfferCode } from "../../shared/telephoneCoachingEvent";
+
+import { DECEMBER_REPORT_ENDS_AT, getDecemberReportOfferByCoupon } from "../../shared/december-report-event";
+import { prepareDecemberTossApproval, reconcileDecemberTerminalFailure, recoverDecemberLiveApproval, resolveDecemberCheckoutCoupon, rowsFromDecemberExecute } from "./december-report-event-service";
 
 const ORDER_TIMEOUT_MS = 30 * 60 * 1000;
 
@@ -302,6 +307,9 @@ async function createCheckoutForProvider(input: {
         finalAmountKrw: orderItems.finalAmountKrw,
         expiresAt: orders.expiresAt,
         orderStatus: orders.status,
+        customerEmailHash: customers.emailHash,
+        userId: orders.userId,
+        provider: paymentTransactions.provider,
       })
       .from(paymentTransactions)
       .innerJoin(orders, eq(paymentTransactions.orderId, orders.id))
@@ -309,7 +317,10 @@ async function createCheckoutForProvider(input: {
       .innerJoin(customers, eq(customers.id, orders.customerId))
       .where(eq(paymentTransactions.idempotencyKey, input.idempotencyKey))
       .limit(1);
-    if (existing[0]) return asCheckoutResponse(existing[0]);
+    if (existing[0]) {
+      if (existing[0].productCode !== input.productCode || existing[0].customerEmailHash !== emailHash || (existing[0].provider !== provider && !(existing[0].provider === "coupon" && existing[0].finalAmountKrw === 0)) || (existing[0].userId && existing[0].userId !== input.userId)) throw new Error("CHECKOUT_IDEMPOTENCY_CONFLICT");
+      return asCheckoutResponse(existing[0]);
+    }
 
     const productRows = await tx
       .select()
@@ -376,7 +387,9 @@ async function createCheckoutForProvider(input: {
       authenticatedEmail: input.authenticatedEmail,
     });
 
-    const expiresAt = new Date(now.getTime() + ORDER_TIMEOUT_MS);
+    const resolvedCouponCode = await resolveDecemberCheckoutCoupon(tx, { ...input, email, now: new Date() });
+    const decemberCoupon = getDecemberReportOfferByCoupon(resolvedCouponCode ?? "");
+    const expiresAt = new Date(Math.min(now.getTime() + ORDER_TIMEOUT_MS, decemberCoupon ? DECEMBER_REPORT_ENDS_AT.getTime() : Infinity));
     const orderInsert = await tx.insert(orders).values({
       orderNumber: newOrderNumber(),
       customerId,
@@ -395,12 +408,12 @@ async function createCheckoutForProvider(input: {
     const order = await tx.select().from(orders).where(eq(orders.id, orderId)).limit(1);
     const createdOrder = order[0];
     if (!createdOrder) throw new Error("ORDER_CREATE_FAILED");
-    const coupon = input.couponCode
+    const coupon = resolvedCouponCode
       ? await reserveCouponForOrder(tx, {
-          couponCode: input.couponCode,
+          couponCode: resolvedCouponCode,
           productId: product.id,
           customerId,
-          userId: linkedUserId,
+          userId: decemberCoupon ? input.userId : linkedUserId,
           orderId,
           listAmountKrw: price.amountKrw,
         })
@@ -584,6 +597,7 @@ async function completePaymentForProvider(input: {
   provider: "test" | "toss_pg" | "toss_live";
   rawPayloadEncrypted?: string;
   restoreExpiredTelephoneCoachingHold?: boolean;
+  decemberApprovalPrepared?: boolean;
 }): Promise<PaymentResponse> {
   if (input.provider === "test" && !isTestPaymentEnabled()) {
     throw new Error("TEST_PAYMENT_DISABLED_IN_PRODUCTION");
@@ -598,6 +612,14 @@ async function completePaymentForProvider(input: {
   if (!db) throw new Error("DATABASE_NOT_AVAILABLE");
 
   const response: PaymentResponse = await (db as any).transaction(async (tx: any) => {
+    // Event reserve/approve/fail all lock coupon before payment row, avoiding lock inversion.
+    const eventRows = rowsFromDecemberExecute<any>(await tx.execute(sql`SELECT c.id, c.code FROM coupons c INNER JOIN coupon_redemptions r ON r.couponId = c.id INNER JOIN orders o ON o.id = r.orderId WHERE o.orderNumber = ${input.orderNumber}`));
+    const event = getDecemberReportOfferByCoupon(eventRows[0]?.code ?? "");
+    let eventLatest: any;
+    if (event) {
+      await tx.execute(sql`SELECT id FROM coupons WHERE id = ${eventRows[0].id} FOR UPDATE`);
+      eventLatest = rowsFromDecemberExecute<any>(await tx.execute(sql`SELECT p.status AS transactionStatus, p.providerPaymentId AS savedPaymentId, o.status AS orderStatus, o.expiresAt FROM payment_transactions p INNER JOIN orders o ON o.id = p.orderId WHERE p.provider = ${input.provider} AND o.orderNumber = ${input.orderNumber} FOR UPDATE`))[0];
+    }
     const rows = await tx
       .select({
         transactionId: paymentTransactions.id,
@@ -626,6 +648,7 @@ async function completePaymentForProvider(input: {
       .limit(1);
     const record = rows[0];
     if (!record) throw new Error("TOSS_ORDER_NOT_FOUND");
+    if (eventLatest) Object.assign(record, eventLatest, { expiresAt: new Date(eventLatest.expiresAt) });
     // Toss does not include the amount in every failUrl redirect. Keep the
     // strict amount comparison for an approval, while still allowing a
     // terminal failure/cancellation to release an otherwise reserved coupon.
@@ -633,7 +656,7 @@ async function completePaymentForProvider(input: {
       throw new Error("ORDER_AMOUNT_MISMATCH");
     }
 
-    const existingEntitlements = await tx
+    const existingEntitlements = event ? rowsFromDecemberExecute<any>(await tx.execute(sql`SELECT id FROM entitlements WHERE orderItemId = ${record.orderItemId} FOR UPDATE`)) : await tx
       .select({ id: entitlements.id })
       .from(entitlements)
       .where(eq(entitlements.orderItemId, record.orderItemId))
@@ -666,7 +689,11 @@ async function completePaymentForProvider(input: {
       };
     }
     const now = new Date();
-    if (record.expiresAt.getTime() <= now.getTime()) {
+    if (event && record.transactionStatus === "processing") {
+      if (input.outcome !== "success") throw new Error("TOSS_PAYMENT_PROCESSING");
+      if (record.savedPaymentId !== input.providerPaymentId || !input.decemberApprovalPrepared) throw new Error("TOSS_PAYMENT_ID_CONFLICT");
+    }
+    if (record.expiresAt.getTime() <= now.getTime() && !(event && input.decemberApprovalPrepared && record.transactionStatus === "processing" && input.outcome === "success")) {
       if (input.outcome === "success" && input.restoreExpiredTelephoneCoachingHold && isTelephoneCoachingProduct(record.productCode)) {
         const restoredRequest = decryptPendingCoachingBookingRequest(record.pendingBookingRequestEncrypted);
         await restoreExpiredTelephoneCoachingSlotForOrder(tx, {
@@ -687,10 +714,11 @@ async function completePaymentForProvider(input: {
       if (isTelephoneCoachingProduct(record.productCode)) {
         await releaseTelephoneCoachingSlotForOrder(tx, record.orderId);
       }
-      throw new Error("TOSS_ORDER_EXPIRED");
+      // Return a sentinel to commit expiry/release; throw outside the transaction.
+      return { orderNumber: record.orderNumber, paymentId: null, status: "failed" as const, entitlementId: null, startGrant: null, alreadyProcessed: false, orderExpired: true };
       }
     }
-    if (record.transactionStatus !== "ready") throw new Error("TOSS_PAYMENT_PROCESSING");
+    if (record.transactionStatus !== "ready" && !(event && input.decemberApprovalPrepared && record.transactionStatus === "processing")) throw new Error("TOSS_PAYMENT_PROCESSING");
 
     // 전화 코칭은 대기 예약 암호문이 일정·전화 방식·연락처의 유일한 원장이다.
     // 과거 provider 원문으로 덮인 레코드를 승인 처리하면 빈 예약을 만들 수 있으므로,
@@ -707,7 +735,7 @@ async function completePaymentForProvider(input: {
     }
 
     // 동일 결제 승인 콜백이 동시에 도착해도 ready 상태의 한 행만 선점할 수 있다.
-    const claimed = await tx
+    const claimed = event && input.decemberApprovalPrepared ? [{ affectedRows: 1 }] : await tx
       .update(paymentTransactions)
       .set({ status: "processing" })
       .where(and(eq(paymentTransactions.id, record.transactionId), eq(paymentTransactions.status, "ready")));
@@ -835,6 +863,7 @@ async function completePaymentForProvider(input: {
       alreadyProcessed: false,
     };
   });
+  if ((response as PaymentResponse & { orderExpired?: boolean }).orderExpired) throw new Error("TOSS_ORDER_EXPIRED");
   if (response.coachingEmailOutboxId) {
     // 예약 확정은 메일과 독립적으로 완료된다. 메일 전송 실패는 Outbox 재시도로 남긴다.
     await deliverTelephoneCoachingConfirmationOutboxItem(response.coachingEmailOutboxId);
@@ -918,9 +947,10 @@ export async function completeTossTestPayment(input: {
     orderNumber: input.orderNumber,
     amountKrw: input.amountKrw,
   };
+  const decemberApproval = await prepareDecemberTossApproval("toss_pg", input);
   let approved: Awaited<ReturnType<typeof confirmTossTestPayment>>;
   try {
-    approved = await confirmTossTestPayment(confirmationInput);
+    approved = decemberApproval === "recover" ? await getTossTestPayment(confirmationInput) : await confirmTossTestPayment(confirmationInput);
   } catch (error) {
     // Toss can reject a second confirm after it has already approved the card.
     // A prior DB transaction failure must be recoverable, but only after a
@@ -937,6 +967,7 @@ export async function completeTossTestPayment(input: {
     amountKrw: approved.amountKrw,
     provider: "toss_pg",
     rawPayloadEncrypted: encryptCommerceValue(approved.rawPayload),
+    decemberApprovalPrepared: Boolean(decemberApproval),
   });
 }
 
@@ -1027,17 +1058,24 @@ export async function completeTossLivePayment(input: {
   if (!isTossLivePaymentEnabled()) throw new Error("TOSS_LIVE_PAYMENT_DISABLED");
   const known = await getKnownTossSuccess("toss_live", input);
   if (known) return known;
-  const approved = await confirmTossLivePayment({
-    paymentKey: input.paymentKey,
-    orderNumber: input.orderNumber,
-    amountKrw: input.amountKrw,
-  });
+  const decemberApproval = await prepareDecemberTossApproval("toss_live", input);
+  let approved: Awaited<ReturnType<typeof confirmTossLivePayment>>;
+  if (decemberApproval === "recover") {
+    approved = await recoverDecemberLiveApproval(input);
+  } else {
+    try { approved = await confirmTossLivePayment(input); }
+    catch (error) {
+      if (!decemberApproval) throw error;
+      approved = await recoverDecemberLiveApproval(input);
+    }
+  }
   return completePaymentForProvider({
     orderNumber: approved.orderNumber,
     providerPaymentId: approved.paymentKey,
     outcome: "success",
     amountKrw: approved.amountKrw,
     provider: "toss_live",
+    decemberApprovalPrepared: Boolean(decemberApproval),
     rawPayloadEncrypted: encryptCommerceValue(approved.rawPayload),
   });
 }
@@ -1053,6 +1091,7 @@ export async function completeTossTestPaymentFailure(input: {
   errorMessage?: string;
 }): Promise<PaymentResponse> {
   const outcome = getTossTestTerminalOutcome(input.errorCode);
+  if (isTossTestPaymentEnabled()) await reconcileDecemberTerminalFailure("toss_pg", input.orderNumber, outcome);
   const providerPaymentId = `toss-test-${outcome}-${input.orderNumber}`.slice(0, 160);
   return completePaymentForProvider({
     orderNumber: input.orderNumber,
@@ -1074,6 +1113,7 @@ export async function completeTossLivePaymentFailure(input: {
   errorMessage?: string;
 }): Promise<PaymentResponse> {
   const outcome = getTossTestTerminalOutcome(input.errorCode);
+  if (isTossLivePaymentEnabled()) await reconcileDecemberTerminalFailure("toss_live", input.orderNumber, outcome);
   const providerPaymentId = `toss-live-${outcome}-${input.orderNumber}`.slice(0, 160);
   return completePaymentForProvider({
     orderNumber: input.orderNumber,

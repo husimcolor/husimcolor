@@ -1,0 +1,2740 @@
+{
+  "qaType": "browser-emulation + API fixture QA; NOT DB E2E, NOT real Android or real Toss payment",
+  "export": "dist-december",
+  "exportIndexSha256": "db20801fd6abe51de592648b255360f476a7e116d87bb8b4ccc51e3c161f1237",
+  "generatedAt": "2026-11-26T06:32:44.961719+00:00",
+  "email": "december-qa@example.invalid",
+  "safety": {
+    "databaseConnected": false,
+    "productionApiCalled": false,
+    "networkWritesForwarded": 0,
+    "tossSdk": "injected recording stub; external requests blocked",
+    "allowedNetwork": "GET/HEAD static files on loopback QA server only",
+    "productCatalog": "No procedure exists in inspected current app; local shared/commerce.ts definitions used"
+  },
+  "summary": {
+    "passed": 107,
+    "failed": 0,
+    "checks": 107
+  },
+  "checks": [
+    {
+      "name": "mobile390 home banner and CTA first viewport",
+      "passed": true,
+      "detail": {
+        "banner": {
+          "x": 24,
+          "y": 106,
+          "width": 342,
+          "height": 282
+        },
+        "button": {
+          "x": 43,
+          "y": 321,
+          "width": 304,
+          "height": 48
+        },
+        "viewport": [
+          390,
+          844
+        ]
+      }
+    },
+    {
+      "name": "mobile390 no horizontal viewport overflow",
+      "passed": true
+    },
+    {
+      "name": "mobile390 home CTA opens coupon screen",
+      "passed": true
+    },
+    {
+      "name": "mobile390 authenticated claim fixture called once",
+      "passed": true
+    },
+    {
+      "name": "mobile390 issued personal_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 issued couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 issued parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 coupon product link routes personal_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 in-app checkout navigation no page error personal_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 coupon product link routes couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 in-app checkout navigation no page error couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 coupon product link routes parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 in-app checkout navigation no page error parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 checkout prices personal_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 automatic dedicated coupon personal_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 requestPayment exact amount personal_deep",
+      "passed": true,
+      "detail": [
+        {
+          "method": "CARD",
+          "amount": {
+            "currency": "KRW",
+            "value": 9900
+          },
+          "orderId": "QA-FIXTURE-personal_deep",
+          "orderName": "컬러 + 심리카드 개인 심화분석",
+          "customerEmail": "december-qa@example.invalid",
+          "successUrl": "http://127.0.0.1:8766/commerce-checkout?product=personal_deep&paymentMode=live",
+          "failUrl": "http://127.0.0.1:8766/commerce-checkout?product=personal_deep&paymentMode=live",
+          "card": {
+            "flowMode": "DEFAULT"
+          },
+          "windowTarget": "self"
+        }
+      ]
+    },
+    {
+      "name": "mobile390 checkout prices couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 automatic dedicated coupon couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 requestPayment exact amount couple_love_deep",
+      "passed": true,
+      "detail": [
+        {
+          "method": "CARD",
+          "amount": {
+            "currency": "KRW",
+            "value": 23600
+          },
+          "orderId": "QA-FIXTURE-couple_love_deep",
+          "orderName": "부부 · 연인 관계 심화분석",
+          "customerEmail": "december-qa@example.invalid",
+          "successUrl": "http://127.0.0.1:8766/commerce-checkout?product=couple_love_deep&paymentMode=live",
+          "failUrl": "http://127.0.0.1:8766/commerce-checkout?product=couple_love_deep&paymentMode=live",
+          "card": {
+            "flowMode": "DEFAULT"
+          },
+          "windowTarget": "self"
+        }
+      ]
+    },
+    {
+      "name": "mobile390 checkout prices parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 automatic dedicated coupon parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "mobile390 requestPayment exact amount parent_child_deep",
+      "passed": true,
+      "detail": [
+        {
+          "method": "CARD",
+          "amount": {
+            "currency": "KRW",
+            "value": 15600
+          },
+          "orderId": "QA-FIXTURE-parent_child_deep",
+          "orderName": "부모 · 자녀 관계 심화분석",
+          "customerEmail": "december-qa@example.invalid",
+          "successUrl": "http://127.0.0.1:8766/commerce-checkout?product=parent_child_deep&paymentMode=live",
+          "failUrl": "http://127.0.0.1:8766/commerce-checkout?product=parent_child_deep&paymentMode=live",
+          "card": {
+            "flowMode": "DEFAULT"
+          },
+          "windowTarget": "self"
+        }
+      ]
+    },
+    {
+      "name": "narrow360 home banner and CTA first viewport",
+      "passed": true,
+      "detail": {
+        "banner": {
+          "x": 24,
+          "y": 106,
+          "width": 312,
+          "height": 282
+        },
+        "button": {
+          "x": 43,
+          "y": 321,
+          "width": 274,
+          "height": 48
+        },
+        "viewport": [
+          360,
+          844
+        ]
+      }
+    },
+    {
+      "name": "narrow360 no horizontal viewport overflow",
+      "passed": true
+    },
+    {
+      "name": "narrow360 home CTA opens coupon screen",
+      "passed": true
+    },
+    {
+      "name": "narrow360 authenticated claim fixture called once",
+      "passed": true
+    },
+    {
+      "name": "narrow360 issued personal_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 issued couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 issued parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 coupon product link routes personal_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 in-app checkout navigation no page error personal_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 coupon product link routes couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 in-app checkout navigation no page error couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 coupon product link routes parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 in-app checkout navigation no page error parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 checkout prices personal_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 automatic dedicated coupon personal_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 requestPayment exact amount personal_deep",
+      "passed": true,
+      "detail": [
+        {
+          "method": "CARD",
+          "amount": {
+            "currency": "KRW",
+            "value": 9900
+          },
+          "orderId": "QA-FIXTURE-personal_deep",
+          "orderName": "컬러 + 심리카드 개인 심화분석",
+          "customerEmail": "december-qa@example.invalid",
+          "successUrl": "http://127.0.0.1:8766/commerce-checkout?product=personal_deep&paymentMode=live",
+          "failUrl": "http://127.0.0.1:8766/commerce-checkout?product=personal_deep&paymentMode=live",
+          "card": {
+            "flowMode": "DEFAULT"
+          },
+          "windowTarget": "self"
+        }
+      ]
+    },
+    {
+      "name": "narrow360 checkout prices couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 automatic dedicated coupon couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 requestPayment exact amount couple_love_deep",
+      "passed": true,
+      "detail": [
+        {
+          "method": "CARD",
+          "amount": {
+            "currency": "KRW",
+            "value": 23600
+          },
+          "orderId": "QA-FIXTURE-couple_love_deep",
+          "orderName": "부부 · 연인 관계 심화분석",
+          "customerEmail": "december-qa@example.invalid",
+          "successUrl": "http://127.0.0.1:8766/commerce-checkout?product=couple_love_deep&paymentMode=live",
+          "failUrl": "http://127.0.0.1:8766/commerce-checkout?product=couple_love_deep&paymentMode=live",
+          "card": {
+            "flowMode": "DEFAULT"
+          },
+          "windowTarget": "self"
+        }
+      ]
+    },
+    {
+      "name": "narrow360 checkout prices parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 automatic dedicated coupon parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "narrow360 requestPayment exact amount parent_child_deep",
+      "passed": true,
+      "detail": [
+        {
+          "method": "CARD",
+          "amount": {
+            "currency": "KRW",
+            "value": 15600
+          },
+          "orderId": "QA-FIXTURE-parent_child_deep",
+          "orderName": "부모 · 자녀 관계 심화분석",
+          "customerEmail": "december-qa@example.invalid",
+          "successUrl": "http://127.0.0.1:8766/commerce-checkout?product=parent_child_deep&paymentMode=live",
+          "failUrl": "http://127.0.0.1:8766/commerce-checkout?product=parent_child_deep&paymentMode=live",
+          "card": {
+            "flowMode": "DEFAULT"
+          },
+          "windowTarget": "self"
+        }
+      ]
+    },
+    {
+      "name": "pc1365 home banner and CTA first viewport",
+      "passed": true,
+      "detail": {
+        "banner": {
+          "x": 402.5,
+          "y": 106,
+          "width": 560,
+          "height": 282
+        },
+        "button": {
+          "x": 421.5,
+          "y": 321,
+          "width": 522,
+          "height": 48
+        },
+        "viewport": [
+          1365,
+          900
+        ]
+      }
+    },
+    {
+      "name": "pc1365 no horizontal viewport overflow",
+      "passed": true
+    },
+    {
+      "name": "pc1365 home CTA opens coupon screen",
+      "passed": true
+    },
+    {
+      "name": "pc1365 authenticated claim fixture called once",
+      "passed": true
+    },
+    {
+      "name": "pc1365 issued personal_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 issued couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 issued parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 coupon product link routes personal_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 in-app checkout navigation no page error personal_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 coupon product link routes couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 in-app checkout navigation no page error couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 coupon product link routes parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 in-app checkout navigation no page error parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 checkout prices personal_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 automatic dedicated coupon personal_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 requestPayment exact amount personal_deep",
+      "passed": true,
+      "detail": [
+        {
+          "method": "CARD",
+          "amount": {
+            "currency": "KRW",
+            "value": 9900
+          },
+          "orderId": "QA-FIXTURE-personal_deep",
+          "orderName": "컬러 + 심리카드 개인 심화분석",
+          "customerEmail": "december-qa@example.invalid",
+          "successUrl": "http://127.0.0.1:8766/commerce-checkout?product=personal_deep&paymentMode=live",
+          "failUrl": "http://127.0.0.1:8766/commerce-checkout?product=personal_deep&paymentMode=live",
+          "card": {
+            "flowMode": "DEFAULT"
+          },
+          "windowTarget": "self"
+        }
+      ]
+    },
+    {
+      "name": "pc1365 checkout prices couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 automatic dedicated coupon couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 requestPayment exact amount couple_love_deep",
+      "passed": true,
+      "detail": [
+        {
+          "method": "CARD",
+          "amount": {
+            "currency": "KRW",
+            "value": 23600
+          },
+          "orderId": "QA-FIXTURE-couple_love_deep",
+          "orderName": "부부 · 연인 관계 심화분석",
+          "customerEmail": "december-qa@example.invalid",
+          "successUrl": "http://127.0.0.1:8766/commerce-checkout?product=couple_love_deep&paymentMode=live",
+          "failUrl": "http://127.0.0.1:8766/commerce-checkout?product=couple_love_deep&paymentMode=live",
+          "card": {
+            "flowMode": "DEFAULT"
+          },
+          "windowTarget": "self"
+        }
+      ]
+    },
+    {
+      "name": "pc1365 checkout prices parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 automatic dedicated coupon parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "pc1365 requestPayment exact amount parent_child_deep",
+      "passed": true,
+      "detail": [
+        {
+          "method": "CARD",
+          "amount": {
+            "currency": "KRW",
+            "value": 15600
+          },
+          "orderId": "QA-FIXTURE-parent_child_deep",
+          "orderName": "부모 · 자녀 관계 심화분석",
+          "customerEmail": "december-qa@example.invalid",
+          "successUrl": "http://127.0.0.1:8766/commerce-checkout?product=parent_child_deep&paymentMode=live",
+          "failUrl": "http://127.0.0.1:8766/commerce-checkout?product=parent_child_deep&paymentMode=live",
+          "card": {
+            "flowMode": "DEFAULT"
+          },
+          "windowTarget": "self"
+        }
+      ]
+    },
+    {
+      "name": "guest claim routes to login with returnTo",
+      "passed": true,
+      "detail": [
+        "http://127.0.0.1:8766/api/auth/kakao/login?returnTo=%2Fdecember-coupons"
+      ]
+    },
+    {
+      "name": "guest does not call claim mutation",
+      "passed": true
+    },
+    {
+      "name": "before-december home banner hidden",
+      "passed": true
+    },
+    {
+      "name": "before-december home personal normal price",
+      "passed": true
+    },
+    {
+      "name": "before-december relationship normal prices",
+      "passed": true
+    },
+    {
+      "name": "before-december coupon claim disabled",
+      "passed": true
+    },
+    {
+      "name": "before-december coupons normal prices",
+      "passed": true
+    },
+    {
+      "name": "before-december checkout normal price personal_deep",
+      "passed": true
+    },
+    {
+      "name": "before-december checkout normal price couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "before-december checkout normal price parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "after-january1 home banner hidden",
+      "passed": true
+    },
+    {
+      "name": "after-january1 home personal normal price",
+      "passed": true
+    },
+    {
+      "name": "after-january1 relationship normal prices",
+      "passed": true
+    },
+    {
+      "name": "after-january1 coupon claim disabled",
+      "passed": true
+    },
+    {
+      "name": "after-january1 coupons normal prices",
+      "passed": true
+    },
+    {
+      "name": "after-january1 checkout normal price personal_deep",
+      "passed": true
+    },
+    {
+      "name": "after-january1 checkout normal price couple_love_deep",
+      "passed": true
+    },
+    {
+      "name": "after-january1 checkout normal price parent_child_deep",
+      "passed": true
+    },
+    {
+      "name": "expired DEC prefix preview rejected and payment disabled",
+      "passed": true
+    },
+    {
+      "name": "expired DEC prefix does not emit checkout or SDK",
+      "passed": true
+    },
+    {
+      "name": "server mismatch 10000 versus quoted 9900 blocks SDK",
+      "passed": true
+    },
+    {
+      "name": "personal video is poster-first no MP4 request",
+      "passed": true
+    },
+    {
+      "name": "personal video player opens local source without autoplay",
+      "passed": true
+    },
+    {
+      "name": "personal sample viewer opens",
+      "passed": true
+    },
+    {
+      "name": "personal sample canvas rendered",
+      "passed": true
+    },
+    {
+      "name": "personal sample back restores home",
+      "passed": true
+    },
+    {
+      "name": "free color entry still selects colors",
+      "passed": true
+    },
+    {
+      "name": "relationship discounted list and final prices",
+      "passed": true
+    },
+    {
+      "name": "friend card remains free",
+      "passed": true
+    },
+    {
+      "name": "relationship video poster-first",
+      "passed": true
+    },
+    {
+      "name": "relationship video player opens",
+      "passed": true
+    },
+    {
+      "name": "couple_love_deep sample opens and canvas renders",
+      "passed": true
+    },
+    {
+      "name": "couple_love_deep sample back restores relationship selection",
+      "passed": true
+    },
+    {
+      "name": "parent_child_deep sample opens and canvas renders",
+      "passed": true
+    },
+    {
+      "name": "parent_child_deep sample back restores relationship selection",
+      "passed": true
+    },
+    {
+      "name": "free friend routes to information with friend relation",
+      "passed": true
+    },
+    {
+      "name": "symbol first four taps do not navigate admin",
+      "passed": true
+    },
+    {
+      "name": "symbol fifth tap opens admin route",
+      "passed": true
+    },
+    {
+      "name": "no unhandled tRPC fixture procedures",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "no JavaScript page errors",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "no external Toss SDK request reached network",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "docs/december-event-qa/captures/mobile390-home-first-viewport.png",
+    "docs/december-event-qa/captures/mobile390-coupons-issued-top.png",
+    "docs/december-event-qa/captures/mobile390-coupons-issued-bottom.png",
+    "docs/december-event-qa/captures/mobile390-checkout-personal_deep-top.png",
+    "docs/december-event-qa/captures/mobile390-checkout-personal_deep-payment.png",
+    "docs/december-event-qa/captures/mobile390-checkout-couple_love_deep-top.png",
+    "docs/december-event-qa/captures/mobile390-checkout-couple_love_deep-payment.png",
+    "docs/december-event-qa/captures/mobile390-checkout-parent_child_deep-top.png",
+    "docs/december-event-qa/captures/mobile390-checkout-parent_child_deep-payment.png",
+    "docs/december-event-qa/captures/narrow360-home-first-viewport.png",
+    "docs/december-event-qa/captures/narrow360-coupons-issued-top.png",
+    "docs/december-event-qa/captures/narrow360-coupons-issued-bottom.png",
+    "docs/december-event-qa/captures/narrow360-checkout-personal_deep-top.png",
+    "docs/december-event-qa/captures/narrow360-checkout-personal_deep-payment.png",
+    "docs/december-event-qa/captures/narrow360-checkout-couple_love_deep-top.png",
+    "docs/december-event-qa/captures/narrow360-checkout-couple_love_deep-payment.png",
+    "docs/december-event-qa/captures/narrow360-checkout-parent_child_deep-top.png",
+    "docs/december-event-qa/captures/narrow360-checkout-parent_child_deep-payment.png",
+    "docs/december-event-qa/captures/pc1365-home-first-viewport.png",
+    "docs/december-event-qa/captures/pc1365-coupons-issued-top.png",
+    "docs/december-event-qa/captures/pc1365-coupons-issued-bottom.png",
+    "docs/december-event-qa/captures/pc1365-checkout-personal_deep-top.png",
+    "docs/december-event-qa/captures/pc1365-checkout-personal_deep-payment.png",
+    "docs/december-event-qa/captures/pc1365-checkout-couple_love_deep-top.png",
+    "docs/december-event-qa/captures/pc1365-checkout-couple_love_deep-payment.png",
+    "docs/december-event-qa/captures/pc1365-checkout-parent_child_deep-top.png",
+    "docs/december-event-qa/captures/pc1365-checkout-parent_child_deep-payment.png",
+    "docs/december-event-qa/captures/guest-claim-login-required.png",
+    "docs/december-event-qa/captures/before-december-home.png",
+    "docs/december-event-qa/captures/before-december-relationships.png",
+    "docs/december-event-qa/captures/before-december-coupons.png",
+    "docs/december-event-qa/captures/after-january1-home.png",
+    "docs/december-event-qa/captures/after-january1-relationships.png",
+    "docs/december-event-qa/captures/after-january1-coupons.png",
+    "docs/december-event-qa/captures/after-january1-expired-dec-rejected.png",
+    "docs/december-event-qa/captures/server-amount-mismatch-blocked.png",
+    "docs/december-event-qa/captures/regression-personal-video.png",
+    "docs/december-event-qa/captures/regression-personal-sample.png",
+    "docs/december-event-qa/captures/regression-free-color.png",
+    "docs/december-event-qa/captures/regression-sample-couple_love_deep.png",
+    "docs/december-event-qa/captures/regression-sample-parent_child_deep.png",
+    "docs/december-event-qa/captures/regression-free-friend.png",
+    "docs/december-event-qa/captures/regression-symbol-five-tap.png"
+  ],
+  "fixtures": [
+    {
+      "label": "mobile390",
+      "serverNow": "2026-12-15T03:00:00.000Z",
+      "active": true,
+      "guest": false,
+      "calls": [
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.kakaoStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "visitors.log",
+          "method": "POST",
+          "input": {
+            "deviceId": "6bf19b6c-88c1-4b66-a756-c0e98ff0c83c",
+            "visitType": "home"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.claimDecember",
+          "method": "POST",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PERSONAL",
+            "productCode": "personal_deep",
+            "listAmountKrw": 29000,
+            "email": null
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "c9054610-6f1f-46d3-8a3c-13b0d058fb99:checkout_view:personal_deep:checkout-personal_deep",
+            "deviceId": "6bf19b6c-88c1-4b66-a756-c0e98ff0c83c",
+            "eventType": "checkout_view",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PERSONAL",
+            "productCode": "personal_deep",
+            "listAmountKrw": 29000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-COUPLE",
+            "productCode": "couple_love_deep",
+            "listAmountKrw": 59000,
+            "email": null
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "c9054610-6f1f-46d3-8a3c-13b0d058fb99:checkout_view:couple_love_deep:checkout-couple_love_deep",
+            "deviceId": "6bf19b6c-88c1-4b66-a756-c0e98ff0c83c",
+            "eventType": "checkout_view",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-COUPLE",
+            "productCode": "couple_love_deep",
+            "listAmountKrw": 59000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "productCode": "parent_child_deep",
+            "listAmountKrw": 39000,
+            "email": null
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "c9054610-6f1f-46d3-8a3c-13b0d058fb99:checkout_view:parent_child_deep:checkout-parent_child_deep",
+            "deviceId": "6bf19b6c-88c1-4b66-a756-c0e98ff0c83c",
+            "eventType": "checkout_view",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "productCode": "parent_child_deep",
+            "listAmountKrw": 39000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "c9054610-6f1f-46d3-8a3c-13b0d058fb99:checkout_view:personal_deep:checkout-personal_deep",
+            "deviceId": "6bf19b6c-88c1-4b66-a756-c0e98ff0c83c",
+            "eventType": "checkout_view",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PERSONAL",
+            "productCode": "personal_deep",
+            "listAmountKrw": 29000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "commerce.checkout.createTossLive",
+          "method": "POST",
+          "input": {
+            "productCode": "personal_deep",
+            "email": "december-qa@example.invalid",
+            "idempotencyKey": "checkout-c52459a9-9d7d-4c1e-8b2f-b5877d3c6463",
+            "couponCode": "DEC2026-PERSONAL",
+            "channel": "app"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "c9054610-6f1f-46d3-8a3c-13b0d058fb99:toss_request:personal_deep:payment-b1f1e088-5399-4772-b079-b2e11d5dda5a",
+            "deviceId": "6bf19b6c-88c1-4b66-a756-c0e98ff0c83c",
+            "eventType": "toss_request",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "c9054610-6f1f-46d3-8a3c-13b0d058fb99:checkout_view:couple_love_deep:checkout-couple_love_deep",
+            "deviceId": "6bf19b6c-88c1-4b66-a756-c0e98ff0c83c",
+            "eventType": "checkout_view",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-COUPLE",
+            "productCode": "couple_love_deep",
+            "listAmountKrw": 59000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "commerce.checkout.createTossLive",
+          "method": "POST",
+          "input": {
+            "productCode": "couple_love_deep",
+            "email": "december-qa@example.invalid",
+            "idempotencyKey": "checkout-1dd95d39-985e-4c4e-b7fe-9e8d95342c71",
+            "couponCode": "DEC2026-COUPLE",
+            "channel": "app"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "c9054610-6f1f-46d3-8a3c-13b0d058fb99:toss_request:couple_love_deep:payment-9c1b0fbb-542f-46bd-92f0-e9cbcbb5899e",
+            "deviceId": "6bf19b6c-88c1-4b66-a756-c0e98ff0c83c",
+            "eventType": "toss_request",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "c9054610-6f1f-46d3-8a3c-13b0d058fb99:checkout_view:parent_child_deep:checkout-parent_child_deep",
+            "deviceId": "6bf19b6c-88c1-4b66-a756-c0e98ff0c83c",
+            "eventType": "checkout_view",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "productCode": "parent_child_deep",
+            "listAmountKrw": 39000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "commerce.checkout.createTossLive",
+          "method": "POST",
+          "input": {
+            "productCode": "parent_child_deep",
+            "email": "december-qa@example.invalid",
+            "idempotencyKey": "checkout-319511d0-8592-4add-87d2-362c13807adf",
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "channel": "app"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "c9054610-6f1f-46d3-8a3c-13b0d058fb99:toss_request:parent_child_deep:payment-745d94d2-aa0e-49f1-b51f-c486c8a2a11f",
+            "deviceId": "6bf19b6c-88c1-4b66-a756-c0e98ff0c83c",
+            "eventType": "toss_request",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        }
+      ],
+      "blocked": [],
+      "login": [],
+      "pageErrors": [],
+      "unknown": []
+    },
+    {
+      "label": "narrow360",
+      "serverNow": "2026-12-15T03:00:00.000Z",
+      "active": true,
+      "guest": false,
+      "calls": [
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.kakaoStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "visitors.log",
+          "method": "POST",
+          "input": {
+            "deviceId": "3b1b2278-dd7d-4360-a76f-4c6e14273e0a",
+            "visitType": "home"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.claimDecember",
+          "method": "POST",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PERSONAL",
+            "productCode": "personal_deep",
+            "listAmountKrw": 29000,
+            "email": null
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "88f15dbd-c143-49e3-948f-8ea3d77de171:checkout_view:personal_deep:checkout-personal_deep",
+            "deviceId": "3b1b2278-dd7d-4360-a76f-4c6e14273e0a",
+            "eventType": "checkout_view",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PERSONAL",
+            "productCode": "personal_deep",
+            "listAmountKrw": 29000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-COUPLE",
+            "productCode": "couple_love_deep",
+            "listAmountKrw": 59000,
+            "email": null
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "88f15dbd-c143-49e3-948f-8ea3d77de171:checkout_view:couple_love_deep:checkout-couple_love_deep",
+            "deviceId": "3b1b2278-dd7d-4360-a76f-4c6e14273e0a",
+            "eventType": "checkout_view",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-COUPLE",
+            "productCode": "couple_love_deep",
+            "listAmountKrw": 59000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "productCode": "parent_child_deep",
+            "listAmountKrw": 39000,
+            "email": null
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "88f15dbd-c143-49e3-948f-8ea3d77de171:checkout_view:parent_child_deep:checkout-parent_child_deep",
+            "deviceId": "3b1b2278-dd7d-4360-a76f-4c6e14273e0a",
+            "eventType": "checkout_view",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "productCode": "parent_child_deep",
+            "listAmountKrw": 39000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "88f15dbd-c143-49e3-948f-8ea3d77de171:checkout_view:personal_deep:checkout-personal_deep",
+            "deviceId": "3b1b2278-dd7d-4360-a76f-4c6e14273e0a",
+            "eventType": "checkout_view",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PERSONAL",
+            "productCode": "personal_deep",
+            "listAmountKrw": 29000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "commerce.checkout.createTossLive",
+          "method": "POST",
+          "input": {
+            "productCode": "personal_deep",
+            "email": "december-qa@example.invalid",
+            "idempotencyKey": "checkout-fc9dc465-88f3-461e-830a-16790a7fea42",
+            "couponCode": "DEC2026-PERSONAL",
+            "channel": "app"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "88f15dbd-c143-49e3-948f-8ea3d77de171:toss_request:personal_deep:payment-f610bb8c-cb90-4146-805a-8038b1b10145",
+            "deviceId": "3b1b2278-dd7d-4360-a76f-4c6e14273e0a",
+            "eventType": "toss_request",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "88f15dbd-c143-49e3-948f-8ea3d77de171:checkout_view:couple_love_deep:checkout-couple_love_deep",
+            "deviceId": "3b1b2278-dd7d-4360-a76f-4c6e14273e0a",
+            "eventType": "checkout_view",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-COUPLE",
+            "productCode": "couple_love_deep",
+            "listAmountKrw": 59000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "commerce.checkout.createTossLive",
+          "method": "POST",
+          "input": {
+            "productCode": "couple_love_deep",
+            "email": "december-qa@example.invalid",
+            "idempotencyKey": "checkout-5ea6db66-6605-492e-8bff-9005628d1350",
+            "couponCode": "DEC2026-COUPLE",
+            "channel": "app"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "88f15dbd-c143-49e3-948f-8ea3d77de171:toss_request:couple_love_deep:payment-9aaff27f-ad37-4d44-a078-549b48c3f191",
+            "deviceId": "3b1b2278-dd7d-4360-a76f-4c6e14273e0a",
+            "eventType": "toss_request",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "88f15dbd-c143-49e3-948f-8ea3d77de171:checkout_view:parent_child_deep:checkout-parent_child_deep",
+            "deviceId": "3b1b2278-dd7d-4360-a76f-4c6e14273e0a",
+            "eventType": "checkout_view",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "productCode": "parent_child_deep",
+            "listAmountKrw": 39000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "commerce.checkout.createTossLive",
+          "method": "POST",
+          "input": {
+            "productCode": "parent_child_deep",
+            "email": "december-qa@example.invalid",
+            "idempotencyKey": "checkout-468924ae-ea0e-4289-8a31-081fac35030b",
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "channel": "app"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "88f15dbd-c143-49e3-948f-8ea3d77de171:toss_request:parent_child_deep:payment-a6a16e32-6fc0-4e41-807c-b595a9c4cf92",
+            "deviceId": "3b1b2278-dd7d-4360-a76f-4c6e14273e0a",
+            "eventType": "toss_request",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        }
+      ],
+      "blocked": [],
+      "login": [],
+      "pageErrors": [],
+      "unknown": []
+    },
+    {
+      "label": "pc1365",
+      "serverNow": "2026-12-15T03:00:00.000Z",
+      "active": true,
+      "guest": false,
+      "calls": [
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.kakaoStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "visitors.log",
+          "method": "POST",
+          "input": {
+            "deviceId": "0c48bb91-26c9-478e-a8a8-42a7efa229ed",
+            "visitType": "home"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.claimDecember",
+          "method": "POST",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PERSONAL",
+            "productCode": "personal_deep",
+            "listAmountKrw": 29000,
+            "email": null
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "1a9d4d8f-1c64-46c7-9bdc-86de0d00c355:checkout_view:personal_deep:checkout-personal_deep",
+            "deviceId": "0c48bb91-26c9-478e-a8a8-42a7efa229ed",
+            "eventType": "checkout_view",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PERSONAL",
+            "productCode": "personal_deep",
+            "listAmountKrw": 29000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-COUPLE",
+            "productCode": "couple_love_deep",
+            "listAmountKrw": 59000,
+            "email": null
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "1a9d4d8f-1c64-46c7-9bdc-86de0d00c355:checkout_view:couple_love_deep:checkout-couple_love_deep",
+            "deviceId": "0c48bb91-26c9-478e-a8a8-42a7efa229ed",
+            "eventType": "checkout_view",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-COUPLE",
+            "productCode": "couple_love_deep",
+            "listAmountKrw": 59000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "productCode": "parent_child_deep",
+            "listAmountKrw": 39000,
+            "email": null
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "1a9d4d8f-1c64-46c7-9bdc-86de0d00c355:checkout_view:parent_child_deep:checkout-parent_child_deep",
+            "deviceId": "0c48bb91-26c9-478e-a8a8-42a7efa229ed",
+            "eventType": "checkout_view",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "productCode": "parent_child_deep",
+            "listAmountKrw": 39000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "1a9d4d8f-1c64-46c7-9bdc-86de0d00c355:checkout_view:personal_deep:checkout-personal_deep",
+            "deviceId": "0c48bb91-26c9-478e-a8a8-42a7efa229ed",
+            "eventType": "checkout_view",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PERSONAL",
+            "productCode": "personal_deep",
+            "listAmountKrw": 29000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "commerce.checkout.createTossLive",
+          "method": "POST",
+          "input": {
+            "productCode": "personal_deep",
+            "email": "december-qa@example.invalid",
+            "idempotencyKey": "checkout-8e3fd663-0dc7-475b-b1fc-56dfd550fbc9",
+            "couponCode": "DEC2026-PERSONAL",
+            "channel": "app"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "1a9d4d8f-1c64-46c7-9bdc-86de0d00c355:toss_request:personal_deep:payment-c848db39-a7ef-480b-be83-7da9a16a4bc3",
+            "deviceId": "0c48bb91-26c9-478e-a8a8-42a7efa229ed",
+            "eventType": "toss_request",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "1a9d4d8f-1c64-46c7-9bdc-86de0d00c355:checkout_view:couple_love_deep:checkout-couple_love_deep",
+            "deviceId": "0c48bb91-26c9-478e-a8a8-42a7efa229ed",
+            "eventType": "checkout_view",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-COUPLE",
+            "productCode": "couple_love_deep",
+            "listAmountKrw": 59000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "commerce.checkout.createTossLive",
+          "method": "POST",
+          "input": {
+            "productCode": "couple_love_deep",
+            "email": "december-qa@example.invalid",
+            "idempotencyKey": "checkout-61bf0981-51c2-48ed-9a4c-f908c053d17f",
+            "couponCode": "DEC2026-COUPLE",
+            "channel": "app"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "1a9d4d8f-1c64-46c7-9bdc-86de0d00c355:toss_request:couple_love_deep:payment-613fef09-20f7-4ce6-88a7-e60f976865f6",
+            "deviceId": "0c48bb91-26c9-478e-a8a8-42a7efa229ed",
+            "eventType": "toss_request",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "1a9d4d8f-1c64-46c7-9bdc-86de0d00c355:checkout_view:parent_child_deep:checkout-parent_child_deep",
+            "deviceId": "0c48bb91-26c9-478e-a8a8-42a7efa229ed",
+            "eventType": "checkout_view",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "productCode": "parent_child_deep",
+            "listAmountKrw": 39000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "commerce.checkout.createTossLive",
+          "method": "POST",
+          "input": {
+            "productCode": "parent_child_deep",
+            "email": "december-qa@example.invalid",
+            "idempotencyKey": "checkout-4dbf5b45-f340-43e6-98e3-b1ac4e8ff635",
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "channel": "app"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "1a9d4d8f-1c64-46c7-9bdc-86de0d00c355:toss_request:parent_child_deep:payment-74100838-88ca-4ea8-9ebe-dc54a258b44e",
+            "deviceId": "0c48bb91-26c9-478e-a8a8-42a7efa229ed",
+            "eventType": "toss_request",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        }
+      ],
+      "blocked": [],
+      "login": [],
+      "pageErrors": [],
+      "unknown": []
+    },
+    {
+      "label": "guest-claim",
+      "serverNow": "2026-12-15T03:00:00.000Z",
+      "active": true,
+      "guest": true,
+      "calls": [
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        }
+      ],
+      "blocked": [],
+      "login": [
+        "http://127.0.0.1:8766/api/auth/kakao/login?returnTo=%2Fdecember-coupons"
+      ],
+      "pageErrors": [],
+      "unknown": []
+    },
+    {
+      "label": "before-december",
+      "serverNow": "2026-11-30T14:59:59.000Z",
+      "active": false,
+      "guest": false,
+      "calls": [
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.kakaoStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "visitors.log",
+          "method": "POST",
+          "input": {
+            "deviceId": "84b7cd0b-698f-4dbc-bb15-48462fb5fa00",
+            "visitType": "home"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "visitors.log",
+          "method": "POST",
+          "input": {
+            "deviceId": "84b7cd0b-698f-4dbc-bb15-48462fb5fa00",
+            "visitType": "couple_start",
+            "testType": "couple"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "27454749-7e8e-42f5-a7e8-ac85cc3dde8d:checkout_view:personal_deep:checkout-personal_deep",
+            "deviceId": "84b7cd0b-698f-4dbc-bb15-48462fb5fa00",
+            "eventType": "checkout_view",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "27454749-7e8e-42f5-a7e8-ac85cc3dde8d:checkout_view:couple_love_deep:checkout-couple_love_deep",
+            "deviceId": "84b7cd0b-698f-4dbc-bb15-48462fb5fa00",
+            "eventType": "checkout_view",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "27454749-7e8e-42f5-a7e8-ac85cc3dde8d:checkout_view:parent_child_deep:checkout-parent_child_deep",
+            "deviceId": "84b7cd0b-698f-4dbc-bb15-48462fb5fa00",
+            "eventType": "checkout_view",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        }
+      ],
+      "blocked": [],
+      "login": [],
+      "pageErrors": [],
+      "unknown": []
+    },
+    {
+      "label": "after-january1",
+      "serverNow": "2026-12-31T15:00:00.000Z",
+      "active": false,
+      "guest": false,
+      "calls": [
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.kakaoStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "visitors.log",
+          "method": "POST",
+          "input": {
+            "deviceId": "fe182ebc-606c-4a94-bf25-cf71302035b0",
+            "visitType": "home"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "visitors.log",
+          "method": "POST",
+          "input": {
+            "deviceId": "fe182ebc-606c-4a94-bf25-cf71302035b0",
+            "visitType": "couple_start",
+            "testType": "couple"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "27509bce-dd91-4e74-941f-f6bd9caadf1a:checkout_view:personal_deep:checkout-personal_deep",
+            "deviceId": "fe182ebc-606c-4a94-bf25-cf71302035b0",
+            "eventType": "checkout_view",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "27509bce-dd91-4e74-941f-f6bd9caadf1a:checkout_view:couple_love_deep:checkout-couple_love_deep",
+            "deviceId": "fe182ebc-606c-4a94-bf25-cf71302035b0",
+            "eventType": "checkout_view",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "27509bce-dd91-4e74-941f-f6bd9caadf1a:checkout_view:parent_child_deep:checkout-parent_child_deep",
+            "deviceId": "fe182ebc-606c-4a94-bf25-cf71302035b0",
+            "eventType": "checkout_view",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "productCode": "parent_child_deep",
+            "listAmountKrw": 39000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PARENT-CHILD",
+            "productCode": "parent_child_deep",
+            "listAmountKrw": 39000,
+            "email": "december-qa@example.invalid"
+          }
+        }
+      ],
+      "blocked": [],
+      "login": [],
+      "pageErrors": [],
+      "unknown": []
+    },
+    {
+      "label": "server-amount-mismatch",
+      "serverNow": "2026-12-15T03:00:00.000Z",
+      "active": true,
+      "guest": false,
+      "calls": [
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "7e9b60b4-e0eb-4061-afbb-96cc940d13a2:checkout_view:personal_deep:checkout-personal_deep",
+            "deviceId": "9a3d0568-6021-4eb6-908f-1b5945ecbea6",
+            "eventType": "checkout_view",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PERSONAL",
+            "productCode": "personal_deep",
+            "listAmountKrw": 29000,
+            "email": "december-qa@example.invalid"
+          }
+        },
+        {
+          "procedure": "commerce.checkout.createTossLive",
+          "method": "POST",
+          "input": {
+            "productCode": "personal_deep",
+            "email": "december-qa@example.invalid",
+            "idempotencyKey": "checkout-a41bc9bd-28d4-484a-a66b-cc837220ea17",
+            "couponCode": "DEC2026-PERSONAL",
+            "channel": "app"
+          }
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.preview",
+          "method": "GET",
+          "input": {
+            "couponCode": "DEC2026-PERSONAL",
+            "productCode": "personal_deep",
+            "listAmountKrw": 29000,
+            "email": "december-qa@example.invalid"
+          }
+        }
+      ],
+      "blocked": [],
+      "login": [],
+      "pageErrors": [],
+      "unknown": []
+    },
+    {
+      "label": "regressions",
+      "serverNow": "2026-12-15T03:00:00.000Z",
+      "active": true,
+      "guest": false,
+      "calls": [
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.kakaoStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "visitors.log",
+          "method": "POST",
+          "input": {
+            "deviceId": "c3a8654b-0116-4a4c-a12c-52825545bb2e",
+            "visitType": "home"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "15d57706-7926-4e78-a10c-fa253d6953c3:paid_guide_click:personal_deep:home-sample-personal_deep",
+            "deviceId": "c3a8654b-0116-4a4c-a12c-52825545bb2e",
+            "eventType": "paid_guide_click",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "15d57706-7926-4e78-a10c-fa253d6953c3:sample_view:personal_deep:sample-personal_deep",
+            "deviceId": "c3a8654b-0116-4a4c-a12c-52825545bb2e",
+            "eventType": "sample_view",
+            "productCode": "personal_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "visitors.log",
+          "method": "POST",
+          "input": {
+            "deviceId": "c3a8654b-0116-4a4c-a12c-52825545bb2e",
+            "visitType": "free_start",
+            "testType": "free"
+          }
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "visitors.log",
+          "method": "POST",
+          "input": {
+            "deviceId": "c3a8654b-0116-4a4c-a12c-52825545bb2e",
+            "visitType": "couple_start",
+            "testType": "couple"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "15d57706-7926-4e78-a10c-fa253d6953c3:paid_guide_click:couple_love_deep:relationship-sample-couple_love_deep",
+            "deviceId": "c3a8654b-0116-4a4c-a12c-52825545bb2e",
+            "eventType": "paid_guide_click",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "15d57706-7926-4e78-a10c-fa253d6953c3:sample_view:couple_love_deep:sample-couple_love_deep",
+            "deviceId": "c3a8654b-0116-4a4c-a12c-52825545bb2e",
+            "eventType": "sample_view",
+            "productCode": "couple_love_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "15d57706-7926-4e78-a10c-fa253d6953c3:paid_guide_click:parent_child_deep:relationship-sample-parent_child_deep",
+            "deviceId": "c3a8654b-0116-4a4c-a12c-52825545bb2e",
+            "eventType": "paid_guide_click",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "conversionFunnel.track",
+          "method": "POST",
+          "input": {
+            "eventKey": "15d57706-7926-4e78-a10c-fa253d6953c3:sample_view:parent_child_deep:sample-parent_child_deep",
+            "deviceId": "c3a8654b-0116-4a4c-a12c-52825545bb2e",
+            "eventType": "sample_view",
+            "productCode": "parent_child_deep",
+            "locale": "ko-KR",
+            "channel": "web"
+          }
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": {}
+        },
+        {
+          "procedure": "commerce.checkout.testMode",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.kakaoStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "commerce.coupons.decemberStatus",
+          "method": "GET",
+          "input": null
+        },
+        {
+          "procedure": "auth.me",
+          "method": "GET",
+          "input": null
+        }
+      ],
+      "blocked": [
+        {
+          "url": "http://127.0.0.1:8766/api/auth/legacy-admin-session",
+          "method": "GET"
+        }
+      ],
+      "login": [],
+      "pageErrors": [],
+      "unknown": []
+    }
+  ]
+}
